@@ -1,0 +1,65 @@
+[package]
+name = "phichain"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# Enable only a small amount of optimization in debug mode
+[profile.dev]
+opt-level = 1
+
+# Enable max optimizations for dependencies, but not for our code:
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+lto = true
+opt-level = 3
+codegen-units = 1
+incremental = false
+debug = false
+
+[dependencies]
+bevy = { version = "0.13.2", default-features = false, features = [
+    "animation",
+    "bevy_asset",
+    "bevy_gilrs",
+    "bevy_scene",
+    "bevy_winit",
+    "bevy_core_pipeline",
+    "bevy_pbr",
+    "bevy_gltf",
+    "bevy_render",
+    "bevy_sprite",
+    "bevy_text",
+    "bevy_ui",
+    "multi-threaded",
+    "png",
+    "hdr",
+    "x11",
+    "bevy_gizmos",
+    "tonemapping_luts",
+    "default_font",
+    "webgl2",
+    "bevy_debug_stepping",
+] }
+bevy_mod_picking = "0.18"
+bevy_kira_audio = { version = "0.19.0", features = [
+    "mp3",
+    "ogg",
+    "flac",
+    "wav",
+] }
+bevy_egui = "0.27"
+egui = "0.27"
+egui_dock = "0.12"
+
+fraction = "0.15.1"
+
+serde = { version = "1.0.197", features = ["derive"] }
+serde_json = "1.0.114"
+serde_repr = "0.1"
+
+iyes_perf_ui = "0.2.3"
+bevy-inspector-egui = "0.24.0"

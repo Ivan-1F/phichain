@@ -1,0 +1,94 @@
+use bevy::prelude::*;
+use bevy_kira_audio::prelude::*;
+
+use crate::timing::{ChartTime, PauseEvent, Paused, ResumeEvent};
+
+#[derive(Resource)]
+struct InstanceHandle(Handle<AudioInstance>);
+
+pub struct AudioPlugin;
+
+impl Plugin for AudioPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugins(bevy_kira_audio::AudioPlugin)
+            .add_systems(Startup, setup_audio_system)
+            .add_systems(Update, handle_pause_system)
+            .add_systems(Update, handle_resume_system)
+            .add_systems(Update, progress_control_system)
+            .add_systems(Update, update_time_system);
+    }
+}
+
+/// Setup music
+fn setup_audio_system(mut commands: Commands, asset_server: Res<AssetServer>, audio: Res<Audio>) {
+    let handle = audio
+        .play(asset_server.load("audio.mp3"))
+        .paused()
+        .handle();
+    commands.insert_resource(InstanceHandle(handle));
+}
+
+/// When receiving [PauseEvent], pause the audio instance
+fn handle_pause_system(
+    handle: Res<InstanceHandle>,
+    mut paused: ResMut<Paused>,
+    mut audio_instances: ResMut<Assets<AudioInstance>>,
+    mut events: EventReader<PauseEvent>,
+) {
+    if let Some(instance) = audio_instances.get_mut(&handle.0) {
+        for _ in events.read() {
+            instance.pause(AudioTween::default());
+            paused.0 = true;
+        }
+    }
+}
+
+/// When receiving [ResumeEvent], resume the audio instance
+fn handle_resume_system(
+    handle: Res<InstanceHandle>,
+    mut paused: ResMut<Paused>,
+    mut audio_instances: ResMut<Assets<AudioInstance>>,
+    mut events: EventReader<ResumeEvent>,
+) {
+    if let Some(instance) = audio_instances.get_mut(&handle.0) {
+        for _ in events.read() {
+            instance.resume(AudioTween::default());
+            paused.0 = false;
+        }
+    }
+}
+
+/// Use ArrowLeft and ArrowRight to control the progress. Holding Controll will seek faster and holding Alt will seek slower
+fn progress_control_system(
+    handle: Res<InstanceHandle>,
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut audio_instances: ResMut<Assets<AudioInstance>>,
+) {
+    if let Some(instance) = audio_instances.get_mut(&handle.0) {
+        instance.set_volume(0.0, AudioTween::default());
+        let mut factor = 1.0;
+        if keyboard.pressed(KeyCode::ControlLeft) {
+            factor *= 2.0;
+        }
+        if keyboard.pressed(KeyCode::AltLeft) {
+            factor /= 2.0;
+        }
+        if keyboard.pressed(KeyCode::ArrowLeft) {
+            instance.seek_by(-0.01 * factor);
+        }
+        if keyboard.pressed(KeyCode::ArrowRight) {
+            instance.seek_by(0.01 * factor);
+        }
+    }
+}
+
+/// Sync the [ChartTime] with the audio instance
+fn update_time_system(
+    handle: Res<InstanceHandle>,
+    mut audio_instances: ResMut<Assets<AudioInstance>>,
+    mut time: ResMut<ChartTime>,
+) {
+    if let Some(instance) = audio_instances.get_mut(&handle.0) {
+        time.0 = instance.state().position().unwrap_or_default() as f32
+    }
+}
