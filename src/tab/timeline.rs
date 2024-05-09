@@ -70,7 +70,6 @@ fn update_note_timeline_camera_viewport(
             || viewport_pos.x + viewport_size.x > window.width() * scale_factor
             || viewport_pos.y + viewport_size.y > window.height() * scale_factor
         {
-            println!("{}x{}", window.width(), window.height());
             return;
         }
 
