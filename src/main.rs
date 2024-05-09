@@ -17,12 +17,15 @@ use crate::chart::note::{Note, NoteKind};
 use crate::layer::GAME_LAYER;
 use crate::loader::official::OfficialLoader;
 use crate::loader::Loader;
+use crate::selection::SelectedLine;
 use crate::tab::game::GameCamera;
 use crate::tab::game::GameTabPlugin;
 use crate::tab::game::GameViewport;
-use crate::tab::timeline::event_timeline_ui;
-use crate::tab::timeline::note_timeline_ui;
+use crate::tab::inspector::inspector_ui_system;
+use crate::tab::timeline::timeline_ui_system;
 use crate::tab::timeline::{TimelineTabPlugin, TimelineViewport};
+use crate::tab::TabPlugin;
+use crate::tab::{empty_tab, EditorTab, TabRegistrationExt, TabRegistry};
 use crate::timing::{ChartTime, TimingPlugin};
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::sprite::Anchor;
@@ -34,7 +37,6 @@ use chart::beat::Beat;
 use chart::line::{LineOpacity, LinePosition, LineRotation};
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use fraction::prelude::*;
-use selection::SelectedLine;
 
 fn main() {
     App::new()
@@ -47,6 +49,8 @@ fn main() {
         .add_plugins(TimelineTabPlugin)
         .add_plugins(DefaultPickingPlugins)
         .add_plugins(EguiPlugin)
+        .add_plugins(crate::selection::SelectionPlugin)
+        .add_plugins(TabPlugin)
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(AssetsPlugin)
         .add_systems(Startup, |mut contexts: bevy_egui::EguiContexts| {
@@ -74,6 +78,9 @@ fn main() {
         )
         .add_systems(Update, calculate_speed_events_system)
         .add_systems(Update, hide_unselected_line_timeline_items_system)
+        .register_tab(EditorTab::Timeline, "Timeline", timeline_ui_system)
+        .register_tab(EditorTab::Game, "Game", empty_tab)
+        .register_tab(EditorTab::Inspector, "Inspector", inspector_ui_system)
         .run();
 }
 
@@ -102,13 +109,7 @@ fn hide_unselected_line_timeline_items_system(
 
 struct TabViewer<'a> {
     world: &'a mut World,
-}
-
-#[derive(Debug)]
-enum EditorTab {
-    Game,
-    Timeline,
-    Inspector,
+    registry: &'a mut TabRegistry,
 }
 
 #[derive(Resource)]
@@ -128,8 +129,8 @@ impl UiState {
         Self { state }
     }
 
-    fn ui(&mut self, world: &mut World, ctx: &mut egui::Context) {
-        let mut tab_viewer = TabViewer { world };
+    fn ui(&mut self, world: &mut World, registry: &mut TabRegistry, ctx: &mut egui::Context) {
+        let mut tab_viewer = TabViewer { world, registry };
 
         DockArea::new(&mut self.state)
             .style(Style::from_egui(ctx.style().as_ref()))
@@ -141,10 +142,15 @@ impl egui_dock::TabViewer for TabViewer<'_> {
     type Tab = EditorTab;
 
     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
-        format!("{tab:?}").into()
+        self.registry
+            .get(tab)
+            .map(|t| t.title())
+            .unwrap_or("Unknown")
+            .into()
     }
 
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
+        self.registry.tab_ui(ui, self.world, tab);
         match tab {
             EditorTab::Game => {
                 let mut game_viewport = self.world.resource_mut::<GameViewport>();
@@ -161,8 +167,6 @@ impl egui_dock::TabViewer for TabViewer<'_> {
                 );
             }
             EditorTab::Timeline => {
-                note_timeline_ui(ui, self.world);
-                event_timeline_ui(ui, self.world);
                 let mut timeline_viewport = self.world.resource_mut::<TimelineViewport>();
                 let clip_rect = ui.clip_rect();
                 timeline_viewport.0 = Rect::from_corners(
@@ -239,8 +243,10 @@ fn ui_system(world: &mut World) {
             ..default()
         })
         .show(ctx, |_ui| {
-            world.resource_scope::<UiState, _>(|world, mut ui_state| {
-                ui_state.ui(world, &mut ctx.clone());
+            world.resource_scope(|world: &mut World, mut registry: Mut<TabRegistry>| {
+                world.resource_scope(|world: &mut World, mut ui_state: Mut<UiState>| {
+                    ui_state.ui(world, &mut registry, &mut ctx.clone());
+                });
             });
         });
 }

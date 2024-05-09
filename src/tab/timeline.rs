@@ -6,7 +6,7 @@ use crate::{
         event::LineEvent,
         note::{Note, NoteKind},
     },
-    selection::SelectedLine,
+    selection::{SelectNoteEvent, Selected, SelectedLine},
     timing::ChartTime,
 };
 
@@ -18,26 +18,34 @@ impl Plugin for TimelineTabPlugin {
     }
 }
 
-pub fn event_timeline_ui(ui: &mut Ui, world: &mut World) {
-    let selected_line = world.resource::<SelectedLine>().0;
-    let viewport = world
-        .resource::<TimelineViewport>()
-        .event_timeline_viewport();
-    let time = world.resource::<ChartTime>().0;
+pub fn timeline_ui_system(
+    In(ui): In<&mut Ui>,
+    selected_line_query: Res<SelectedLine>,
+    timeline_viewport: Res<TimelineViewport>,
+    time: Res<ChartTime>,
+    event_query: Query<&LineEvent>,
+    note_query: Query<(&Note, &Parent, Entity, Option<&Selected>)>,
+    mut select_events: EventWriter<SelectNoteEvent>,
+) {
+    let selected_line = selected_line_query.0;
+    let viewport = timeline_viewport;
+    let time = time.0;
 
     ui.painter().rect_filled(
         egui::Rect::from_center_size(
             egui::Pos2::new(
-                viewport.width() / 2.0 + viewport.min.x,
-                viewport.height() * 0.9,
+                viewport.0.width() / 2.0 + viewport.0.min.x,
+                viewport.0.height() * 0.9,
             ),
-            egui::Vec2::new(viewport.width(), 2.0),
+            egui::Vec2::new(viewport.0.width(), 2.0),
         ),
         0.0,
         Color32::WHITE,
     );
 
-    for event in world.query::<&LineEvent>().iter(world) {
+    let event_timeline_viewport = viewport.event_timeline_viewport();
+
+    for event in event_query.iter() {
         if event.line_id != selected_line {
             continue;
         }
@@ -50,46 +58,37 @@ pub fn event_timeline_ui(ui: &mut Ui, world: &mut World) {
             crate::chart::event::LineEventKind::Speed => 5,
         };
 
-        let x =
-            viewport.width() / 5.0 * track as f32 - viewport.width() / 5.0 / 2.0 + viewport.min.x;
+        let x = event_timeline_viewport.width() / 5.0 * track as f32
+            - event_timeline_viewport.width() / 5.0 / 2.0
+            + event_timeline_viewport.min.x;
         let y: f32 = (time - event.start_beat.value() * (60.0 / 174.0)) * 400.0 * 2.0
-            + viewport.height() * 0.9;
+            + event_timeline_viewport.height() * 0.9;
 
         let size = egui::Vec2::new(
-            viewport.width() / 8000.0 * 989.0,
+            event_timeline_viewport.width() / 8000.0 * 989.0,
             event.duration().value() * (60.0 / 174.0) * 400.0 * 2.0,
         );
 
         let center = egui::Pos2::new(x, y - size.y / 2.0);
 
-        ui.painter().rect(egui::Rect::from_center_size(center, size), 0.0, Color32::LIGHT_BLUE, egui::Stroke::new(2.0, Color32::WHITE));
+        ui.painter().rect(
+            egui::Rect::from_center_size(center, size),
+            0.0,
+            Color32::LIGHT_BLUE,
+            egui::Stroke::new(2.0, Color32::WHITE),
+        );
     }
-}
 
-pub fn note_timeline_ui(ui: &mut Ui, world: &mut World) {
-    let selected_line = world.resource::<SelectedLine>().0;
-    let viewport = world
-        .resource::<TimelineViewport>()
-        .note_timeline_viewport();
-    let time = world.resource::<ChartTime>().0;
+    let note_timeline_viewport = viewport.note_timeline_viewport();
 
-    ui.painter().rect_filled(
-        egui::Rect::from_center_size(
-            egui::Pos2::new(viewport.width() / 2.0, viewport.height() * 0.9),
-            egui::Vec2::new(viewport.width(), 2.0),
-        ),
-        0.0,
-        Color32::WHITE,
-    );
-
-    for (note, parent) in world.query::<(&Note, &Parent)>().iter(world) {
+    for (note, parent, entity, selected) in note_query.iter() {
         if parent.get() != selected_line {
             continue;
         }
 
-        let x = (note.x + 0.5) * viewport.width();
-        let y: f32 =
-            (time - note.beat.value() * (60.0 / 174.0)) * 400.0 * 2.0 + viewport.height() * 0.9;
+        let x = (note.x + 0.5) * note_timeline_viewport.width();
+        let y: f32 = (time - note.beat.value() * (60.0 / 174.0)) * 400.0 * 2.0
+            + note_timeline_viewport.height() * 0.9;
 
         let image = match note.kind {
             NoteKind::Tap => egui::include_image!("../../assets/tap.png"),
@@ -109,12 +108,12 @@ pub fn note_timeline_ui(ui: &mut Ui, world: &mut World) {
 
         let size = match note.kind {
             NoteKind::Hold { hold_beat } => egui::Vec2::new(
-                viewport.width() / 8000.0 * image_size.x,
+                note_timeline_viewport.width() / 8000.0 * image_size.x,
                 hold_beat.value() * (60.0 / 174.0) * 400.0 * 2.0,
             ),
             _ => egui::Vec2::new(
-                viewport.width() / 8000.0 * image_size.x,
-                viewport.width() / 8000.0 * image_size.y,
+                note_timeline_viewport.width() / 8000.0 * image_size.x,
+                note_timeline_viewport.width() / 8000.0 * image_size.y,
             ),
         };
 
@@ -128,11 +127,16 @@ pub fn note_timeline_ui(ui: &mut Ui, world: &mut World) {
             egui::Image::new(image)
                 .maintain_aspect_ratio(false)
                 .fit_to_exact_size(size)
+                .tint(if selected.is_some() {
+                    Color32::LIGHT_GREEN
+                } else {
+                    Color32::WHITE
+                })
                 .sense(egui::Sense::click()),
         );
 
         if response.clicked() {
-            println!("{:?}", note);
+            select_events.send(SelectNoteEvent(entity));
         }
     }
 }
