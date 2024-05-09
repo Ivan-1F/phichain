@@ -14,15 +14,15 @@ use crate::chart::event::{LineEvent, LineEventKind};
 use crate::chart::line::Line;
 use crate::chart::note::TimelineNote;
 use crate::chart::note::{Note, NoteKind};
-use crate::layer::{EVENT_TIME_LINE_LAYER, GAME_LAYER, NOTE_TIME_LINE_LAYER};
+use crate::layer::GAME_LAYER;
 use crate::loader::official::OfficialLoader;
 use crate::loader::Loader;
 use crate::tab::game::GameCamera;
 use crate::tab::game::GameTabPlugin;
 use crate::tab::game::GameViewport;
-use crate::tab::timeline::{
-    EventTimelineCamera, NoteTimelineCamera, TimelineTabPlugin, TimelineViewport,
-};
+use crate::tab::timeline::event_timeline_ui;
+use crate::tab::timeline::note_timeline_ui;
+use crate::tab::timeline::{TimelineTabPlugin, TimelineViewport};
 use crate::timing::{ChartTime, TimingPlugin};
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::sprite::Anchor;
@@ -49,6 +49,9 @@ fn main() {
         .add_plugins(EguiPlugin)
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(AssetsPlugin)
+        .add_systems(Startup, |mut contexts: bevy_egui::EguiContexts| {
+            egui_extras::install_image_loaders(contexts.ctx_mut());
+        })
         .add_systems(Startup, setup_plugin)
         .add_systems(Startup, setup_chart_plugin)
         .add_systems(Update, zoom_scale)
@@ -70,8 +73,6 @@ fn main() {
             (update_line_texture_system, update_note_texture_system),
         )
         .add_systems(Update, calculate_speed_events_system)
-        .add_systems(Update, update_timeline_note_system)
-        .add_systems(Update, update_timeline_event_system)
         .add_systems(Update, hide_unselected_line_timeline_items_system)
         .run();
 }
@@ -120,9 +121,9 @@ impl UiState {
         let mut state = DockState::new(vec![EditorTab::Game]);
         let tree = state.main_surface_mut();
         let [game, _timeline] =
-            tree.split_left(NodeIndex::root(), 1.0 / 2.0, vec![EditorTab::Timeline]);
+            tree.split_left(NodeIndex::root(), 2.0 / 3.0, vec![EditorTab::Timeline]);
 
-        tree.split_below(game, 1.0 / 2.0, vec![EditorTab::Inspector]);
+        tree.split_below(game, 2.0 / 5.0, vec![EditorTab::Inspector]);
 
         Self { state }
     }
@@ -160,6 +161,8 @@ impl egui_dock::TabViewer for TabViewer<'_> {
                 );
             }
             EditorTab::Timeline => {
+                note_timeline_ui(ui, self.world);
+                event_timeline_ui(ui, self.world);
                 let mut timeline_viewport = self.world.resource_mut::<TimelineViewport>();
                 let clip_rect = ui.clip_rect();
                 timeline_viewport.0 = Rect::from_corners(
@@ -172,7 +175,7 @@ impl egui_dock::TabViewer for TabViewer<'_> {
                         y: clip_rect.max.y,
                     },
                 );
-            },
+            }
             _ => {}
         }
     }
@@ -214,11 +217,19 @@ fn ui_system(world: &mut World) {
         });
     });
 
+    let notes: Vec<_> = world.query::<&Note>().iter(world).collect();
+    let notes = notes.len();
+    let events: Vec<_> = world.query::<&LineEvent>().iter(world).collect();
+    let events = events.len();
+
     egui::TopBottomPanel::bottom("phichain.StatusBar").show(ctx, |ui| {
         ui.horizontal(|ui| {
             ui.label("PhiChain v0.1.0");
 
             ui.label(format!("FPS: {:.2}", fps));
+
+            ui.label(format!("Notes: {}", notes));
+            ui.label(format!("Events: {}", events));
         });
     });
 
@@ -246,107 +257,6 @@ fn setup_plugin(mut commands: Commands) {
         RenderLayers::layer(GAME_LAYER),
         GameCamera,
     ));
-    commands.spawn((
-        Camera2dBundle {
-            camera: Camera {
-                order: 1,
-                ..default()
-            },
-            ..default()
-        },
-        RenderLayers::layer(NOTE_TIME_LINE_LAYER),
-        NoteTimelineCamera,
-    ));
-    commands.spawn((
-        Camera2dBundle {
-            camera: Camera {
-                order: 2,
-                ..default()
-            },
-            ..default()
-        },
-        RenderLayers::layer(EVENT_TIME_LINE_LAYER),
-        EventTimelineCamera,
-    ));
-}
-
-fn update_timeline_note_system(
-    mut query: Query<(
-        &mut Transform,
-        &mut Sprite,
-        &mut Handle<Image>,
-        &TimelineNote,
-    )>,
-    note_query: Query<(&Note, &Parent)>,
-    assets: Res<ImageAssets>,
-    timeline_viewport: Res<TimelineViewport>,
-    time: Res<ChartTime>,
-    selected_line: Res<SelectedLine>,
-) {
-    let note_timeline_viewport = timeline_viewport.note_timeline_viewport();
-    for (mut transform, mut sprite, mut image, timeline_note) in &mut query {
-        let (note, parent) = note_query.get(timeline_note.0).unwrap();
-        if parent.get() != selected_line.0 {
-            continue;
-        }
-        match note.kind {
-            NoteKind::Tap => *image = assets.tap.clone(),
-            NoteKind::Drag => *image = assets.drag.clone(),
-            NoteKind::Hold { hold_beat: _ } => *image = assets.hold.clone(),
-            NoteKind::Flick => *image = assets.flick.clone(),
-        }
-        transform.scale = Vec3::splat(note_timeline_viewport.width() / 8000.0);
-        transform.translation.y = note_timeline_viewport.height() / 2.0
-            - (note_timeline_viewport.height()
-                - (note.beat.value() * (60.0 / 174.0) - time.0) * 400.0 * 2.0);
-        transform.translation.x = note.x * note_timeline_viewport.width();
-        match note.kind {
-            NoteKind::Hold { hold_beat } => {
-                sprite.anchor = Anchor::BottomCenter;
-                transform.scale.y = (hold_beat.value() * (60.0 / 174.0) * 400.0 * 2.0) / 1900.0;
-            }
-            _ => sprite.anchor = Anchor::Center,
-        }
-    }
-}
-
-fn update_timeline_event_system(
-    mut query: Query<(&mut Transform, &mut Sprite, &mut Handle<Image>, &LineEvent)>,
-    assets: Res<ImageAssets>,
-    timeline_viewport: Res<TimelineViewport>,
-    time: Res<ChartTime>,
-    selected_line: Res<SelectedLine>,
-) {
-    let event_timeline_viewport = timeline_viewport.event_timeline_viewport();
-    for (mut transform, mut sprite, mut image, event) in &mut query {
-        if event.line_id != selected_line.0 {
-            continue;
-        }
-        *image = assets.hold.clone();
-        transform.scale = Vec3::splat(event_timeline_viewport.width() / 8000.0);
-        transform.translation.y = event_timeline_viewport.height() / 2.0
-            - (event_timeline_viewport.height()
-                - (event.start_beat.value() * (60.0 / 174.0) - time.0) * 400.0 * 2.0);
-        match event.kind {
-            LineEventKind::X => {
-                transform.translation.x = -event_timeline_viewport.width() / 2.0 / 5.0 * (2.0 * 2.0)
-            }
-            LineEventKind::Y => {
-                transform.translation.x = -event_timeline_viewport.width() / 2.0 / 5.0 * (1.0 * 2.0)
-            }
-            LineEventKind::Rotation => transform.translation.x = 0.0,
-            LineEventKind::Opacity => {
-                transform.translation.x = event_timeline_viewport.width() / 2.0 / 5.0 * (1.0 * 2.0)
-            }
-            LineEventKind::Speed => {
-                transform.translation.x = event_timeline_viewport.width() / 2.0 / 5.0 * (2.0 * 2.0)
-            }
-        }
-        sprite.anchor = Anchor::BottomCenter;
-        transform.scale.y =
-            ((event.end_beat.value() - event.start_beat.value()) * (60.0 / 174.0) * 400.0 * 2.0)
-                / 1900.0;
-    }
 }
 
 fn zoom_scale(
@@ -364,7 +274,7 @@ fn zoom_scale(
 /// Load a chart in official JSON format into the world
 fn setup_chart_plugin(commands: Commands) {
     OfficialLoader::load(
-        std::fs::File::open("Chart_AT.json").expect("Failed to open chart"),
+        std::fs::File::open("Chart_IN_Antithese.json").expect("Failed to open chart"),
         commands,
     );
 }

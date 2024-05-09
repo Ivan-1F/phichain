@@ -1,8 +1,7 @@
 use fraction::prelude::*;
-use bevy::prelude::*;
 
 #[derive(Clone, Copy, Debug)]
-pub struct Beat(Fraction);
+pub struct Beat(pub Fraction);
 
 impl Into<f32> for Beat {
     fn into(self) -> f32 {
@@ -37,19 +36,5 @@ impl Beat {
 
     pub fn value(&self) -> f32 {
         (*self).into()
-    }
-}
-
-#[derive(Resource, Debug)]
-struct BPMList {
-
-}
-
-impl BPMList {
-    fn to_time(beat: Beat) -> f32 {
-        beat.value() * (60.0 / 174.0)
-    }
-    fn to_beat(time: f32) -> Beat {
-        Beat::from(time / (60.0 / 174.0))
     }
 }

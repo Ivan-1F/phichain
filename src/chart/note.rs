@@ -11,7 +11,7 @@ pub enum NoteKind {
     Flick,
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct Note {
     pub kind: NoteKind,
     pub above: bool,

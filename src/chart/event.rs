@@ -1,6 +1,5 @@
-use bevy::{prelude::*, render::view::RenderLayers};
+use bevy::prelude::*;
 
-use crate::layer::EVENT_TIME_LINE_LAYER;
 use super::beat::Beat;
 
 #[derive(Debug)]
@@ -35,21 +34,25 @@ impl LineEvent {
 
         None
     }
+
+    pub fn duration(&self) -> Beat {
+        Beat::from(self.end_beat.0 - self.start_beat.0)
+    }
 }
 
 #[derive(Bundle)]
 pub struct LineEventBundle {
-    sprite: SpriteBundle,
+    // sprite: SpriteBundle,
     event: LineEvent,
-    render_layers: RenderLayers,
+    // render_layers: RenderLayers,
 }
 
 impl LineEventBundle {
     pub fn new(event: LineEvent) -> Self {
         Self {
-            sprite: SpriteBundle::default(),
+            // sprite: SpriteBundle::default(),
             event,
-            render_layers: RenderLayers::layer(EVENT_TIME_LINE_LAYER),
+            // render_layers: RenderLayers::layer(EVENT_TIME_LINE_LAYER),
         }
     }
 }

@@ -3,14 +3,14 @@ use crate::{
         beat::Beat,
         event::{LineEvent, LineEventBundle, LineEventKind},
         line::LineBundle,
-        note::{NoteBundle, TimelineNote},
+        note::NoteBundle,
     },
-    layer::NOTE_TIME_LINE_LAYER, selection::SelectedLine,
+    selection::SelectedLine,
 };
 
 use super::Loader;
 
-use bevy::{prelude::*, render::view::RenderLayers};
+use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_repr::*;
 
@@ -140,14 +140,6 @@ impl Loader for OfficialLoader {
             match first_line_id {
                 None => first_line_id = Some(id),
                 _ => {}
-            }
-
-            for note_id in note_ids {
-                commands.spawn((
-                    SpriteBundle::default(),
-                    TimelineNote(note_id),
-                    RenderLayers::layer(NOTE_TIME_LINE_LAYER),
-                ));
             }
 
             for event in line.move_events.iter() {
