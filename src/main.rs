@@ -35,7 +35,6 @@ use bevy::{prelude::*, render::view::RenderLayers};
 use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
-use chart::beat::Beat;
 use chart::line::{LineOpacity, LinePosition, LineRotation};
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use num::{Rational32, FromPrimitive};
@@ -337,7 +336,7 @@ fn compute_line_system(
     let beat = time.0 / (60.0 / 174.0);
     for (mut position, mut rotation, mut opacity, entity) in &mut line_query {
         let mut events: Vec<_> = event_query.iter().filter(|e| e.line_id == entity).collect();
-        events.sort_by_key(|e| <Beat as Into<Rational32>>::into(e.start_beat));
+        events.sort_by_key(|e| e.start_beat);
         for event in events {
             let value = event.evaluate(beat);
             if let Some(value) = value {

@@ -36,7 +36,7 @@ impl LineEvent {
     }
 
     pub fn duration(&self) -> Beat {
-        Beat::from(self.end_beat.0 - self.start_beat.0)
+        self.end_beat - self.start_beat
     }
 }
 
