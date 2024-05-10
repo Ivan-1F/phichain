@@ -52,6 +52,11 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: Install libudev-dev
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get install -y libudev-dev
+
       - name: Get version
         id: version
         uses: SebRollen/toml-action@v1.2.0
@@ -88,7 +93,7 @@ jobs:
 
       - name: Build with cargo
         run: |
-          cargo build --verbose --release --target ${{ matrix.target }}
+          cargo build --release --target ${{ matrix.target }}
         env:
           RUST_BACKTRACE: 1
 
