@@ -1,13 +1,12 @@
 use bevy::prelude::*;
 use egui::{Color32, Ui};
+use url::Url;
 
 use crate::{
     chart::{
         event::LineEvent,
         note::{Note, NoteKind},
-    },
-    selection::{SelectNoteEvent, Selected, SelectedLine},
-    timing::ChartTime,
+    }, misc::WorkingDirectory, selection::{SelectNoteEvent, Selected, SelectedLine}, timing::ChartTime
 };
 
 pub struct TimelineTabPlugin;
@@ -25,6 +24,7 @@ pub fn timeline_ui_system(
     time: Res<ChartTime>,
     event_query: Query<&LineEvent>,
     note_query: Query<(&Note, &Parent, Entity, Option<&Selected>)>,
+    working_dir: Res<WorkingDirectory>,
     mut select_events: EventWriter<SelectNoteEvent>,
 ) {
     let selected_line = selected_line_query.0;
@@ -91,12 +91,12 @@ pub fn timeline_ui_system(
             + note_timeline_viewport.height() * 0.9;
 
         let image = match note.kind {
-            NoteKind::Tap => egui::include_image!("../../assets/tap.png"),
-            NoteKind::Drag => egui::include_image!("../../assets/drag.png"),
+            NoteKind::Tap => "tap.png",
+            NoteKind::Drag => "drag.png",
             NoteKind::Hold { hold_beat: _ } => {
-                egui::include_image!("../../assets/hold.png")
+                "hold.png"
             }
-            NoteKind::Flick => egui::include_image!("../../assets/flick.png"),
+            NoteKind::Flick => "flick.png",
         };
 
         let image_size = match note.kind {
@@ -122,9 +122,11 @@ pub fn timeline_ui_system(
             _ => egui::Pos2::new(x, y),
         };
 
+        let assets_dir = working_dir.0.join("assets");
+
         let response = ui.put(
             egui::Rect::from_center_size(center, size),
-            egui::Image::new(image)
+            egui::Image::new(Url::from_file_path(assets_dir.join(image)).unwrap().as_str())
                 .maintain_aspect_ratio(false)
                 .fit_to_exact_size(size)
                 .tint(if selected.is_some() {

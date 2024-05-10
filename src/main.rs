@@ -4,6 +4,7 @@ mod chart;
 mod hit_sound;
 mod layer;
 mod loader;
+mod misc;
 mod selection;
 mod tab;
 mod timing;
@@ -17,6 +18,7 @@ use crate::chart::note::{Note, NoteKind};
 use crate::layer::GAME_LAYER;
 use crate::loader::official::OfficialLoader;
 use crate::loader::Loader;
+use crate::misc::MiscPlugin;
 use crate::selection::SelectedLine;
 use crate::tab::game::GameCamera;
 use crate::tab::game::GameTabPlugin;
@@ -50,6 +52,7 @@ fn main() {
         .add_plugins(DefaultPickingPlugins)
         .add_plugins(EguiPlugin)
         .add_plugins(crate::selection::SelectionPlugin)
+        .add_plugins(MiscPlugin)
         .add_plugins(TabPlugin)
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(AssetsPlugin)

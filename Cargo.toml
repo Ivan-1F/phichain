@@ -65,3 +65,4 @@ serde_repr = "0.1"
 
 iyes_perf_ui = "0.2.3"
 bevy-inspector-egui = "0.24.0"
+url = "2.5.0"
