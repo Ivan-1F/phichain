@@ -61,8 +61,9 @@ jobs:
 
       - name: Generate full version
         id: full_version
+        shell: bash
         run: |
-          if [ "${{ inputs.release }}" ]; then
+          if [ "${{ inputs.release }}" == "true" ]; then
             echo "phichain_version=${{ steps.version.outputs.value }}" >> $GITHUB_OUTPUT
           else
             echo "phichain_version=${{ steps.version.outputs.value }}+build.${{ github.run_number }}" >> $GITHUB_OUTPUT
@@ -70,6 +71,7 @@ jobs:
 
       - name: Generate build filename
         id: filename
+        shell: bash
         run: |
           if [ "${{ matrix.platform }}" = "windows" ]; then
             echo "filename=phichain-v${{ steps.full_version.outputs.phichain_version }}-${{ matrix.target }}.exe" >> $GITHUB_OUTPUT
@@ -78,6 +80,7 @@ jobs:
           fi
 
       - name: Update version in Cargo.toml
+        shell: bash
         run: |
           echo PhiChain ${{ steps.full_version.outputs.phichain_version }}
           cargo install cargo-edit
@@ -90,6 +93,7 @@ jobs:
           RUST_BACKTRACE: 1
 
       - name: Build archive
+        shell: bash
         run: |
           if [ "${{ matrix.platform }}" = "windows" ]; then
             mv ./target/${{ matrix.target }}/release/phichain.exe "${{ steps.filename.outputs.filename }}"
