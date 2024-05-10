@@ -13,6 +13,7 @@ use crate::assets::{AssetsPlugin, ImageAssets};
 use crate::audio::AudioPlugin;
 use crate::chart::event::{LineEvent, LineEventKind};
 use crate::chart::line::Line;
+use crate::chart::line::{LineOpacity, LinePosition, LineRotation};
 use crate::chart::note::TimelineNote;
 use crate::chart::note::{Note, NoteKind};
 use crate::layer::GAME_LAYER;
@@ -35,9 +36,8 @@ use bevy::{prelude::*, render::view::RenderLayers};
 use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
-use chart::line::{LineOpacity, LinePosition, LineRotation};
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
-use num::{Rational32, FromPrimitive};
+use num::{FromPrimitive, Rational32};
 
 fn main() {
     App::new()
@@ -230,7 +230,10 @@ fn ui_system(world: &mut World) {
 
     egui::TopBottomPanel::bottom("phichain.StatusBar").show(ctx, |ui| {
         ui.horizontal(|ui| {
-            ui.label("PhiChain v0.1.0");
+            ui.label(format!(
+                "PhiChain v{}",
+                std::env::var("CARGO_PKG_VERSION").unwrap_or("Unknown".to_string())
+            ));
 
             ui.label(format!("FPS: {:.2}", fps));
 
@@ -394,8 +397,9 @@ fn update_note_y_system(
             .filter(|(_, e)| e.line_id == entity)
             .map(|(s, _)| *s)
             .collect();
-        speed_events
-            .sort_by(|a, b| Rational32::from_f32(a.start_time).cmp(&Rational32::from_f32(b.start_time)));
+        speed_events.sort_by(|a, b| {
+            Rational32::from_f32(a.start_time).cmp(&Rational32::from_f32(b.start_time))
+        });
 
         let distance = |time| {
             distance_at(&speed_events, time) * (game_viewport.0.height() * (120.0 / 900.0))
