@@ -52,10 +52,13 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Install libudev-dev
+      # https://github.com/bevyengine/bevy/blob/main/docs/linux_dependencies.md
+      - name: Install dependencies
         if: matrix.platform == 'linux'
         run: |
-          sudo apt-get install -y libudev-dev
+          sudo apt-get update
+          sudo apt-get install -y g++ pkg-config libx11-dev libasound2-dev libudev-dev libxkbcommon-x11-0
+          sudo apt-get install -y libwayland-dev libxkbcommon-dev
 
       - name: Get version
         id: version
@@ -78,7 +81,7 @@ jobs:
         id: filename
         shell: bash
         run: |
-          if [ "${{ matrix.platform }}" = "windows" ]; then
+          if [ "${{ matrix.platform }}" == "windows" ]; then
             echo "filename=phichain-v${{ steps.full_version.outputs.phichain_version }}-${{ matrix.target }}.exe" >> $GITHUB_OUTPUT
           else
             echo "filename=phichain-v${{ steps.full_version.outputs.phichain_version }}-${{ matrix.target }}" >> $GITHUB_OUTPUT
@@ -100,7 +103,7 @@ jobs:
       - name: Build archive
         shell: bash
         run: |
-          if [ "${{ matrix.platform }}" = "windows" ]; then
+          if [ "${{ matrix.platform }}" == "windows" ]; then
             mv ./target/${{ matrix.target }}/release/phichain.exe "${{ steps.filename.outputs.filename }}"
           else
             mv ./target/${{ matrix.target }}/release/phichain "${{ steps.filename.outputs.filename }}"
