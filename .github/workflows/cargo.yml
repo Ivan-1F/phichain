@@ -1,0 +1,19 @@
+name: Dev Builds
+
+on:
+  push:
+    paths:
+      - Cargo.lock
+      - Cargo.toml
+      - src/**
+      - assets/**
+      - ".github/**"
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+    secrets: inherit

@@ -1,0 +1,104 @@
+name: step.build
+
+on:
+  workflow_call:
+    inputs:
+      release:
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - platform: linux
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+
+          - platform: windows
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+
+          - platform: macOS
+            os: macOS-latest
+            target: x86_64-apple-darwin
+          - platform: macOS
+            os: macOS-latest
+            target: aarch64-apple-darwin
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          target: ${{ matrix.target }}
+          components: rustfmt, clippy
+
+      - name: Cache cargo files
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Get version
+        id: version
+        uses: SebRollen/toml-action@v1.2.0
+        with:
+          file: Cargo.toml
+          field: package.version
+
+      - name: Generate full version
+        id: full_version
+        run: |
+          if [ "${{ inputs.release }}" ]; then
+            echo "phichain_version=${{ steps.version.outputs.value }}" >> $GITHUB_OUTPUT
+          else
+            echo "phichain_version=${{ steps.version.outputs.value }}+build.${{ github.run_number }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate build filename
+        id: filename
+        run: |
+          if [ "${{ matrix.platform }}" = "windows" ]; then
+            echo "filename=phichain-v${{ steps.full_version.outputs.phichain_version }}-${{ matrix.target }}.exe" >> $GITHUB_OUTPUT
+          else
+            echo "filename=phichain-v${{ steps.full_version.outputs.phichain_version }}-${{ matrix.target }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update version in Cargo.toml
+        run: |
+          echo PhiChain ${{ steps.full_version.outputs.phichain_version }}
+          cargo install cargo-edit
+          cargo set-version ${{ steps.full_version.outputs.phichain_version }}
+
+      - name: Build with cargo
+        run: |
+          cargo build --verbose --release --target ${{ matrix.target }}
+        env:
+          RUST_BACKTRACE: 1
+
+      - name: Build archive
+        run: |
+          if [ "${{ matrix.platform }}" = "windows" ]; then
+            mv ./target/${{ matrix.target }}/release/phichain.exe "${{ steps.filename.outputs.filename }}"
+          else
+            mv ./target/${{ matrix.target }}/release/phichain "${{ steps.filename.outputs.filename }}"
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.filename.outputs.filename }}
+          path: ${{ steps.filename.outputs.filename }}
