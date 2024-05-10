@@ -88,11 +88,11 @@ jobs:
           fi
 
       - name: Update version in Cargo.toml
-        shell: bash
-        run: |
-          echo PhiChain ${{ steps.full_version.outputs.phichain_version }}
-          cargo install cargo-edit
-          cargo set-version ${{ steps.full_version.outputs.phichain_version }}
+        uses: ciiiii/toml-editor@1.0.0
+        with:
+          file: Cargo.toml
+          key: package.version
+          value: ${{ steps.full_version.outputs.phichain_version }}
 
       - name: Build with cargo
         run: |
