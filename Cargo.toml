@@ -57,8 +57,6 @@ egui_dock = "0.12"
 egui_extras = { version = "*", features = ["all_loaders"] }
 image = { version = "0.24", features = ["jpeg", "png"] }
 
-fraction = "0.15.1"
-
 serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.114"
 serde_repr = "0.1"
@@ -66,3 +64,4 @@ serde_repr = "0.1"
 iyes_perf_ui = "0.2.3"
 bevy-inspector-egui = "0.24.0"
 url = "2.5.0"
+num = "0.4.3"

@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use egui::Ui;
-use fraction::Fraction;
+use num::Rational32;
 
 use crate::{chart::{beat::Beat, note::Note}, selection::Selected};
 
@@ -18,7 +18,7 @@ pub fn inspector_ui_system(In(ui): In<&mut Ui>, mut selected_notes: Query<&mut N
             ui.add(egui::DragValue::new(&mut denom).clamp_range(1..=u32::MAX).speed(1));
 
             if beat != selected_note.beat.beat() || numer != selected_note.beat.numer() || denom != selected_note.beat.denom() {
-                selected_note.beat = Beat::from(Fraction::new(beat * denom + numer, denom));
+                selected_note.beat = Beat::from(Rational32::new_raw(beat * denom + numer, denom));
             }
         });
     }

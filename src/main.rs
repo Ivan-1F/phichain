@@ -38,7 +38,7 @@ use bevy_mod_picking::prelude::*;
 use chart::beat::Beat;
 use chart::line::{LineOpacity, LinePosition, LineRotation};
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
-use fraction::prelude::*;
+use num::{Rational32, FromPrimitive};
 
 fn main() {
     App::new()
@@ -337,7 +337,7 @@ fn compute_line_system(
     let beat = time.0 / (60.0 / 174.0);
     for (mut position, mut rotation, mut opacity, entity) in &mut line_query {
         let mut events: Vec<_> = event_query.iter().filter(|e| e.line_id == entity).collect();
-        events.sort_by_key(|e| <Beat as Into<Fraction>>::into(e.start_beat));
+        events.sort_by_key(|e| <Beat as Into<Rational32>>::into(e.start_beat));
         for event in events {
             let value = event.evaluate(beat);
             if let Some(value) = value {
@@ -396,7 +396,7 @@ fn update_note_y_system(
             .map(|(s, _)| *s)
             .collect();
         speed_events
-            .sort_by(|a, b| Fraction::from(a.start_time).cmp(&Fraction::from(b.start_time)));
+            .sort_by(|a, b| Rational32::from_f32(a.start_time).cmp(&Rational32::from_f32(b.start_time)));
 
         let distance = |time| {
             distance_at(&speed_events, time) * (game_viewport.0.height() * (120.0 / 900.0))
