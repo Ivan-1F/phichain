@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
 
-use crate::timing::{ChartTime, PauseEvent, Paused, ResumeEvent};
+use crate::timing::{ChartTime, PauseEvent, Paused, ResumeEvent, SeekEvent};
 
 #[derive(Resource)]
 struct InstanceHandle(Handle<AudioInstance>);
@@ -14,7 +14,7 @@ impl Plugin for AudioPlugin {
             .add_systems(Startup, setup_audio_system)
             .add_systems(Update, handle_pause_system)
             .add_systems(Update, handle_resume_system)
-            .add_systems(Update, progress_control_system)
+            .add_systems(Update, handle_seek_system)
             .add_systems(Update, update_time_system);
     }
 }
@@ -58,26 +58,15 @@ fn handle_resume_system(
     }
 }
 
-/// Use ArrowLeft and ArrowRight to control the progress. Holding Controll will seek faster and holding Alt will seek slower
-fn progress_control_system(
+/// When receiving [SeekEvent], seek the audio instance
+fn handle_seek_system(
     handle: Res<InstanceHandle>,
-    keyboard: Res<ButtonInput<KeyCode>>,
     mut audio_instances: ResMut<Assets<AudioInstance>>,
+    mut events: EventReader<SeekEvent>,
 ) {
     if let Some(instance) = audio_instances.get_mut(&handle.0) {
-        instance.set_volume(0.0, AudioTween::default());
-        let mut factor = 1.0;
-        if keyboard.pressed(KeyCode::ControlLeft) {
-            factor *= 2.0;
-        }
-        if keyboard.pressed(KeyCode::AltLeft) {
-            factor /= 2.0;
-        }
-        if keyboard.pressed(KeyCode::ArrowLeft) {
-            instance.seek_by(-0.01 * factor);
-        }
-        if keyboard.pressed(KeyCode::ArrowRight) {
-            instance.seek_by(0.01 * factor);
+        for event in events.read() {
+            instance.seek_by(event.0.max(0.0).into());
         }
     }
 }

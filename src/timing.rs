@@ -18,6 +18,10 @@ pub struct PauseEvent;
 #[derive(Event, Default)]
 pub struct ResumeEvent;
 
+/// Seek the chart
+#[derive(Event, Default)]
+pub struct SeekEvent(pub f32);
+
 pub struct TimingPlugin;
 
 impl Plugin for TimingPlugin {
@@ -26,7 +30,30 @@ impl Plugin for TimingPlugin {
             .insert_resource(Paused(true))
             .add_event::<PauseEvent>()
             .add_event::<ResumeEvent>()
-            .add_systems(Update, space_pause_resume_control);
+            .add_event::<SeekEvent>()
+            .add_systems(Update, space_pause_resume_control)
+            .add_systems(Update, progress_control_system);
+    }
+}
+
+/// Use ArrowLeft and ArrowRight to control the progress. Holding Controll will seek faster and holding Alt will seek slower
+fn progress_control_system(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut events: EventWriter<SeekEvent>,
+) {
+    let mut factor = 1.0;
+    if keyboard.pressed(KeyCode::ControlLeft) {
+        factor *= 2.0;
+    }
+    if keyboard.pressed(KeyCode::AltLeft) {
+        factor /= 2.0;
+    }
+    events.send(SeekEvent(-0.01 * factor));
+    if keyboard.pressed(KeyCode::ArrowLeft) {
+        events.send(SeekEvent(-0.01 * factor));
+    }
+    if keyboard.pressed(KeyCode::ArrowRight) {
+        events.send(SeekEvent(0.01 * factor));
     }
 }
 
