@@ -295,7 +295,7 @@ fn zoom_scale(
 /// Load a chart in official JSON format into the world
 fn setup_chart_plugin(commands: Commands) {
     OfficialLoader::load(
-        std::fs::File::open("Chart_IN_Antithese.json").expect("Failed to open chart"),
+        std::fs::File::open("Chart_IN.json").expect("Failed to open chart"),
         commands,
     );
 }

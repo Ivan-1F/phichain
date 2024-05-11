@@ -48,7 +48,6 @@ fn progress_control_system(
     if keyboard.pressed(KeyCode::AltLeft) {
         factor /= 2.0;
     }
-    events.send(SeekEvent(-0.01 * factor));
     if keyboard.pressed(KeyCode::ArrowLeft) {
         events.send(SeekEvent(-0.01 * factor));
     }

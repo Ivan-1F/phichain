@@ -21,10 +21,7 @@ impl Plugin for AudioPlugin {
 
 /// Setup music
 fn setup_audio_system(mut commands: Commands, asset_server: Res<AssetServer>, audio: Res<Audio>) {
-    let handle = audio
-        .play(asset_server.load("audio.mp3"))
-        .paused()
-        .handle();
+    let handle = audio.play(asset_server.load("audio.mp3")).paused().handle();
     commands.insert_resource(InstanceHandle(handle));
 }
 
@@ -66,7 +63,15 @@ fn handle_seek_system(
 ) {
     if let Some(instance) = audio_instances.get_mut(&handle.0) {
         for event in events.read() {
-            instance.seek_by(event.0.max(0.0).into());
+            match instance.state() {
+                PlaybackState::Paused { position }
+                | PlaybackState::Pausing { position }
+                | PlaybackState::Playing { position }
+                | PlaybackState::Stopping { position } => {
+                    instance.seek_to((position as f32 + event.0).max(0.0).into());
+                }
+                PlaybackState::Queued | PlaybackState::Stopped => {}
+            }
         }
     }
 }
