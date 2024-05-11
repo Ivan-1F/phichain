@@ -7,6 +7,7 @@ pub struct Beat(i32, Rational32);
 
 impl Beat {
     pub const ZERO: Self = Beat(0, Rational32::ZERO);
+    pub const ONE: Self = Beat(1, Rational32::ZERO);
 }
 
 impl Into<f32> for Beat {
