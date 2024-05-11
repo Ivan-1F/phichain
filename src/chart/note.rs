@@ -1,6 +1,5 @@
-use bevy::{prelude::*, render::view::RenderLayers};
+use bevy::prelude::*;
 
-use crate::layer::GAME_LAYER;
 use super::beat::Beat;
 
 #[derive(Debug, Clone, Copy)]
@@ -37,7 +36,6 @@ pub struct TimelineNote(pub Entity);
 pub struct NoteBundle {
     sprite: SpriteBundle,
     note: Note,
-    render_layers: RenderLayers,
 }
 
 impl NoteBundle {
@@ -45,7 +43,6 @@ impl NoteBundle {
         Self {
             sprite: SpriteBundle::default(),
             note,
-            render_layers: RenderLayers::layer(GAME_LAYER),
         }
     }
 }

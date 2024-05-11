@@ -1,6 +1,4 @@
-use bevy::{prelude::*, render::view::RenderLayers};
-
-use crate::layer::GAME_LAYER;
+use bevy::prelude::*;
 
 #[derive(Component)]
 pub struct Line;
@@ -21,7 +19,6 @@ pub struct LineBundle {
     position: LinePosition,
     rotation: LineRotation,
     opacity: LineOpacity,
-    render_layers: RenderLayers,
 }
 
 impl LineBundle {
@@ -32,7 +29,6 @@ impl LineBundle {
             position: LinePosition(Vec2 { x: 0.0, y: 0.0 }),
             rotation: LineRotation(0.0),
             opacity: LineOpacity(0.0),
-            render_layers: RenderLayers::layer(GAME_LAYER),
         }
     }
 }

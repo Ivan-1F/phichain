@@ -42,17 +42,13 @@ impl LineEvent {
 
 #[derive(Bundle)]
 pub struct LineEventBundle {
-    // sprite: SpriteBundle,
     event: LineEvent,
-    // render_layers: RenderLayers,
 }
 
 impl LineEventBundle {
     pub fn new(event: LineEvent) -> Self {
         Self {
-            // sprite: SpriteBundle::default(),
             event,
-            // render_layers: RenderLayers::layer(EVENT_TIME_LINE_LAYER),
         }
     }
 }

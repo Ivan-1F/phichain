@@ -3,7 +3,6 @@ mod audio;
 mod chart;
 mod constants;
 mod hit_sound;
-mod layer;
 mod loader;
 mod misc;
 mod selection;
@@ -17,7 +16,6 @@ use crate::chart::line::Line;
 use crate::chart::line::{LineOpacity, LinePosition, LineRotation};
 use crate::chart::note::TimelineNote;
 use crate::chart::note::{Note, NoteKind};
-use crate::layer::GAME_LAYER;
 use crate::loader::official::OfficialLoader;
 use crate::loader::Loader;
 use crate::misc::MiscPlugin;
@@ -33,7 +31,7 @@ use crate::tab::{empty_tab, EditorTab, TabRegistrationExt, TabRegistry};
 use crate::timing::{ChartTime, TimingPlugin};
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::sprite::Anchor;
-use bevy::{prelude::*, render::view::RenderLayers};
+use bevy::prelude::*;
 use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
@@ -268,7 +266,6 @@ fn setup_plugin(mut commands: Commands) {
             },
             ..default()
         },
-        RenderLayers::layer(GAME_LAYER),
         GameCamera,
     ));
 }
