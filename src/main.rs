@@ -40,6 +40,7 @@ use bevy_mod_picking::prelude::*;
 use constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use num::{FromPrimitive, Rational32};
+use timing::BpmList;
 
 fn main() {
     App::new()
@@ -306,8 +307,9 @@ fn update_note_system(
     mut query: Query<(&mut Transform, &mut Sprite, &Note)>,
     game_viewport: Res<GameViewport>,
     time: Res<ChartTime>,
+    bpm_list: Res<BpmList>,
 ) {
-    let beat = time.0 / (60.0 / 174.0);
+    let beat = bpm_list.beat_at(time.0);
     for (mut transform, mut sprite, note) in &mut query {
         transform.translation.x = (note.x / CANVAS_WIDTH) * game_viewport.0.width()
             / (game_viewport.0.width() * 3.0 / 1920.0);
@@ -316,7 +318,7 @@ fn update_note_system(
         } else {
             0.0
         };
-        sprite.color = Color::WHITE.with_a(if note.beat.value() + hold_beat < beat {
+        sprite.color = Color::WHITE.with_a(if note.beat.value() + hold_beat < beat.into() {
             0.0
         } else {
             1.0
@@ -337,8 +339,9 @@ fn compute_line_system(
         With<Line>,
     >,
     time: Res<ChartTime>,
+    bpm_list: Res<BpmList>,
 ) {
-    let beat = time.0 / (60.0 / 174.0);
+    let beat: f32 = bpm_list.beat_at(time.0).into();
     for (mut position, mut rotation, mut opacity, entity) in &mut line_query {
         let mut events: Vec<_> = event_query.iter().filter(|e| e.line_id == entity).collect();
         events.sort_by_key(|e| e.start_beat);
@@ -391,6 +394,7 @@ fn update_note_y_system(
     speed_event_query: Query<(&SpeedEvent, &LineEvent)>,
     mut note_query: Query<(&mut Transform, &mut Sprite, &Note)>,
     time: Res<ChartTime>,
+    bpm_list: Res<BpmList>,
 ) {
     let all_speed_events: Vec<(&SpeedEvent, &LineEvent)> = speed_event_query.iter().collect();
     for (children, entity) in &query {
@@ -410,12 +414,12 @@ fn update_note_y_system(
         let current_distance = distance(time.0);
         for child in children {
             if let Ok((mut transform, mut sprite, note)) = note_query.get_mut(*child) {
-                let mut y = distance(note.beat.value() * (60.0 / 174.0)) - current_distance;
+                let mut y = distance(bpm_list.time_at(note.beat)) - current_distance;
                 match note.kind {
                     NoteKind::Hold { hold_beat } => {
                         y = y.max(0.0);
                         let height = distance(
-                            note.beat.value() * (60.0 / 174.0) + hold_beat.value() * (60.0 / 174.0),
+                            bpm_list.time_at(note.beat + hold_beat),
                         ) - current_distance
                             - y;
                         sprite.anchor = Anchor::BottomCenter;
@@ -478,13 +482,17 @@ impl SpeedEvent {
     }
 }
 
-fn calculate_speed_events_system(mut commands: Commands, query: Query<(&LineEvent, Entity)>) {
+fn calculate_speed_events_system(
+    mut commands: Commands,
+    query: Query<(&LineEvent, Entity)>,
+    bpm_list: Res<BpmList>,
+) {
     for (event, entity) in &query {
         match event.kind {
             LineEventKind::Speed => {
                 commands.entity(entity).insert(SpeedEvent::new(
-                    event.start_beat.value() * (60.0 / 174.0),
-                    event.end_beat.value() * (60.0 / 174.0),
+                    bpm_list.time_at(event.start_beat),
+                    bpm_list.time_at(event.end_beat),
                     event.start,
                     event.end,
                 ));

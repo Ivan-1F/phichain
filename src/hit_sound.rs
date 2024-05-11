@@ -3,7 +3,7 @@ use bevy_kira_audio::prelude::*;
 
 use crate::{
     chart::note::{Note, NoteKind},
-    timing::ChartTime,
+    timing::{BpmList, ChartTime},
 };
 
 pub struct HitSoundPlugin;
@@ -20,9 +20,14 @@ struct PlayHitSound(NoteKind);
 #[derive(Component, Debug)]
 struct PlayedHitSound;
 
-fn add_marker_system(mut commands: Commands, query: Query<(&Note, Entity), Without<PlayedHitSound>>, time: Res<ChartTime>) {
+fn add_marker_system(
+    mut commands: Commands,
+    query: Query<(&Note, Entity), Without<PlayedHitSound>>,
+    time: Res<ChartTime>,
+    bpm_list: Res<BpmList>,
+) {
     for (note, entity) in &query {
-        if note.beat.value() * (60.0 / 174.0) < time.0 {
+        if bpm_list.time_at(note.beat) < time.0 {
             commands.entity(entity).insert(PlayHitSound(note.kind));
         }
     }

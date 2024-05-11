@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::chart::beat::Beat;
+
 /// Represents the current time in seconds
 #[derive(Resource)]
 pub struct ChartTime(pub f32);
@@ -41,5 +43,67 @@ fn space_pause_resume_control(
         } else {
             pause_events.send_default();
         }
+    }
+}
+
+#[derive(Debug)]
+pub struct BpmPoint {
+    beat: Beat,
+    bpm: f32,
+
+    time: f32,
+}
+
+impl BpmPoint {
+    pub fn new(beat: Beat, bpm: f32) -> Self {
+        Self {
+            beat,
+            bpm,
+            time: 0.0,
+        }
+    }
+}
+
+#[derive(Resource, Debug)]
+pub struct BpmList(Vec<BpmPoint>);
+
+impl BpmList {
+    pub fn new(points: Vec<BpmPoint>) -> Self {
+        let mut list = Self(points);
+        list.compute();
+        list
+    }
+
+    fn compute(&mut self) {
+        let mut time = 0.0;
+        let mut last_beat = 0.0;
+        let mut last_bpm = -1.0;
+        for point in &mut self.0 {
+            if last_bpm != -1.0 {
+                time += (point.beat.value() - last_beat) * (60.0 / last_bpm);
+            }
+            last_beat = point.beat.value();
+            last_bpm = point.bpm;
+            point.time = time;
+        }
+    }
+
+    pub fn time_at(&self, beat: Beat) -> f32 {
+        let point = self.0.iter()
+            .take_while(|p| p.beat.value() < beat.value())
+            .last()
+            .or_else(|| self.0.first())
+            .expect("No bpm points available");
+
+        point.time + (beat.value() - point.beat.value()) * (60.0 / point.bpm)
+    }
+
+    pub fn beat_at(&self, time: f32) -> Beat {
+        let point = self.0.iter()
+            .take_while(|p| p.time <= time)
+            .last()
+            .expect("No bpm points available");
+
+        Beat::from(point.beat.value() + (time - point.time) * point.bpm / 60.0)
     }
 }

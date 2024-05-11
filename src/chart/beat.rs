@@ -1,9 +1,13 @@
-use std::{cmp::Ordering, ops::Sub};
+use std::{cmp::Ordering, ops::{Add, Sub}};
 
-use num::{Rational32, FromPrimitive};
+use num::{FromPrimitive, Rational32};
 
 #[derive(Clone, Copy, Debug)]
-pub struct Beat(i32, pub Rational32);
+pub struct Beat(i32, Rational32);
+
+impl Beat {
+    pub const ZERO: Self = Beat(0, Rational32::ZERO);
+}
 
 impl Into<f32> for Beat {
     fn into(self) -> f32 {
@@ -56,6 +60,14 @@ impl Sub for Beat {
 
     fn sub(self, rhs: Self) -> Self::Output {
         Self(self.0 - rhs.0, self.1 - rhs.1)
+    }
+}
+
+impl Add for Beat {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self(self.0 + rhs.0, self.1 + rhs.1)
     }
 }
 

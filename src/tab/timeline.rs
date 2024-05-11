@@ -6,7 +6,7 @@ use crate::{
     chart::{
         event::LineEvent,
         note::{Note, NoteKind},
-    }, constants::CANVAS_WIDTH, misc::WorkingDirectory, selection::{SelectNoteEvent, Selected, SelectedLine}, timing::ChartTime
+    }, constants::CANVAS_WIDTH, misc::WorkingDirectory, selection::{SelectNoteEvent, Selected, SelectedLine}, timing::{BpmList, ChartTime}
 };
 
 pub struct TimelineTabPlugin;
@@ -22,6 +22,7 @@ pub fn timeline_ui_system(
     selected_line_query: Res<SelectedLine>,
     timeline_viewport: Res<TimelineViewport>,
     time: Res<ChartTime>,
+    bpm_list: Res<BpmList>,
     event_query: Query<&LineEvent>,
     note_query: Query<(&Note, &Parent, Entity, Option<&Selected>)>,
     working_dir: Res<WorkingDirectory>,
@@ -61,12 +62,12 @@ pub fn timeline_ui_system(
         let x = event_timeline_viewport.width() / 5.0 * track as f32
             - event_timeline_viewport.width() / 5.0 / 2.0
             + event_timeline_viewport.min.x;
-        let y: f32 = (time - event.start_beat.value() * (60.0 / 174.0)) * 400.0 * 2.0
+        let y: f32 = (time - bpm_list.time_at(event.start_beat)) * 400.0 * 2.0
             + event_timeline_viewport.height() * 0.9;
 
         let size = egui::Vec2::new(
             event_timeline_viewport.width() / 8000.0 * 989.0,
-            event.duration().value() * (60.0 / 174.0) * 400.0 * 2.0,
+            bpm_list.time_at(event.duration()) * 400.0 * 2.0,
         );
 
         let center = egui::Pos2::new(x, y - size.y / 2.0);
@@ -87,7 +88,7 @@ pub fn timeline_ui_system(
         }
 
         let x = (note.x / CANVAS_WIDTH + 0.5) * note_timeline_viewport.width();
-        let y: f32 = (time - note.beat.value() * (60.0 / 174.0)) * 400.0 * 2.0
+        let y: f32 = (time - bpm_list.time_at(note.beat)) * 400.0 * 2.0
             + note_timeline_viewport.height() * 0.9;
 
         let image = match note.kind {
@@ -109,7 +110,7 @@ pub fn timeline_ui_system(
         let size = match note.kind {
             NoteKind::Hold { hold_beat } => egui::Vec2::new(
                 note_timeline_viewport.width() / 8000.0 * image_size.x,
-                hold_beat.value() * (60.0 / 174.0) * 400.0 * 2.0,
+                bpm_list.time_at(hold_beat) * 400.0 * 2.0,
             ),
             _ => egui::Vec2::new(
                 note_timeline_viewport.width() / 8000.0 * image_size.x,
