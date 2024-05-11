@@ -65,9 +65,15 @@ fn single_note_inspector(ui: &mut Ui, note: &mut Note) {
             ui.beat(&mut note.beat);
             ui.end_row();
 
-            if let NoteKind::Hold { mut hold_beat } = note.kind {
+            if let NoteKind::Hold { hold_beat } = note.kind {
                 ui.label("Hold Beat");
-                ui.beat(&mut hold_beat);
+
+                let mut bind = hold_beat;
+                ui.beat(&mut bind);
+                if bind != hold_beat {
+                    note.kind = NoteKind::Hold { hold_beat: bind };
+                }
+
                 ui.end_row();
             }
             
