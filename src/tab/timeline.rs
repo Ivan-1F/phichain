@@ -6,7 +6,7 @@ use crate::{
     chart::{
         event::LineEvent,
         note::{Note, NoteKind},
-    }, misc::WorkingDirectory, selection::{SelectNoteEvent, Selected, SelectedLine}, timing::ChartTime
+    }, constants::CANVAS_WIDTH, misc::WorkingDirectory, selection::{SelectNoteEvent, Selected, SelectedLine}, timing::ChartTime
 };
 
 pub struct TimelineTabPlugin;
@@ -86,7 +86,7 @@ pub fn timeline_ui_system(
             continue;
         }
 
-        let x = (note.x + 0.5) * note_timeline_viewport.width();
+        let x = (note.x / CANVAS_WIDTH + 0.5) * note_timeline_viewport.width();
         let y: f32 = (time - note.beat.value() * (60.0 / 174.0)) * 400.0 * 2.0
             + note_timeline_viewport.height() * 0.9;
 

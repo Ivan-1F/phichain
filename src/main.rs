@@ -1,6 +1,7 @@
 mod assets;
 mod audio;
 mod chart;
+mod constants;
 mod hit_sound;
 mod layer;
 mod loader;
@@ -36,6 +37,7 @@ use bevy::{prelude::*, render::view::RenderLayers};
 use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
+use constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use num::{FromPrimitive, Rational32};
 
@@ -307,8 +309,8 @@ fn update_note_system(
 ) {
     let beat = time.0 / (60.0 / 174.0);
     for (mut transform, mut sprite, note) in &mut query {
-        transform.translation.x =
-            note.x * game_viewport.0.width() / (game_viewport.0.width() * 3.0 / 1920.0);
+        transform.translation.x = (note.x / CANVAS_WIDTH) * game_viewport.0.width()
+            / (game_viewport.0.width() * 3.0 / 1920.0);
         let hold_beat = if let NoteKind::Hold { hold_beat } = note.kind {
             hold_beat.value()
         } else {
@@ -376,8 +378,8 @@ fn update_line_system(
 ) {
     for (position, rotation, opacity, mut transform, mut sprite) in &mut line_query {
         transform.scale = Vec3::splat(game_viewport.0.width() * 3.0 / 1920.0);
-        transform.translation.x = position.0.x * game_viewport.0.width();
-        transform.translation.y = position.0.y * game_viewport.0.height();
+        transform.translation.x = position.0.x / CANVAS_WIDTH * game_viewport.0.width();
+        transform.translation.y = position.0.y / CANVAS_HEIGHT * game_viewport.0.height();
         transform.rotation = Quat::from_rotation_z(rotation.0);
         sprite.color = Color::rgba(1.0, 1.0, 1.0, opacity.0);
     }

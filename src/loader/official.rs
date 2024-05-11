@@ -4,8 +4,7 @@ use crate::{
         event::{LineEvent, LineEventBundle, LineEventKind},
         line::LineBundle,
         note::NoteBundle,
-    },
-    selection::SelectedLine,
+    }, constants::{CANVAS_HEIGHT, CANVAS_WIDTH}, selection::SelectedLine
 };
 
 use super::Loader;
@@ -102,6 +101,8 @@ impl Loader for OfficialLoader {
         let mut first_line_id: Option<Entity> = None;
         for line in chart.lines.iter() {
             let t: fn(f32) -> Beat = |x| Beat::from(x * 1.875 / 60.0);
+            let x: fn(f32) -> f32 = |x| (x - 0.5) * CANVAS_WIDTH;
+            let y: fn(f32) -> f32 = |x| (x - 0.5) * CANVAS_HEIGHT;
 
             let mut note_ids: Vec<Entity> = vec![];
             let id = commands
@@ -122,7 +123,7 @@ impl Loader for OfficialLoader {
                                 kind,
                                 above,
                                 t(note.time),
-                                note.x / 18.0,
+                                note.x / 18.0 * CANVAS_WIDTH as f32,
                             )))
                             .id();
                         note_ids.push(note_id);
@@ -145,16 +146,16 @@ impl Loader for OfficialLoader {
             for event in line.move_events.iter() {
                 commands.spawn(LineEventBundle::new(LineEvent {
                     kind: LineEventKind::X,
-                    start: event.start_x - 0.5,
-                    end: event.end_x - 0.5,
+                    start: x(event.start_x),
+                    end: x(event.end_x),
                     start_beat: t(event.start_time),
                     end_beat: t(event.end_time),
                     line_id: id,
                 }));
                 commands.spawn(LineEventBundle::new(LineEvent {
                     kind: LineEventKind::Y,
-                    start: event.start_y - 0.5,
-                    end: event.end_y - 0.5,
+                    start: y(event.start_y),
+                    end: y(event.end_y),
                     start_beat: t(event.start_time),
                     end_beat: t(event.end_time),
                     line_id: id,
