@@ -115,9 +115,9 @@ jobs:
         run: |
           mkdir build && cd build
           if [ "${{ matrix.platform }}" == "windows" ]; then
-            mv ./target/${{ matrix.target }}/release/phichain.exe "./build/${{ steps.filename.outputs.filename }}"
+            cp ./target/${{ matrix.target }}/release/phichain.exe "./build/${{ steps.filename.outputs.filename }}"
           else
-            mv ./target/${{ matrix.target }}/release/phichain "./build/${{ steps.filename.outputs.filename }}"
+            cp ./target/${{ matrix.target }}/release/phichain "./build/${{ steps.filename.outputs.filename }}"
           fi
 
           mv LICENSE README fonts lang ./build
