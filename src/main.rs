@@ -241,10 +241,7 @@ fn ui_system(world: &mut World) {
 
     egui::TopBottomPanel::bottom("phichain.StatusBar").show(ctx, |ui| {
         ui.horizontal(|ui| {
-            ui.label(format!(
-                "PhiChain v{}",
-                std::env::var("CARGO_PKG_VERSION").unwrap_or("Unknown".to_string())
-            ));
+            ui.label(format!("PhiChain v{}", env!("CARGO_PKG_VERSION")));
 
             ui.label(format!("FPS: {:.2}", fps));
 
