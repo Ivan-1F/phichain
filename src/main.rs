@@ -8,6 +8,7 @@ mod misc;
 mod selection;
 mod tab;
 mod timing;
+mod font;
 
 use crate::assets::{AssetsPlugin, ImageAssets};
 use crate::audio::AudioPlugin;
@@ -56,7 +57,10 @@ fn main() {
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(AssetsPlugin)
         .add_systems(Startup, |mut contexts: bevy_egui::EguiContexts| {
-            egui_extras::install_image_loaders(contexts.ctx_mut());
+            // contexts.ctx_mut().set_fonts(font_definitions)
+            let ctx = contexts.ctx_mut();
+            font::configure_fonts(ctx);
+            egui_extras::install_image_loaders(ctx);
         })
         .add_systems(Startup, setup_plugin)
         .add_systems(Startup, setup_chart_plugin)
