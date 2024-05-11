@@ -67,6 +67,8 @@ jobs:
           file: Cargo.toml
           field: package.version
 
+      # Dev: 0.1.0+build.10
+      # Release: 0.1.0
       - name: Generate full version
         id: full_version
         shell: bash
@@ -77,12 +79,14 @@ jobs:
             echo "phichain_version=${{ steps.version.outputs.value }}+build.${{ github.run_number }}" >> $GITHUB_OUTPUT
           fi
 
+      # phichain-v0.1.0+build-x86_64-pc-windows-msvc
       - name: Generate build name
         id: build_name
         shell: bash
         run: |
           echo "build_name=phichain-v${{ steps.full_version.outputs.phichain_version }}-${{ matrix.target }}" >> $GITHUB_OUTPUT
 
+      # append .exe for windows
       - name: Generate build filename
         id: filename
         shell: bash
@@ -109,17 +113,17 @@ jobs:
       - name: Build archive
         shell: bash
         run: |
-          mkdir phichain && cd phichain
+          mkdir build && cd build
           if [ "${{ matrix.platform }}" == "windows" ]; then
-            mv ./target/${{ matrix.target }}/release/phichain.exe ./phichain/"${{ steps.filename.outputs.filename }}"
+            mv ./target/${{ matrix.target }}/release/phichain.exe "./build/${{ steps.filename.outputs.filename }}"
           else
-            mv ./target/${{ matrix.target }}/release/phichain ./phichain"${{ steps.filename.outputs.filename }}"
+            mv ./target/${{ matrix.target }}/release/phichain "./build/${{ steps.filename.outputs.filename }}"
           fi
 
-          mv LICENSE README fonts lang ./phichain
+          mv LICENSE README fonts lang ./build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.filename.outputs.filename }}
-          path: ${{ steps.filename.outputs.filename }}
+          name: ${{ steps.build_name.outputs.build_name }}
+          path: build
