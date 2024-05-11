@@ -77,14 +77,20 @@ jobs:
             echo "phichain_version=${{ steps.version.outputs.value }}+build.${{ github.run_number }}" >> $GITHUB_OUTPUT
           fi
 
+      - name: Generate build name
+        id: build_name
+        shell: bash
+        run: |
+          echo "build_name=phichain-v${{ steps.full_version.outputs.phichain_version }}-${{ matrix.target }}" >> $GITHUB_OUTPUT
+
       - name: Generate build filename
         id: filename
         shell: bash
         run: |
           if [ "${{ matrix.platform }}" == "windows" ]; then
-            echo "filename=phichain-v${{ steps.full_version.outputs.phichain_version }}-${{ matrix.target }}.exe" >> $GITHUB_OUTPUT
+            echo "filename=${{ steps.build_name.outputs.build_name }}.exe" >> $GITHUB_OUTPUT
           else
-            echo "filename=phichain-v${{ steps.full_version.outputs.phichain_version }}-${{ matrix.target }}" >> $GITHUB_OUTPUT
+            echo "filename=${{ steps.build_name.outputs.build_name }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Update version in Cargo.toml
@@ -103,11 +109,14 @@ jobs:
       - name: Build archive
         shell: bash
         run: |
+          mkdir phichain && cd phichain
           if [ "${{ matrix.platform }}" == "windows" ]; then
-            mv ./target/${{ matrix.target }}/release/phichain.exe "${{ steps.filename.outputs.filename }}"
+            mv ./target/${{ matrix.target }}/release/phichain.exe ./phichain/"${{ steps.filename.outputs.filename }}"
           else
-            mv ./target/${{ matrix.target }}/release/phichain "${{ steps.filename.outputs.filename }}"
+            mv ./target/${{ matrix.target }}/release/phichain ./phichain"${{ steps.filename.outputs.filename }}"
           fi
+
+          mv LICENSE README fonts lang ./phichain
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
