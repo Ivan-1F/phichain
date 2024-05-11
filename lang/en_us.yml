@@ -1,0 +1,21 @@
+menu_bar:
+  file:
+    .: File
+    quit: Quit
+
+tab:
+  game:
+    title: Preview
+  timeline:
+    title: Timeline
+  inspector:
+    title: Inspector
+    single_note:
+      x: X
+      beat: Beat
+      hold_beat: Hold Beat
+      above: Is Above
+  timeline_setting:
+    title: Timeline Setting
+    zoom: Timeline Zoom
+    density: Timeline Density

@@ -9,6 +9,7 @@ mod selection;
 mod tab;
 mod timing;
 mod font;
+mod translation;
 
 use crate::assets::{AssetsPlugin, ImageAssets};
 use crate::audio::AudioPlugin;
@@ -31,6 +32,7 @@ use crate::tab::{empty_tab, EditorTab, TabRegistrationExt, TabRegistry};
 use crate::timing::BpmList;
 use crate::timing::{ChartTime, TimingPlugin};
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
+use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use bevy::sprite::Anchor;
 use bevy_egui::egui::{Color32, Frame};
@@ -39,6 +41,7 @@ use bevy_mod_picking::prelude::*;
 use constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use num::{FromPrimitive, Rational32};
+use translation::{TranslationPlugin, Translator};
 
 fn main() {
     App::new()
@@ -56,8 +59,8 @@ fn main() {
         .add_plugins(TabPlugin)
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(AssetsPlugin)
+        .add_plugins(TranslationPlugin)
         .add_systems(Startup, |mut contexts: bevy_egui::EguiContexts| {
-            // contexts.ctx_mut().set_fonts(font_definitions)
             let ctx = contexts.ctx_mut();
             font::configure_fonts(ctx);
             egui_extras::install_image_loaders(ctx);
@@ -83,12 +86,12 @@ fn main() {
             (update_line_texture_system, update_note_texture_system),
         )
         .add_systems(Update, calculate_speed_events_system)
-        .register_tab(EditorTab::Timeline, "Timeline", timeline_ui_system)
-        .register_tab(EditorTab::Game, "Game", empty_tab)
-        .register_tab(EditorTab::Inspector, "Inspector", inspector_ui_system)
+        .register_tab(EditorTab::Timeline, "tab.timeline.title", timeline_ui_system)
+        .register_tab(EditorTab::Game, "tab.game.title", empty_tab)
+        .register_tab(EditorTab::Inspector, "tab.inspector.title", inspector_ui_system)
         .register_tab(
             EditorTab::TimelineSetting,
-            "Timeline Setting",
+            "tab.timeline_setting.title",
             timeline_setting_tab,
         )
         .run();
@@ -130,10 +133,13 @@ impl egui_dock::TabViewer for TabViewer<'_> {
     type Tab = EditorTab;
 
     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
+        let mut system_state: SystemState<Translator> = SystemState::new(self.world);
+        let translator = system_state.get(self.world);
+
         self.registry
             .get(tab)
-            .map(|t| t.title())
-            .unwrap_or("Unknown")
+            .map(|t| translator.tr(t.title()))
+            .unwrap_or("Unknown".to_string())
             .into()
     }
 
@@ -199,10 +205,12 @@ fn ui_system(world: &mut World) {
         fps = value;
     }
 
+    let mut system_state: SystemState<Translator> = SystemState::new(world);
+    let translator = system_state.get(world);
     egui::TopBottomPanel::top("phichain.MenuBar").show(ctx, |ui| {
         egui::menu::bar(ui, |ui| {
-            ui.menu_button("File", |ui| {
-                if ui.button("Quit").clicked() {
+            ui.menu_button(translator.tr("menu_bar.file"), |ui| {
+                if ui.button(translator.tr("menu_bar.file.quit")).clicked() {
                     std::process::exit(0);
                 }
             });

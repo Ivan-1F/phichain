@@ -4,17 +4,18 @@ use num::Rational32;
 
 use crate::{
     chart::{beat::Beat, note::{Note, NoteKind}},
-    selection::Selected,
+    selection::Selected, translation::Translator,
 };
 
 pub fn inspector_ui_system(
     In(ui): In<&mut Ui>,
     mut selected_notes: Query<&mut Note, With<Selected>>,
+    translator: Translator
 ) {
     let mut selected_notes: Vec<_> = selected_notes.iter_mut().collect();
     if selected_notes.len() == 1 {
         let selected_note = selected_notes.get_mut(0).unwrap();
-        single_note_inspector(ui, selected_note);
+        single_note_inspector(ui, selected_note, &translator);
     }
 }
 
@@ -51,22 +52,22 @@ impl BeatExt for Ui {
     }
 }
 
-fn single_note_inspector(ui: &mut Ui, note: &mut Note) {
+fn single_note_inspector(ui: &mut Ui, note: &mut Note, translator: &Translator) {
     egui::Grid::new("inspector_grid")
         .num_columns(2)
         .spacing([40.0, 2.0])
         .striped(true)
         .show(ui, |ui| {
-            ui.label("X");
+            ui.label(translator.tr("tab.inspector.single_note.x"));
             ui.add(egui::DragValue::new(&mut note.x).speed(1));
             ui.end_row();
 
-            ui.label("Beat");
+            ui.label(translator.tr("tab.inspector.single_note.beat"));
             ui.beat(&mut note.beat);
             ui.end_row();
 
             if let NoteKind::Hold { hold_beat } = note.kind {
-                ui.label("Hold Beat");
+                ui.label(translator.tr("tab.inspector.single_note.hold_beat"));
 
                 let mut bind = hold_beat;
                 ui.beat(&mut bind);
@@ -76,8 +77,8 @@ fn single_note_inspector(ui: &mut Ui, note: &mut Note) {
 
                 ui.end_row();
             }
-            
-            ui.label("Above");
+
+            ui.label(translator.tr("tab.inspector.single_note.above"));
             ui.checkbox(&mut note.above, "");
         });
 }
