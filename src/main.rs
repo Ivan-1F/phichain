@@ -60,10 +60,7 @@ fn main() {
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(AssetsPlugin)
         .add_plugins(TranslationPlugin)
-        .add_systems(Startup, |mut contexts: bevy_egui::EguiContexts| {
-            let ctx = contexts.ctx_mut();
-            egui_extras::install_image_loaders(ctx);
-        })
+        .add_systems(Startup, setup_egui_image_loader_system)
         .add_systems(Startup, setup_egui_font_system)
         .add_systems(Startup, setup_plugin)
         .add_systems(Startup, setup_chart_plugin)
@@ -79,7 +76,6 @@ fn main() {
             )
                 .chain(),
         )
-        // .add_systems(Update, update_judgeline_system)
         .add_systems(Update, (compute_line_system, update_line_system))
         .add_systems(
             Update,
@@ -95,6 +91,10 @@ fn main() {
             timeline_setting_tab,
         )
         .run();
+}
+
+fn setup_egui_image_loader_system(mut contexts: bevy_egui::EguiContexts) {
+    egui_extras::install_image_loaders(contexts.ctx_mut());
 }
 
 fn setup_egui_font_system(mut contexts: bevy_egui::EguiContexts, working_directory: Res<WorkingDirectory>) {
@@ -520,7 +520,6 @@ fn distance_at(speed_events: &Vec<&SpeedEvent>, time: f32) -> f32 {
         if event.start_time > t {
             let delta = ((event.start_time.min(time) - t) * v).max(0.0);
             area += delta;
-            // t = event.start_time;
         }
 
         let time_delta = (time.min(event.end_time) - event.start_time).max(0.0);
