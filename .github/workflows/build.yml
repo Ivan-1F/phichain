@@ -113,7 +113,7 @@ jobs:
       - name: Build archive
         shell: bash
         run: |
-          mkdir build && cd build
+          mkdir build
           if [ "${{ matrix.platform }}" == "windows" ]; then
             cp ./target/${{ matrix.target }}/release/phichain.exe "./build/${{ steps.filename.outputs.filename }}"
           else
