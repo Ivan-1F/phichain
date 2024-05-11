@@ -24,19 +24,20 @@ use crate::tab::game::GameViewport;
 use crate::tab::inspector::inspector_ui_system;
 use crate::tab::timeline::timeline_ui_system;
 use crate::tab::timeline::{TimelineTabPlugin, TimelineViewport};
+use crate::tab::timeline_setting::timeline_setting_tab;
 use crate::tab::TabPlugin;
 use crate::tab::{empty_tab, EditorTab, TabRegistrationExt, TabRegistry};
+use crate::timing::BpmList;
 use crate::timing::{ChartTime, TimingPlugin};
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
-use bevy::sprite::Anchor;
 use bevy::prelude::*;
+use bevy::sprite::Anchor;
 use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
 use constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use num::{FromPrimitive, Rational32};
-use timing::BpmList;
 
 fn main() {
     App::new()
@@ -81,6 +82,11 @@ fn main() {
         .register_tab(EditorTab::Timeline, "Timeline", timeline_ui_system)
         .register_tab(EditorTab::Game, "Game", empty_tab)
         .register_tab(EditorTab::Inspector, "Inspector", inspector_ui_system)
+        .register_tab(
+            EditorTab::TimelineSetting,
+            "Timeline Setting",
+            timeline_setting_tab,
+        )
         .run();
 }
 
@@ -101,7 +107,8 @@ impl UiState {
         let [game, _timeline] =
             tree.split_left(NodeIndex::root(), 2.0 / 3.0, vec![EditorTab::Timeline]);
 
-        tree.split_below(game, 2.0 / 5.0, vec![EditorTab::Inspector]);
+        let [_, inspector] = tree.split_below(game, 2.0 / 5.0, vec![EditorTab::Inspector]);
+        tree.split_right(inspector, 1.0 / 2.0, vec![EditorTab::TimelineSetting]);
 
         Self { state }
     }
@@ -314,7 +321,10 @@ fn compute_line_system(
 ) {
     let beat: f32 = bpm_list.beat_at(time.0).into();
     for (mut position, mut rotation, mut opacity, entity) in &mut line_query {
-        let mut events: Vec<_> = event_query.iter().filter(|(_, parent)| parent.get() == entity).collect();
+        let mut events: Vec<_> = event_query
+            .iter()
+            .filter(|(_, parent)| parent.get() == entity)
+            .collect();
         events.sort_by_key(|(e, _)| e.start_beat);
         for (event, _) in events {
             let value = event.evaluate(beat);
@@ -389,9 +399,8 @@ fn update_note_y_system(
                 match note.kind {
                     NoteKind::Hold { hold_beat } => {
                         y = y.max(0.0);
-                        let height = distance(
-                            bpm_list.time_at(note.beat + hold_beat),
-                        ) - current_distance
+                        let height = distance(bpm_list.time_at(note.beat + hold_beat))
+                            - current_distance
                             - y;
                         sprite.anchor = Anchor::BottomCenter;
                         transform.rotation = Quat::from_rotation_z(

@@ -204,8 +204,8 @@ impl TimelineViewport {
 
 #[derive(Resource)]
 pub struct TimelineSettings {
-    zoom: f32,
-    density: f32,
+    pub zoom: f32,
+    pub density: f32,
 }
 
 impl Default for TimelineSettings {

@@ -1,6 +1,7 @@
 pub mod game;
 pub mod timeline;
 pub mod inspector;
+pub mod timeline_setting;
 
 use bevy::{prelude::*, utils::HashMap};
 use egui::Ui;
@@ -42,6 +43,7 @@ pub enum EditorTab {
     Game,
     Timeline,
     Inspector,
+    TimelineSetting,
 }
 
 pub struct TabPlugin;
