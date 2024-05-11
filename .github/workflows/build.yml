@@ -120,7 +120,7 @@ jobs:
             cp ./target/${{ matrix.target }}/release/phichain "./build/${{ steps.filename.outputs.filename }}"
           fi
 
-          mv LICENSE README fonts lang ./build
+          mv LICENSE README.md fonts lang ./build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
