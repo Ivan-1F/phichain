@@ -8,7 +8,6 @@ mod misc;
 mod selection;
 mod tab;
 mod timing;
-mod font;
 mod translation;
 
 use crate::assets::{AssetsPlugin, ImageAssets};
@@ -40,6 +39,7 @@ use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
 use constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
+use misc::WorkingDirectory;
 use num::{FromPrimitive, Rational32};
 use translation::{TranslationPlugin, Translator};
 
@@ -62,9 +62,9 @@ fn main() {
         .add_plugins(TranslationPlugin)
         .add_systems(Startup, |mut contexts: bevy_egui::EguiContexts| {
             let ctx = contexts.ctx_mut();
-            font::configure_fonts(ctx);
             egui_extras::install_image_loaders(ctx);
         })
+        .add_systems(Startup, setup_egui_font_system)
         .add_systems(Startup, setup_plugin)
         .add_systems(Startup, setup_chart_plugin)
         .add_systems(Update, zoom_scale)
@@ -95,6 +95,23 @@ fn main() {
             timeline_setting_tab,
         )
         .run();
+}
+
+fn setup_egui_font_system(mut contexts: bevy_egui::EguiContexts, working_directory: Res<WorkingDirectory>) {
+    let ctx = contexts.ctx_mut();
+
+    let font_file = working_directory.0.join("fonts/MiSans-Regular.ttf").to_str().unwrap().to_string();
+    let font_name = "MiSans-Regular".to_string();
+    let font_file_bytes = std::fs::read(font_file).expect("Failed to open font file");
+
+    let font_data = egui::FontData::from_owned(font_file_bytes);
+    let mut font_def = egui::FontDefinitions::default();
+    font_def.font_data.insert(font_name.to_string(), font_data);
+
+    let font_family: egui::FontFamily = egui::FontFamily::Proportional;
+    font_def.families.get_mut(&font_family).expect("Failed to setuo font").insert(0, font_name);
+
+    ctx.set_fonts(font_def);
 }
 
 struct TabViewer<'a> {
