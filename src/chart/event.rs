@@ -18,7 +18,6 @@ pub struct LineEvent {
     pub end: f32,
     pub start_beat: Beat,
     pub end_beat: Beat,
-    pub line_id: Entity,
 }
 
 impl LineEvent {

@@ -14,12 +14,10 @@ use crate::audio::AudioPlugin;
 use crate::chart::event::{LineEvent, LineEventKind};
 use crate::chart::line::Line;
 use crate::chart::line::{LineOpacity, LinePosition, LineRotation};
-use crate::chart::note::TimelineNote;
 use crate::chart::note::{Note, NoteKind};
 use crate::loader::official::OfficialLoader;
 use crate::loader::Loader;
 use crate::misc::MiscPlugin;
-use crate::selection::SelectedLine;
 use crate::tab::game::GameCamera;
 use crate::tab::game::GameTabPlugin;
 use crate::tab::game::GameViewport;
@@ -80,34 +78,10 @@ fn main() {
             (update_line_texture_system, update_note_texture_system),
         )
         .add_systems(Update, calculate_speed_events_system)
-        .add_systems(Update, hide_unselected_line_timeline_items_system)
         .register_tab(EditorTab::Timeline, "Timeline", timeline_ui_system)
         .register_tab(EditorTab::Game, "Game", empty_tab)
         .register_tab(EditorTab::Inspector, "Inspector", inspector_ui_system)
         .run();
-}
-
-fn hide_unselected_line_timeline_items_system(
-    selected_line: Res<SelectedLine>,
-    mut event_query: Query<(&LineEvent, &mut Visibility), Without<TimelineNote>>,
-    mut timeline_note_query: Query<(&TimelineNote, &mut Visibility), Without<LineEvent>>,
-    note_query: Query<&Parent, With<Note>>,
-) {
-    for (event, mut visibility) in &mut event_query {
-        *visibility = if event.line_id == selected_line.0 {
-            Visibility::Inherited
-        } else {
-            Visibility::Hidden
-        };
-    }
-    for (note, mut visibility) in &mut timeline_note_query {
-        let parent: &Parent = note_query.get(note.0).unwrap();
-        *visibility = if parent.get() == selected_line.0 {
-            Visibility::Inherited
-        } else {
-            Visibility::Hidden
-        };
-    }
 }
 
 struct TabViewer<'a> {
@@ -325,7 +299,7 @@ fn update_note_system(
 
 fn compute_line_system(
     keyboard: Res<ButtonInput<KeyCode>>,
-    event_query: Query<&LineEvent>,
+    event_query: Query<(&LineEvent, &Parent)>,
     mut line_query: Query<
         (
             &mut LinePosition,
@@ -340,9 +314,9 @@ fn compute_line_system(
 ) {
     let beat: f32 = bpm_list.beat_at(time.0).into();
     for (mut position, mut rotation, mut opacity, entity) in &mut line_query {
-        let mut events: Vec<_> = event_query.iter().filter(|e| e.line_id == entity).collect();
-        events.sort_by_key(|e| e.start_beat);
-        for event in events {
+        let mut events: Vec<_> = event_query.iter().filter(|(_, parent)| parent.get() == entity).collect();
+        events.sort_by_key(|(e, _)| e.start_beat);
+        for (event, _) in events {
             let value = event.evaluate(beat);
             if let Some(value) = value {
                 match event.kind {
@@ -388,17 +362,17 @@ fn update_line_system(
 fn update_note_y_system(
     query: Query<(&Children, Entity), With<Line>>,
     game_viewport: Res<GameViewport>,
-    speed_event_query: Query<(&SpeedEvent, &LineEvent)>,
+    speed_event_query: Query<(&SpeedEvent, &LineEvent, &Parent)>,
     mut note_query: Query<(&mut Transform, &mut Sprite, &Note)>,
     time: Res<ChartTime>,
     bpm_list: Res<BpmList>,
 ) {
-    let all_speed_events: Vec<(&SpeedEvent, &LineEvent)> = speed_event_query.iter().collect();
+    let all_speed_events: Vec<_> = speed_event_query.iter().collect();
     for (children, entity) in &query {
         let mut speed_events: Vec<&SpeedEvent> = all_speed_events
             .iter()
-            .filter(|(_, e)| e.line_id == entity)
-            .map(|(s, _)| *s)
+            .filter(|(_, _, parent)| parent.get() == entity)
+            .map(|(s, _, _)| *s)
             .collect();
         speed_events.sort_by(|a, b| {
             Rational32::from_f32(a.start_time).cmp(&Rational32::from_f32(b.start_time))

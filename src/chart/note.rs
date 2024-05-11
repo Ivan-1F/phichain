@@ -29,9 +29,6 @@ impl Note {
     }
 }
 
-#[derive(Component)]
-pub struct TimelineNote(pub Entity);
-
 #[derive(Bundle)]
 pub struct NoteBundle {
     sprite: SpriteBundle,

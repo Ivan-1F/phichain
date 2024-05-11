@@ -141,61 +141,56 @@ impl Loader for OfficialLoader {
                     for note in line.notes_below.iter() {
                         spawn_note(false, note);
                     }
+
+                    for event in line.move_events.iter() {
+                        parent.spawn(LineEventBundle::new(LineEvent {
+                            kind: LineEventKind::X,
+                            start: x(event.start_x),
+                            end: x(event.end_x),
+                            start_beat: t(event.start_time),
+                            end_beat: t(event.end_time),
+                        }));
+                        parent.spawn(LineEventBundle::new(LineEvent {
+                            kind: LineEventKind::Y,
+                            start: y(event.start_y),
+                            end: y(event.end_y),
+                            start_beat: t(event.start_time),
+                            end_beat: t(event.end_time),
+                        }));
+                    }
+                    for event in line.rotate_events.iter() {
+                        parent.spawn(LineEventBundle::new(LineEvent {
+                            kind: LineEventKind::Rotation,
+                            start: event.start,
+                            end: event.end,
+                            start_beat: t(event.start_time),
+                            end_beat: t(event.end_time),
+                        }));
+                    }
+                    for event in line.opacity_events.iter() {
+                        parent.spawn(LineEventBundle::new(LineEvent {
+                            kind: LineEventKind::Opacity,
+                            start: event.start,
+                            end: event.end,
+                            start_beat: t(event.start_time),
+                            end_beat: t(event.end_time),
+                        }));
+                    }
+                    for event in line.speed_events.iter() {
+                        parent.spawn(LineEventBundle::new(LineEvent {
+                            kind: LineEventKind::Speed,
+                            start: event.value / 2.0 * 9.0,
+                            end: event.value / 2.0 * 9.0,
+                            start_beat: t(event.start_time),
+                            end_beat: t(event.end_time),
+                        }));
+                    }
                 })
                 .id();
 
             match first_line_id {
                 None => first_line_id = Some(id),
                 _ => {}
-            }
-
-            for event in line.move_events.iter() {
-                commands.spawn(LineEventBundle::new(LineEvent {
-                    kind: LineEventKind::X,
-                    start: x(event.start_x),
-                    end: x(event.end_x),
-                    start_beat: t(event.start_time),
-                    end_beat: t(event.end_time),
-                    line_id: id,
-                }));
-                commands.spawn(LineEventBundle::new(LineEvent {
-                    kind: LineEventKind::Y,
-                    start: y(event.start_y),
-                    end: y(event.end_y),
-                    start_beat: t(event.start_time),
-                    end_beat: t(event.end_time),
-                    line_id: id,
-                }));
-            }
-            for event in line.rotate_events.iter() {
-                commands.spawn(LineEventBundle::new(LineEvent {
-                    kind: LineEventKind::Rotation,
-                    start: event.start,
-                    end: event.end,
-                    start_beat: t(event.start_time),
-                    end_beat: t(event.end_time),
-                    line_id: id,
-                }));
-            }
-            for event in line.opacity_events.iter() {
-                commands.spawn(LineEventBundle::new(LineEvent {
-                    kind: LineEventKind::Opacity,
-                    start: event.start,
-                    end: event.end,
-                    start_beat: t(event.start_time),
-                    end_beat: t(event.end_time),
-                    line_id: id,
-                }));
-            }
-            for event in line.speed_events.iter() {
-                commands.spawn(LineEventBundle::new(LineEvent {
-                    kind: LineEventKind::Speed,
-                    start: event.value / 2.0 * 9.0,
-                    end: event.value / 2.0 * 9.0,
-                    start_beat: t(event.start_time),
-                    end_beat: t(event.end_time),
-                    line_id: id,
-                }));
             }
         }
         commands.insert_resource(SelectedLine(first_line_id.unwrap()));

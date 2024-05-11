@@ -28,7 +28,7 @@ pub fn timeline_ui_system(
     selected_line_query: Res<SelectedLine>,
     timeline_viewport: Res<TimelineViewport>,
     bpm_list: Res<BpmList>,
-    event_query: Query<&LineEvent>,
+    event_query: Query<(&LineEvent, &Parent)>,
     note_query: Query<(&Note, &Parent, Entity, Option<&Selected>)>,
     working_dir: Res<WorkingDirectory>,
     mut select_events: EventWriter<SelectNoteEvent>,
@@ -51,8 +51,8 @@ pub fn timeline_ui_system(
 
     let event_timeline_viewport = viewport.event_timeline_viewport();
 
-    for event in event_query.iter() {
-        if event.line_id != selected_line {
+    for (event, parent) in event_query.iter() {
+        if parent.get() != selected_line {
             continue;
         }
 
