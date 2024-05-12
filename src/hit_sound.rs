@@ -38,10 +38,10 @@ fn play_hit_sound_system(mut commands: Commands, query: Query<(Entity, &PlayHitS
         commands.entity(entity).remove::<PlayHitSound>();
         commands.entity(entity).insert(PlayedHitSound);
         let path = match hit_sound.0 {
-            NoteKind::Tap => "HitSong0.ogg",
-            NoteKind::Drag => "HitSong1.ogg",
-            NoteKind::Hold { hold_beat: _ } => "HitSong0.ogg",
-            NoteKind::Flick => "HitSong2.ogg",
+            NoteKind::Tap => "audio/HitSong0.ogg",
+            NoteKind::Drag => "audio/HitSong1.ogg",
+            NoteKind::Hold { hold_beat: _ } => "audio/HitSong0.ogg",
+            NoteKind::Flick => "audio/HitSong2.ogg",
         };
         audio.play(asset_server.load(path));
     }

@@ -21,7 +21,7 @@ impl Plugin for AudioPlugin {
 
 /// Setup music
 fn setup_audio_system(mut commands: Commands, asset_server: Res<AssetServer>, audio: Res<Audio>) {
-    let handle = audio.play(asset_server.load("audio.mp3")).paused().handle();
+    let handle = audio.play(asset_server.load("audio/audio.mp3")).paused().handle();
     commands.insert_resource(InstanceHandle(handle));
 }
 

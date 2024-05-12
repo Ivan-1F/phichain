@@ -124,12 +124,12 @@ pub fn timeline_ui_system(
             _ => egui::Pos2::new(x, y),
         };
 
-        let assets_dir = working_dir.0.join("assets");
+        let image_dir = working_dir.0.join("assets/image");
 
         let response = ui.put(
             egui::Rect::from_center_size(center, size),
             egui::Image::new(
-                Url::from_file_path(assets_dir.join(image))
+                Url::from_file_path(image_dir.join(image))
                     .unwrap()
                     .as_str(),
             )

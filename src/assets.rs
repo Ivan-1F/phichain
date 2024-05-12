@@ -24,14 +24,14 @@ impl Plugin for AssetsPlugin {
 
 fn load_assets(mut image_assets: ResMut<ImageAssets>, asset_server: Res<AssetServer>) {
     *image_assets = ImageAssets {
-        tap: asset_server.load("tap.png"),
-        drag: asset_server.load("drag.png"),
-        hold: asset_server.load("hold.png"),
-        flick: asset_server.load("flick.png"),
-        tap_highlight: asset_server.load("tap.highlight.png"),
-        drag_highlight: asset_server.load("drag.highlight.png"),
-        hold_highlight: asset_server.load("hold.highlight.png"),
-        flick_highlight: asset_server.load("flick.highlight.png"),
-        line: asset_server.load("judgeline.png"),
+        tap: asset_server.load("image/tap.png"),
+        drag: asset_server.load("image/drag.png"),
+        hold: asset_server.load("image/hold.png"),
+        flick: asset_server.load("image/flick.png"),
+        tap_highlight: asset_server.load("image/tap.highlight.png"),
+        drag_highlight: asset_server.load("image/drag.highlight.png"),
+        hold_highlight: asset_server.load("image/hold.highlight.png"),
+        flick_highlight: asset_server.load("image/flick.highlight.png"),
+        line: asset_server.load("image/judgeline.png"),
     };
 }

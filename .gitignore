@@ -1,6 +1,8 @@
 /target
 
 Chart*.json
-/assets
+
+assets/*
+!assets/font/
 
 .DS_Store

@@ -116,7 +116,7 @@ fn setup_egui_font_system(
 
     let font_file = working_directory
         .0
-        .join("fonts/MiSans-Regular.ttf")
+        .join("assets/font/MiSans-Regular.ttf")
         .to_str()
         .unwrap()
         .to_string();
