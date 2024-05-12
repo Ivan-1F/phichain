@@ -11,7 +11,9 @@ pub struct GameUiPlugin;
 
 impl Plugin for GameUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup_combo_ui_system)
+        app.insert_resource(TextScale(1.0))
+            .add_systems(Update, update_text_scale_system)
+            .add_systems(Startup, setup_combo_ui_system)
             .add_systems(Update, update_combo_system)
             .add_systems(Update, hide_combo_below_3_system)
             .add_systems(Update, update_combo_text_scale_system)
@@ -19,6 +21,18 @@ impl Plugin for GameUiPlugin {
             .add_systems(Update, update_score_text_scale_system)
             .add_systems(Update, update_score_system);
     }
+}
+
+/// Base game ui text scale
+#[derive(Resource, Debug)]
+struct TextScale(f32);
+
+fn update_text_scale_system(mut scale: ResMut<TextScale>, game_viewport: Res<GameViewport>) {
+    scale.0 = if game_viewport.0.width() > game_viewport.0.height() * 0.75 {
+        game_viewport.0.height() / 18.75
+    } else {
+        game_viewport.0.width() / 14.0625
+    };
 }
 
 /// Marker component to represent the combo number text
@@ -95,37 +109,40 @@ fn setup_combo_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
         });
 }
 
+/// Marker component to represent the score text
 #[derive(Component)]
 struct ScoreText;
 
 fn spawn_score_ui_system(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn(NodeBundle {
-        style: Style {
-            width: Val::Percent(100.0),
-            justify_content: JustifyContent::FlexEnd,
-            align_items: AlignItems::FlexStart,
-            top: Val::Px(8.0),
-            right: Val::Px(8.0),
-            ..default()
-        },
-        ..default()
-    }).with_children(|parent| {
-        parent.spawn((
-            TextBundle {
-                text: Text::from_section(
-                    "0000000",
-                    TextStyle {
-                        font: asset_server.load("font/phigros.ttf"),
-                        font_size: 10.0,
-                        color: Color::WHITE,
-                        ..default()
-                    },
-                ),
+    commands
+        .spawn(NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                justify_content: JustifyContent::FlexEnd,
+                align_items: AlignItems::FlexStart,
+                top: Val::Px(8.0),
+                right: Val::Px(8.0),
                 ..default()
             },
-            ScoreText,
-        ));
-    });
+            ..default()
+        })
+        .with_children(|parent| {
+            parent.spawn((
+                TextBundle {
+                    text: Text::from_section(
+                        "0000000",
+                        TextStyle {
+                            font: asset_server.load("font/phigros.ttf"),
+                            font_size: 10.0,
+                            color: Color::WHITE,
+                            ..default()
+                        },
+                    ),
+                    ..default()
+                },
+                ScoreText,
+            ));
+        });
 }
 
 fn update_combo_system(
@@ -165,34 +182,21 @@ fn hide_combo_below_3_system(
 fn update_combo_text_scale_system(
     mut combo_text_query: Query<&mut Text, (With<ComboText>, Without<ComboIndicator>)>,
     mut combo_indicator_query: Query<&mut Text, (With<ComboIndicator>, Without<ComboText>)>,
-    game_viewport: Res<GameViewport>,
+    scale: Res<TextScale>,
 ) {
-    let scale = if game_viewport.0.width() > game_viewport.0.height() * 0.75 {
-        game_viewport.0.height() / 18.75
-    } else {
-        game_viewport.0.width() / 14.0625
-    };
-
     let mut combo_text = combo_text_query.single_mut();
     let mut combo_indicator = combo_indicator_query.single_mut();
-    combo_text.sections[0].style.font_size = scale * 1.32;
-    combo_indicator.sections[0].style.font_size = scale * 1.32 * 0.4;
+    combo_text.sections[0].style.font_size = scale.0 * 1.32;
+    combo_indicator.sections[0].style.font_size = scale.0 * 1.32 * 0.4;
 }
 
 fn update_score_text_scale_system(
     mut score_text_query: Query<&mut Text, With<ScoreText>>,
-    game_viewport: Res<GameViewport>,
+    scale: Res<TextScale>,
 ) {
-    let scale = if game_viewport.0.width() > game_viewport.0.height() * 0.75 {
-        game_viewport.0.height() / 18.75
-    } else {
-        game_viewport.0.width() / 14.0625
-    };
-
     let mut score_text = score_text_query.single_mut();
-    score_text.sections[0].style.font_size = scale * 1.32 * 0.8;
+    score_text.sections[0].style.font_size = scale.0 * 1.32 * 0.8;
 }
-
 
 fn update_score_system(
     mut score_text_query: Query<&mut Text, With<ScoreText>>,
