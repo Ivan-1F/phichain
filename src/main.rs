@@ -5,6 +5,7 @@ mod constants;
 mod hit_sound;
 mod loader;
 mod misc;
+mod score;
 mod selection;
 mod tab;
 mod timing;
@@ -19,6 +20,7 @@ use crate::chart::note::{Note, NoteKind};
 use crate::loader::official::OfficialLoader;
 use crate::loader::Loader;
 use crate::misc::MiscPlugin;
+use crate::score::ScorePlugin;
 use crate::tab::game::GameCamera;
 use crate::tab::game::GameTabPlugin;
 use crate::tab::game::GameViewport;
@@ -30,6 +32,7 @@ use crate::tab::TabPlugin;
 use crate::tab::{empty_tab, EditorTab, TabRegistrationExt, TabRegistry};
 use crate::timing::BpmList;
 use crate::timing::{ChartTime, TimingPlugin};
+use crate::translation::{TranslationPlugin, Translator};
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
@@ -41,7 +44,6 @@ use constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use misc::WorkingDirectory;
 use num::{FromPrimitive, Rational32};
-use translation::{TranslationPlugin, Translator};
 
 fn main() {
     App::new()
@@ -51,6 +53,7 @@ fn main() {
         .add_plugins(TimingPlugin)
         .add_plugins(AudioPlugin)
         .add_plugins(GameTabPlugin)
+        .add_plugins(ScorePlugin)
         .add_plugins(TimelineTabPlugin)
         .add_plugins(DefaultPickingPlugins)
         .add_plugins(EguiPlugin)
@@ -82,9 +85,17 @@ fn main() {
             (update_line_texture_system, update_note_texture_system),
         )
         .add_systems(Update, calculate_speed_events_system)
-        .register_tab(EditorTab::Timeline, "tab.timeline.title", timeline_ui_system)
+        .register_tab(
+            EditorTab::Timeline,
+            "tab.timeline.title",
+            timeline_ui_system,
+        )
         .register_tab(EditorTab::Game, "tab.game.title", empty_tab)
-        .register_tab(EditorTab::Inspector, "tab.inspector.title", inspector_ui_system)
+        .register_tab(
+            EditorTab::Inspector,
+            "tab.inspector.title",
+            inspector_ui_system,
+        )
         .register_tab(
             EditorTab::TimelineSetting,
             "tab.timeline_setting.title",
@@ -97,10 +108,18 @@ fn setup_egui_image_loader_system(mut contexts: bevy_egui::EguiContexts) {
     egui_extras::install_image_loaders(contexts.ctx_mut());
 }
 
-fn setup_egui_font_system(mut contexts: bevy_egui::EguiContexts, working_directory: Res<WorkingDirectory>) {
+fn setup_egui_font_system(
+    mut contexts: bevy_egui::EguiContexts,
+    working_directory: Res<WorkingDirectory>,
+) {
     let ctx = contexts.ctx_mut();
 
-    let font_file = working_directory.0.join("fonts/MiSans-Regular.ttf").to_str().unwrap().to_string();
+    let font_file = working_directory
+        .0
+        .join("fonts/MiSans-Regular.ttf")
+        .to_str()
+        .unwrap()
+        .to_string();
     let font_name = "MiSans-Regular".to_string();
     let font_file_bytes = std::fs::read(font_file).expect("Failed to open font file");
 
@@ -109,7 +128,11 @@ fn setup_egui_font_system(mut contexts: bevy_egui::EguiContexts, working_directo
     font_def.font_data.insert(font_name.to_string(), font_data);
 
     let font_family: egui::FontFamily = egui::FontFamily::Proportional;
-    font_def.families.get_mut(&font_family).expect("Failed to setuo font").insert(0, font_name);
+    font_def
+        .families
+        .get_mut(&font_family)
+        .expect("Failed to setuo font")
+        .insert(0, font_name);
 
     ctx.set_fonts(font_def);
 }

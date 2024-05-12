@@ -1,9 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{
-    chart::note::Note,
-    timing::{BpmList, ChartTime},
-};
+use crate::score::GameScore;
 
 use super::GameViewport;
 
@@ -145,34 +142,17 @@ fn spawn_score_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
         });
 }
 
-fn update_combo_system(
-    mut text_query: Query<&mut Text, With<ComboText>>,
-    note_query: Query<&Note>,
-    time: Res<ChartTime>,
-    bpm_list: Res<BpmList>,
-) {
+fn update_combo_system(mut text_query: Query<&mut Text, With<ComboText>>, score: Res<GameScore>) {
     let mut combo_text = text_query.single_mut();
-    let combo = note_query
-        .iter()
-        .filter(|note| bpm_list.time_at(note.beat) <= time.0)
-        .collect::<Vec<_>>()
-        .len();
-    combo_text.sections[0].value = combo.to_string();
+    combo_text.sections[0].value = score.combo().to_string();
 }
 
 fn hide_combo_below_3_system(
     mut combo_query: Query<&mut Visibility, With<Combo>>,
-    note_query: Query<&Note>,
-    time: Res<ChartTime>,
-    bpm_list: Res<BpmList>,
+    score: Res<GameScore>,
 ) {
     let mut visibility = combo_query.single_mut();
-    let combo = note_query
-        .iter()
-        .filter(|note| bpm_list.time_at(note.beat) <= time.0)
-        .collect::<Vec<_>>()
-        .len();
-    *visibility = if combo >= 3 {
+    *visibility = if score.combo() >= 3 {
         Visibility::Inherited
     } else {
         Visibility::Hidden
@@ -200,19 +180,8 @@ fn update_score_text_scale_system(
 
 fn update_score_system(
     mut score_text_query: Query<&mut Text, With<ScoreText>>,
-    note_query: Query<&Note>,
-    time: Res<ChartTime>,
-    bpm_list: Res<BpmList>,
+    score: Res<GameScore>,
 ) {
-    let notes: Vec<_> = note_query.iter().collect();
-    let combo = notes
-        .iter()
-        .filter(|note| bpm_list.time_at(note.beat) <= time.0)
-        .collect::<Vec<_>>()
-        .len();
-
-    let score = 100_0000.0 * combo as f32 / notes.len() as f32;
-
     let mut score_text = score_text_query.single_mut();
-    score_text.sections[0].value = format!("{:07}", score.round());
+    score_text.sections[0].value = score.score_text();
 }
