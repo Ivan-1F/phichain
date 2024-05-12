@@ -1,8 +1,9 @@
+mod illustration;
 mod ui;
 
 use bevy::{prelude::*, render::camera::Viewport};
 
-use self::ui::GameUiPlugin;
+use self::{illustration::IllustrationPlugin, ui::GameUiPlugin};
 
 pub struct GameTabPlugin;
 
@@ -10,7 +11,8 @@ impl Plugin for GameTabPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(GameViewport(Rect::from_corners(Vec2::ZERO, Vec2::ZERO)))
             .add_systems(Update, update_game_camera_viewport)
-            .add_plugins(GameUiPlugin);
+            .add_plugins(GameUiPlugin)
+            .add_plugins(IllustrationPlugin);
     }
 }
 
