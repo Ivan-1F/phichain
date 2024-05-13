@@ -39,8 +39,8 @@ fn ui_system(world: &mut World) {
 }
 
 fn load_project_system(mut commands: Commands, mut tasks: Query<(Entity, &mut SelectedFolder)>, mut events: EventWriter<LoadProjectEvent>) {
-    for (entity, mut selected_folfer) in &mut tasks {
-        if let Some(result) = future::block_on(future::poll_once(&mut selected_folfer.0)) {
+    for (entity, mut selected_folder) in &mut tasks {
+        if let Some(result) = future::block_on(future::poll_once(&mut selected_folder.0)) {
             commands.entity(entity).despawn();
             if let Some(root_dir) = result {
                 events.send(LoadProjectEvent(root_dir));
