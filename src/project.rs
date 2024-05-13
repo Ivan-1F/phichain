@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use std::{fs::File, path::PathBuf};
 
+use crate::{loader::{phichain::PhiChainLoader, Loader}, serialzation::PhiChainChart};
+
 #[derive(Serialize, Deserialize)]
 pub struct ProjectMeta {
     pub composer: String,
@@ -54,6 +56,10 @@ impl ProjectPath {
         let meta_file = File::open(self.meta_path()).context("Failed to open meta file")?;
         let meta: ProjectMeta = serde_json::from_reader(meta_file).context("Invalid meta file")?;
 
+        let chart_file = File::open(self.chart_path()).context("Failed to open chart file")?;
+        // just do validation here
+        let _: PhiChainChart = serde_json::from_reader(chart_file).context("Invalid chart")?;
+
         Ok(Project {
             root_dir: self.0,
             meta,
@@ -69,4 +75,37 @@ pub fn project_loaded() -> impl Condition<()> {
 /// A [Condition] represents the project is not loaded
 pub fn project_not_loaded() -> impl Condition<()> {
     resource_exists::<Project>.map(|x| !x)
+}
+
+pub struct ProjectPlugin;
+
+impl Plugin for ProjectPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_event::<LoadProjectEvent>()
+            .add_systems(Update, load_project_system);
+    }
+}
+
+#[derive(Event, Debug)]
+pub struct LoadProjectEvent(pub PathBuf);
+
+fn load_project_system(mut commands: Commands, mut events: EventReader<LoadProjectEvent>) {
+    if events.len() > 1 {
+        warn!("Mutiple projects are requested, ignoring previous ones");
+    }
+
+    if let Some(event) = events.read().last() {
+        match Project::load(event.0.clone()) {
+            Ok(project) => {
+                let file = File::open(project.root_dir.join("chart.json")).unwrap();
+                PhiChainLoader::load(file, &mut commands);
+                commands.insert_resource(project);
+            },
+            Err(error) => {
+                error!("{:?}", error)
+            }
+        }
+    }
+
+    events.clear();
 }

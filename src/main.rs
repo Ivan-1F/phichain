@@ -30,6 +30,7 @@ use crate::loader::Loader;
 use crate::misc::MiscPlugin;
 use crate::misc::WorkingDirectory;
 use crate::project::project_loaded;
+use crate::project::ProjectPlugin;
 use crate::score::ScorePlugin;
 use crate::tab::game::GameCamera;
 use crate::tab::game::GameTabPlugin;
@@ -66,6 +67,7 @@ fn main() {
         .add_plugins(TimelineTabPlugin)
         .add_plugins(DefaultPickingPlugins)
         .add_plugins(EguiPlugin)
+        .add_plugins(ProjectPlugin)
         .add_plugins(crate::selection::SelectionPlugin)
         .add_plugins(MiscPlugin)
         .add_plugins(TabPlugin)
@@ -331,10 +333,10 @@ fn zoom_scale(
 }
 
 /// Load a chart in official JSON format into the world
-fn setup_chart_plugin(commands: Commands) {
+fn setup_chart_plugin(mut commands: Commands) {
     OfficialLoader::load(
         std::fs::File::open("Chart_IN.json").expect("Failed to open chart"),
-        commands,
+        &mut commands,
     );
 }
 

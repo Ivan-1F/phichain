@@ -8,7 +8,7 @@ use bevy_egui::EguiContext;
 use futures_lite::future;
 use rfd::FileDialog;
 
-use crate::project::{project_not_loaded, Project};
+use crate::project::{project_not_loaded, LoadProjectEvent};
 
 pub struct HomePlugin;
 
@@ -38,15 +38,12 @@ fn ui_system(world: &mut World) {
     });
 }
 
-fn load_project_system(mut commands: Commands, mut tasks: Query<(Entity, &mut SelectedFolder)>) {
+fn load_project_system(mut commands: Commands, mut tasks: Query<(Entity, &mut SelectedFolder)>, mut events: EventWriter<LoadProjectEvent>) {
     for (entity, mut selected_folfer) in &mut tasks {
         if let Some(result) = future::block_on(future::poll_once(&mut selected_folfer.0)) {
             commands.entity(entity).despawn();
             if let Some(root_dir) = result {
-                match Project::load(root_dir) {
-                    Ok(project) => commands.insert_resource(project),
-                    Err(error) => error!("{:?}", error),
-                }   
+                events.send(LoadProjectEvent(root_dir));
             }
         }
     }

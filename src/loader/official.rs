@@ -98,7 +98,7 @@ struct Chart {
 pub struct OfficialLoader;
 
 impl Loader for OfficialLoader {
-    fn load(file: std::fs::File, mut commands: Commands) {
+    fn load(file: std::fs::File, commands: &mut Commands) {
         let chart: Chart = serde_json::from_reader(file).expect("Failed to load chart");
 
         let first_line = chart.lines.first().expect("The chart should has at least one line");
