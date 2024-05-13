@@ -94,6 +94,12 @@ impl BpmPoint {
 #[derive(Resource, Debug, Clone, Serialize, Deserialize)]
 pub struct BpmList(Vec<BpmPoint>);
 
+impl Default for BpmList {
+    fn default() -> Self {
+        Self::new(vec![BpmPoint::new(Beat::ZERO, 120.0)])
+    }
+}
+
 impl BpmList {
     pub fn new(points: Vec<BpmPoint>) -> Self {
         let mut list = Self(points);
