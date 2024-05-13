@@ -1,8 +1,9 @@
 use std::{cmp::Ordering, ops::{Add, Sub}};
 
 use num::{FromPrimitive, Rational32};
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Beat(i32, Rational32);
 
 impl Beat {

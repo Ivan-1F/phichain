@@ -1,8 +1,9 @@
 use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use super::beat::Beat;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum LineEventKind {
     X,
     Y,
@@ -11,7 +12,7 @@ pub enum LineEventKind {
     Speed,
 }
 
-#[derive(Component, Debug)]
+#[derive(Component, Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct LineEvent {
     pub kind: LineEventKind,
     pub start: f32,

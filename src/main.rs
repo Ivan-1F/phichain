@@ -12,6 +12,8 @@ mod selection;
 mod tab;
 mod timing;
 mod translation;
+mod exporter;
+mod serialzation;
 
 use crate::assets::{AssetsPlugin, ImageAssets};
 use crate::audio::AudioPlugin;
@@ -46,6 +48,8 @@ use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
 use constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
+use exporter::phichain::PhiChainExporter;
+use exporter::Exporter;
 use num::{FromPrimitive, Rational32};
 use project::project_loaded;
 
@@ -74,6 +78,15 @@ fn main() {
         .add_systems(Startup, setup_chart_plugin)
         .add_systems(Update, zoom_scale)
         .add_systems(Update, ui_system.run_if(project_loaded()))
+        .add_systems(Update, |world: &mut World| {
+            // Debug
+            let event = world.resource::<ButtonInput<KeyCode>>();
+            if event.just_pressed(KeyCode::KeyE) {
+                if let Ok(chart) = PhiChainExporter::export(world) {
+                    let _ = std::fs::write("Chart.json", chart);
+                }
+            }
+        })
         .add_systems(
             Update,
             (

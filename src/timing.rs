@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::chart::beat::Beat;
 
@@ -72,7 +73,7 @@ fn space_pause_resume_control(
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BpmPoint {
     beat: Beat,
     bpm: f32,
@@ -90,7 +91,7 @@ impl BpmPoint {
     }
 }
 
-#[derive(Resource, Debug)]
+#[derive(Resource, Debug, Clone, Serialize, Deserialize)]
 pub struct BpmList(Vec<BpmPoint>);
 
 impl BpmList {
