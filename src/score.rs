@@ -1,8 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    chart::note::Note,
-    timing::{BpmList, ChartTime},
+    chart::note::Note, project::project_loaded, timing::{BpmList, ChartTime}
 };
 
 pub struct ScorePlugin;
@@ -10,7 +9,7 @@ pub struct ScorePlugin;
 impl Plugin for ScorePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(GameScore::default())
-            .add_systems(Update, update_score_system);
+            .add_systems(Update, update_score_system.run_if(project_loaded()));
     }
 }
 

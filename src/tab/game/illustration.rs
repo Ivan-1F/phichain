@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 
-use crate::constants::{ILLUSTRATION_ALPHA, ILLUSTRATION_BLUR};
+use crate::{
+    constants::{ILLUSTRATION_ALPHA, ILLUSTRATION_BLUR},
+    project::project_loaded,
+};
 
 use super::GameViewport;
 
@@ -9,8 +12,8 @@ pub struct IllustrationPlugin;
 impl Plugin for IllustrationPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_illustration_system)
-            .add_systems(Update, resize_illustration_system)
-            .add_systems(Update, blur_image_system);
+            .add_systems(Update, blur_image_system)
+            .add_systems(Update, resize_illustration_system.run_if(project_loaded()));
     }
 }
 
@@ -42,14 +45,21 @@ fn blur_image_system(
                             .collect();
 
                         // Apply Gaussian blur on the RGB data
-                        fastblur::gaussian_blur(&mut rgb_data, width as usize, height as usize, ILLUSTRATION_BLUR);
+                        fastblur::gaussian_blur(
+                            &mut rgb_data,
+                            width as usize,
+                            height as usize,
+                            ILLUSTRATION_BLUR,
+                        );
 
                         // Recombine RGB data with Alpha channel
                         let mut recombined_data = Vec::with_capacity(illustration.data.len());
-                        let mut alpha_iter = illustration.data.chunks_exact(4).map(|chunk| chunk[3]);
+                        let mut alpha_iter =
+                            illustration.data.chunks_exact(4).map(|chunk| chunk[3]);
                         for rgb in rgb_data.iter() {
                             recombined_data.extend_from_slice(rgb);
-                            recombined_data.push(alpha_iter.next().unwrap_or(255)); // Default to 255 if alpha channel is missing
+                            recombined_data.push(alpha_iter.next().unwrap_or(255));
+                            // Default to 255 if alpha channel is missing
                         }
 
                         // Update illustration data

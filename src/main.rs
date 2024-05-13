@@ -25,8 +25,6 @@ use crate::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use crate::exporter::phichain::PhiChainExporter;
 use crate::exporter::Exporter;
 use crate::home::HomePlugin;
-use crate::loader::official::OfficialLoader;
-use crate::loader::Loader;
 use crate::misc::MiscPlugin;
 use crate::misc::WorkingDirectory;
 use crate::project::project_loaded;
@@ -77,8 +75,7 @@ fn main() {
         .add_systems(Startup, setup_egui_image_loader_system)
         .add_systems(Startup, setup_egui_font_system)
         .add_systems(Startup, setup_plugin)
-        .add_systems(Startup, setup_chart_plugin)
-        .add_systems(Update, zoom_scale)
+        .add_systems(Update, zoom_scale_system.run_if(project_loaded()))
         .add_systems(Update, ui_system.run_if(project_loaded()))
         .add_systems(Update, |world: &mut World| {
             // Debug
@@ -97,14 +94,15 @@ fn main() {
                 update_note_y_system,
                 update_note_texture_system,
             )
-                .chain(),
+                .chain()
+                .run_if(project_loaded()),
         )
-        .add_systems(Update, (compute_line_system, update_line_system))
+        .add_systems(Update, (compute_line_system, update_line_system).chain().run_if(project_loaded()))
         .add_systems(
             Update,
-            (update_line_texture_system, update_note_texture_system),
+            (update_line_texture_system, update_note_texture_system).run_if(project_loaded()),
         )
-        .add_systems(Update, calculate_speed_events_system)
+        .add_systems(Update, calculate_speed_events_system.run_if(project_loaded()))
         .register_tab(
             EditorTab::Timeline,
             "tab.timeline.title",
@@ -320,7 +318,7 @@ fn setup_plugin(mut commands: Commands) {
     ));
 }
 
-fn zoom_scale(
+fn zoom_scale_system(
     keyboard: Res<ButtonInput<KeyCode>>,
     mut query: Query<&mut OrthographicProjection, With<GameCamera>>,
 ) {
@@ -330,14 +328,6 @@ fn zoom_scale(
     } else if keyboard.pressed(KeyCode::KeyO) {
         projection.scale *= 1.01;
     }
-}
-
-/// Load a chart in official JSON format into the world
-fn setup_chart_plugin(mut commands: Commands) {
-    OfficialLoader::load(
-        std::fs::File::open("Chart_IN.json").expect("Failed to open chart"),
-        &mut commands,
-    );
 }
 
 fn update_note_scale_system(

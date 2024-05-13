@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::project::project_loaded;
+
 #[derive(Resource)]
 pub struct SelectedLine(pub Entity);
 
@@ -14,7 +16,7 @@ pub struct SelectionPlugin;
 impl Plugin for SelectionPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<SelectNoteEvent>()
-            .add_systems(Update, handle_select_event);
+            .add_systems(Update, handle_select_event.run_if(project_loaded()));
     }
 }
 

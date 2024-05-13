@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
 
-use crate::timing::{ChartTime, PauseEvent, Paused, ResumeEvent, SeekEvent};
+use crate::{project::project_loaded, timing::{ChartTime, PauseEvent, Paused, ResumeEvent, SeekEvent}};
 
 #[derive(Resource)]
 struct InstanceHandle(Handle<AudioInstance>);
@@ -12,10 +12,10 @@ impl Plugin for AudioPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(bevy_kira_audio::AudioPlugin)
             .add_systems(Startup, setup_audio_system)
-            .add_systems(Update, handle_pause_system)
-            .add_systems(Update, handle_resume_system)
-            .add_systems(Update, handle_seek_system)
-            .add_systems(Update, update_time_system);
+            .add_systems(Update, handle_pause_system.run_if(project_loaded()))
+            .add_systems(Update, handle_resume_system.run_if(project_loaded()))
+            .add_systems(Update, handle_seek_system.run_if(project_loaded()))
+            .add_systems(Update, update_time_system.run_if(project_loaded()));
     }
 }
 

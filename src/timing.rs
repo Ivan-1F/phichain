@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::chart::beat::Beat;
+use crate::{chart::beat::Beat, project::project_loaded};
 
 /// Represents the current time in seconds
 #[derive(Resource)]
@@ -32,8 +32,8 @@ impl Plugin for TimingPlugin {
             .add_event::<PauseEvent>()
             .add_event::<ResumeEvent>()
             .add_event::<SeekEvent>()
-            .add_systems(Update, space_pause_resume_control)
-            .add_systems(Update, progress_control_system);
+            .add_systems(Update, space_pause_resume_control.run_if(project_loaded()))
+            .add_systems(Update, progress_control_system.run_if(project_loaded()));
     }
 }
 

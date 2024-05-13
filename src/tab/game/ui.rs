@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::score::GameScore;
+use crate::{project::project_loaded, score::GameScore};
 
 use super::GameViewport;
 
@@ -9,14 +9,14 @@ pub struct GameUiPlugin;
 impl Plugin for GameUiPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(TextScale(1.0))
-            .add_systems(Update, update_text_scale_system)
+            .add_systems(Update, update_text_scale_system.run_if(project_loaded()))
             .add_systems(Startup, setup_combo_ui_system)
-            .add_systems(Update, update_combo_system)
-            .add_systems(Update, hide_combo_below_3_system)
-            .add_systems(Update, update_combo_text_scale_system)
+            .add_systems(Update, update_combo_system.run_if(project_loaded()))
+            .add_systems(Update, hide_combo_below_3_system.run_if(project_loaded()))
+            .add_systems(Update, update_combo_text_scale_system.run_if(project_loaded()))
             .add_systems(Startup, spawn_score_ui_system)
-            .add_systems(Update, update_score_text_scale_system)
-            .add_systems(Update, update_score_system);
+            .add_systems(Update, update_score_text_scale_system.run_if(project_loaded()))
+            .add_systems(Update, update_score_system.run_if(project_loaded()));
     }
 }
 
