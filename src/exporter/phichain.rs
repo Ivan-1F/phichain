@@ -3,7 +3,7 @@ use bevy::prelude::*;
 
 use crate::{
     chart::{event::LineEvent, line::Line, note::Note},
-    serialzation::{LineWrapper, PhiChianChart},
+    serialzation::{LineWrapper, PhiChainChart},
     timing::BpmList,
 };
 
@@ -14,7 +14,7 @@ pub struct PhiChainExporter;
 impl Exporter for PhiChainExporter {
     fn export(world: &mut World) -> anyhow::Result<String> {
         let bpm_list = world.resource::<BpmList>().clone();
-        let mut chart = PhiChianChart::new(bpm_list, vec![]);
+        let mut chart = PhiChainChart::new(bpm_list, vec![]);
 
         let mut line_query = world.query_filtered::<&Children, With<Line>>();
         let mut note_query = world.query::<&Note>();

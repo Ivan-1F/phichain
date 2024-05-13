@@ -6,12 +6,12 @@ use crate::{
 };
 
 #[derive(Serialize, Deserialize)]
-pub struct PhiChianChart {
+pub struct PhiChainChart {
     pub bpm_list: BpmList,
     pub lines: Vec<LineWrapper>,
 }
 
-impl PhiChianChart {
+impl PhiChainChart {
     pub fn new(bpm_list: BpmList, lines: Vec<LineWrapper>) -> Self {
         Self {
             bpm_list,
