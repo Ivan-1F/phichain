@@ -51,6 +51,7 @@ use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use num::{FromPrimitive, Rational32};
+use project::LoadProjectEvent;
 
 fn main() {
     App::new()
@@ -86,6 +87,7 @@ fn main() {
                 }
             }
         })
+        .add_systems(Startup, load_project_from_args)
         .add_systems(
             Update,
             (
@@ -120,6 +122,12 @@ fn main() {
             timeline_setting_tab,
         )
         .run();
+}
+
+fn load_project_from_args(mut events: EventWriter<LoadProjectEvent>) {
+    if let Some(path) = std::env::args().nth(1) {
+        events.send(LoadProjectEvent(path.into()));
+    }
 }
 
 fn setup_egui_image_loader_system(mut contexts: bevy_egui::EguiContexts) {
