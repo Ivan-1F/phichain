@@ -2126,6 +2126,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "egui-toast"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d35b823ed2488732e085cb1abd1144f23f9546e5c89f4492047c123d27a1a826"
+dependencies = [
+ "egui",
+]
+
+[[package]]
 name = "egui_dock"
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3823,6 +3832,7 @@ dependencies = [
  "bevy_kira_audio",
  "bevy_mod_picking",
  "egui",
+ "egui-toast",
  "egui_dock",
  "egui_extras",
  "fastblur",

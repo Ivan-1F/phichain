@@ -4,9 +4,13 @@ use serde::{Deserialize, Serialize};
 
 use std::{fs::File, path::PathBuf};
 
-use crate::{loader::{phichain::PhiChainLoader, Loader}, serialzation::PhiChainChart};
+use crate::{
+    loader::{phichain::PhiChainLoader, Loader},
+    notification::{ToastsExt, ToastsStorage},
+    serialzation::PhiChainChart,
+};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct ProjectMeta {
     pub composer: String,
     pub charter: String,
@@ -38,6 +42,10 @@ impl ProjectPath {
         self.0.join("music.wav")
     }
 
+    pub fn illustration_path(&self) -> PathBuf {
+        self.0.join("illustration.png")
+    }
+
     pub fn meta_path(&self) -> PathBuf {
         self.0.join("meta.json")
     }
@@ -48,6 +56,9 @@ impl ProjectPath {
         }
         if !self.music_path().is_file() {
             bail!("music.wav is missing");
+        }
+        if !self.illustration_path().is_file() {
+            bail!("illustration.png is missing");
         }
         if !self.meta_path().is_file() {
             bail!("meta.json is missing");
@@ -89,7 +100,11 @@ impl Plugin for ProjectPlugin {
 #[derive(Event, Debug)]
 pub struct LoadProjectEvent(pub PathBuf);
 
-fn load_project_system(mut commands: Commands, mut events: EventReader<LoadProjectEvent>) {
+fn load_project_system(
+    mut commands: Commands,
+    mut events: EventReader<LoadProjectEvent>,
+    mut toasts: ResMut<ToastsStorage>,
+) {
     if events.len() > 1 {
         warn!("Mutiple projects are requested, ignoring previous ones");
     }
@@ -100,9 +115,9 @@ fn load_project_system(mut commands: Commands, mut events: EventReader<LoadProje
                 let file = File::open(project.root_dir.join("chart.json")).unwrap();
                 PhiChainLoader::load(file, &mut commands);
                 commands.insert_resource(project);
-            },
+            }
             Err(error) => {
-                error!("{:?}", error)
+                toasts.error(format!("Failed to open project: {:?}", error));
             }
         }
     }

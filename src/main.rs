@@ -7,6 +7,7 @@ mod hit_sound;
 mod home;
 mod loader;
 mod misc;
+mod notification;
 mod project;
 mod score;
 mod selection;
@@ -24,7 +25,9 @@ use crate::exporter::Exporter;
 use crate::home::HomePlugin;
 use crate::misc::MiscPlugin;
 use crate::misc::WorkingDirectory;
+use crate::notification::NotificationPlugin;
 use crate::project::project_loaded;
+use crate::project::LoadProjectEvent;
 use crate::project::ProjectPlugin;
 use crate::score::ScorePlugin;
 use crate::tab::game::GameCamera;
@@ -45,7 +48,6 @@ use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
-use project::LoadProjectEvent;
 
 fn main() {
     App::new()
@@ -67,6 +69,7 @@ fn main() {
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(AssetsPlugin)
         .add_plugins(TranslationPlugin)
+        .add_plugins(NotificationPlugin)
         .add_systems(Startup, setup_egui_image_loader_system)
         .add_systems(Startup, setup_egui_font_system)
         .add_systems(Startup, setup_plugin)
