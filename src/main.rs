@@ -3,8 +3,10 @@ mod audio;
 mod chart;
 mod constants;
 mod hit_sound;
+mod home;
 mod loader;
 mod misc;
+mod project;
 mod score;
 mod selection;
 mod tab;
@@ -17,9 +19,11 @@ use crate::chart::event::{LineEvent, LineEventKind};
 use crate::chart::line::Line;
 use crate::chart::line::{LineOpacity, LinePosition, LineRotation};
 use crate::chart::note::{Note, NoteKind};
+use crate::home::HomePlugin;
 use crate::loader::official::OfficialLoader;
 use crate::loader::Loader;
 use crate::misc::MiscPlugin;
+use crate::misc::WorkingDirectory;
 use crate::score::ScorePlugin;
 use crate::tab::game::GameCamera;
 use crate::tab::game::GameTabPlugin;
@@ -42,13 +46,14 @@ use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
 use constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
-use misc::WorkingDirectory;
 use num::{FromPrimitive, Rational32};
+use project::project_loaded;
 
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::BLACK))
         .insert_resource(UiState::new())
+        .add_plugins(HomePlugin)
         .add_plugins(DefaultPlugins)
         .add_plugins(TimingPlugin)
         .add_plugins(AudioPlugin)
@@ -68,7 +73,7 @@ fn main() {
         .add_systems(Startup, setup_plugin)
         .add_systems(Startup, setup_chart_plugin)
         .add_systems(Update, zoom_scale)
-        .add_systems(Update, ui_system)
+        .add_systems(Update, ui_system.run_if(project_loaded()))
         .add_systems(
             Update,
             (
