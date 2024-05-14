@@ -77,15 +77,7 @@ fn main() {
         .add_systems(Startup, setup_egui_font_system)
         .add_systems(Startup, setup_plugin)
         .add_systems(Update, ui_system.run_if(project_loaded()))
-        .add_systems(Update, |world: &mut World| {
-            // Debug
-            let event = world.resource::<ButtonInput<KeyCode>>();
-            if event.just_pressed(KeyCode::KeyE) {
-                if let Ok(chart) = PhiChainExporter::export(world) {
-                    let _ = std::fs::write("Chart.json", chart);
-                }
-            }
-        })
+        .add_systems(Update, debug_save_system.run_if(project_loaded()))
         .add_systems(Startup, load_project_from_args)
         .register_tab(
             EditorTab::Timeline,
@@ -104,6 +96,15 @@ fn main() {
             timeline_setting_tab,
         )
         .run();
+}
+
+fn debug_save_system(world: &mut World) {
+    let event = world.resource::<ButtonInput<KeyCode>>();
+    if event.just_pressed(KeyCode::KeyE) {
+        if let Ok(chart) = PhiChainExporter::export(world) {
+            let _ = std::fs::write("Chart.json", chart);
+        }
+    }
 }
 
 fn load_project_from_args(mut events: EventWriter<LoadProjectEvent>) {

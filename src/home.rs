@@ -65,6 +65,33 @@ fn ui_system(world: &mut World) {
             }
         });
 
+        egui::Grid::new("project_meta_grid")
+            .num_columns(2)
+            .spacing([40.0, 2.0])
+            .striped(true)
+            .show(ui, |ui| {
+                let mut form = world.resource_mut::<CreateProjectForm>();
+                ui.label("Name");
+                ui.text_edit_singleline(&mut form.meta.name);
+                ui.end_row();
+
+                ui.label("Level");
+                ui.text_edit_singleline(&mut form.meta.level);
+                ui.end_row();
+
+                ui.label("Composer");
+                ui.text_edit_singleline(&mut form.meta.composer);
+                ui.end_row();
+
+                ui.label("Charter");
+                ui.text_edit_singleline(&mut form.meta.charter);
+                ui.end_row();
+
+                ui.label("Illustrator");
+                ui.text_edit_singleline(&mut form.meta.illustrator);
+                ui.end_row();
+            });
+
         let form = world.resource_mut::<CreateProjectForm>();
         if ui.button("Create Project").clicked() {
             if form.music.is_none() {
@@ -153,7 +180,7 @@ fn handle_create_project_system(
         ) {
             Ok(_) => {
                 load_project_events.send(LoadProjectEvent(root_path.clone()));
-            },
+            }
             Err(error) => toasts.error(format!("{:?}", error)),
         }
     }
