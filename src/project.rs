@@ -1,17 +1,10 @@
 use anyhow::{bail, Context};
-use bevy::{
-    prelude::*,
-    render::{
-        render_asset::RenderAssetUsages,
-        render_resource::{Extent3d, TextureDimension, TextureFormat},
-    },
-};
+use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use std::{fs::File, path::PathBuf};
 
 use crate::{
-    constants::ILLUSTRATION_BLUR,
     loader::{phichain::PhiChainLoader, Loader},
     notification::{ToastsExt, ToastsStorage},
     serialzation::PhiChainChart,
@@ -122,28 +115,11 @@ fn load_project_system(
             Ok(project) => {
                 let file = File::open(project.root_dir.join("chart.json")).unwrap();
                 let illustraion_path = project.root_dir.join("illustration.png");
-                PhiChainLoader::load(file, &mut commands);
+                // TODO: maybe make this load_illustration(PathBuf, mut Commands) for better error handling
                 commands.add(|world: &mut World| {
-                    // TODO: error handling
-                    // TODO: move image loading to illsturation.rs, SpawnIllustrationEvent(PathBuf)
-                    let mut images = world.resource_mut::<Assets<Image>>();
-                    let image = image::open(illustraion_path)
-                        .unwrap()
-                        .blur(ILLUSTRATION_BLUR);
-                    let rgb8 = image.as_rgba8().unwrap();
-                    let handle = images.add(Image::new(
-                        Extent3d {
-                            width: image.width(),
-                            height: image.height(),
-                            depth_or_array_layers: 1,
-                        },
-                        TextureDimension::D2,
-                        rgb8.clone().into_vec(),
-                        TextureFormat::Rgba8UnormSrgb,
-                        RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
-                    ));
-                    world.send_event(SpawnIllustrationEvent(handle));
+                    world.send_event(SpawnIllustrationEvent(illustraion_path));
                 });
+                PhiChainLoader::load(file, &mut commands);
                 commands.insert_resource(project);
             }
             Err(error) => {
