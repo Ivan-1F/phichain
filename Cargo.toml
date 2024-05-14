@@ -66,8 +66,6 @@ bevy-inspector-egui = "0.24.0"
 url = "2.5.0"
 num = { version = "0.4.3", features = ["serde"] }
 serde_yaml = "0.9.34"
-
-fastblur = "0.1.1"
 rfd = "0.14.1"
 futures-lite = "2.3.0"
 anyhow = "1.0.83"
