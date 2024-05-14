@@ -10,7 +10,7 @@ use crate::{
     serialzation::PhiChainChart,
 };
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ProjectMeta {
     pub composer: String,
     pub charter: String,
@@ -123,4 +123,21 @@ fn load_project_system(
     }
 
     events.clear();
+}
+
+pub fn create_project(
+    root_path: PathBuf,
+    music_path: PathBuf,
+    illustration_path: PathBuf,
+    project_meta: ProjectMeta,
+) -> anyhow::Result<()> {
+    let project_path = ProjectPath(root_path);
+    std::fs::copy(music_path, project_path.music_path()).context("Failed to copy music file")?;
+    std::fs::copy(illustration_path, project_path.illustration_path()).context("Failed to copy illustration file")?;
+    let meta_string = serde_json::to_string_pretty(&project_meta).unwrap();
+    std::fs::write(project_path.meta_path(), meta_string).context("Failed to write meta")?;
+    let chart_string = serde_json::to_string_pretty(&PhiChainChart::default()).unwrap();
+    std::fs::write(project_path.chart_path(), chart_string).context("Failed to write meta")?;
+
+    Ok(())
 }

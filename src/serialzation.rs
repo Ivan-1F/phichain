@@ -9,7 +9,7 @@ use crate::{
     timing::BpmList,
 };
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize)]
 pub struct PhiChainChart {
     pub bpm_list: BpmList,
     pub lines: Vec<LineWrapper>,
@@ -18,6 +18,15 @@ pub struct PhiChainChart {
 impl PhiChainChart {
     pub fn new(bpm_list: BpmList, lines: Vec<LineWrapper>) -> Self {
         Self { bpm_list, lines }
+    }
+}
+
+impl Default for PhiChainChart {
+    fn default() -> Self {
+        Self {
+            bpm_list: Default::default(),
+            lines: vec![Default::default()],
+        }
     }
 }
 
