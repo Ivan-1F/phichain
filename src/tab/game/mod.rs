@@ -1,6 +1,6 @@
-mod core;
-mod illustration;
-mod ui;
+pub mod core;
+pub mod illustration;
+pub mod ui;
 
 use bevy::{prelude::*, render::camera::Viewport};
 

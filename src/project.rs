@@ -1,13 +1,21 @@
 use anyhow::{bail, Context};
-use bevy::prelude::*;
+use bevy::{
+    prelude::*,
+    render::{
+        render_asset::RenderAssetUsages,
+        render_resource::{Extent3d, TextureDimension, TextureFormat},
+    },
+};
 use serde::{Deserialize, Serialize};
 
 use std::{fs::File, path::PathBuf};
 
 use crate::{
+    constants::ILLUSTRATION_BLUR,
     loader::{phichain::PhiChainLoader, Loader},
     notification::{ToastsExt, ToastsStorage},
     serialzation::PhiChainChart,
+    tab::game::illustration::SpawnIllustrationEvent,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -113,7 +121,29 @@ fn load_project_system(
         match Project::load(event.0.clone()) {
             Ok(project) => {
                 let file = File::open(project.root_dir.join("chart.json")).unwrap();
+                let illustraion_path = project.root_dir.join("illustration.png");
                 PhiChainLoader::load(file, &mut commands);
+                commands.add(|world: &mut World| {
+                    // TODO: error handling
+                    // TODO: move image loading to illsturation.rs, SpawnIllustrationEvent(PathBuf)
+                    let mut images = world.resource_mut::<Assets<Image>>();
+                    let image = image::open(illustraion_path)
+                        .unwrap()
+                        .blur(ILLUSTRATION_BLUR);
+                    let rgb8 = image.as_rgba8().unwrap();
+                    let handle = images.add(Image::new(
+                        Extent3d {
+                            width: image.width(),
+                            height: image.height(),
+                            depth_or_array_layers: 1,
+                        },
+                        TextureDimension::D2,
+                        rgb8.clone().into_vec(),
+                        TextureFormat::Rgba8UnormSrgb,
+                        RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
+                    ));
+                    world.send_event(SpawnIllustrationEvent(handle));
+                });
                 commands.insert_resource(project);
             }
             Err(error) => {
@@ -133,7 +163,8 @@ pub fn create_project(
 ) -> anyhow::Result<()> {
     let project_path = ProjectPath(root_path);
     std::fs::copy(music_path, project_path.music_path()).context("Failed to copy music file")?;
-    std::fs::copy(illustration_path, project_path.illustration_path()).context("Failed to copy illustration file")?;
+    std::fs::copy(illustration_path, project_path.illustration_path())
+        .context("Failed to copy illustration file")?;
     let meta_string = serde_json::to_string_pretty(&project_meta).unwrap();
     std::fs::write(project_path.meta_path(), meta_string).context("Failed to write meta")?;
     let chart_string = serde_json::to_string_pretty(&PhiChainChart::default()).unwrap();
