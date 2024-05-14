@@ -15,6 +15,7 @@ mod serialzation;
 mod tab;
 mod timing;
 mod translation;
+mod file;
 
 use crate::assets::AssetsPlugin;
 use crate::audio::AudioPlugin;
@@ -48,6 +49,7 @@ use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
+use file::FilePickingPlugin;
 
 fn main() {
     App::new()
@@ -70,6 +72,7 @@ fn main() {
         .add_plugins(AssetsPlugin)
         .add_plugins(TranslationPlugin)
         .add_plugins(NotificationPlugin)
+        .add_plugins(FilePickingPlugin)
         .add_systems(Startup, setup_egui_image_loader_system)
         .add_systems(Startup, setup_egui_font_system)
         .add_systems(Startup, setup_plugin)

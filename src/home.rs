@@ -1,14 +1,11 @@
-use std::path::PathBuf;
-
-use bevy::{
-    prelude::*,
-    tasks::{AsyncComputeTaskPool, Task},
-};
+use bevy::prelude::*;
 use bevy_egui::EguiContext;
-use futures_lite::future;
 use rfd::FileDialog;
 
-use crate::project::{project_not_loaded, LoadProjectEvent};
+use crate::{
+    file::{pick_folder, PickingEvent, PickingKind},
+    project::{project_not_loaded, LoadProjectEvent},
+};
 
 pub struct HomePlugin;
 
@@ -19,9 +16,6 @@ impl Plugin for HomePlugin {
     }
 }
 
-#[derive(Component)]
-struct SelectedFolder(Task<Option<PathBuf>>);
-
 fn ui_system(world: &mut World) {
     let egui_context = world.query::<&mut EguiContext>().single_mut(world);
     let mut egui_context = egui_context.clone();
@@ -31,20 +25,21 @@ fn ui_system(world: &mut World) {
         ui.heading(format!("phichain v{}", env!("CARGO_PKG_VERSION")));
 
         if ui.button("Load Project").clicked() {
-            let thread_pool = AsyncComputeTaskPool::get();
-            let task = thread_pool.spawn(async move { FileDialog::new().pick_folder() });
-            world.spawn(SelectedFolder(task));
+            pick_folder(world, PickingKind::OpenProject, FileDialog::new());
         }
     });
 }
 
-fn load_project_system(mut commands: Commands, mut tasks: Query<(Entity, &mut SelectedFolder)>, mut events: EventWriter<LoadProjectEvent>) {
-    for (entity, mut selected_folder) in &mut tasks {
-        if let Some(result) = future::block_on(future::poll_once(&mut selected_folder.0)) {
-            commands.entity(entity).despawn();
-            if let Some(root_dir) = result {
-                events.send(LoadProjectEvent(root_dir));
-            }
+fn load_project_system(
+    mut picking_events: EventReader<PickingEvent>,
+    mut events: EventWriter<LoadProjectEvent>,
+) {
+    for PickingEvent { path, kind } in picking_events.read() {
+        if !matches!(kind, PickingKind::OpenProject) {
+            continue;
+        }
+        if let Some(root_dir) = path {
+            events.send(LoadProjectEvent(root_dir.to_path_buf()));
         }
     }
 }
