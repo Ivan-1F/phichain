@@ -41,6 +41,18 @@ pub fn timeline_ui_system(
     ui.painter().rect_filled(
         egui::Rect::from_center_size(
             egui::Pos2::new(
+                viewport.note_timeline_viewport().max.x,
+                viewport.0.center().y,
+            ),
+            egui::Vec2::new(2.0, viewport.0.height()),
+        ),
+        0.0,
+        Color32::WHITE,
+    );
+
+    ui.painter().rect_filled(
+        egui::Rect::from_center_size(
+            egui::Pos2::new(
                 viewport.0.width() / 2.0 + viewport.0.min.x,
                 viewport.0.height() * INDICATOR_POSITION,
             ),
