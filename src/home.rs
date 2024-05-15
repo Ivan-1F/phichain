@@ -132,7 +132,7 @@ fn handle_select_illustration_system(
         if !matches!(kind, PickingKind::SelectIllustration) {
             continue;
         }
-        form.illustration = path.clone();
+        form.illustration.clone_from(path);
     }
 }
 
@@ -144,7 +144,7 @@ fn handle_select_music_system(
         if !matches!(kind, PickingKind::SelectMusic) {
             continue;
         }
-        form.music = path.clone();
+        form.music.clone_from(path);
     }
 }
 

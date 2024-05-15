@@ -12,10 +12,10 @@ impl Plugin for TranslationPlugin {
 }
 
 fn load_translations(mut storage: ResMut<TranslationStorage>) {
-    let file = std::fs::File::open("lang/meta/languages.json")
-        .expect(&format!("Failed to load translations"));
+    let file =
+        std::fs::File::open("lang/meta/languages.json").expect("Failed to load translations");
     let languages: Vec<String> =
-        serde_json::from_reader(file).expect(&format!("Failed to load translations"));
+        serde_json::from_reader(file).expect("Failed to load translations");
 
     for language in languages {
         let mapping = load_translation(&language);
@@ -52,9 +52,9 @@ fn flatten(prefix: Option<&str>, value: &Value, result: &mut HashMap<String, Str
 
 fn load_translation(lang: &String) -> HashMap<String, String> {
     let file = std::fs::File::open(format!("lang/{}.yml", lang))
-        .expect(&format!("Failed to load translation: {}", lang));
-    let value: Value =
-        serde_yaml::from_reader(file).expect(&format!("Failed to load translation: {}", lang));
+        .unwrap_or_else(|_| panic!("Failed to load translation: {}", lang));
+    let value: Value = serde_yaml::from_reader(file)
+        .unwrap_or_else(|_| panic!("Failed to load translation: {}", lang));
 
     let mut mapping: HashMap<String, String> = HashMap::new();
     flatten(None, &value, &mut mapping);

@@ -138,7 +138,7 @@ impl Loader for OfficialLoader {
                                 kind,
                                 above,
                                 t(note.time),
-                                note.x / 18.0 * CANVAS_WIDTH as f32,
+                                note.x / 18.0 * CANVAS_WIDTH,
                             )))
                             .id();
                         note_ids.push(note_id);
@@ -197,9 +197,8 @@ impl Loader for OfficialLoader {
                 })
                 .id();
 
-            match first_line_id {
-                None => first_line_id = Some(id),
-                _ => {}
+            if first_line_id.is_none() {
+                first_line_id = Some(id)
             }
         }
         commands.insert_resource(SelectedLine(first_line_id.unwrap()));

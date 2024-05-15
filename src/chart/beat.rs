@@ -25,15 +25,15 @@ impl Beat {
     pub const ONE: Self = Beat(1, Rational32::ZERO);
 }
 
-impl Into<f32> for Beat {
-    fn into(self) -> f32 {
-        self.0 as f32 + *self.1.numer() as f32 / *self.1.denom() as f32
+impl From<Beat> for f32 {
+    fn from(val: Beat) -> Self {
+        val.0 as f32 + *val.1.numer() as f32 / *val.1.denom() as f32
     }
 }
 
-impl Into<Rational32> for Beat {
-    fn into(self) -> Rational32 {
-        Rational32::new(self.0 * self.1.denom() + self.1.numer(), self.denom())
+impl From<Beat> for Rational32 {
+    fn from(val: Beat) -> Self {
+        Rational32::new(val.0 * val.1.denom() + val.1.numer(), val.denom())
     }
 }
 
@@ -96,16 +96,16 @@ impl PartialEq for Beat {
 impl Eq for Beat {}
 
 impl PartialOrd for Beat {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        match self.0.partial_cmp(&other.0) {
-            Some(core::cmp::Ordering::Equal) => self.1.partial_cmp(&other.1),
-            ord => ord,
-        }
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
 impl Ord for Beat {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap()
+        match self.0.cmp(&other.0) {
+            Ordering::Equal => self.1.cmp(&other.1),
+            ord => ord,
+        }
     }
 }

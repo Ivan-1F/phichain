@@ -33,7 +33,7 @@ impl TabRegistry {
         if let Some(tab) = self.0.get_mut(tab) {
             tab.run(world, ui);
         } else {
-            ui.colored_label(egui::Color32::RED, format!("Tab does not exist."));
+            ui.colored_label(egui::Color32::RED, "Tab does not exist.".to_string());
         }
     }
 }

@@ -85,7 +85,6 @@ fn setup_combo_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
                                     font: asset_server.load("font/phigros.ttf"),
                                     font_size: 20.0,
                                     color: Color::WHITE,
-                                    ..default()
                                 },
                             ),
                             ..default()
@@ -101,7 +100,6 @@ fn setup_combo_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
                                     font: asset_server.load("font/phigros.ttf"),
                                     font_size: 10.0,
                                     color: Color::WHITE,
-                                    ..default()
                                 },
                             ),
                             ..default()
@@ -138,7 +136,6 @@ fn spawn_score_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
                             font: asset_server.load("font/phigros.ttf"),
                             font_size: 10.0,
                             color: Color::WHITE,
-                            ..default()
                         },
                     ),
                     ..default()

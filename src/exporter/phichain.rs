@@ -25,9 +25,9 @@ impl Exporter for PhiChainExporter {
             let mut events: Vec<LineEvent> = vec![];
             for child in children.iter() {
                 if let Ok(note) = note_query.get(world, *child) {
-                    notes.push(note.clone());
+                    notes.push(*note);
                 } else if let Ok(event) = event_query.get(world, *child) {
-                    events.push(event.clone());
+                    events.push(*event);
                 }
             }
             chart.lines.push(LineWrapper(notes, events));

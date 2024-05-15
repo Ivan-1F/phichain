@@ -242,12 +242,12 @@ struct SpeedEvent {
 
 impl SpeedEvent {
     fn new(start_time: f32, end_time: f32, start_value: f32, end_value: f32) -> Self {
-        return Self {
+        Self {
             start_time,
             end_time,
             start_value,
             end_value,
-        };
+        }
     }
 }
 
@@ -257,16 +257,13 @@ fn calculate_speed_events_system(
     bpm_list: Res<BpmList>,
 ) {
     for (event, entity) in &query {
-        match event.kind {
-            LineEventKind::Speed => {
-                commands.entity(entity).insert(SpeedEvent::new(
-                    bpm_list.time_at(event.start_beat),
-                    bpm_list.time_at(event.end_beat),
-                    event.start,
-                    event.end,
-                ));
-            }
-            _ => {}
+        if let LineEventKind::Speed = event.kind {
+            commands.entity(entity).insert(SpeedEvent::new(
+                bpm_list.time_at(event.start_beat),
+                bpm_list.time_at(event.end_beat),
+                event.start,
+                event.end,
+            ));
         }
     }
 }

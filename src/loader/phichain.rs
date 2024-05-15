@@ -31,9 +31,8 @@ impl Loader for PhiChainLoader {
                 })
                 .id();
 
-            match first_line_id {
-                None => first_line_id = Some(id),
-                _ => {}
+            if first_line_id.is_none() {
+                first_line_id = Some(id)
             }
         }
 

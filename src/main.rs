@@ -71,7 +71,7 @@ fn main() {
         .add_plugins(MiscPlugin)
         .add_plugins(TabPlugin)
         .add_plugins(EditingPlugin)
-        .add_plugins(FrameTimeDiagnosticsPlugin::default())
+        .add_plugins(FrameTimeDiagnosticsPlugin)
         .add_plugins(AssetsPlugin)
         .add_plugins(TranslationPlugin)
         .add_plugins(NotificationPlugin)

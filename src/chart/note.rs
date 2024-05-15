@@ -21,12 +21,12 @@ pub struct Note {
 
 impl Note {
     pub fn new(kind: NoteKind, above: bool, beat: Beat, x: f32) -> Self {
-        return Self {
+        Self {
             kind,
             above,
             beat,
             x,
-        };
+        }
     }
 }
 
