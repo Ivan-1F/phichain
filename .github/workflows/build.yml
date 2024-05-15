@@ -38,6 +38,7 @@ jobs:
         with:
           toolchain: stable
           targets: ${{ matrix.target }}
+          components: rustfmt, clippy
 
       - name: Cache cargo files
         uses: actions/cache@v4
@@ -101,6 +102,15 @@ jobs:
           file: Cargo.toml
           key: package.version
           value: ${{ steps.full_version.outputs.phichain_version }}
+
+      - name: Run rustfmt check
+        run: cargo fmt --all -- --check
+
+      - name: Run clippy check
+        run: cargo clippy --all-features --all-targets -- -D warnings
+
+      - name: Test with cargo test
+        run: cargo test
 
       - name: Build with cargo
         run: |
