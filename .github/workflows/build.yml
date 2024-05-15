@@ -38,7 +38,6 @@ jobs:
         with:
           toolchain: stable
           targets: ${{ matrix.target }}
-          components: rustfmt, clippy
 
       - name: Cache cargo files
         uses: actions/cache@v4

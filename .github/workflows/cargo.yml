@@ -14,6 +14,16 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
+  clippy:
+    uses: ./.github/workflows/clippy.yml
+    secrets: inherit
+  format:
+    uses: ./.github/workflows/format.yml
+    secrets: inherit
   build:
+    needs: [test, clippy, format]
     uses: ./.github/workflows/build.yml
     secrets: inherit
