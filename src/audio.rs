@@ -1,7 +1,12 @@
+use std::{io::Cursor, path::PathBuf};
+
 use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
 
-use crate::{project::project_loaded, timing::{ChartTime, PauseEvent, Paused, ResumeEvent, SeekEvent}};
+use crate::{
+    project::project_loaded,
+    timing::{ChartTime, PauseEvent, Paused, ResumeEvent, SeekEvent},
+};
 
 #[derive(Resource)]
 struct InstanceHandle(Handle<AudioInstance>);
@@ -11,18 +16,48 @@ pub struct AudioPlugin;
 impl Plugin for AudioPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(bevy_kira_audio::AudioPlugin)
-            .add_systems(Startup, setup_audio_system)
-            .add_systems(Update, handle_pause_system.run_if(project_loaded()))
-            .add_systems(Update, handle_resume_system.run_if(project_loaded()))
-            .add_systems(Update, handle_seek_system.run_if(project_loaded()))
-            .add_systems(Update, update_time_system.run_if(project_loaded()));
+            .add_event::<SpawnAudioEvent>()
+            .add_systems(
+                Update,
+                (
+                    handle_pause_system,
+                    handle_resume_system,
+                    handle_seek_system,
+                    update_time_system,
+                )
+                    .run_if(project_loaded().and_then(resource_exists::<InstanceHandle>)),
+            )
+            .add_systems(Update, spawn_audio_system);
     }
 }
 
-/// Setup music
-fn setup_audio_system(mut commands: Commands, asset_server: Res<AssetServer>, audio: Res<Audio>) {
-    let handle = audio.play(asset_server.load("audio/audio.mp3")).paused().handle();
-    commands.insert_resource(InstanceHandle(handle));
+#[derive(Event, Debug)]
+pub struct SpawnAudioEvent(pub PathBuf);
+
+fn spawn_audio_system(
+    mut commands: Commands,
+    mut events: EventReader<SpawnAudioEvent>,
+    mut audios: ResMut<Assets<AudioSource>>,
+    audio: Res<Audio>,
+) {
+    if events.len() > 1 {
+        warn!("Mutiple illustration are requested, ignoring previous ones");
+    }
+
+    // TODO: error handling
+    if let Some(event) = events.read().last() {
+        let sound_data = std::fs::read(event.0.clone()).unwrap();
+        let source = AudioSource {
+            sound: StaticSoundData::from_cursor(
+                Cursor::new(sound_data),
+                StaticSoundSettings::default(),
+            )
+            .unwrap(),
+        };
+        let handle = audios.add(source);
+        let instance_handle = audio.play(handle).paused().handle();
+        commands.insert_resource(InstanceHandle(instance_handle));
+    }
 }
 
 /// When receiving [PauseEvent], pause the audio instance

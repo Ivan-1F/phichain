@@ -5,10 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::{fs::File, path::PathBuf};
 
 use crate::{
-    loader::{phichain::PhiChainLoader, Loader},
-    notification::{ToastsExt, ToastsStorage},
-    serialzation::PhiChainChart,
-    tab::game::illustration::SpawnIllustrationEvent,
+    audio::SpawnAudioEvent, loader::{phichain::PhiChainLoader, Loader}, notification::{ToastsExt, ToastsStorage}, serialzation::PhiChainChart, tab::game::illustration::SpawnIllustrationEvent
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -115,9 +112,14 @@ fn load_project_system(
             Ok(project) => {
                 let file = File::open(project.root_dir.join("chart.json")).unwrap();
                 let illustraion_path = project.root_dir.join("illustration.png");
+                let audio_path = project.root_dir.join("music.wav");
                 // TODO: maybe make this load_illustration(PathBuf, mut Commands) for better error handling
                 commands.add(|world: &mut World| {
                     world.send_event(SpawnIllustrationEvent(illustraion_path));
+                });
+                // TODO: maybe make this load_music(PathBuf, mut Commands) for better error handling
+                commands.add(|world: &mut World| {
+                    world.send_event(SpawnAudioEvent(audio_path));
                 });
                 PhiChainLoader::load(file, &mut commands);
                 commands.insert_resource(project);
