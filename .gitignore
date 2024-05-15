@@ -6,3 +6,6 @@ assets/*
 !assets/font/
 
 .DS_Store
+
+# IDE
+.idea

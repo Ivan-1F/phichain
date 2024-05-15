@@ -34,6 +34,7 @@ pub fn timeline_ui_system(
     working_dir: Res<WorkingDirectory>,
     mut select_events: EventWriter<SelectNoteEvent>,
     timeline: Timeline,
+    timeline_settings: Res<TimelineSettings>,
 ) {
     let selected_line = selected_line_query.0;
     let viewport = timeline_viewport;
@@ -53,7 +54,7 @@ pub fn timeline_ui_system(
     ui.painter().rect_filled(
         egui::Rect::from_center_size(
             egui::Pos2::new(
-                viewport.0.width() / 2.0 + viewport.0.min.x,
+                viewport.0.center().x,
                 viewport.0.height() * INDICATOR_POSITION,
             ),
             egui::Vec2::new(viewport.0.width(), 2.0),
@@ -141,24 +142,34 @@ pub fn timeline_ui_system(
 
         let response = ui.put(
             egui::Rect::from_center_size(center, size),
-            egui::Image::new(
-                Url::from_file_path(image_dir.join(image))
-                    .unwrap()
-                    .as_str(),
-            )
-            .maintain_aspect_ratio(false)
-            .fit_to_exact_size(size)
-            .tint(if selected.is_some() {
-                Color32::LIGHT_GREEN
-            } else {
-                Color32::WHITE
-            })
-            .sense(egui::Sense::click()),
+            egui::Image::new(Url::from_file_path(image_dir.join(image)).unwrap().as_str())
+                .maintain_aspect_ratio(false)
+                .fit_to_exact_size(size)
+                .tint(if selected.is_some() {
+                    Color32::LIGHT_GREEN
+                } else {
+                    Color32::WHITE
+                })
+                .sense(egui::Sense::click()),
         );
 
         if response.clicked() {
             select_events.send(SelectNoteEvent(entity));
         }
+    }
+
+    for percent in timeline_settings.lane_percents() {
+        ui.painter().rect_filled(
+            egui::Rect::from_center_size(
+                egui::Pos2::new(
+                    viewport.note_timeline_viewport().width() * percent,
+                    viewport.0.center().y,
+                ),
+                egui::Vec2::new(2.0, viewport.0.height()),
+            ),
+            0.0,
+            Color32::from_rgba_unmultiplied(255, 255, 255, 40),
+        );
     }
 
     for beat_time in timeline.primary_beat_times() {
@@ -219,6 +230,7 @@ impl TimelineViewport {
 pub struct TimelineSettings {
     pub zoom: f32,
     pub density: u32,
+    pub lanes: u32,
 }
 
 impl Default for TimelineSettings {
@@ -226,7 +238,19 @@ impl Default for TimelineSettings {
         Self {
             zoom: 2.0,
             density: 4,
+            lanes: 11,
         }
+    }
+}
+
+impl TimelineSettings {
+    pub fn lane_percents(&self) -> Vec<f32> {
+        let lane_width = 1.0 / (self.lanes + 1) as f32;
+        std::iter::repeat(0)
+            .take(self.lanes as usize)
+            .enumerate()
+            .map(|(i, _)| (i + 1) as f32 * lane_width)
+            .collect()
     }
 }
 
@@ -254,9 +278,10 @@ impl<'w> Timeline<'w> {
     pub fn secondary_beat_times(&self) -> Vec<f32> {
         let audio_duration = 240.0; // TODO: replace with actual audio duration
 
-        let interval = self
-            .bpm_list
-            .time_at(Beat::new(0, Rational32::new(1, self.timeline_settings.density as i32)));
+        let interval = self.bpm_list.time_at(Beat::new(
+            0,
+            Rational32::new(1, self.timeline_settings.density as i32),
+        ));
 
         std::iter::repeat(0)
             .take((audio_duration / interval).round() as usize)
@@ -266,12 +291,15 @@ impl<'w> Timeline<'w> {
     }
 
     pub fn time_to_y(&self, time: f32) -> f32 {
-        (self.current_time.0 - time) * BASE_ZOOM * self.timeline_settings.zoom + self.viewport.0.height() * INDICATOR_POSITION
+        (self.current_time.0 - time) * BASE_ZOOM * self.timeline_settings.zoom
+            + self.viewport.0.height() * INDICATOR_POSITION
     }
 
     #[allow(dead_code)]
     pub fn y_to_time(&self, y: f32) -> f32 {
-        self.current_time.0 - (y - self.viewport.0.height() * INDICATOR_POSITION) / (BASE_ZOOM * self.timeline_settings.zoom)
+        self.current_time.0
+            - (y - self.viewport.0.height() * INDICATOR_POSITION)
+                / (BASE_ZOOM * self.timeline_settings.zoom)
     }
 
     pub fn duration_to_height(&self, duration: f32) -> f32 {

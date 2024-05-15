@@ -19,3 +19,4 @@ tab:
     title: 时间线设置
     zoom: 时间线缩放
     density: 节拍线密度
+    lane: 垂直参考线
