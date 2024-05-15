@@ -2,7 +2,9 @@ mod assets;
 mod audio;
 mod chart;
 mod constants;
+mod editing;
 mod exporter;
+mod file;
 mod hit_sound;
 mod home;
 mod loader;
@@ -15,14 +17,15 @@ mod serialzation;
 mod tab;
 mod timing;
 mod translation;
-mod file;
 
 use crate::assets::AssetsPlugin;
 use crate::audio::AudioPlugin;
 use crate::chart::event::LineEvent;
 use crate::chart::note::Note;
+use crate::editing::EditingPlugin;
 use crate::exporter::phichain::PhiChainExporter;
 use crate::exporter::Exporter;
+use crate::file::FilePickingPlugin;
 use crate::home::HomePlugin;
 use crate::misc::MiscPlugin;
 use crate::misc::WorkingDirectory;
@@ -49,7 +52,6 @@ use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
-use file::FilePickingPlugin;
 
 fn main() {
     App::new()
@@ -68,6 +70,7 @@ fn main() {
         .add_plugins(crate::selection::SelectionPlugin)
         .add_plugins(MiscPlugin)
         .add_plugins(TabPlugin)
+        .add_plugins(EditingPlugin)
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(AssetsPlugin)
         .add_plugins(TranslationPlugin)

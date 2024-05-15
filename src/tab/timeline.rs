@@ -1,5 +1,6 @@
 use bevy::{ecs::system::SystemParam, prelude::*};
 use egui::{Color32, Ui};
+use num::Rational32;
 use url::Url;
 
 use crate::{
@@ -205,14 +206,14 @@ impl TimelineViewport {
 #[derive(Resource)]
 pub struct TimelineSettings {
     pub zoom: f32,
-    pub density: f32,
+    pub density: u32,
 }
 
 impl Default for TimelineSettings {
     fn default() -> Self {
         Self {
             zoom: 2.0,
-            density: 4.0,
+            density: 4,
         }
     }
 }
@@ -243,7 +244,7 @@ impl<'w> Timeline<'w> {
 
         let interval = self
             .bpm_list
-            .time_at(Beat::from(1.0 / self.timeline_settings.density));
+            .time_at(Beat::new(0, Rational32::new(1, self.timeline_settings.density as i32)));
 
         std::iter::repeat(0)
             .take((audio_duration / interval).round() as usize)

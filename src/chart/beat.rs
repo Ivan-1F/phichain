@@ -1,10 +1,24 @@
-use std::{cmp::Ordering, ops::{Add, Sub}};
+use std::{
+    cmp::Ordering,
+    ops::{Add, Sub},
+};
 
 use num::{FromPrimitive, Rational32};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Beat(i32, Rational32);
+
+impl Beat {
+    pub fn attach_to_beat_line(&mut self, density: u32) {
+        let original_fraction = self.1;
+        let target_denominator = density as i32;
+        let closest_numerator = (original_fraction.numer() * target_denominator
+            + original_fraction.denom() / 2)
+            / original_fraction.denom();
+        self.1 = Rational32::new(closest_numerator, target_denominator);
+    }
+}
 
 impl Beat {
     pub const ZERO: Self = Beat(0, Rational32::ZERO);
@@ -36,7 +50,7 @@ impl From<Rational32> for Beat {
 }
 
 impl Beat {
-    pub fn new(whole: i32, ratio: Rational32) -> Self{
+    pub fn new(whole: i32, ratio: Rational32) -> Self {
         Self(whole, ratio)
     }
 
@@ -86,7 +100,7 @@ impl PartialOrd for Beat {
         match self.0.partial_cmp(&other.0) {
             Some(core::cmp::Ordering::Equal) => self.1.partial_cmp(&other.1),
             ord => ord,
-        }        
+        }
     }
 }
 
