@@ -4,7 +4,10 @@ use crate::{
         event::{LineEvent, LineEventBundle, LineEventKind},
         line::LineBundle,
         note::NoteBundle,
-    }, constants::{CANVAS_HEIGHT, CANVAS_WIDTH}, selection::SelectedLine, timing::{BpmList, BpmPoint}
+    },
+    constants::{CANVAS_HEIGHT, CANVAS_WIDTH},
+    selection::SelectedLine,
+    timing::{BpmList, BpmPoint},
 };
 
 use super::Loader;
@@ -101,8 +104,14 @@ impl Loader for OfficialLoader {
     fn load(file: std::fs::File, commands: &mut Commands) {
         let chart: Chart = serde_json::from_reader(file).expect("Failed to load chart");
 
-        let first_line = chart.lines.first().expect("The chart should has at least one line");
-        commands.insert_resource(BpmList::new(vec![BpmPoint::new(Beat::ZERO, first_line.bpm)]));
+        let first_line = chart
+            .lines
+            .first()
+            .expect("The chart should has at least one line");
+        commands.insert_resource(BpmList::new(vec![BpmPoint::new(
+            Beat::ZERO,
+            first_line.bpm,
+        )]));
 
         let mut first_line_id: Option<Entity> = None;
         for line in chart.lines.iter() {

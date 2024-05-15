@@ -1,6 +1,6 @@
 pub mod game;
-pub mod timeline;
 pub mod inspector;
+pub mod timeline;
 pub mod timeline_setting;
 
 use bevy::{prelude::*, utils::HashMap};

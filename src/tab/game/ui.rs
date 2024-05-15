@@ -13,9 +13,15 @@ impl Plugin for GameUiPlugin {
             .add_systems(Startup, setup_combo_ui_system)
             .add_systems(Update, update_combo_system.run_if(project_loaded()))
             .add_systems(Update, hide_combo_below_3_system.run_if(project_loaded()))
-            .add_systems(Update, update_combo_text_scale_system.run_if(project_loaded()))
+            .add_systems(
+                Update,
+                update_combo_text_scale_system.run_if(project_loaded()),
+            )
             .add_systems(Startup, spawn_score_ui_system)
-            .add_systems(Update, update_score_text_scale_system.run_if(project_loaded()))
+            .add_systems(
+                Update,
+                update_score_text_scale_system.run_if(project_loaded()),
+            )
             .add_systems(Update, update_score_system.run_if(project_loaded()));
     }
 }

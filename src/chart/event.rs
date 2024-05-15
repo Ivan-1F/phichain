@@ -47,8 +47,6 @@ pub struct LineEventBundle {
 
 impl LineEventBundle {
     pub fn new(event: LineEvent) -> Self {
-        Self {
-            event,
-        }
+        Self { event }
     }
 }

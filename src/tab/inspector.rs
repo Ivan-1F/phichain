@@ -3,14 +3,18 @@ use egui::Ui;
 use num::Rational32;
 
 use crate::{
-    chart::{beat::Beat, note::{Note, NoteKind}},
-    selection::Selected, translation::Translator,
+    chart::{
+        beat::Beat,
+        note::{Note, NoteKind},
+    },
+    selection::Selected,
+    translation::Translator,
 };
 
 pub fn inspector_ui_system(
     In(ui): In<&mut Ui>,
     mut selected_notes: Query<&mut Note, With<Selected>>,
-    translator: Translator
+    translator: Translator,
 ) {
     let mut selected_notes: Vec<_> = selected_notes.iter_mut().collect();
     if selected_notes.len() == 1 {

@@ -122,7 +122,9 @@ impl BpmList {
     }
 
     pub fn time_at(&self, beat: Beat) -> f32 {
-        let point = self.0.iter()
+        let point = self
+            .0
+            .iter()
             .take_while(|p| p.beat.value() < beat.value())
             .last()
             .or_else(|| self.0.first())
@@ -132,7 +134,9 @@ impl BpmList {
     }
 
     pub fn beat_at(&self, time: f32) -> Beat {
-        let point = self.0.iter()
+        let point = self
+            .0
+            .iter()
             .take_while(|p| p.time <= time)
             .last()
             .expect("No bpm points available");

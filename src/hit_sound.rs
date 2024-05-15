@@ -33,7 +33,12 @@ fn add_marker_system(
     }
 }
 
-fn play_hit_sound_system(mut commands: Commands, query: Query<(Entity, &PlayHitSound)>, audio: Res<Audio>, asset_server: Res<AssetServer>) {
+fn play_hit_sound_system(
+    mut commands: Commands,
+    query: Query<(Entity, &PlayHitSound)>,
+    audio: Res<Audio>,
+    asset_server: Res<AssetServer>,
+) {
     for (entity, hit_sound) in &query {
         commands.entity(entity).remove::<PlayHitSound>();
         commands.entity(entity).insert(PlayedHitSound);

@@ -4,7 +4,9 @@ pub struct MiscPlugin;
 
 impl Plugin for MiscPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(WorkingDirectory(std::env::current_dir().expect("Failed to locate working directory")));
+        app.insert_resource(WorkingDirectory(
+            std::env::current_dir().expect("Failed to locate working directory"),
+        ));
     }
 }
 

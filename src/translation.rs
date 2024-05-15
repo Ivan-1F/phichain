@@ -35,7 +35,7 @@ fn flatten(prefix: Option<&str>, value: &Value, result: &mut HashMap<String, Str
                         } else {
                             format!("{}.{}", prefix, k)
                         }
-                    },
+                    }
                     None => k.as_str().unwrap().to_string(),
                 };
                 flatten(Some(&key), v, result);

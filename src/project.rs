@@ -5,7 +5,11 @@ use serde::{Deserialize, Serialize};
 use std::{fs::File, path::PathBuf};
 
 use crate::{
-    audio::SpawnAudioEvent, loader::{phichain::PhiChainLoader, Loader}, notification::{ToastsExt, ToastsStorage}, serialzation::PhiChainChart, tab::game::illustration::SpawnIllustrationEvent
+    audio::SpawnAudioEvent,
+    loader::{phichain::PhiChainLoader, Loader},
+    notification::{ToastsExt, ToastsStorage},
+    serialzation::PhiChainChart,
+    tab::game::illustration::SpawnIllustrationEvent,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]

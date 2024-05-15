@@ -1,7 +1,9 @@
 use bevy::prelude::*;
 
 use crate::{
-    chart::note::Note, project::project_loaded, timing::{BpmList, ChartTime}
+    chart::note::Note,
+    project::project_loaded,
+    timing::{BpmList, ChartTime},
 };
 
 pub struct ScorePlugin;
