@@ -20,3 +20,7 @@ tab:
     zoom: Timeline Zoom
     density: Timeline Density
     lane: Vertical Lane
+  audio_setting:
+    title: Audio Setting
+    music_volume: Music Volume
+    hit_sound_volume: Hit Sound Volume

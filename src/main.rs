@@ -34,6 +34,7 @@ use crate::project::project_loaded;
 use crate::project::LoadProjectEvent;
 use crate::project::ProjectPlugin;
 use crate::score::ScorePlugin;
+use crate::tab::audio_setting::audio_setting_tab;
 use crate::tab::game::GameCamera;
 use crate::tab::game::GameTabPlugin;
 use crate::tab::game::GameViewport;
@@ -97,6 +98,11 @@ fn main() {
             EditorTab::TimelineSetting,
             "tab.timeline_setting.title",
             timeline_setting_tab,
+        )
+        .register_tab(
+            EditorTab::AudioSetting,
+            "tab.audio_setting.title",
+            audio_setting_tab,
         )
         .run();
 }
@@ -167,7 +173,11 @@ impl UiState {
             tree.split_left(NodeIndex::root(), 2.0 / 3.0, vec![EditorTab::Timeline]);
 
         let [_, inspector] = tree.split_below(game, 2.0 / 5.0, vec![EditorTab::Inspector]);
-        tree.split_right(inspector, 1.0 / 2.0, vec![EditorTab::TimelineSetting]);
+        tree.split_right(
+            inspector,
+            1.0 / 2.0,
+            vec![EditorTab::TimelineSetting, EditorTab::AudioSetting],
+        );
 
         Self { state }
     }

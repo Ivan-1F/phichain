@@ -11,11 +11,27 @@ use crate::{
 #[derive(Resource)]
 struct InstanceHandle(Handle<AudioInstance>);
 
+#[derive(Resource)]
+pub struct AudioSettings {
+    pub music_volume: f32,
+    pub hit_sound_volume: f32,
+}
+
+impl Default for AudioSettings {
+    fn default() -> Self {
+        Self {
+            music_volume: 1.0,
+            hit_sound_volume: 1.0,
+        }
+    }
+}
+
 pub struct AudioPlugin;
 
 impl Plugin for AudioPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(bevy_kira_audio::AudioPlugin)
+        app.insert_resource(AudioSettings::default())
+            .add_plugins(bevy_kira_audio::AudioPlugin)
             .add_event::<SpawnAudioEvent>()
             .add_systems(
                 Update,
@@ -24,6 +40,7 @@ impl Plugin for AudioPlugin {
                     handle_resume_system,
                     handle_seek_system,
                     update_time_system,
+                    update_volume_system,
                 )
                     .run_if(project_loaded().and_then(resource_exists::<InstanceHandle>)),
             )
@@ -119,5 +136,18 @@ fn update_time_system(
 ) {
     if let Some(instance) = audio_instances.get_mut(&handle.0) {
         time.0 = instance.state().position().unwrap_or_default() as f32
+    }
+}
+
+fn update_volume_system(
+    handle: Res<InstanceHandle>,
+    mut audio_instances: ResMut<Assets<AudioInstance>>,
+    audio_settings: Res<AudioSettings>,
+) {
+    if let Some(instance) = audio_instances.get_mut(&handle.0) {
+        instance.set_volume(
+            Volume::Amplitude(audio_settings.music_volume as f64),
+            AudioTween::default(),
+        );
     }
 }

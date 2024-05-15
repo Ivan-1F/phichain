@@ -1,3 +1,4 @@
+pub mod audio_setting;
 pub mod game;
 pub mod inspector;
 pub mod timeline;
@@ -6,7 +7,7 @@ pub mod timeline_setting;
 use bevy::{prelude::*, utils::HashMap};
 use egui::Ui;
 
-pub fn empty_tab(In(_ui): In<&mut egui::Ui>) {}
+pub fn empty_tab(In(_ui): In<&mut Ui>) {}
 
 pub struct RegisteredTab {
     system: Box<dyn System<In = &'static mut Ui, Out = ()>>,
@@ -44,6 +45,7 @@ pub enum EditorTab {
     Timeline,
     Inspector,
     TimelineSetting,
+    AudioSetting,
 }
 
 pub struct TabPlugin;

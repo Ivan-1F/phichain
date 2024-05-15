@@ -20,3 +20,7 @@ tab:
     zoom: 时间线缩放
     density: 节拍线密度
     lane: 垂直参考线
+  audio_setting:
+    title: 音频设置
+    music_volume: 音乐音量
+    hit_sound_volume: 打击音效音量
