@@ -40,8 +40,18 @@ pub fn create_note_system(
         let mut beat = bpm_list.beat_at(time);
         beat.attach_to_beat_line(timeline_settings.density);
 
-        let x = (cursor_position.x - note_timeline_viewport.min.x) / note_timeline_viewport.width()
-            - 0.5;
+        let x = (cursor_position.x - note_timeline_viewport.min.x) / note_timeline_viewport.width();
+
+        let lane_percents = timeline_settings.lane_percents();
+
+        let x = lane_percents
+            .iter()
+            .map(|p| (p, (p - x).abs()))
+            .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+            .unwrap()
+            .0;
+
+        let x = x - 0.5;
 
         commands.entity(selected_line.0).with_children(|parent| {
             parent.spawn(NoteBundle::new(Note::new(
