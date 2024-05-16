@@ -42,7 +42,7 @@ fn spawn_illustration_system(
     query: Query<&Illustration>,
 ) {
     if events.len() > 1 {
-        warn!("Multiple illustration are requested, ignoring previous ones");
+        warn!("Multiple illustrations are requested, ignoring previous ones");
     }
 
     if let Some(event) = events.read().last() {
