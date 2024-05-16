@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use egui::Ui;
 use num::Rational32;
 
+use crate::chart::event::LineEvent;
 use crate::{
     chart::{
         beat::Beat,
@@ -14,12 +15,17 @@ use crate::{
 pub fn inspector_ui_system(
     In(ui): In<&mut Ui>,
     mut selected_notes: Query<&mut Note, With<Selected>>,
+    mut selected_events: Query<&mut LineEvent, With<Selected>>,
     translator: Translator,
 ) {
     let mut selected_notes: Vec<_> = selected_notes.iter_mut().collect();
-    if selected_notes.len() == 1 {
+    let mut selected_events: Vec<_> = selected_events.iter_mut().collect();
+    if selected_notes.len() == 1 && selected_events.len() == 0 {
         let selected_note = selected_notes.get_mut(0).unwrap();
         single_note_inspector(ui, selected_note, &translator);
+    } else if selected_notes.len() == 0 && selected_events.len() == 1 {
+        let selected_event = selected_events.get_mut(0).unwrap();
+        single_event_inspector(ui, selected_event, &translator);
     }
 }
 
@@ -54,6 +60,30 @@ impl BeatExt for Ui {
             }
         });
     }
+}
+
+fn single_event_inspector(ui: &mut Ui, event: &mut LineEvent, translator: &Translator) {
+    egui::Grid::new("inspector_grid")
+        .num_columns(2)
+        .spacing([40.0, 2.0])
+        .striped(true)
+        .show(ui, |ui| {
+            ui.label(translator.tr("tab.inspector.single_event.start_beat"));
+            ui.beat(&mut event.start_beat);
+            ui.end_row();
+
+            ui.label(translator.tr("tab.inspector.single_event.end_beat"));
+            ui.beat(&mut event.end_beat);
+            ui.end_row();
+
+            ui.label(translator.tr("tab.inspector.single_event.start_value"));
+            ui.add(egui::DragValue::new(&mut event.start));
+            ui.end_row();
+
+            ui.label(translator.tr("tab.inspector.single_event.end_value"));
+            ui.add(egui::DragValue::new(&mut event.end));
+            ui.end_row();
+        });
 }
 
 fn single_note_inspector(ui: &mut Ui, note: &mut Note, translator: &Translator) {

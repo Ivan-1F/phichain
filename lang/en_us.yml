@@ -15,6 +15,11 @@ tab:
       beat: Beat
       hold_beat: Hold Beat
       above: Is Above
+    single_event:
+      start_beat: Start Beat
+      end_beat: End Beat
+      start_value: Start Value
+      end_value: End Value
   timeline_setting:
     title: Timeline Setting
     zoom: Timeline Zoom
