@@ -1,4 +1,6 @@
 use bevy::prelude::*;
+use crate::chart::event::LineEvent;
+use crate::chart::note::Note;
 
 use crate::project::project_loaded;
 
@@ -10,7 +12,7 @@ pub struct Selected;
 
 /// Select a [Entity] in the world
 #[derive(Event)]
-pub struct SelectEvent(pub Entity);
+pub struct SelectEvent(pub Entity, pub bool);
 
 pub struct SelectionPlugin;
 
@@ -21,8 +23,39 @@ impl Plugin for SelectionPlugin {
     }
 }
 
-pub fn handle_select_event(mut commands: Commands, mut select_events: EventReader<SelectEvent>) {
+pub fn handle_select_event(
+    mut commands: Commands,
+    mut select_events: EventReader<SelectEvent>,
+    note_query: Query<&Note>,
+    event_query: Query<&LineEvent>,
+
+    selected_notes_query: Query<Entity, (With<Selected>, With<Note>, Without<LineEvent>)>,
+    selected_events_query: Query<Entity, (With<Selected>, With<LineEvent>, Without<Note>)>,
+
+    selected_notes_and_events_query: Query<Entity, (With<Selected>, Or<(With<Note>, With<LineEvent>)>)>,
+) {
     for event in select_events.read() {
+        if event.1 {
+            // unselect all notes and events
+            for entity in &selected_notes_and_events_query {
+                commands.entity(entity).remove::<Selected>();
+            }
+        } else {
+            // selecting both notes and events is not allowed
+            if note_query.get(event.0).is_ok() {
+                // target is note, unselect all events
+                for entity in &selected_events_query {
+                    commands.entity(entity).remove::<Selected>();
+                }
+            }
+            if event_query.get(event.0).is_ok() {
+                // target is event, unselect all notes
+                for entity in &selected_notes_query {
+                    commands.entity(entity).remove::<Selected>();
+                }
+            }
+        }
+
         commands.entity(event.0).insert(Selected);
     }
 }
