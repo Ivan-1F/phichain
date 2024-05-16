@@ -1,5 +1,5 @@
 use bevy::{ecs::system::SystemParam, prelude::*};
-use egui::{Color32, Ui};
+use egui::{Align2, Color32, FontId, Ui};
 use num::Rational32;
 use url::Url;
 
@@ -178,31 +178,52 @@ pub fn timeline_ui_system(
         );
     }
 
-    for beat_time in timeline.primary_beat_times() {
-        ui.painter().rect_filled(
-            egui::Rect::from_center_size(
-                egui::Pos2::new(
-                    viewport.0.width() / 2.0 + viewport.0.min.x,
-                    timeline.time_to_y(beat_time),
-                ),
-                egui::Vec2::new(viewport.0.width(), 2.0),
+    for (index, beat_time) in timeline.primary_beat_times().iter().enumerate() {
+        let rect = egui::Rect::from_center_size(
+            egui::Pos2::new(
+                viewport.0.width() / 2.0 + viewport.0.min.x,
+                timeline.time_to_y(*beat_time),
             ),
+            egui::Vec2::new(viewport.0.width(), 2.0),
+        );
+        ui.painter().rect_filled(
+            rect,
             0.0,
             Color32::from_rgba_unmultiplied(255, 255, 255, 40),
         );
+        ui.painter().text(
+            rect.left_top() + egui::Vec2::new(4.0, 0.0),
+            Align2::LEFT_BOTTOM,
+            index,
+            FontId::monospace(14.0),
+            Color32::WHITE,
+        );
     }
 
-    for beat_time in timeline.secondary_beat_times() {
-        ui.painter().rect_filled(
-            egui::Rect::from_center_size(
-                egui::Pos2::new(
-                    viewport.0.width() / 2.0 + viewport.0.min.x,
-                    timeline.time_to_y(beat_time),
-                ),
-                egui::Vec2::new(viewport.0.width(), 0.5),
+    for (index, beat_time) in timeline.secondary_beat_times().iter().enumerate() {
+        if index as u32 % timeline_settings.density == 0 {
+            continue;
+        }
+        let rect = egui::Rect::from_center_size(
+            egui::Pos2::new(
+                viewport.0.width() / 2.0 + viewport.0.min.x,
+                timeline.time_to_y(*beat_time),
             ),
+            egui::Vec2::new(viewport.0.width(), 0.5),
+        );
+        ui.painter().rect_filled(
+            rect,
             0.0,
             Color32::from_rgba_unmultiplied(255, 255, 255, 40),
+        );
+        let numer = index as u32;
+        let denom = timeline_settings.density;
+        ui.painter().text(
+            rect.left_top() + egui::Vec2::new(4.0, 0.0),
+            Align2::LEFT_BOTTOM,
+            format!("{}:{}/{}", numer / denom, numer % denom, denom),
+            FontId::monospace(8.0),
+            Color32::WHITE,
         );
     }
 }
