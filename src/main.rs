@@ -35,17 +35,12 @@ use crate::project::project_loaded;
 use crate::project::LoadProjectEvent;
 use crate::project::ProjectPlugin;
 use crate::score::ScorePlugin;
-use crate::tab::audio_setting::audio_setting_tab;
-use crate::tab::chart_basic_setting::chart_basic_setting_tab;
 use crate::tab::game::GameCamera;
 use crate::tab::game::GameTabPlugin;
 use crate::tab::game::GameViewport;
-use crate::tab::inspector::inspector_ui_system;
-use crate::tab::timeline::timeline_ui_system;
 use crate::tab::timeline::{TimelineTabPlugin, TimelineViewport};
-use crate::tab::timeline_setting::timeline_setting_tab;
 use crate::tab::TabPlugin;
-use crate::tab::{empty_tab, EditorTab, TabRegistrationExt, TabRegistry};
+use crate::tab::{EditorTab, TabRegistry};
 use crate::timing::TimingPlugin;
 use crate::translation::{TranslationPlugin, Translator};
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
@@ -85,32 +80,6 @@ fn main() {
         .add_systems(Update, ui_system.run_if(project_loaded()))
         .add_systems(Update, debug_save_system.run_if(project_loaded()))
         .add_systems(Startup, load_project_from_args)
-        .register_tab(
-            EditorTab::Timeline,
-            "tab.timeline.title",
-            timeline_ui_system,
-        )
-        .register_tab(EditorTab::Game, "tab.game.title", empty_tab)
-        .register_tab(
-            EditorTab::Inspector,
-            "tab.inspector.title",
-            inspector_ui_system,
-        )
-        .register_tab(
-            EditorTab::TimelineSetting,
-            "tab.timeline_setting.title",
-            timeline_setting_tab,
-        )
-        .register_tab(
-            EditorTab::AudioSetting,
-            "tab.audio_setting.title",
-            audio_setting_tab,
-        )
-        .register_tab(
-            EditorTab::ChartBasicSetting,
-            "tab.chart_basic_setting.title",
-            chart_basic_setting_tab,
-        )
         .run();
 }
 

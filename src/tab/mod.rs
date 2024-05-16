@@ -5,6 +5,11 @@ pub mod inspector;
 pub mod timeline;
 pub mod timeline_setting;
 
+use crate::tab::audio_setting::audio_setting_tab;
+use crate::tab::chart_basic_setting::chart_basic_setting_tab;
+use crate::tab::inspector::inspector_ui_system;
+use crate::tab::timeline::timeline_ui_system;
+use crate::tab::timeline_setting::timeline_setting_tab;
 use bevy::{prelude::*, utils::HashMap};
 use egui::Ui;
 
@@ -54,7 +59,33 @@ pub struct TabPlugin;
 
 impl Plugin for TabPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<TabRegistry>();
+        app.init_resource::<TabRegistry>()
+            .register_tab(
+                EditorTab::Timeline,
+                "tab.timeline.title",
+                timeline_ui_system,
+            )
+            .register_tab(EditorTab::Game, "tab.game.title", empty_tab)
+            .register_tab(
+                EditorTab::Inspector,
+                "tab.inspector.title",
+                inspector_ui_system,
+            )
+            .register_tab(
+                EditorTab::TimelineSetting,
+                "tab.timeline_setting.title",
+                timeline_setting_tab,
+            )
+            .register_tab(
+                EditorTab::AudioSetting,
+                "tab.audio_setting.title",
+                audio_setting_tab,
+            )
+            .register_tab(
+                EditorTab::ChartBasicSetting,
+                "tab.chart_basic_setting.title",
+                chart_basic_setting_tab,
+            );
     }
 }
 
