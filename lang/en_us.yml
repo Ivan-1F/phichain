@@ -29,3 +29,6 @@ tab:
     title: Audio Setting
     music_volume: Music Volume
     hit_sound_volume: Hit Sound Volume
+  chart_basic_setting:
+    title: Chart Basic Setting
+    offset: Offset (ms)

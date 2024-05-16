@@ -15,6 +15,7 @@ pub struct PhiChainLoader;
 impl Loader for PhiChainLoader {
     fn load(file: File, commands: &mut Commands) {
         let chart: PhiChainChart = serde_json::from_reader(file).expect("Failed to load chart");
+        commands.insert_resource(chart.offset);
         commands.insert_resource(chart.bpm_list);
 
         let mut first_line_id: Option<Entity> = None;

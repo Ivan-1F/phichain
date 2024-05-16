@@ -1,4 +1,5 @@
 pub mod audio_setting;
+pub mod chart_basic_setting;
 pub mod game;
 pub mod inspector;
 pub mod timeline;
@@ -46,6 +47,7 @@ pub enum EditorTab {
     Inspector,
     TimelineSetting,
     AudioSetting,
+    ChartBasicSetting,
 }
 
 pub struct TabPlugin;

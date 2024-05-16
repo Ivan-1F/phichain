@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+use crate::audio::Offset;
 use crate::{
     chart::{
         beat::Beat,
@@ -11,19 +12,25 @@ use crate::{
 
 #[derive(Serialize, Deserialize)]
 pub struct PhiChainChart {
+    pub offset: Offset,
     pub bpm_list: BpmList,
     pub lines: Vec<LineWrapper>,
 }
 
 impl PhiChainChart {
-    pub fn new(bpm_list: BpmList, lines: Vec<LineWrapper>) -> Self {
-        Self { bpm_list, lines }
+    pub fn new(offset: f32, bpm_list: BpmList, lines: Vec<LineWrapper>) -> Self {
+        Self {
+            offset: Offset(offset),
+            bpm_list,
+            lines,
+        }
     }
 }
 
 impl Default for PhiChainChart {
     fn default() -> Self {
         Self {
+            offset: Default::default(),
             bpm_list: Default::default(),
             lines: vec![Default::default()],
         }

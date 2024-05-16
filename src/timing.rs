@@ -147,6 +147,7 @@ impl BpmList {
             .iter()
             .take_while(|p| p.time <= time)
             .last()
+            .or_else(|| self.0.first())
             .expect("No bpm points available");
 
         Beat::from(point.beat.value() + (time - point.time) * point.bpm / 60.0)

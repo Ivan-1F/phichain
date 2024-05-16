@@ -36,6 +36,7 @@ use crate::project::LoadProjectEvent;
 use crate::project::ProjectPlugin;
 use crate::score::ScorePlugin;
 use crate::tab::audio_setting::audio_setting_tab;
+use crate::tab::chart_basic_setting::chart_basic_setting_tab;
 use crate::tab::game::GameCamera;
 use crate::tab::game::GameTabPlugin;
 use crate::tab::game::GameViewport;
@@ -104,6 +105,11 @@ fn main() {
             EditorTab::AudioSetting,
             "tab.audio_setting.title",
             audio_setting_tab,
+        )
+        .register_tab(
+            EditorTab::ChartBasicSetting,
+            "tab.chart_basic_setting.title",
+            chart_basic_setting_tab,
         )
         .run();
 }
@@ -177,7 +183,11 @@ impl UiState {
         tree.split_right(
             inspector,
             1.0 / 2.0,
-            vec![EditorTab::TimelineSetting, EditorTab::AudioSetting],
+            vec![
+                EditorTab::TimelineSetting,
+                EditorTab::AudioSetting,
+                EditorTab::ChartBasicSetting,
+            ],
         );
 
         Self { state }

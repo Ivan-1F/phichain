@@ -12,6 +12,7 @@ use crate::{
 
 use super::Loader;
 
+use crate::audio::Offset;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_repr::*;
@@ -112,6 +113,7 @@ impl Loader for OfficialLoader {
             Beat::ZERO,
             first_line.bpm,
         )]));
+        commands.insert_resource(Offset(chart.offset * 1000.0));
 
         let mut first_line_id: Option<Entity> = None;
         for line in chart.lines.iter() {

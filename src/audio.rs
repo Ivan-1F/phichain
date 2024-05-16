@@ -2,11 +2,16 @@ use std::{io::Cursor, path::PathBuf};
 
 use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     project::project_loaded,
     timing::{ChartTime, PauseEvent, Paused, ResumeEvent, SeekEvent},
 };
+
+/// Chart offset in milliseconds
+#[derive(Debug, Default, Resource, Serialize, Deserialize)]
+pub struct Offset(pub f32);
 
 #[derive(Resource)]
 struct InstanceHandle(Handle<AudioInstance>);
@@ -142,9 +147,10 @@ fn update_time_system(
     handle: Res<InstanceHandle>,
     mut audio_instances: ResMut<Assets<AudioInstance>>,
     mut time: ResMut<ChartTime>,
+    offset: Res<Offset>,
 ) {
     if let Some(instance) = audio_instances.get_mut(&handle.0) {
-        time.0 = instance.state().position().unwrap_or_default() as f32
+        time.0 = instance.state().position().unwrap_or_default() as f32 + offset.0 / 1000.0;
     }
 }
 
