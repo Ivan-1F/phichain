@@ -26,7 +26,7 @@ pub fn audio_setting_tab(
             ui.add(
                 egui::DragValue::new(&mut audio_settings.hit_sound_volume)
                     .clamp_range(0.00..=1.2)
-                    .speed(1),
+                    .speed(0.01),
             );
             ui.end_row();
         });
