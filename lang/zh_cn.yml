@@ -33,3 +33,5 @@ tab:
   chart_basic_setting:
     title: 谱面基本设置
     offset: 延迟 (毫秒)
+  line_list:
+    title: 判定线列表

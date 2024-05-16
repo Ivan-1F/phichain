@@ -2,12 +2,14 @@ pub mod audio_setting;
 pub mod chart_basic_setting;
 pub mod game;
 pub mod inspector;
+pub mod line_list;
 pub mod timeline;
 pub mod timeline_setting;
 
 use crate::tab::audio_setting::audio_setting_tab;
 use crate::tab::chart_basic_setting::chart_basic_setting_tab;
 use crate::tab::inspector::inspector_ui_system;
+use crate::tab::line_list::line_list_tab;
 use crate::tab::timeline::timeline_ui_system;
 use crate::tab::timeline_setting::timeline_setting_tab;
 use bevy::{prelude::*, utils::HashMap};
@@ -53,6 +55,7 @@ pub enum EditorTab {
     TimelineSetting,
     AudioSetting,
     ChartBasicSetting,
+    LineList,
 }
 
 pub struct TabPlugin;
@@ -85,7 +88,8 @@ impl Plugin for TabPlugin {
                 EditorTab::ChartBasicSetting,
                 "tab.chart_basic_setting.title",
                 chart_basic_setting_tab,
-            );
+            )
+            .register_tab(EditorTab::LineList, "tab.line_list.title", line_list_tab);
     }
 }
 

@@ -33,3 +33,5 @@ tab:
   chart_basic_setting:
     title: Chart Basic Setting
     offset: Offset (ms)
+  line_list:
+    title: Line List

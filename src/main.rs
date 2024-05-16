@@ -156,6 +156,7 @@ impl UiState {
                 EditorTab::TimelineSetting,
                 EditorTab::AudioSetting,
                 EditorTab::ChartBasicSetting,
+                EditorTab::LineList,
             ],
         );
 
