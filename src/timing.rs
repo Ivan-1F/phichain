@@ -2,8 +2,8 @@ use bevy::input::mouse::MouseWheel;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::{chart::beat::Beat, project::project_loaded};
 use crate::tab::timeline::TimelineViewport;
+use crate::{chart::beat::Beat, project::project_loaded};
 
 /// Represents the current time in seconds
 #[derive(Resource)]
@@ -64,7 +64,10 @@ fn scroll_progress_control_system(
     window_query: Query<&Window>,
 ) {
     let window = window_query.single();
-    if window.cursor_position().is_some_and(|p| viewport.0.contains(p)) {
+    if window
+        .cursor_position()
+        .is_some_and(|p| viewport.0.contains(p))
+    {
         for ev in wheel_events.read() {
             seek_events.send(SeekEvent(ev.y / 500.0));
         }
