@@ -30,8 +30,8 @@ use crate::file::FilePickingPlugin;
 use crate::home::HomePlugin;
 use crate::misc::MiscPlugin;
 use crate::misc::WorkingDirectory;
-use crate::notification::NotificationPlugin;
-use crate::project::project_loaded;
+use crate::notification::{NotificationPlugin, ToastsExt, ToastsStorage};
+use crate::project::{Project, project_loaded};
 use crate::project::LoadProjectEvent;
 use crate::project::ProjectPlugin;
 use crate::score::ScorePlugin;
@@ -65,7 +65,7 @@ fn main() {
         .add_plugins(DefaultPickingPlugins)
         .add_plugins(EguiPlugin)
         .add_plugins(ProjectPlugin)
-        .add_plugins(crate::selection::SelectionPlugin)
+        .add_plugins(selection::SelectionPlugin)
         .add_plugins(MiscPlugin)
         .add_plugins(TabPlugin)
         .add_plugins(EditingPlugin)
@@ -249,10 +249,30 @@ fn ui_system(world: &mut World) {
 
     let mut system_state: SystemState<Translator> = SystemState::new(world);
     let translator = system_state.get(world);
+    let file = translator.tr("menu_bar.file");
+    let save = translator.tr("menu_bar.file.save");
+    let quit = translator.tr("menu_bar.file.quit");
+
     egui::TopBottomPanel::top("phichain.MenuBar").show(ctx, |ui| {
         egui::menu::bar(ui, |ui| {
-            ui.menu_button(translator.tr("menu_bar.file"), |ui| {
-                if ui.button(translator.tr("menu_bar.file.quit")).clicked() {
+            ui.menu_button(file, |ui| {
+                if ui.button(save).clicked() {
+                    if let Ok(chart) = PhiChainExporter::export(world) {
+                        let project = world.resource::<Project>();
+                        let result = std::fs::write(project.root_dir.join("chart.json"), chart);
+                        let mut toasts = world.resource_mut::<ToastsStorage>();
+                        match result {
+                            Ok(_) => {
+                                toasts.success("Project saved");
+                            }
+                            Err(error) => {
+                                toasts.error(format!("Failed to save project: {}", error));
+                            }
+                        }
+                    }
+                }
+                ui.separator();
+                if ui.button(quit).clicked() {
                     std::process::exit(0);
                 }
             });

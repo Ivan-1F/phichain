@@ -2,6 +2,7 @@ menu_bar:
   file:
     .: File
     quit: Quit
+    save: Save
 
 tab:
   game:

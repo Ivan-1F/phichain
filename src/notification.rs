@@ -17,6 +17,7 @@ impl Plugin for NotificationPlugin {
 
 pub trait ToastsExt {
     fn error(&mut self, message: impl Into<WidgetText>);
+    fn success(&mut self, message: impl Into<WidgetText>);
 }
 
 impl ToastsExt for Toasts {
@@ -24,6 +25,16 @@ impl ToastsExt for Toasts {
         self.add(Toast {
             text: text.into(),
             kind: ToastKind::Error,
+            options: ToastOptions::default()
+                .duration_in_seconds(8.0)
+                .show_progress(true),
+        });
+    }
+
+    fn success(&mut self, text: impl Into<WidgetText>) {
+        self.add(Toast {
+            text: text.into(),
+            kind: ToastKind::Success,
             options: ToastOptions::default()
                 .duration_in_seconds(8.0)
                 .show_progress(true),
