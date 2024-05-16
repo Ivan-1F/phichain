@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::{chart::beat::Beat, project::project_loaded};
+use crate::tab::timeline::TimelineViewport;
 
 /// Represents the current time in seconds
 #[derive(Resource)]
@@ -58,10 +59,15 @@ fn progress_control_system(
 /// Scroll on the timeline to control the progress
 fn scroll_progress_control_system(
     mut wheel_events: EventReader<MouseWheel>,
-    mut events: EventWriter<SeekEvent>,
+    mut seek_events: EventWriter<SeekEvent>,
+    viewport: Res<TimelineViewport>,
+    window_query: Query<&Window>,
 ) {
-    for ev in wheel_events.read() {
-        events.send(SeekEvent(ev.y / 500.0));
+    let window = window_query.single();
+    if window.cursor_position().is_some_and(|p| viewport.0.contains(p)) {
+        for ev in wheel_events.read() {
+            seek_events.send(SeekEvent(ev.y / 500.0));
+        }
     }
 }
 
