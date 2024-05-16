@@ -108,7 +108,7 @@ fn load_project_system(
     mut toasts: ResMut<ToastsStorage>,
 ) {
     if events.len() > 1 {
-        warn!("Mutiple projects are requested, ignoring previous ones");
+        warn!("Multiple projects are requested, ignoring previous ones");
     }
 
     if let Some(event) = events.read().last() {

@@ -58,7 +58,7 @@ fn spawn_audio_system(
     audio: Res<Audio>,
 ) {
     if events.len() > 1 {
-        warn!("Mutiple illustration are requested, ignoring previous ones");
+        warn!("Multiple illustration are requested, ignoring previous ones");
     }
 
     // TODO: error handling
