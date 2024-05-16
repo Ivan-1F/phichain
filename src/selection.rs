@@ -1,6 +1,6 @@
-use bevy::prelude::*;
 use crate::chart::event::LineEvent;
 use crate::chart::note::Note;
+use bevy::prelude::*;
 
 use crate::project::project_loaded;
 
@@ -32,7 +32,10 @@ pub fn handle_select_event(
     selected_notes_query: Query<Entity, (With<Selected>, With<Note>, Without<LineEvent>)>,
     selected_events_query: Query<Entity, (With<Selected>, With<LineEvent>, Without<Note>)>,
 
-    selected_notes_and_events_query: Query<Entity, (With<Selected>, Or<(With<Note>, With<LineEvent>)>)>,
+    selected_notes_and_events_query: Query<
+        Entity,
+        (With<Selected>, Or<(With<Note>, With<LineEvent>)>),
+    >,
 ) {
     for event in select_events.read() {
         if event.1 {
