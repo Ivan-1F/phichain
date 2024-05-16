@@ -50,10 +50,10 @@ fn progress_control_system(
         factor /= 2.0;
     }
     if keyboard.pressed(KeyCode::ArrowLeft) {
-        events.send(SeekEvent(-0.01 * factor));
+        events.send(SeekEvent(-0.02 * factor));
     }
     if keyboard.pressed(KeyCode::ArrowRight) {
-        events.send(SeekEvent(0.01 * factor));
+        events.send(SeekEvent(0.02 * factor));
     }
 }
 

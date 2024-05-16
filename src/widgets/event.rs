@@ -1,5 +1,5 @@
-use egui::{Align2, Color32, FontId, Response, Sense, Ui};
 use crate::chart::event::LineEvent;
+use egui::{Align2, Color32, FontId, Response, Sense, Ui};
 
 pub fn event_ui(ui: &mut Ui, rect: egui::Rect, event: &LineEvent, selected: bool) -> Response {
     let response = ui.allocate_rect(rect, Sense::click());
@@ -14,8 +14,20 @@ pub fn event_ui(ui: &mut Ui, rect: egui::Rect, event: &LineEvent, selected: bool
             },
             egui::Stroke::new(2.0, Color32::WHITE),
         );
-        ui.painter().text(rect.center_top(), Align2::CENTER_TOP, event.end, FontId::default(), Color32::DARK_GREEN);
-        ui.painter().text(rect.center_bottom(), Align2::CENTER_BOTTOM, event.start, FontId::default(), Color32::DARK_GREEN);
+        ui.painter().text(
+            rect.center_top(),
+            Align2::CENTER_TOP,
+            event.end,
+            FontId::default(),
+            Color32::DARK_GREEN,
+        );
+        ui.painter().text(
+            rect.center_bottom(),
+            Align2::CENTER_BOTTOM,
+            event.start,
+            FontId::default(),
+            Color32::DARK_GREEN,
+        );
     }
 
     response
