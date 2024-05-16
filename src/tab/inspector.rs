@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use egui::Ui;
 use num::Rational32;
 
-use crate::chart::event::LineEvent;
+use crate::chart::event::{LineEvent, LineEventKind};
 use crate::{
     chart::{
         beat::Beat,
@@ -77,11 +77,15 @@ fn single_event_inspector(ui: &mut Ui, event: &mut LineEvent, translator: &Trans
             ui.end_row();
 
             ui.label(translator.tr("tab.inspector.single_event.start_value"));
-            ui.add(egui::DragValue::new(&mut event.start));
+            let range = match event.kind {
+                LineEventKind::Opacity => 0.0..=255.0,
+                _ => f32::MIN..=f32::MAX,
+            };
+            ui.add(egui::DragValue::new(&mut event.start).clamp_range(range.clone()).speed(1.0));
             ui.end_row();
 
             ui.label(translator.tr("tab.inspector.single_event.end_value"));
-            ui.add(egui::DragValue::new(&mut event.end));
+            ui.add(egui::DragValue::new(&mut event.end).clamp_range(range.clone()).speed(1.0));
             ui.end_row();
         });
 }

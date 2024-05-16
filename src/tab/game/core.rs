@@ -126,7 +126,7 @@ fn compute_line_system(
                         if keyboard.pressed(KeyCode::KeyT) {
                             opacity.0 = 1.0;
                         } else {
-                            opacity.0 = value;
+                            opacity.0 = value / 255.0;
                         }
                     }
                     LineEventKind::Speed => {}

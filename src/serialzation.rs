@@ -63,8 +63,8 @@ impl Default for LineWrapper {
                 },
                 LineEvent {
                     kind: LineEventKind::Opacity,
-                    start: 1.0,
-                    end: 1.0,
+                    start: 255.0,
+                    end: 255.0,
                     start_beat: Beat::ZERO,
                     end_beat: Beat::ONE,
                 },

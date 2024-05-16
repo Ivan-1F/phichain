@@ -179,8 +179,8 @@ impl Loader for OfficialLoader {
                     for event in line.opacity_events.iter() {
                         parent.spawn(LineEventBundle::new(LineEvent {
                             kind: LineEventKind::Opacity,
-                            start: event.start,
-                            end: event.end,
+                            start: event.start * 255.0,
+                            end: event.end * 255.0,
                             start_beat: t(event.start_time),
                             end_beat: t(event.end_time),
                         }));
