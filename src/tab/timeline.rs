@@ -95,6 +95,7 @@ pub fn timeline_ui_system(
         if event_ui(
             ui,
             egui::Rect::from_center_size(center, size),
+            event,
             selected.is_some(),
         )
         .clicked()
