@@ -1,3 +1,4 @@
+use bevy::input::mouse::MouseWheel;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -33,11 +34,12 @@ impl Plugin for TimingPlugin {
             .add_event::<ResumeEvent>()
             .add_event::<SeekEvent>()
             .add_systems(Update, space_pause_resume_control.run_if(project_loaded()))
-            .add_systems(Update, progress_control_system.run_if(project_loaded()));
+            .add_systems(Update, progress_control_system.run_if(project_loaded()))
+            .add_systems(Update, scroll_progress_control_system.run_if(project_loaded()));
     }
 }
 
-/// Use ArrowLeft and ArrowRight to control the progress. Holding Controll will seek faster and holding Alt will seek slower
+/// Use ArrowLeft and ArrowRight to control the progress. Holding Control will seek faster and holding Alt will seek slower
 fn progress_control_system(
     keyboard: Res<ButtonInput<KeyCode>>,
     mut events: EventWriter<SeekEvent>,
@@ -54,6 +56,16 @@ fn progress_control_system(
     }
     if keyboard.pressed(KeyCode::ArrowRight) {
         events.send(SeekEvent(0.02 * factor));
+    }
+}
+
+/// Scroll on the timeline to control the progress. Holding Control will seek faster and holding Alt will seek slower
+fn scroll_progress_control_system(
+    mut wheel_events: EventReader<MouseWheel>,
+    mut events: EventWriter<SeekEvent>,
+) {
+    for ev in wheel_events.read() {
+        events.send(SeekEvent(ev.y / 500.0));
     }
 }
 
