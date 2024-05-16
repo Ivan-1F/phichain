@@ -11,7 +11,7 @@ use crate::{
     },
     constants::{BASE_ZOOM, CANVAS_WIDTH, INDICATOR_POSITION},
     misc::WorkingDirectory,
-    selection::{SelectNoteEvent, Selected, SelectedLine},
+    selection::{SelectEvent, Selected, SelectedLine},
     timing::{BpmList, ChartTime},
 };
 use crate::widgets::event::event_ui;
@@ -31,10 +31,10 @@ pub fn timeline_ui_system(
     selected_line_query: Res<SelectedLine>,
     timeline_viewport: Res<TimelineViewport>,
     bpm_list: Res<BpmList>,
-    event_query: Query<(&LineEvent, &Parent)>,
+    event_query: Query<(&LineEvent, &Parent, Entity, Option<&Selected>)>,
     note_query: Query<(&Note, &Parent, Entity, Option<&Selected>)>,
     working_dir: Res<WorkingDirectory>,
-    mut select_events: EventWriter<SelectNoteEvent>,
+    mut select_events: EventWriter<SelectEvent>,
     timeline: Timeline,
     timeline_settings: Res<TimelineSettings>,
 ) {
@@ -67,7 +67,7 @@ pub fn timeline_ui_system(
 
     let event_timeline_viewport = viewport.event_timeline_viewport();
 
-    for (event, parent) in event_query.iter() {
+    for (event, parent, entity, selected) in event_query.iter() {
         if parent.get() != selected_line {
             continue;
         }
@@ -92,8 +92,8 @@ pub fn timeline_ui_system(
 
         let center = egui::Pos2::new(x, y - size.y / 2.0);
 
-        if event_ui(ui, egui::Rect::from_center_size(center, size)).clicked() {
-            println!("{:?}", event);
+        if event_ui(ui, egui::Rect::from_center_size(center, size), selected.is_some()).clicked() {
+            select_events.send(SelectEvent(entity));
         }
     }
 
@@ -153,7 +153,7 @@ pub fn timeline_ui_system(
         );
 
         if response.clicked() {
-            select_events.send(SelectNoteEvent(entity));
+            select_events.send(SelectEvent(entity));
         }
     }
 
