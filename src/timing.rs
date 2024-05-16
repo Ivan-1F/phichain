@@ -35,31 +35,27 @@ impl Plugin for TimingPlugin {
             .add_event::<SeekEvent>()
             .add_systems(Update, space_pause_resume_control.run_if(project_loaded()))
             .add_systems(Update, progress_control_system.run_if(project_loaded()))
-            .add_systems(Update, scroll_progress_control_system.run_if(project_loaded()));
+            .add_systems(
+                Update,
+                scroll_progress_control_system.run_if(project_loaded()),
+            );
     }
 }
 
-/// Use ArrowLeft and ArrowRight to control the progress. Holding Control will seek faster and holding Alt will seek slower
+/// Use ArrowLeft and ArrowRight to control the progress
 fn progress_control_system(
     keyboard: Res<ButtonInput<KeyCode>>,
     mut events: EventWriter<SeekEvent>,
 ) {
-    let mut factor = 1.0;
-    if keyboard.pressed(KeyCode::ControlLeft) {
-        factor *= 2.0;
-    }
-    if keyboard.pressed(KeyCode::AltLeft) {
-        factor /= 2.0;
-    }
     if keyboard.pressed(KeyCode::ArrowLeft) {
-        events.send(SeekEvent(-0.02 * factor));
+        events.send(SeekEvent(-0.02));
     }
     if keyboard.pressed(KeyCode::ArrowRight) {
-        events.send(SeekEvent(0.02 * factor));
+        events.send(SeekEvent(0.02));
     }
 }
 
-/// Scroll on the timeline to control the progress. Holding Control will seek faster and holding Alt will seek slower
+/// Scroll on the timeline to control the progress
 fn scroll_progress_control_system(
     mut wheel_events: EventReader<MouseWheel>,
     mut events: EventWriter<SeekEvent>,

@@ -112,15 +112,24 @@ fn handle_seek_system(
     handle: Res<InstanceHandle>,
     mut audio_instances: ResMut<Assets<AudioInstance>>,
     mut events: EventReader<SeekEvent>,
+    keyboard: Res<ButtonInput<KeyCode>>,
 ) {
     if let Some(instance) = audio_instances.get_mut(&handle.0) {
         for event in events.read() {
+            // holding Control will seek faster and holding Alt will seek slower
+            let mut factor = 1.0;
+            if keyboard.pressed(KeyCode::ControlLeft) {
+                factor *= 2.0;
+            }
+            if keyboard.pressed(KeyCode::AltLeft) {
+                factor /= 2.0;
+            }
             match instance.state() {
                 PlaybackState::Paused { position }
                 | PlaybackState::Pausing { position }
                 | PlaybackState::Playing { position }
                 | PlaybackState::Stopping { position } => {
-                    instance.seek_to((position as f32 + event.0).max(0.0).into());
+                    instance.seek_to((position as f32 + event.0 * factor).max(0.0).into());
                 }
                 PlaybackState::Queued | PlaybackState::Stopped => {}
             }
