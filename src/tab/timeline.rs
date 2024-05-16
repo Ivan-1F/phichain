@@ -3,6 +3,7 @@ use egui::{Color32, Ui};
 use num::Rational32;
 use url::Url;
 
+use crate::widgets::event::event_ui;
 use crate::{
     chart::{
         beat::Beat,
@@ -14,7 +15,6 @@ use crate::{
     selection::{SelectEvent, Selected, SelectedLine},
     timing::{BpmList, ChartTime},
 };
-use crate::widgets::event::event_ui;
 
 pub struct TimelineTabPlugin;
 
@@ -92,7 +92,13 @@ pub fn timeline_ui_system(
 
         let center = egui::Pos2::new(x, y - size.y / 2.0);
 
-        if event_ui(ui, egui::Rect::from_center_size(center, size), selected.is_some()).clicked() {
+        if event_ui(
+            ui,
+            egui::Rect::from_center_size(center, size),
+            selected.is_some(),
+        )
+        .clicked()
+        {
             select_events.send(SelectEvent(entity));
         }
     }

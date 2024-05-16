@@ -21,10 +21,7 @@ impl Plugin for SelectionPlugin {
     }
 }
 
-pub fn handle_select_event(
-    mut commands: Commands,
-    mut select_events: EventReader<SelectEvent>,
-) {
+pub fn handle_select_event(mut commands: Commands, mut select_events: EventReader<SelectEvent>) {
     for event in select_events.read() {
         commands.entity(event.0).insert(Selected);
     }

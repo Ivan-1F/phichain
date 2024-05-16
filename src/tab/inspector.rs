@@ -20,10 +20,10 @@ pub fn inspector_ui_system(
 ) {
     let mut selected_notes: Vec<_> = selected_notes.iter_mut().collect();
     let mut selected_events: Vec<_> = selected_events.iter_mut().collect();
-    if selected_notes.len() == 1 && selected_events.len() == 0 {
+    if selected_notes.len() == 1 && selected_events.is_empty() {
         let selected_note = selected_notes.get_mut(0).unwrap();
         single_note_inspector(ui, selected_note, &translator);
-    } else if selected_notes.len() == 0 && selected_events.len() == 1 {
+    } else if selected_notes.is_empty() && selected_events.len() == 1 {
         let selected_event = selected_events.get_mut(0).unwrap();
         single_event_inspector(ui, selected_event, &translator);
     }
