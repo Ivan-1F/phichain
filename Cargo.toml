@@ -20,6 +20,9 @@ codegen-units = 1
 incremental = false
 debug = false
 
+[lints.clippy]
+type_complexity = "allow"
+
 [dependencies]
 bevy = { version = "0.13.2", default-features = false, features = [
     "animation",
