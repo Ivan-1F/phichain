@@ -14,6 +14,7 @@ use crate::{
     selection::{SelectNoteEvent, Selected, SelectedLine},
     timing::{BpmList, ChartTime},
 };
+use crate::widgets::event::event_ui;
 
 pub struct TimelineTabPlugin;
 
@@ -91,12 +92,9 @@ pub fn timeline_ui_system(
 
         let center = egui::Pos2::new(x, y - size.y / 2.0);
 
-        ui.painter().rect(
-            egui::Rect::from_center_size(center, size),
-            0.0,
-            Color32::LIGHT_BLUE,
-            egui::Stroke::new(2.0, Color32::WHITE),
-        );
+        if event_ui(ui, egui::Rect::from_center_size(center, size)).clicked() {
+            println!("{:?}", event);
+        }
     }
 
     let note_timeline_viewport = viewport.note_timeline_viewport();

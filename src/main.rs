@@ -17,6 +17,7 @@ mod serialzation;
 mod tab;
 mod timing;
 mod translation;
+mod widgets;
 
 use crate::assets::AssetsPlugin;
 use crate::audio::AudioPlugin;
