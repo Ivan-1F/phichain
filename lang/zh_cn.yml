@@ -3,6 +3,8 @@ menu_bar:
     title: 文件
     quit: 退出
     save: 保存
+  tabs:
+    title: 窗口
 
 tab:
   game:

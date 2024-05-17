@@ -3,6 +3,8 @@ menu_bar:
     title: File
     quit: Quit
     save: Save
+  tabs:
+    title: Windows
 
 tab:
   game:

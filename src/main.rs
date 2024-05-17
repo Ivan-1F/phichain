@@ -271,7 +271,7 @@ fn ui_system(world: &mut World) {
                     std::process::exit(0);
                 }
             });
-            ui.menu_button("Tabs", |ui| {
+            ui.menu_button(t!("menu_bar.tabs.title"), |ui| {
                 world.resource_scope(|world, mut ui_state: Mut<UiState>| {
                     world.resource_scope(|_, registry: Mut<TabRegistry>| {
                         for (tab, registered_tab) in registry.iter() {
