@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use egui::Ui;
 use num::Rational32;
-use rust_i18n::t;
 
 use crate::chart::event::{LineEvent, LineEventKind};
 use crate::{

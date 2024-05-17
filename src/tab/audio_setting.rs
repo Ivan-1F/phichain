@@ -1,7 +1,6 @@
 use crate::audio::AudioSettings;
 use bevy::prelude::*;
 use egui::Ui;
-use rust_i18n::t;
 
 pub fn audio_setting_tab(In(ui): In<&mut Ui>, mut audio_settings: ResMut<AudioSettings>) {
     egui::Grid::new("audio_setting_grid")

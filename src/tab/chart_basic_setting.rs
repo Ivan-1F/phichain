@@ -1,7 +1,6 @@
 use crate::audio::Offset;
 use bevy::prelude::*;
 use egui::Ui;
-use rust_i18n::t;
 
 pub fn chart_basic_setting_tab(In(ui): In<&mut Ui>, mut offset: ResMut<Offset>) {
     egui::Grid::new("chart_basic_setting_grid")

@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate rust_i18n;
+
 mod assets;
 mod audio;
 mod chart;
@@ -47,11 +50,12 @@ use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
-use rust_i18n::{i18n, t};
 
 i18n!("lang", fallback = "en_us");
 
 fn main() {
+    rust_i18n::set_locale("zh_cn");
+
     App::new()
         .insert_resource(ClearColor(Color::BLACK))
         .insert_resource(UiState::new())

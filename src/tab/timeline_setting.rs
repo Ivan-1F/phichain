@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 use egui::Ui;
-use rust_i18n::t;
 
 use super::timeline::TimelineSettings;
 
