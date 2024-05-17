@@ -277,6 +277,26 @@ fn ui_system(world: &mut World) {
                     std::process::exit(0);
                 }
             });
+            ui.menu_button("Tabs", |ui| {
+                world.resource_scope(|world, mut ui_state: Mut<UiState>| {
+                    world.resource_scope(|_, registry: Mut<TabRegistry>| {
+                        for (tab, registered_tab) in registry.iter() {
+                            let opened = ui_state.state.iter_all_tabs().map(|x| x.1).collect::<Vec<_>>().contains(&tab);
+                            if ui.selectable_label(opened, registered_tab.title()).clicked() {
+                                if opened {
+                                    if let Some(node) = ui_state.state.find_tab(tab) {
+                                        ui_state.state.remove_tab(node);
+                                    }
+                                    ui.close_menu();
+                                } else {
+                                    ui_state.state.add_window(vec![*tab]);
+                                    ui.close_menu();
+                                }
+                            }
+                        }
+                    });
+                });
+            });
         });
     });
 

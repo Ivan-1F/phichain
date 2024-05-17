@@ -47,7 +47,7 @@ impl TabRegistry {
     }
 }
 
-#[derive(Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
 pub enum EditorTab {
     Game,
     Timeline,
