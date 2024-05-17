@@ -57,7 +57,7 @@ pub fn timeline_ui_system(
         egui::Rect::from_center_size(
             egui::Pos2::new(
                 viewport.0.center().x,
-                viewport.0.height() * INDICATOR_POSITION,
+                viewport.0.min.y + viewport.0.height() * INDICATOR_POSITION,
             ),
             egui::Vec2::new(viewport.0.width(), 2.0),
         ),
@@ -320,13 +320,14 @@ impl<'w> Timeline<'w> {
 
     pub fn time_to_y(&self, time: f32) -> f32 {
         (self.current_time.0 - time) * BASE_ZOOM * self.timeline_settings.zoom
+            + self.viewport.0.min.y
             + self.viewport.0.height() * INDICATOR_POSITION
     }
 
     #[allow(dead_code)]
     pub fn y_to_time(&self, y: f32) -> f32 {
         self.current_time.0
-            - (y - self.viewport.0.height() * INDICATOR_POSITION)
+            - (y - (self.viewport.0.min.y + self.viewport.0.height() * INDICATOR_POSITION))
                 / (BASE_ZOOM * self.timeline_settings.zoom)
     }
 
