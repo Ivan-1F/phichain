@@ -1,6 +1,6 @@
 menu_bar:
   file:
-    .: File
+    title: File
     quit: Quit
     save: Save
 

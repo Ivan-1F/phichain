@@ -16,7 +16,6 @@ mod selection;
 mod serialzation;
 mod tab;
 mod timing;
-mod translation;
 mod widgets;
 
 use crate::assets::AssetsPlugin;
@@ -42,14 +41,15 @@ use crate::tab::timeline::{TimelineTabPlugin, TimelineViewport};
 use crate::tab::TabPlugin;
 use crate::tab::{EditorTab, TabRegistry};
 use crate::timing::TimingPlugin;
-use crate::translation::{TranslationPlugin, Translator};
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
-use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
+use rust_i18n::{i18n, t};
+
+i18n!("lang", fallback = "en_us");
 
 fn main() {
     App::new()
@@ -71,7 +71,6 @@ fn main() {
         .add_plugins(EditingPlugin)
         .add_plugins(FrameTimeDiagnosticsPlugin)
         .add_plugins(AssetsPlugin)
-        .add_plugins(TranslationPlugin)
         .add_plugins(NotificationPlugin)
         .add_plugins(FilePickingPlugin)
         .add_systems(Startup, setup_egui_image_loader_system)
@@ -125,7 +124,7 @@ fn setup_egui_font_system(
     font_def
         .families
         .get_mut(&font_family)
-        .expect("Failed to setuo font")
+        .expect("Failed to setup font")
         .insert(0, font_name);
 
     ctx.set_fonts(font_def);
@@ -176,13 +175,10 @@ impl egui_dock::TabViewer for TabViewer<'_> {
     type Tab = EditorTab;
 
     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
-        let mut system_state: SystemState<Translator> = SystemState::new(self.world);
-        let translator = system_state.get(self.world);
-
         self.registry
             .get(tab)
-            .map(|t| translator.tr(t.title()))
-            .unwrap_or("Unknown".to_string())
+            .map(|t| t!(t.title()))
+            .unwrap_or("Unknown".into())
             .into()
     }
 
@@ -248,16 +244,10 @@ fn ui_system(world: &mut World) {
         fps = value;
     }
 
-    let mut system_state: SystemState<Translator> = SystemState::new(world);
-    let translator = system_state.get(world);
-    let file = translator.tr("menu_bar.file");
-    let save = translator.tr("menu_bar.file.save");
-    let quit = translator.tr("menu_bar.file.quit");
-
     egui::TopBottomPanel::top("phichain.MenuBar").show(ctx, |ui| {
         egui::menu::bar(ui, |ui| {
-            ui.menu_button(file, |ui| {
-                if ui.button(save).clicked() {
+            ui.menu_button(t!("menu_bar.file.title"), |ui| {
+                if ui.button(t!("menu_bar.file.save")).clicked() {
                     if let Ok(chart) = PhiChainExporter::export(world) {
                         let project = world.resource::<Project>();
                         let result = std::fs::write(project.root_dir.join("chart.json"), chart);
@@ -273,7 +263,7 @@ fn ui_system(world: &mut World) {
                     }
                 }
                 ui.separator();
-                if ui.button(quit).clicked() {
+                if ui.button(t!("menu_bar.file.quit")).clicked() {
                     std::process::exit(0);
                 }
             });
@@ -281,8 +271,16 @@ fn ui_system(world: &mut World) {
                 world.resource_scope(|world, mut ui_state: Mut<UiState>| {
                     world.resource_scope(|_, registry: Mut<TabRegistry>| {
                         for (tab, registered_tab) in registry.iter() {
-                            let opened = ui_state.state.iter_all_tabs().map(|x| x.1).collect::<Vec<_>>().contains(&tab);
-                            if ui.selectable_label(opened, registered_tab.title()).clicked() {
+                            let opened = ui_state
+                                .state
+                                .iter_all_tabs()
+                                .map(|x| x.1)
+                                .collect::<Vec<_>>()
+                                .contains(&tab);
+                            if ui
+                                .selectable_label(opened, t!(registered_tab.title()))
+                                .clicked()
+                            {
                                 if opened {
                                     if let Some(node) = ui_state.state.find_tab(tab) {
                                         ui_state.state.remove_tab(node);

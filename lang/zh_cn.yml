@@ -1,6 +1,6 @@
 menu_bar:
   file:
-    .: 文件
+    title: 文件
     quit: 退出
     save: 保存
 
