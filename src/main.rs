@@ -224,7 +224,7 @@ impl egui_dock::TabViewer for TabViewer<'_> {
     }
 
     fn allowed_in_windows(&self, tab: &mut Self::Tab) -> bool {
-        !matches!(tab, EditorTab::Game | EditorTab::Timeline)
+        !matches!(tab, EditorTab::Game)
     }
 
     fn clear_background(&self, tab: &Self::Tab) -> bool {
