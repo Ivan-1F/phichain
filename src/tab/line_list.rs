@@ -1,9 +1,9 @@
 use crate::chart::event::LineEvent;
 use crate::chart::line::Line;
 use crate::chart::note::Note;
+use crate::selection::SelectedLine;
 use bevy::prelude::*;
 use egui::Ui;
-use crate::selection::SelectedLine;
 
 // use crate::translation::Translator;
 
@@ -12,7 +12,7 @@ pub fn line_list_tab(
     line_query: Query<(&Children, Entity), With<Line>>,
     note_query: Query<&Note>,
     event_query: Query<&LineEvent>,
-    
+
     mut selected_line: ResMut<SelectedLine>,
 ) {
     for (index, (line, entity)) in line_query.iter().enumerate() {
