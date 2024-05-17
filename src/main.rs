@@ -49,13 +49,25 @@ use bevy::prelude::*;
 use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
+use clap::Parser;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 
 i18n!("lang", fallback = "en_us");
 
-fn main() {
-    rust_i18n::set_locale("zh_cn");
+/// Phichain - Phigros charting toolchain
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// Load project from this path when launch
+    #[arg(short, long)]
+    project: Option<String>,
 
+    /// The language phichain use
+    #[arg(short, long, default_value = "en_us")]
+    language: String,
+}
+
+fn main() {
     App::new()
         .insert_resource(ClearColor(Color::BLACK))
         .insert_resource(UiState::new())
@@ -82,7 +94,7 @@ fn main() {
         .add_systems(Startup, setup_plugin)
         .add_systems(Update, ui_system.run_if(project_loaded()))
         .add_systems(Update, debug_save_system.run_if(project_loaded()))
-        .add_systems(Startup, load_project_from_args)
+        .add_systems(Startup, apply_args_config_system)
         .run();
 }
 
@@ -95,8 +107,15 @@ fn debug_save_system(world: &mut World) {
     }
 }
 
-fn load_project_from_args(mut events: EventWriter<LoadProjectEvent>) {
-    if let Some(path) = std::env::args().nth(1) {
+/// Apply configurations from the command line args
+fn apply_args_config_system(mut events: EventWriter<LoadProjectEvent>) {
+    let args = Args::parse();
+
+    // setup i18n locale
+    rust_i18n::set_locale(&args.language[..]);
+
+    // load chart if specified
+    if let Some(path) = args.project {
         events.send(LoadProjectEvent(path.into()));
     }
 }
@@ -155,10 +174,7 @@ impl UiState {
         tree.split_right(
             inspector,
             1.0 / 2.0,
-            vec![
-                EditorTab::TimelineSetting,
-                EditorTab::LineList,
-            ],
+            vec![EditorTab::TimelineSetting, EditorTab::LineList],
         );
 
         Self { state }
