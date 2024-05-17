@@ -157,8 +157,6 @@ impl UiState {
             1.0 / 2.0,
             vec![
                 EditorTab::TimelineSetting,
-                EditorTab::AudioSetting,
-                EditorTab::ChartBasicSetting,
                 EditorTab::LineList,
             ],
         );
