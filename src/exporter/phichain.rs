@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use crate::audio::Offset;
 use crate::{
     chart::{event::LineEvent, line::Line, note::Note},
-    serialzation::{LineWrapper, PhiChainChart},
+    serialization::{LineWrapper, PhiChainChart},
     timing::BpmList,
 };
 

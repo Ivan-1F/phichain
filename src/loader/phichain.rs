@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use crate::{
     chart::{event::LineEventBundle, line::LineBundle, note::NoteBundle},
     selection::SelectedLine,
-    serialzation::{LineWrapper, PhiChainChart},
+    serialization::{LineWrapper, PhiChainChart},
 };
 
 use super::Loader;

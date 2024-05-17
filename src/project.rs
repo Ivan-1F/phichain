@@ -8,7 +8,7 @@ use crate::{
     audio::SpawnAudioEvent,
     loader::{phichain::PhiChainLoader, Loader},
     notification::{ToastsExt, ToastsStorage},
-    serialzation::PhiChainChart,
+    serialization::PhiChainChart,
     tab::game::illustration::SpawnIllustrationEvent,
 };
 

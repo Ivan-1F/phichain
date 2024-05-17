@@ -16,7 +16,7 @@ mod notification;
 mod project;
 mod score;
 mod selection;
-mod serialzation;
+mod serialization;
 mod tab;
 mod timing;
 mod widgets;
