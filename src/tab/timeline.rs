@@ -294,27 +294,26 @@ impl<'w> Timeline<'w> {
     pub fn primary_beat_times(&self) -> Vec<f32> {
         let audio_duration = 240.0; // TODO: replace with actual audio duration
 
-        let interval = self.bpm_list.time_at(Beat::ONE);
-
         std::iter::repeat(0)
-            .take((audio_duration / interval).round() as usize)
+            .take(100)
             .enumerate()
-            .map(|(i, _)| i as f32 * interval)
+            .map(|(i, _)| self.bpm_list.time_at(Beat::from(i as f32)))
+            .take_while(|x| x < &audio_duration)
             .collect()
     }
 
     pub fn secondary_beat_times(&self) -> Vec<f32> {
         let audio_duration = 240.0; // TODO: replace with actual audio duration
 
-        let interval = self.bpm_list.time_at(Beat::new(
-            0,
-            Rational32::new(1, self.timeline_settings.density as i32),
-        ));
-
         std::iter::repeat(0)
-            .take((audio_duration / interval).round() as usize)
             .enumerate()
-            .map(|(i, _)| i as f32 * interval)
+            .map(|(i, _)| {
+                self.bpm_list.time_at(Beat::new(
+                    0,
+                    Rational32::new(i as i32, self.timeline_settings.density as i32),
+                ))
+            })
+            .take_while(|x| x < &audio_duration)
             .collect()
     }
 
