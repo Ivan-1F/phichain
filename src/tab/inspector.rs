@@ -1,13 +1,10 @@
 use bevy::prelude::*;
 use egui::Ui;
-use num::Rational32;
 
 use crate::chart::event::{LineEvent, LineEventKind};
+use crate::widgets::beat_value::BeatExt;
 use crate::{
-    chart::{
-        beat::Beat,
-        note::{Note, NoteKind},
-    },
+    chart::note::{Note, NoteKind},
     selection::Selected,
 };
 
@@ -24,39 +21,6 @@ pub fn inspector_ui_system(
     } else if selected_notes.is_empty() && selected_events.len() == 1 {
         let selected_event = selected_events.get_mut(0).unwrap();
         single_event_inspector(ui, selected_event);
-    }
-}
-
-trait BeatExt {
-    fn beat(&mut self, beat: &mut Beat);
-}
-
-impl BeatExt for Ui {
-    fn beat(&mut self, beat: &mut Beat) {
-        self.horizontal(|ui| {
-            let mut whole = beat.beat();
-            let mut numer = beat.numer();
-            let mut denom = beat.denom();
-            ui.add(
-                egui::DragValue::new(&mut whole)
-                    .clamp_range(0..=u32::MAX)
-                    .speed(1),
-            );
-            ui.add(
-                egui::DragValue::new(&mut numer)
-                    .clamp_range(0..=u32::MAX)
-                    .speed(1),
-            );
-            ui.add(
-                egui::DragValue::new(&mut denom)
-                    .clamp_range(1..=u32::MAX)
-                    .speed(1),
-            );
-
-            if whole != beat.beat() || numer != beat.numer() || denom != beat.denom() {
-                *beat = Beat::new(whole, Rational32::new(numer, denom));
-            }
-        });
     }
 }
 

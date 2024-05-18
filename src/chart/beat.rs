@@ -21,6 +21,9 @@ impl Beat {
 }
 
 impl Beat {
+    pub const MAX: Self = Beat(i32::MAX, Rational32::ZERO);
+    pub const MIN: Self = Beat(i32::MIN, Rational32::ZERO);
+
     pub const ZERO: Self = Beat(0, Rational32::ZERO);
     pub const ONE: Self = Beat(1, Rational32::ZERO);
 }
