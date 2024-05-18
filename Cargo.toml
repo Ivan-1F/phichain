@@ -23,6 +23,11 @@ debug = false
 [lints.clippy]
 type_complexity = "allow"
 
+[package.metadata.i18n]
+available-locales = ["en_us", "zh_cn"]
+default-locale = "en_us"
+load-path = "lang"
+
 [dependencies]
 bevy = { version = "0.13.2", default-features = false, features = [
     "animation",
