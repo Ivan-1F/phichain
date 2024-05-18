@@ -5,8 +5,6 @@ use crate::selection::SelectedLine;
 use bevy::prelude::*;
 use egui::Ui;
 
-// use crate::translation::Translator;
-
 pub fn line_list_tab(
     In(ui): In<&mut Ui>,
     line_query: Query<(&Children, Entity), With<Line>>,

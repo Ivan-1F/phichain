@@ -37,3 +37,11 @@ tab:
     offset: Offset (ms)
   line_list:
     title: Line List
+  bpm_list:
+    title: BPM List
+    new: New BPM Point
+    remove: Remove
+    zero_beat_not_editable: Each project must have one BPM point at beat 0
+    point:
+      beat: Beat
+      bpm: BPM
