@@ -8,6 +8,7 @@ mod constants;
 mod editing;
 mod exporter;
 mod file;
+mod format;
 mod hit_sound;
 mod home;
 mod loader;
