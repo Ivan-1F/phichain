@@ -1,6 +1,7 @@
 //! Phigros official json chart format
 
 use crate::chart::beat::Beat;
+use crate::chart::easing::Easing;
 use crate::chart::event::{LineEvent, LineEventKind};
 use crate::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use crate::format::Format;
@@ -135,6 +136,7 @@ impl Format for OfficialChart {
                         end: x(event.end_x),
                         start_beat: t(event.start_time),
                         end_beat: t(event.end_time),
+                        easing: Easing::Linear,
                     },
                     LineEvent {
                         kind: LineEventKind::Y,
@@ -142,6 +144,7 @@ impl Format for OfficialChart {
                         end: y(event.end_y),
                         start_beat: t(event.start_time),
                         end_beat: t(event.end_time),
+                        easing: Easing::Linear,
                     },
                 ]
             });
@@ -152,6 +155,7 @@ impl Format for OfficialChart {
                 end: event.end,
                 start_beat: t(event.start_time),
                 end_beat: t(event.end_time),
+                easing: Easing::Linear,
             });
 
             let opacity_event_iter = line.opacity_events.iter().map(|event| LineEvent {
@@ -160,6 +164,7 @@ impl Format for OfficialChart {
                 end: event.end * 255.0,
                 start_beat: t(event.start_time),
                 end_beat: t(event.end_time),
+                easing: Easing::Linear,
             });
 
             let speed_event_iter = line.speed_events.iter().map(|event| LineEvent {
@@ -168,6 +173,7 @@ impl Format for OfficialChart {
                 end: event.value / 2.0 * 9.0,
                 start_beat: t(event.start_time),
                 end_beat: t(event.end_time),
+                easing: Easing::Linear,
             });
 
             phichain.lines.push(LineWrapper(

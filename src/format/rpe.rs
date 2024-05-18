@@ -1,5 +1,6 @@
 //! Re:PhiEdit json format
 
+use crate::chart::easing::Easing;
 use crate::chart::event::{LineEvent, LineEventKind};
 use crate::format::Format;
 use crate::serialization::{LineWrapper, PhiChainChart};
@@ -273,6 +274,7 @@ impl Format for RpeChart {
                     end: event.end,
                     start_beat: event.start_time.into(),
                     end_beat: event.end_time.into(),
+                    easing: Easing::Linear,
                 });
             let y_event_iter = line
                 .event_layers
@@ -284,6 +286,7 @@ impl Format for RpeChart {
                     end: event.end,
                     start_beat: event.start_time.into(),
                     end_beat: event.end_time.into(),
+                    easing: Easing::Linear,
                 });
             let rotate_event_iter = line
                 .event_layers
@@ -295,6 +298,7 @@ impl Format for RpeChart {
                     end: event.end,
                     start_beat: event.start_time.into(),
                     end_beat: event.end_time.into(),
+                    easing: Easing::Linear,
                 });
             let alpha_event_iter = line
                 .event_layers
@@ -306,6 +310,7 @@ impl Format for RpeChart {
                     end: event.end as f32,
                     start_beat: event.start_time.into(),
                     end_beat: event.end_time.into(),
+                    easing: Easing::Linear,
                 });
             let speed_event_iter = line
                 .event_layers
@@ -317,6 +322,7 @@ impl Format for RpeChart {
                     end: event.end,
                     start_beat: event.start_time.into(),
                     end_beat: event.end_time.into(),
+                    easing: Easing::Linear,
                 });
 
             phichain.lines.push(LineWrapper(

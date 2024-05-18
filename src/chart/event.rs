@@ -1,3 +1,4 @@
+use crate::chart::easing::{Easing, Tween};
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -19,6 +20,8 @@ pub struct LineEvent {
     pub end: f32,
     pub start_beat: Beat,
     pub end_beat: Beat,
+
+    pub easing: Easing,
 }
 
 impl LineEvent {
@@ -27,7 +30,7 @@ impl LineEvent {
         let end_beat: f32 = self.end_beat.value();
         if beat >= start_beat && beat <= end_beat {
             let percent = (beat - start_beat) / (end_beat - start_beat);
-            return Some((self.end - self.start) * percent + self.start);
+            return Some(self.start.ease_to(self.end, percent, self.easing));
         } else if beat > end_beat {
             return Some(self.end);
         }

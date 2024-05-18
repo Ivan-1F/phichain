@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::audio::Offset;
+use crate::chart::easing::Easing;
 use crate::{
     chart::{
         beat::Beat,
@@ -53,6 +54,7 @@ impl Default for LineWrapper {
                     end: 0.0,
                     start_beat: Beat::ZERO,
                     end_beat: Beat::ONE,
+                    easing: Easing::Linear,
                 },
                 LineEvent {
                     kind: LineEventKind::Y,
@@ -60,6 +62,7 @@ impl Default for LineWrapper {
                     end: 0.0,
                     start_beat: Beat::ZERO,
                     end_beat: Beat::ONE,
+                    easing: Easing::Linear,
                 },
                 LineEvent {
                     kind: LineEventKind::Rotation,
@@ -67,6 +70,7 @@ impl Default for LineWrapper {
                     end: 0.0,
                     start_beat: Beat::ZERO,
                     end_beat: Beat::ONE,
+                    easing: Easing::Linear,
                 },
                 LineEvent {
                     kind: LineEventKind::Opacity,
@@ -74,6 +78,7 @@ impl Default for LineWrapper {
                     end: 255.0,
                     start_beat: Beat::ZERO,
                     end_beat: Beat::ONE,
+                    easing: Easing::Linear,
                 },
                 LineEvent {
                     kind: LineEventKind::Speed,
@@ -81,6 +86,7 @@ impl Default for LineWrapper {
                     end: 10.0,
                     start_beat: Beat::ZERO,
                     end_beat: Beat::ONE,
+                    easing: Easing::Linear,
                 },
             ],
         )

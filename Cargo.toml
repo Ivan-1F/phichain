@@ -75,3 +75,6 @@ anyhow = "1.0.83"
 egui-toast = "0.13.0"
 rust-i18n = "3.0.1"
 clap = { version = "4.5.4", features = ["derive"] }
+simple-easing = "1.0.1"
+log = "0.4.21"
+num_enum = "0.7.2"
