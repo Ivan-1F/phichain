@@ -40,7 +40,6 @@ tab:
   bpm_list:
     title: BPM 列表
     new: 新增 BPM 点
-    remove: 移除
     zero_beat_not_editable: 每个项目中必须存在一个拍数为 0 的 BPM 点
     point:
       beat: 时间 (拍)

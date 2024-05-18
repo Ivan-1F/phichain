@@ -19,7 +19,7 @@ pub fn bpm_list_tab(In(ui): In<&mut Ui>, mut bpm_list: ResMut<BpmList>) {
         ui.horizontal_top(|ui| {
             egui::Grid::new(format!("audio_setting_grid_{}", index))
                 .num_columns(2)
-                .spacing([40.0, 2.0])
+                .spacing([20.0, 2.0])
                 .striped(true)
                 .show(ui, |ui| {
                     let mut beat = point.beat;
@@ -45,10 +45,10 @@ pub fn bpm_list_tab(In(ui): In<&mut Ui>, mut bpm_list: ResMut<BpmList>) {
                     }
                 });
 
-            ui.add_space(20.0);
+            ui.add_space(10.0);
             ui.add_enabled_ui(point.beat != Beat::ZERO, |ui| {
                 if ui
-                    .button("×")
+                    .button(" × ")
                     .on_disabled_hover_text(t!("tab.bpm_list.zero_beat_not_editable"))
                     .clicked()
                 {
