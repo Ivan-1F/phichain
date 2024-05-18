@@ -4,6 +4,7 @@ Chart*.json
 
 assets/*
 !assets/font/
+!assets/image/
 
 .DS_Store
 
