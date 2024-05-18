@@ -32,6 +32,6 @@ fn load_assets(mut image_assets: ResMut<ImageAssets>, asset_server: Res<AssetSer
         drag_highlight: asset_server.load("image/drag.highlight.png"),
         hold_highlight: asset_server.load("image/hold.highlight.png"),
         flick_highlight: asset_server.load("image/flick.highlight.png"),
-        line: asset_server.load("image/judgeline.png"),
+        line: asset_server.load("image/line.png"),
     };
 }
