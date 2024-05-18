@@ -92,8 +92,8 @@ fn space_pause_resume_control(
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BpmPoint {
-    beat: Beat,
-    bpm: f32,
+    pub beat: Beat,
+    pub bpm: f32,
 
     time: f32,
 }
@@ -109,7 +109,7 @@ impl BpmPoint {
 }
 
 #[derive(Resource, Debug, Clone, Serialize, Deserialize)]
-pub struct BpmList(Vec<BpmPoint>);
+pub struct BpmList(pub Vec<BpmPoint>);
 
 impl Default for BpmList {
     fn default() -> Self {
@@ -124,7 +124,7 @@ impl BpmList {
         list
     }
 
-    fn compute(&mut self) {
+    pub fn compute(&mut self) {
         let mut time = 0.0;
         let mut last_beat = 0.0;
         let mut last_bpm = -1.0;
@@ -160,5 +160,44 @@ impl BpmList {
             .expect("No bpm points available");
 
         Beat::from(point.beat.value() + (time - point.time) * point.bpm / 60.0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_time_at() {
+        let bpm_list = BpmList::new(vec![
+            BpmPoint::new(Beat::ZERO, 120.0),
+            BpmPoint::new(Beat::from(4.0), 240.0),
+        ]);
+        assert_eq!(bpm_list.time_at(Beat::ZERO), 0.0);
+        assert_eq!(bpm_list.time_at(Beat::ONE), 0.5);
+        assert_eq!(bpm_list.time_at(Beat::from(2.0)), 1.0);
+        assert_eq!(bpm_list.time_at(Beat::from(3.0)), 1.5);
+        assert_eq!(bpm_list.time_at(Beat::from(4.0)), 2.0);
+        assert_eq!(bpm_list.time_at(Beat::from(5.0)), 2.0 + 0.25);
+        assert_eq!(bpm_list.time_at(Beat::from(6.0)), 2.0 + 0.25 * 2.0);
+        assert_eq!(bpm_list.time_at(Beat::from(7.0)), 2.0 + 0.25 * 3.0);
+        assert_eq!(bpm_list.time_at(Beat::from(8.0)), 2.0 + 0.25 * 4.0);
+    }
+
+    #[test]
+    fn test_beat_at() {
+        let bpm_list = BpmList::new(vec![
+            BpmPoint::new(Beat::ZERO, 120.0),
+            BpmPoint::new(Beat::from(4.0), 240.0),
+        ]);
+        assert_eq!(bpm_list.beat_at(0.0), Beat::ZERO);
+        assert_eq!(bpm_list.beat_at(0.5), Beat::ONE);
+        assert_eq!(bpm_list.beat_at(1.0), Beat::from(2.0));
+        assert_eq!(bpm_list.beat_at(1.5), Beat::from(3.0));
+        assert_eq!(bpm_list.beat_at(2.0), Beat::from(4.0));
+        assert_eq!(bpm_list.beat_at(2.0 + 0.25), Beat::from(5.0));
+        assert_eq!(bpm_list.beat_at(2.0 + 0.25 * 2.0), Beat::from(6.0));
+        assert_eq!(bpm_list.beat_at(2.0 + 0.25 * 3.0), Beat::from(7.0));
+        assert_eq!(bpm_list.beat_at(2.0 + 0.25 * 4.0), Beat::from(8.0));
     }
 }
