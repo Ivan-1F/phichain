@@ -34,11 +34,13 @@ impl<'a> Widget for BeatValue<'a> {
                     .clamp_range(0..=u32::MAX)
                     .speed(1),
             );
+            ui.label(":");
             ui.add(
                 egui::DragValue::new(&mut numer)
                     .clamp_range(0..=u32::MAX)
                     .speed(1),
             );
+            ui.label("/");
             ui.add(
                 egui::DragValue::new(&mut denom)
                     .clamp_range(1..=u32::MAX)
