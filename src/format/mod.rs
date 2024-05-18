@@ -1,6 +1,7 @@
 use crate::serialization::PhiChainChart;
 
 mod official;
+mod rpe;
 
 pub trait Format {
     #[allow(dead_code)]
