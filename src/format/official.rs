@@ -99,7 +99,7 @@ impl Format for OfficialChart {
         }
 
         let mut phichain = PhiChainChart::new(
-            self.offset,
+            self.offset * 1000.0,
             BpmList::new(vec![BpmPoint::new(Beat::ZERO, self.lines[0].bpm)]),
             vec![],
         );
