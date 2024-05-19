@@ -2,6 +2,7 @@ use anyhow::{bail, Context};
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use std::path::Path;
 use std::{fs::File, path::PathBuf};
 
 use crate::{
@@ -38,6 +39,10 @@ pub struct ProjectPath(PathBuf);
 impl ProjectPath {
     pub fn chart_path(&self) -> PathBuf {
         self.0.join("chart.json")
+    }
+
+    pub fn sub_path(&self, path: impl AsRef<Path>) -> PathBuf {
+        self.0.join(path)
     }
 
     pub fn music_path(&self) -> PathBuf {
@@ -141,13 +146,27 @@ pub fn create_project(
     project_meta: ProjectMeta,
 ) -> anyhow::Result<()> {
     let project_path = ProjectPath(root_path);
-    std::fs::copy(music_path, project_path.music_path()).context("Failed to copy music file")?;
-    std::fs::copy(illustration_path, project_path.illustration_path())
+
+    let mut target_music_path = project_path.sub_path("music");
+    if let Some(ext) = music_path.extension() {
+        target_music_path.set_extension(ext);
+    }
+
+    std::fs::copy(music_path, target_music_path).context("Failed to copy music file")?;
+
+    let mut target_illustration_path = project_path.sub_path("illustration");
+    if let Some(ext) = illustration_path.extension() {
+        target_illustration_path.set_extension(ext);
+    }
+
+    std::fs::copy(illustration_path, target_illustration_path)
         .context("Failed to copy illustration file")?;
+
     let meta_string = serde_json::to_string_pretty(&project_meta).unwrap();
     std::fs::write(project_path.meta_path(), meta_string).context("Failed to write meta")?;
+
     let chart_string = serde_json::to_string_pretty(&PhiChainChart::default()).unwrap();
-    std::fs::write(project_path.chart_path(), chart_string).context("Failed to write meta")?;
+    std::fs::write(project_path.chart_path(), chart_string).context("Failed to write chart")?;
 
     Ok(())
 }

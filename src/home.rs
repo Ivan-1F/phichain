@@ -54,14 +54,22 @@ fn ui_system(world: &mut World) {
             let form = world.resource_mut::<CreateProjectForm>();
             ui.label(format!("{:?}", form.music));
             if ui.button("Select Music").clicked() {
-                pick_file(world, PickingKind::SelectMusic, FileDialog::new());
+                pick_file(
+                    world,
+                    PickingKind::SelectMusic,
+                    FileDialog::new().add_filter("Music", &["wav", "mp3", "ogg", "flac"]),
+                );
             }
         });
         ui.horizontal(|ui| {
             let form = world.resource_mut::<CreateProjectForm>();
             ui.label(format!("{:?}", form.illustration));
             if ui.button("Select Illustration").clicked() {
-                pick_file(world, PickingKind::SelectIllustration, FileDialog::new());
+                pick_file(
+                    world,
+                    PickingKind::SelectIllustration,
+                    FileDialog::new().add_filter("Illustration", &["png", "jpg", "jpeg"]),
+                );
             }
         });
 
