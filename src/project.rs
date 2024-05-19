@@ -1,4 +1,4 @@
-use anyhow::{bail, Context};
+use anyhow::{anyhow, bail, Context};
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -45,12 +45,28 @@ impl ProjectPath {
         self.0.join(path)
     }
 
-    pub fn music_path(&self) -> PathBuf {
-        self.0.join("music.wav")
+    fn find_file(&self, name: &str, allowed_extensions: &[impl ToString]) -> Option<PathBuf> {
+        std::fs::read_dir(&self.0)
+            .ok()?
+            .filter_map(Result::ok)
+            .map(|x| x.path())
+            .find(|path| {
+                path.is_file()
+                    && path.file_stem() == Some(name.as_ref())
+                    && path.extension().map_or(false, |ext| {
+                        allowed_extensions
+                            .iter()
+                            .any(|allowed| *allowed.to_string() == *ext)
+                    })
+            })
     }
 
-    pub fn illustration_path(&self) -> PathBuf {
-        self.0.join("illustration.png")
+    pub fn music_path(&self) -> Option<PathBuf> {
+        self.find_file("music", &["wav", "mp3", "ogg", "flac"])
+    }
+
+    pub fn illustration_path(&self) -> Option<PathBuf> {
+        self.find_file("illustration", &["png", "jpg", "jpeg"])
     }
 
     pub fn meta_path(&self) -> PathBuf {
@@ -61,10 +77,18 @@ impl ProjectPath {
         if !self.chart_path().is_file() {
             bail!("chart.json is missing");
         }
-        if !self.music_path().is_file() {
+        if !self
+            .music_path()
+            .ok_or(anyhow!("Could not find music file in project"))?
+            .is_file()
+        {
             bail!("music.wav is missing");
         }
-        if !self.illustration_path().is_file() {
+        if !self
+            .illustration_path()
+            .ok_or(anyhow!("Could not find illustration file in project"))?
+            .is_file()
+        {
             bail!("illustration.png is missing");
         }
         if !self.meta_path().is_file() {
@@ -116,17 +140,22 @@ fn load_project_system(
     if let Some(event) = events.read().last() {
         match Project::load(event.0.clone()) {
             Ok(project) => {
-                let file = File::open(project.path.chart_path()).unwrap();
-                let illustration_path = project.path.illustration_path();
-                let audio_path = project.path.music_path();
+                
+                // unwrap: if Project::load is ok, illustration_path() must return Some
+                let illustration_path = project.path.illustration_path().unwrap();
                 // TODO: maybe make this load_illustration(PathBuf, mut Commands) for better error handling
                 commands.add(|world: &mut World| {
                     world.send_event(SpawnIllustrationEvent(illustration_path));
                 });
+
+                // unwrap: if Project::load is ok, illustration_path() must return Some
+                let audio_path = project.path.music_path().unwrap();
                 // TODO: maybe make this load_music(PathBuf, mut Commands) for better error handling
                 commands.add(|world: &mut World| {
                     world.send_event(SpawnAudioEvent(audio_path));
                 });
+
+                let file = File::open(project.path.chart_path()).unwrap();
                 PhiChainLoader::load(file, &mut commands);
                 commands.insert_resource(project);
             }
