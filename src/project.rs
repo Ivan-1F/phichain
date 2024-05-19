@@ -140,7 +140,6 @@ fn load_project_system(
     if let Some(event) = events.read().last() {
         match Project::load(event.0.clone()) {
             Ok(project) => {
-                
                 // unwrap: if Project::load is ok, illustration_path() must return Some
                 let illustration_path = project.path.illustration_path().unwrap();
                 // TODO: maybe make this load_illustration(PathBuf, mut Commands) for better error handling
