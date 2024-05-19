@@ -23,7 +23,7 @@ pub struct ProjectMeta {
 
 #[derive(Resource)]
 pub struct Project {
-    pub root_dir: PathBuf,
+    pub path: ProjectPath,
     pub meta: ProjectMeta,
 }
 
@@ -33,7 +33,7 @@ impl Project {
     }
 }
 
-struct ProjectPath(PathBuf);
+pub struct ProjectPath(PathBuf);
 
 impl ProjectPath {
     pub fn chart_path(&self) -> PathBuf {
@@ -74,7 +74,7 @@ impl ProjectPath {
         let _: PhiChainChart = serde_json::from_reader(chart_file).context("Invalid chart")?;
 
         Ok(Project {
-            root_dir: self.0,
+            path: self,
             meta,
         })
     }
@@ -114,12 +114,12 @@ fn load_project_system(
     if let Some(event) = events.read().last() {
         match Project::load(event.0.clone()) {
             Ok(project) => {
-                let file = File::open(project.root_dir.join("chart.json")).unwrap();
-                let illustraion_path = project.root_dir.join("illustration.png");
-                let audio_path = project.root_dir.join("music.wav");
+                let file = File::open(project.path.chart_path()).unwrap();
+                let illustration_path = project.path.illustration_path();
+                let audio_path = project.path.music_path();
                 // TODO: maybe make this load_illustration(PathBuf, mut Commands) for better error handling
                 commands.add(|world: &mut World| {
-                    world.send_event(SpawnIllustrationEvent(illustraion_path));
+                    world.send_event(SpawnIllustrationEvent(illustration_path));
                 });
                 // TODO: maybe make this load_music(PathBuf, mut Commands) for better error handling
                 commands.add(|world: &mut World| {

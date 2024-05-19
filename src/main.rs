@@ -269,7 +269,7 @@ fn ui_system(world: &mut World) {
                 if ui.button(t!("menu_bar.file.save")).clicked() {
                     if let Ok(chart) = PhiChainExporter::export(world) {
                         let project = world.resource::<Project>();
-                        let result = std::fs::write(project.root_dir.join("chart.json"), chart);
+                        let result = std::fs::write(project.path.chart_path(), chart);
                         let mut toasts = world.resource_mut::<ToastsStorage>();
                         match result {
                             Ok(_) => {
