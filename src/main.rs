@@ -11,6 +11,7 @@ mod file;
 mod format;
 mod hit_sound;
 mod home;
+mod hotkey;
 mod loader;
 mod misc;
 mod notification;
@@ -31,6 +32,7 @@ use crate::exporter::phichain::PhiChainExporter;
 use crate::exporter::Exporter;
 use crate::file::FilePickingPlugin;
 use crate::home::HomePlugin;
+use crate::hotkey::HotkeyPlugin;
 use crate::misc::MiscPlugin;
 use crate::misc::WorkingDirectory;
 use crate::notification::{NotificationPlugin, ToastsExt, ToastsStorage};
@@ -90,6 +92,7 @@ fn main() {
         .add_plugins(AssetsPlugin)
         .add_plugins(NotificationPlugin)
         .add_plugins(FilePickingPlugin)
+        .add_plugins(HotkeyPlugin)
         .add_systems(Startup, setup_egui_image_loader_system)
         .add_systems(Startup, setup_egui_font_system)
         .add_systems(Startup, setup_plugin)
