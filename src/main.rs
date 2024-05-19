@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate rust_i18n;
 
+mod action;
 mod assets;
 mod audio;
 mod chart;
@@ -23,8 +24,8 @@ mod serialization;
 mod tab;
 mod timing;
 mod widgets;
-mod action;
 
+use crate::action::ActionPlugin;
 use crate::assets::AssetsPlugin;
 use crate::audio::AudioPlugin;
 use crate::chart::event::LineEvent;
@@ -56,7 +57,6 @@ use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
 use clap::Parser;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
-use crate::action::ActionPlugin;
 
 i18n!("lang", fallback = "en_us");
 

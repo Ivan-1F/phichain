@@ -1,10 +1,10 @@
 use crate::action::ActionRegistry;
+use crate::identifier::Identifier;
 use bevy::ecs::system::SystemState;
 use bevy::input::keyboard::KeyboardInput;
 use bevy::prelude::*;
-use std::ops::Not;
 use bevy::utils::HashMap;
-use crate::identifier::Identifier;
+use std::ops::Not;
 
 pub struct HotkeyPlugin;
 
@@ -12,7 +12,8 @@ pub type HotkeyIdentifier = Identifier;
 
 impl Plugin for HotkeyPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<PressedKeys>().init_resource::<HotkeyRegistry>()
+        app.init_resource::<PressedKeys>()
+            .init_resource::<HotkeyRegistry>()
             .add_systems(
                 Update,
                 (listen_to_key_events_system, handle_hotkey_system).chain(),
@@ -25,14 +26,23 @@ impl Plugin for HotkeyPlugin {
 struct HotkeyRegistry(HashMap<HotkeyIdentifier, Vec<KeyCode>>);
 
 trait HotkeyRegistrationExt {
-    fn register_hotkey(&mut self, id: impl Into<HotkeyIdentifier>, keys: impl IntoIterator<Item = KeyCode>) -> &mut Self;
+    fn register_hotkey(
+        &mut self,
+        id: impl Into<HotkeyIdentifier>,
+        keys: impl IntoIterator<Item = KeyCode>,
+    ) -> &mut Self;
 }
 
 impl HotkeyRegistrationExt for App {
-    fn register_hotkey(&mut self, id: impl Into<HotkeyIdentifier>, keys: impl IntoIterator<Item = KeyCode>) -> &mut Self {
-        self.world.resource_scope(|world, mut registry: Mut<HotkeyRegistry>| {
-            registry.0.insert(id.into(), IntoIterator::into_iter(keys).collect());
-        });
+    fn register_hotkey(
+        &mut self,
+        id: impl Into<HotkeyIdentifier>,
+        keys: impl IntoIterator<Item = KeyCode>,
+    ) -> &mut Self {
+        self.world
+            .resource_mut::<HotkeyRegistry>()
+            .0
+            .insert(id.into(), IntoIterator::into_iter(keys).collect());
 
         self
     }
@@ -63,7 +73,11 @@ fn listen_to_key_events_system(
 
 fn handle_hotkey_system(
     world: &mut World,
-    state: &mut SystemState<(EventReader<KeyboardInput>, Res<PressedKeys>, Res<HotkeyRegistry>)>,
+    state: &mut SystemState<(
+        EventReader<KeyboardInput>,
+        Res<PressedKeys>,
+        Res<HotkeyRegistry>,
+    )>,
 ) {
     let (mut events, pressed_keys, hotkey) = state.get(world);
 
