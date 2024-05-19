@@ -73,10 +73,7 @@ impl ProjectPath {
         // just do validation here
         let _: PhiChainChart = serde_json::from_reader(chart_file).context("Invalid chart")?;
 
-        Ok(Project {
-            path: self,
-            meta,
-        })
+        Ok(Project { path: self, meta })
     }
 }
 
