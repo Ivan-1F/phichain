@@ -1,5 +1,5 @@
 use crate::chart::event::LineEvent;
-use crate::chart::line::{Line, LineOpacity, LinePosition, LineRotation};
+use crate::chart::line::{Line, LineOpacity, LinePosition, LineRotation, LineSpeed};
 use crate::chart::note::Note;
 use crate::selection::SelectedLine;
 use bevy::prelude::*;
@@ -14,6 +14,7 @@ pub fn line_list_tab(
             &LinePosition,
             &LineRotation,
             &LineOpacity,
+            &LineSpeed,
         ),
         With<Line>,
     >,
@@ -22,7 +23,8 @@ pub fn line_list_tab(
 
     mut selected_line: ResMut<SelectedLine>,
 ) {
-    for (index, (line, entity, position, rotation, opacity)) in line_query.iter().enumerate() {
+    for (index, (line, entity, position, rotation, opacity, speed)) in line_query.iter().enumerate()
+    {
         let notes = line
             .iter()
             .filter(|child| note_query.get(**child).is_ok())
@@ -41,8 +43,16 @@ pub fn line_list_tab(
                      {} notes, {} events\n\
                      Pos: ({:.2}, {:.2})\n\
                      Rot: {:.2}\n\
-                     Opa: {:.2}",
-                    index, notes, events, position.0.x, position.0.y, rotation.0, opacity.0
+                     Opa: {:.2}\n\
+                     Spd: {:.2}",
+                    index,
+                    notes,
+                    events,
+                    position.0.x,
+                    position.0.y,
+                    rotation.0,
+                    opacity.0,
+                    speed.0,
                 ),
             )
             .clicked()

@@ -1,6 +1,7 @@
 use bevy::{prelude::*, sprite::Anchor};
 use num::{FromPrimitive, Rational32};
 
+use crate::chart::line::LineSpeed;
 use crate::{
     assets::ImageAssets,
     chart::{
@@ -101,6 +102,7 @@ fn compute_line_system(
             &mut LinePosition,
             &mut LineRotation,
             &mut LineOpacity,
+            &mut LineSpeed,
             Entity,
         ),
         With<Line>,
@@ -109,7 +111,7 @@ fn compute_line_system(
     bpm_list: Res<BpmList>,
 ) {
     let beat: f32 = bpm_list.beat_at(time.0).into();
-    for (mut position, mut rotation, mut opacity, entity) in &mut line_query {
+    for (mut position, mut rotation, mut opacity, mut speed, entity) in &mut line_query {
         let mut events: Vec<_> = event_query
             .iter()
             .filter(|(_, parent)| parent.get() == entity)
@@ -129,7 +131,7 @@ fn compute_line_system(
                             opacity.0 = value / 255.0;
                         }
                     }
-                    LineEventKind::Speed => {}
+                    LineEventKind::Speed => speed.0 = value,
                 }
             }
         }

@@ -3,14 +3,18 @@ use bevy::prelude::*;
 #[derive(Component)]
 pub struct Line;
 
-#[derive(Component, Debug)]
+#[derive(Component, Debug, Default)]
 pub struct LinePosition(pub Vec2);
 
-#[derive(Component, Debug)]
+#[derive(Component, Debug, Default)]
 pub struct LineRotation(pub f32);
 
-#[derive(Component, Debug)]
+#[derive(Component, Debug, Default)]
 pub struct LineOpacity(pub f32);
+
+/// This will not affect line entity, it is only used to show realtime speed of lines in [crate::tab::line_list]
+#[derive(Component, Debug, Default)]
+pub struct LineSpeed(pub f32);
 
 #[derive(Bundle)]
 pub struct LineBundle {
@@ -19,6 +23,7 @@ pub struct LineBundle {
     position: LinePosition,
     rotation: LineRotation,
     opacity: LineOpacity,
+    speed: LineSpeed,
 }
 
 impl LineBundle {
@@ -26,9 +31,10 @@ impl LineBundle {
         Self {
             sprite: SpriteBundle::default(),
             line: Line,
-            position: LinePosition(Vec2 { x: 0.0, y: 0.0 }),
-            rotation: LineRotation(0.0),
-            opacity: LineOpacity(0.0),
+            position: Default::default(),
+            rotation: Default::default(),
+            opacity: Default::default(),
+            speed: Default::default(),
         }
     }
 }
