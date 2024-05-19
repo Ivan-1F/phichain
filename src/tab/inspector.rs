@@ -3,6 +3,7 @@ use egui::Ui;
 
 use crate::chart::event::{LineEvent, LineEventKind};
 use crate::widgets::beat_value::BeatExt;
+use crate::widgets::easing_value::EasingValue;
 use crate::{
     chart::note::{Note, NoteKind},
     selection::Selected,
@@ -56,6 +57,10 @@ fn single_event_inspector(ui: &mut Ui, event: &mut LineEvent) {
                     .clamp_range(range.clone())
                     .speed(1.0),
             );
+            ui.end_row();
+
+            ui.label(t!("tab.inspector.single_event.end_value"));
+            ui.add(EasingValue::new(&mut event.easing));
             ui.end_row();
         });
 }

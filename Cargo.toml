@@ -83,3 +83,4 @@ clap = { version = "4.5.4", features = ["derive"] }
 simple-easing = "1.0.1"
 log = "0.4.21"
 num_enum = "0.7.2"
+strum = { version = "0.26.2", features = ["derive"] }
