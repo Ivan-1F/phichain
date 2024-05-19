@@ -23,6 +23,7 @@ mod serialization;
 mod tab;
 mod timing;
 mod widgets;
+mod action;
 
 use crate::assets::AssetsPlugin;
 use crate::audio::AudioPlugin;
@@ -55,6 +56,7 @@ use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
 use clap::Parser;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
+use crate::action::ActionPlugin;
 
 i18n!("lang", fallback = "en_us");
 
@@ -93,6 +95,7 @@ fn main() {
         .add_plugins(AssetsPlugin)
         .add_plugins(NotificationPlugin)
         .add_plugins(FilePickingPlugin)
+        .add_plugins(ActionPlugin)
         .add_plugins(HotkeyPlugin)
         .add_systems(Startup, setup_egui_image_loader_system)
         .add_systems(Startup, setup_egui_font_system)

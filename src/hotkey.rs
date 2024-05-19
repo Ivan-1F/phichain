@@ -1,6 +1,7 @@
 use bevy::input::keyboard::KeyboardInput;
 use bevy::prelude::*;
 use std::ops::Not;
+use crate::action::ActionRegistry;
 
 pub struct HotkeyPlugin;
 
@@ -9,19 +10,19 @@ impl Plugin for HotkeyPlugin {
         app.insert_resource(PressedKeys::default())
             .add_systems(
                 Update,
-                (listen_to_key_events_system, handle_keybindings_system).chain(),
+                (listen_to_key_events_system, handle_hotkey_system).chain(),
             )
             .register_hotkey(vec![KeyCode::ControlLeft, KeyCode::KeyS]);
     }
 }
 
 trait HotkeyRegistrationExt {
-    fn register_hotkey(&mut self, keys: impl IntoIterator<Item = KeyCode>);
+    fn register_hotkey(&mut self, keys: impl IntoIterator<Item = KeyCode>) -> &mut Self;
 }
 
 impl HotkeyRegistrationExt for App {
-    fn register_hotkey(&mut self, _keys: impl IntoIterator<Item = KeyCode>) {
-        unimplemented!()
+    fn register_hotkey(&mut self, _keys: impl IntoIterator<Item = KeyCode>) -> &mut Self {
+        self
     }
 }
 
@@ -48,13 +49,14 @@ fn listen_to_key_events_system(
     }
 }
 
-fn handle_keybindings_system(
-    mut events: EventReader<KeyboardInput>,
-    pressed_keys: Res<PressedKeys>,
+fn handle_hotkey_system(
+    world: &mut World
 ) {
-    for event in events.read() {
-        if event.state.is_pressed() && pressed_keys.0 == vec![KeyCode::SuperLeft, KeyCode::KeyS] {
-            println!("save!");
-        }
-    }
+    world.resource_scope(|world, keyboard: Mut<ButtonInput<KeyCode>>| {
+       world.resource_scope(|world, mut registry: Mut<ActionRegistry>| {
+           if keyboard.just_pressed(KeyCode::KeyD) {
+               registry.run_action(world, "phichain.debug");
+           }
+       });
+    });
 }
