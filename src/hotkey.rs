@@ -1,27 +1,39 @@
+use crate::action::ActionRegistry;
+use bevy::ecs::system::SystemState;
 use bevy::input::keyboard::KeyboardInput;
 use bevy::prelude::*;
 use std::ops::Not;
-use crate::action::ActionRegistry;
+use bevy::utils::HashMap;
+use crate::identifier::Identifier;
 
 pub struct HotkeyPlugin;
 
+pub type HotkeyIdentifier = Identifier;
+
 impl Plugin for HotkeyPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(PressedKeys::default())
+        app.init_resource::<PressedKeys>().init_resource::<HotkeyRegistry>()
             .add_systems(
                 Update,
                 (listen_to_key_events_system, handle_hotkey_system).chain(),
             )
-            .register_hotkey(vec![KeyCode::ControlLeft, KeyCode::KeyS]);
+            .register_hotkey("phichain.debug", vec![KeyCode::ControlLeft, KeyCode::KeyD]);
     }
 }
 
+#[derive(Resource, Debug, Default)]
+struct HotkeyRegistry(HashMap<HotkeyIdentifier, Vec<KeyCode>>);
+
 trait HotkeyRegistrationExt {
-    fn register_hotkey(&mut self, keys: impl IntoIterator<Item = KeyCode>) -> &mut Self;
+    fn register_hotkey(&mut self, id: impl Into<HotkeyIdentifier>, keys: impl IntoIterator<Item = KeyCode>) -> &mut Self;
 }
 
 impl HotkeyRegistrationExt for App {
-    fn register_hotkey(&mut self, _keys: impl IntoIterator<Item = KeyCode>) -> &mut Self {
+    fn register_hotkey(&mut self, id: impl Into<HotkeyIdentifier>, keys: impl IntoIterator<Item = KeyCode>) -> &mut Self {
+        self.world.resource_scope(|world, mut registry: Mut<HotkeyRegistry>| {
+            registry.0.insert(id.into(), IntoIterator::into_iter(keys).collect());
+        });
+
         self
     }
 }
@@ -50,13 +62,26 @@ fn listen_to_key_events_system(
 }
 
 fn handle_hotkey_system(
-    world: &mut World
+    world: &mut World,
+    state: &mut SystemState<(EventReader<KeyboardInput>, Res<PressedKeys>, Res<HotkeyRegistry>)>,
 ) {
-    world.resource_scope(|world, keyboard: Mut<ButtonInput<KeyCode>>| {
-       world.resource_scope(|world, mut registry: Mut<ActionRegistry>| {
-           if keyboard.just_pressed(KeyCode::KeyD) {
-               registry.run_action(world, "phichain.debug");
-           }
-       });
+    let (mut events, pressed_keys, hotkey) = state.get(world);
+
+    let mut actions_to_run = vec![];
+
+    for event in events.read() {
+        if event.state.is_pressed() {
+            for (id, keys) in hotkey.0.clone() {
+                if pressed_keys.0 == keys {
+                    actions_to_run.push(id);
+                }
+            }
+        }
+    }
+
+    world.resource_scope(|world, mut registry: Mut<ActionRegistry>| {
+        for action in actions_to_run {
+            registry.run_action(world, action);
+        }
     });
 }
