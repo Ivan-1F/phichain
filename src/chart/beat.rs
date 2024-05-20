@@ -1,3 +1,4 @@
+use std::fmt::{Debug, Formatter};
 use std::{
     cmp::Ordering,
     ops::{Add, Sub},
@@ -6,8 +7,14 @@ use std::{
 use num::{FromPrimitive, Rational32};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub struct Beat(i32, Rational32);
+
+impl Debug for Beat {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}+{}/{}", self.0, self.1.numer(), self.1.denom())
+    }
+}
 
 impl Beat {
     pub fn attach_to_beat_line(&mut self, density: u32) {
