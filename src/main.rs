@@ -19,6 +19,7 @@ mod misc;
 mod notification;
 mod project;
 mod score;
+mod screenshot;
 mod selection;
 mod serialization;
 mod tab;
@@ -57,6 +58,7 @@ use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
 use clap::Parser;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
+use crate::screenshot::ScreenshotPlugin;
 
 i18n!("lang", fallback = "en_us");
 
@@ -81,6 +83,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugins(ActionPlugin)
         .add_plugins(HotkeyPlugin)
+        .add_plugins(ScreenshotPlugin)
         .add_plugins(TimingPlugin)
         .add_plugins(AudioPlugin)
         .add_plugins(GameTabPlugin)
