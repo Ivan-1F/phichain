@@ -42,7 +42,11 @@ fn ui_system(world: &mut World) {
     let ctx = egui_context.get_mut();
 
     egui::CentralPanel::default().show(ctx, |ui| {
-        ui.heading(format!("phichain v{}", env!("CARGO_PKG_VERSION")));
+        ui.heading(format!("Phichain v{}", env!("CARGO_PKG_VERSION")));
+
+        ui.separator();
+
+        ui.label("Open an existing project");
 
         if ui.button("Load Project").clicked() {
             pick_folder(world, PickingKind::OpenProject, FileDialog::new());
@@ -50,35 +54,45 @@ fn ui_system(world: &mut World) {
 
         ui.separator();
 
-        ui.horizontal(|ui| {
-            let form = world.resource_mut::<CreateProjectForm>();
-            ui.label(format!("{:?}", form.music));
-            if ui.button("Select Music").clicked() {
-                pick_file(
-                    world,
-                    PickingKind::SelectMusic,
-                    FileDialog::new().add_filter("Music", &["wav", "mp3", "ogg", "flac"]),
-                );
-            }
-        });
-        ui.horizontal(|ui| {
-            let form = world.resource_mut::<CreateProjectForm>();
-            ui.label(format!("{:?}", form.illustration));
-            if ui.button("Select Illustration").clicked() {
-                pick_file(
-                    world,
-                    PickingKind::SelectIllustration,
-                    FileDialog::new().add_filter("Illustration", &["png", "jpg", "jpeg"]),
-                );
-            }
-        });
+        ui.label("Or create a new empty project");
 
-        egui::Grid::new("project_meta_grid")
+        egui::Grid::new("create_project_grid")
             .num_columns(2)
             .spacing([40.0, 2.0])
             .striped(true)
             .show(ui, |ui| {
+                if ui.button("Select Music").clicked() {
+                    pick_file(
+                        world,
+                        PickingKind::SelectMusic,
+                        FileDialog::new().add_filter("Music", &["wav", "mp3", "ogg", "flac"]),
+                    );
+                }
+                let form = world.resource::<CreateProjectForm>();
+                let music_path = match &form.music {
+                    None => "Unselected".to_owned(),
+                    Some(path) => path.display().to_string(),
+                };
+                ui.label(music_path);
+                ui.end_row();
+
+                if ui.button("Select Illustration").clicked() {
+                    pick_file(
+                        world,
+                        PickingKind::SelectIllustration,
+                        FileDialog::new().add_filter("Illustration", &["png", "jpg", "jpeg"]),
+                    );
+                }
+                let form = world.resource::<CreateProjectForm>();
+                let illustration_text = match &form.illustration {
+                    None => "Unselected".to_owned(),
+                    Some(path) => path.display().to_string(),
+                };
+                ui.label(illustration_text);
+                ui.end_row();
+
                 let mut form = world.resource_mut::<CreateProjectForm>();
+
                 ui.label("Name");
                 ui.text_edit_singleline(&mut form.meta.name);
                 ui.end_row();
