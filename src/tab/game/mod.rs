@@ -36,7 +36,9 @@ fn update_game_camera_viewport(
     game_viewport: Res<GameViewport>,
 ) {
     let mut game_camera = query.single_mut();
-    let window = window_query.single();
+    let Ok(window) = window_query.get_single() else {
+        return;
+    };
 
     let scale_factor = window.scale_factor() * egui_settings.scale_factor;
     let viewport_pos = game_viewport.0.min * scale_factor;
