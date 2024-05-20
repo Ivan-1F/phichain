@@ -35,6 +35,11 @@ tab:
   chart_basic_setting:
     title: 谱面基本设置
     offset: 延迟 (毫秒)
+    name: 名称
+    level: 难度
+    composer: 曲师
+    charter: 谱师
+    illustrator: 画师
   line_list:
     title: 判定线列表
   bpm_list:

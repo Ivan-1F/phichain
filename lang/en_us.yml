@@ -35,6 +35,11 @@ tab:
   chart_basic_setting:
     title: Chart Basic Setting
     offset: Offset (ms)
+    name: Name
+    level: Level
+    composer: Composer
+    charter: Charter
+    illustrator: Illustrator
   line_list:
     title: Line List
   bpm_list:

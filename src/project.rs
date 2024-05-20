@@ -132,9 +132,11 @@ impl Plugin for ProjectPlugin {
 fn save_project_system(world: &mut World) {
     if let Ok(chart) = PhiChainExporter::export(world) {
         let project = world.resource::<Project>();
-        let result = std::fs::write(project.path.chart_path(), chart);
+        let chart_result = std::fs::write(project.path.chart_path(), chart);
+        let meta_result = std::fs::write(project.path.meta_path(), serde_json::to_string(&project.meta).unwrap());
+        
         let mut toasts = world.resource_mut::<ToastsStorage>();
-        match result {
+        match chart_result.and(meta_result) {
             Ok(_) => {
                 toasts.success(t!("project.save.succeed"));
             }
