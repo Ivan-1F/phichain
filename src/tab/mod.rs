@@ -10,6 +10,7 @@ pub mod timeline_setting;
 use crate::tab::audio_setting::audio_setting_tab;
 use crate::tab::bpm_list::bpm_list_tab;
 use crate::tab::chart_basic_setting::chart_basic_setting_tab;
+use crate::tab::game::game_tab;
 use crate::tab::inspector::inspector_ui_system;
 use crate::tab::line_list::line_list_tab;
 use crate::tab::timeline::timeline_ui_system;
@@ -71,7 +72,7 @@ impl Plugin for TabPlugin {
                 "tab.timeline.title",
                 timeline_ui_system,
             )
-            .register_tab(EditorTab::Game, "tab.game.title", empty_tab)
+            .register_tab(EditorTab::Game, "tab.game.title", game_tab)
             .register_tab(
                 EditorTab::Inspector,
                 "tab.inspector.title",

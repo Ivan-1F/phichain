@@ -3,10 +3,16 @@ pub mod illustration;
 pub mod ui;
 
 use bevy::{prelude::*, render::camera::Viewport};
+use egui::Ui;
 
 use crate::project::project_loaded;
+use crate::tab::empty_tab;
 
 use self::{core::CoreGamePlugin, illustration::IllustrationPlugin, ui::GameUiPlugin};
+
+pub fn game_tab(In(ui): In<&mut Ui>) {
+    empty_tab(In(ui));
+}
 
 pub struct GameTabPlugin;
 
