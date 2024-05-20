@@ -4,11 +4,12 @@ use bevy::{
     prelude::*,
     render::{
         render_asset::RenderAssetUsages,
-        render_resource::{Extent3d, TextureDimension, TextureFormat},
+        render_resource::{TextureDimension, TextureFormat},
     },
 };
 use image::DynamicImage;
 
+use crate::notification::{ToastsExt, ToastsStorage};
 use crate::{
     constants::{ILLUSTRATION_ALPHA, ILLUSTRATION_BLUR},
     project::project_loaded,
@@ -59,6 +60,7 @@ fn spawn_illustration_system(
     mut events: EventReader<SpawnIllustrationEvent>,
     mut images: ResMut<Assets<Image>>,
     query: Query<&Illustration>,
+    mut toasts_storage: ResMut<ToastsStorage>,
 ) {
     if events.len() > 1 {
         warn!("Multiple illustrations are requested, ignoring previous ones");
@@ -70,26 +72,30 @@ fn spawn_illustration_system(
             return;
         }
 
-        // TODO: error handling
-        let image = image::open(event.0.clone())
-            .unwrap()
-            .blur(ILLUSTRATION_BLUR);
-        let is_srgb = matches!(
-            image.color(),
-            image::ColorType::Rgb8 | image::ColorType::Rgba8
-        );
-        let handle = images.add(Image::from_dynamic(
-            image,
-            is_srgb,
-            RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
-        ));
-        commands.spawn((
-            SpriteBundle {
-                texture: handle,
-                ..default()
-            },
-            Illustration,
-        ));
+        match image::open(event.0.clone()) {
+            Ok(image) => {
+                let image = image.blur(ILLUSTRATION_BLUR);
+                let is_srgb = matches!(
+                    image.color(),
+                    image::ColorType::Rgb8 | image::ColorType::Rgba8
+                );
+                let handle = images.add(Image::from_dynamic(
+                    image,
+                    is_srgb,
+                    RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
+                ));
+                commands.spawn((
+                    SpriteBundle {
+                        texture: handle,
+                        ..default()
+                    },
+                    Illustration,
+                ));
+            }
+            Err(error) => {
+                toasts_storage.error(t!("illustration.load.failed", error = error.to_string()))
+            }
+        }
     }
 }
 

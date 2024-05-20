@@ -56,6 +56,10 @@ screenshot:
     failed: '截图时发生错误: %{error}'
     locale_failed: '无法定位截图文件夹: ${error}'
 
+illustration:
+  load:
+    failed: '加载曲绘时发生错误: ${error}'
+
 home:
   open_project:
     label: 打开一个现有项目
