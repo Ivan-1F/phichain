@@ -15,6 +15,7 @@ use crate::{
     serialization::PhiChainChart,
     tab::game::illustration::SpawnIllustrationEvent,
 };
+use crate::audio::load_audio;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ProjectMeta {
@@ -174,10 +175,7 @@ fn load_project_system(
 
                 // unwrap: if Project::load is ok, illustration_path() must return Some
                 let audio_path = project.path.music_path().unwrap();
-                // TODO: maybe make this load_music(PathBuf, mut Commands) for better error handling
-                commands.add(|world: &mut World| {
-                    world.send_event(SpawnAudioEvent(audio_path));
-                });
+                load_audio(audio_path, &mut commands);
 
                 let file = File::open(project.path.chart_path()).unwrap();
                 PhiChainLoader::load(file, &mut commands);

@@ -37,7 +37,6 @@ impl Plugin for AudioPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(AudioSettings::default())
             .add_plugins(bevy_kira_audio::AudioPlugin)
-            .add_event::<SpawnAudioEvent>()
             .add_systems(
                 Update,
                 (
@@ -48,38 +47,28 @@ impl Plugin for AudioPlugin {
                     update_volume_system,
                 )
                     .run_if(project_loaded().and_then(resource_exists::<InstanceHandle>)),
-            )
-            .add_systems(Update, spawn_audio_system);
+            );
     }
 }
 
-#[derive(Event, Debug)]
-pub struct SpawnAudioEvent(pub PathBuf);
-
-fn spawn_audio_system(
-    mut commands: Commands,
-    mut events: EventReader<SpawnAudioEvent>,
-    mut audios: ResMut<Assets<AudioSource>>,
-    audio: Res<Audio>,
-) {
-    if events.len() > 1 {
-        warn!("Multiple audios are requested, ignoring previous ones");
-    }
-
-    // TODO: error handling
-    if let Some(event) = events.read().last() {
-        let sound_data = std::fs::read(event.0.clone()).unwrap();
-        let source = AudioSource {
-            sound: StaticSoundData::from_cursor(
-                Cursor::new(sound_data),
-                StaticSoundSettings::default(),
-            )
-            .unwrap(),
-        };
-        let handle = audios.add(source);
-        let instance_handle = audio.play(handle).paused().handle();
-        commands.insert_resource(InstanceHandle(instance_handle));
-    }
+pub fn load_audio(path: PathBuf, commands: &mut Commands) {
+    let sound_data = std::fs::read(path).unwrap();
+    let source = AudioSource {
+        sound: StaticSoundData::from_cursor(
+            Cursor::new(sound_data),
+            StaticSoundSettings::default(),
+        )
+        .unwrap(),
+    };
+    commands.add(|world: &mut World| {
+        world.resource_scope(|world, mut audios: Mut<Assets<AudioSource>>| {
+            world.resource_scope(|world, audio: Mut<Audio>| {
+                let handle = audios.add(source);
+                let instance_handle = audio.play(handle).paused().handle();
+                world.insert_resource(InstanceHandle(instance_handle));
+            });
+        });
+    });
 }
 
 /// When receiving [PauseEvent], pause the audio instance
