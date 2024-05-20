@@ -5,7 +5,7 @@ use egui::Ui;
 pub fn audio_setting_tab(In(ui): In<&mut Ui>, mut audio_settings: ResMut<AudioSettings>) {
     egui::Grid::new("audio_setting_grid")
         .num_columns(2)
-        .spacing([40.0, 2.0])
+        .spacing([20.0, 2.0])
         .striped(true)
         .show(ui, |ui| {
             ui.label(t!("tab.audio_setting.music_volume"));

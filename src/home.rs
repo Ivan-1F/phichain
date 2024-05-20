@@ -58,7 +58,7 @@ fn ui_system(world: &mut World) {
 
         egui::Grid::new("create_project_grid")
             .num_columns(2)
-            .spacing([40.0, 2.0])
+            .spacing([20.0, 2.0])
             .striped(true)
             .show(ui, |ui| {
                 if ui.button(t!("home.create_project.select_music")).clicked() {

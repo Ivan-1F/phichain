@@ -6,7 +6,7 @@ use super::timeline::TimelineSettings;
 pub fn timeline_setting_tab(In(ui): In<&mut Ui>, mut timeline_settings: ResMut<TimelineSettings>) {
     egui::Grid::new("timeline_setting_grid")
         .num_columns(2)
-        .spacing([40.0, 2.0])
+        .spacing([20.0, 2.0])
         .striped(true)
         .show(ui, |ui| {
             ui.label(t!("tab.timeline_setting.zoom"));

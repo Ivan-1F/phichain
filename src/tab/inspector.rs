@@ -28,7 +28,7 @@ pub fn inspector_ui_system(
 fn single_event_inspector(ui: &mut Ui, event: &mut LineEvent) {
     egui::Grid::new("inspector_grid")
         .num_columns(2)
-        .spacing([40.0, 2.0])
+        .spacing([20.0, 2.0])
         .striped(true)
         .show(ui, |ui| {
             ui.label(t!("tab.inspector.single_event.start_beat"));
@@ -68,7 +68,7 @@ fn single_event_inspector(ui: &mut Ui, event: &mut LineEvent) {
 fn single_note_inspector(ui: &mut Ui, note: &mut Note) {
     egui::Grid::new("inspector_grid")
         .num_columns(2)
-        .spacing([40.0, 2.0])
+        .spacing([20.0, 2.0])
         .striped(true)
         .show(ui, |ui| {
             ui.label(t!("tab.inspector.single_note.x"));

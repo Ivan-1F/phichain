@@ -10,7 +10,7 @@ pub fn chart_basic_setting_tab(
 ) {
     egui::Grid::new("chart_basic_setting_grid")
         .num_columns(2)
-        .spacing([40.0, 2.0])
+        .spacing([20.0, 2.0])
         .striped(true)
         .show(ui, |ui| {
             ui.label(t!("tab.chart_basic_setting.offset"));
