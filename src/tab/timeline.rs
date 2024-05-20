@@ -295,7 +295,6 @@ impl<'w> Timeline<'w> {
         let audio_duration = 240.0; // TODO: replace with actual audio duration
 
         std::iter::repeat(0)
-            .take(100)
             .enumerate()
             .map(|(i, _)| self.bpm_list.time_at(Beat::from(i as f32)))
             .take_while(|x| x < &audio_duration)
