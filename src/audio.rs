@@ -1,3 +1,4 @@
+use std::time::Duration;
 use std::{io::Cursor, path::PathBuf};
 
 use bevy::prelude::*;
@@ -15,6 +16,10 @@ pub struct Offset(pub f32);
 
 #[derive(Resource)]
 struct InstanceHandle(Handle<AudioInstance>);
+
+/// The duration of the audio
+#[derive(Resource, Debug)]
+pub struct AudioDuration(pub Duration);
 
 #[derive(Resource)]
 pub struct AudioSettings {
@@ -61,6 +66,7 @@ pub fn load_audio(path: PathBuf, commands: &mut Commands) {
         .unwrap(),
     };
     commands.add(|world: &mut World| {
+        world.insert_resource(AudioDuration(source.sound.duration()));
         world.resource_scope(|world, mut audios: Mut<Assets<AudioSource>>| {
             world.resource_scope(|world, audio: Mut<Audio>| {
                 let handle = audios.add(source);

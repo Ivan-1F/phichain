@@ -3,6 +3,7 @@ use egui::{Align2, Color32, FontId, Ui};
 use num::Rational32;
 use url::Url;
 
+use crate::audio::AudioDuration;
 use crate::widgets::event::event_ui;
 use crate::{
     chart::{
@@ -288,22 +289,20 @@ pub struct Timeline<'w> {
     timeline_settings: Res<'w, TimelineSettings>,
     current_time: Res<'w, ChartTime>,
     viewport: Res<'w, TimelineViewport>,
+
+    audio_duration: Res<'w, AudioDuration>,
 }
 
 impl<'w> Timeline<'w> {
     pub fn primary_beat_times(&self) -> Vec<f32> {
-        let audio_duration = 240.0; // TODO: replace with actual audio duration
-
         std::iter::repeat(0)
             .enumerate()
             .map(|(i, _)| self.bpm_list.time_at(Beat::from(i as f32)))
-            .take_while(|x| x < &audio_duration)
+            .take_while(|x| x <= &self.audio_duration.0.as_secs_f32())
             .collect()
     }
 
     pub fn secondary_beat_times(&self) -> Vec<f32> {
-        let audio_duration = 240.0; // TODO: replace with actual audio duration
-
         std::iter::repeat(0)
             .enumerate()
             .map(|(i, _)| {
@@ -312,7 +311,7 @@ impl<'w> Timeline<'w> {
                     Rational32::new(i as i32, self.timeline_settings.density as i32),
                 ))
             })
-            .take_while(|x| x < &audio_duration)
+            .take_while(|x| x <= &self.audio_duration.0.as_secs_f32())
             .collect()
     }
 
