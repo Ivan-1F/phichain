@@ -279,7 +279,7 @@ fn update_name_system(
     project: Res<Project>,
 ) {
     let mut name_text = name_text_query.single_mut();
-    name_text.sections[0].value.clone_from(&project.meta.name);
+    name_text.sections[0].value = project.meta.name.replace(' ', "\u{00A0}");
 }
 
 fn update_level_text_scale_system(
@@ -295,5 +295,5 @@ fn update_level_system(
     project: Res<Project>,
 ) {
     let mut name_text = name_text_query.single_mut();
-    name_text.sections[0].value.clone_from(&project.meta.level);
+    name_text.sections[0].value = project.meta.level.replace(' ', "\u{00A0}");
 }
