@@ -1,9 +1,13 @@
 use crate::audio::Offset;
+use crate::project::Project;
 use bevy::prelude::*;
 use egui::Ui;
-use crate::project::Project;
 
-pub fn chart_basic_setting_tab(In(ui): In<&mut Ui>, mut offset: ResMut<Offset>, mut project: ResMut<Project>) {
+pub fn chart_basic_setting_tab(
+    In(ui): In<&mut Ui>,
+    mut offset: ResMut<Offset>,
+    mut project: ResMut<Project>,
+) {
     egui::Grid::new("chart_basic_setting_grid")
         .num_columns(2)
         .spacing([40.0, 2.0])

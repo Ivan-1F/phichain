@@ -133,8 +133,11 @@ fn save_project_system(world: &mut World) {
     if let Ok(chart) = PhiChainExporter::export(world) {
         let project = world.resource::<Project>();
         let chart_result = std::fs::write(project.path.chart_path(), chart);
-        let meta_result = std::fs::write(project.path.meta_path(), serde_json::to_string(&project.meta).unwrap());
-        
+        let meta_result = std::fs::write(
+            project.path.meta_path(),
+            serde_json::to_string(&project.meta).unwrap(),
+        );
+
         let mut toasts = world.resource_mut::<ToastsStorage>();
         match chart_result.and(meta_result) {
             Ok(_) => {
