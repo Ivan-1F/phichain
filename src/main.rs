@@ -44,6 +44,7 @@ use crate::project::project_loaded;
 use crate::project::LoadProjectEvent;
 use crate::project::ProjectPlugin;
 use crate::score::ScorePlugin;
+use crate::screenshot::ScreenshotPlugin;
 use crate::tab::game::GameCamera;
 use crate::tab::game::GameTabPlugin;
 use crate::tab::game::GameViewport;
@@ -58,7 +59,6 @@ use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
 use clap::Parser;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
-use crate::screenshot::ScreenshotPlugin;
 
 i18n!("lang", fallback = "en_us");
 

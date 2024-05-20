@@ -1,7 +1,7 @@
-use std::fs;
-use std::path::{Path, PathBuf};
 use anyhow::{bail, Context};
 use bevy::prelude::*;
+use std::fs;
+use std::path::{Path, PathBuf};
 
 pub struct MiscPlugin;
 
@@ -22,7 +22,8 @@ impl WorkingDirectory {
         let new_path = self.0.join(&path);
 
         if !new_path.exists() {
-            fs::create_dir(&new_path).context(format!("Failed to create directory: {:?}", path.as_ref()))?;
+            fs::create_dir(&new_path)
+                .context(format!("Failed to create directory: {:?}", path.as_ref()))?;
         }
         if !new_path.is_dir() {
             bail!("Expected a directory at {:?}, found a file", path.as_ref());

@@ -76,7 +76,10 @@ fn ui_system(world: &mut World) {
                 ui.label(music_path);
                 ui.end_row();
 
-                if ui.button(t!("home.create_project.select_illustration")).clicked() {
+                if ui
+                    .button(t!("home.create_project.select_illustration"))
+                    .clicked()
+                {
                     pick_file(
                         world,
                         PickingKind::SelectIllustration,
