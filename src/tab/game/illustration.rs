@@ -7,6 +7,7 @@ use bevy::{
         render_resource::{Extent3d, TextureDimension, TextureFormat},
     },
 };
+use image::DynamicImage;
 
 use crate::{
     constants::{ILLUSTRATION_ALPHA, ILLUSTRATION_BLUR},
@@ -35,6 +36,24 @@ pub struct Illustration;
 #[derive(Event)]
 pub struct SpawnIllustrationEvent(pub PathBuf);
 
+fn get_texture_format(image: &DynamicImage) -> TextureFormat {
+    match image {
+        DynamicImage::ImageLuma8(_) => TextureFormat::R8Unorm,
+        DynamicImage::ImageLumaA8(_) => TextureFormat::Rg8Unorm,
+        DynamicImage::ImageRgb8(_) => TextureFormat::Rgba8Unorm, // Assuming RGB8 can be mapped to RGBA8Unorm
+        DynamicImage::ImageRgba8(_) => TextureFormat::Rgba8Unorm,
+        DynamicImage::ImageLuma16(_) => TextureFormat::R16Unorm,
+        DynamicImage::ImageLumaA16(_) => TextureFormat::Rg16Unorm,
+        DynamicImage::ImageRgb16(_) => TextureFormat::Rgba16Unorm, // Assuming RGB16 can be mapped to RGBA16Unorm
+        DynamicImage::ImageRgba16(_) => TextureFormat::Rgba16Unorm,
+        DynamicImage::ImageRgb32F(_) => TextureFormat::Rgba32Float, // Assuming RGB32F can be mapped to RGBA32Float
+        DynamicImage::ImageRgba32F(_) => TextureFormat::Rgba32Float,
+        _ => {
+            unreachable!();
+        }
+    }
+}
+
 fn spawn_illustration_system(
     mut commands: Commands,
     mut events: EventReader<SpawnIllustrationEvent>,
@@ -55,16 +74,13 @@ fn spawn_illustration_system(
         let image = image::open(event.0.clone())
             .unwrap()
             .blur(ILLUSTRATION_BLUR);
-        let rgb8 = image.as_rgba8().unwrap();
-        let handle = images.add(Image::new(
-            Extent3d {
-                width: image.width(),
-                height: image.height(),
-                depth_or_array_layers: 1,
-            },
-            TextureDimension::D2,
-            rgb8.clone().into_vec(),
-            TextureFormat::Rgba8UnormSrgb,
+        let is_srgb = matches!(
+            image.color(),
+            image::ColorType::Rgb8 | image::ColorType::Rgba8
+        );
+        let handle = images.add(Image::from_dynamic(
+            image,
+            is_srgb,
             RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
         ));
         commands.spawn((
