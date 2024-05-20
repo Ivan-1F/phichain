@@ -85,17 +85,6 @@ jobs:
         run: |
           echo "build_name=phichain-v${{ steps.full_version.outputs.phichain_version }}-${{ matrix.target }}" >> $GITHUB_OUTPUT
 
-      # append .exe for windows
-      - name: Generate build filename
-        id: filename
-        shell: bash
-        run: |
-          if [ "${{ matrix.platform }}" == "windows" ]; then
-            echo "filename=${{ steps.build_name.outputs.build_name }}.exe" >> $GITHUB_OUTPUT
-          else
-            echo "filename=${{ steps.build_name.outputs.build_name }}" >> $GITHUB_OUTPUT
-          fi
-
       - name: Update version in Cargo.toml
         uses: colathro/toml-editor@1.1.0
         with:
@@ -123,9 +112,9 @@ jobs:
         run: |
           mkdir build
           if [ "${{ matrix.platform }}" == "windows" ]; then
-            cp ./target/${{ matrix.target }}/release/phichain.exe "./build/${{ steps.filename.outputs.filename }}"
+            cp ./target/${{ matrix.target }}/release/phichain.exe "./build/phichain.exe"
           else
-            cp ./target/${{ matrix.target }}/release/phichain "./build/${{ steps.filename.outputs.filename }}"
+            cp ./target/${{ matrix.target }}/release/phichain "./build/phichain"
           fi
 
           mv LICENSE README.md assets lang ./build
