@@ -5,6 +5,8 @@ use crate::{project::project_loaded, score::GameScore};
 
 use super::GameViewport;
 
+const UI_TEXT_MARGIN: f32 = 10.0;
+
 pub struct GameUiPlugin;
 
 impl Plugin for GameUiPlugin {
@@ -70,7 +72,7 @@ fn setup_combo_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
                 width: Val::Percent(100.0),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::FlexStart,
-                top: Val::Px(8.0),
+                top: Val::Px(UI_TEXT_MARGIN),
                 ..default()
             },
             ..default()
@@ -134,8 +136,8 @@ fn spawn_score_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
         .spawn(NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
-                top: Val::Px(8.0),
-                right: Val::Px(8.0),
+                top: Val::Px(UI_TEXT_MARGIN),
+                right: Val::Px(UI_TEXT_MARGIN),
                 ..default()
             },
             ..default()
@@ -168,8 +170,8 @@ fn spawn_name_ui_system(mut commands: Commands, asset_server: Res<AssetServer>) 
         .spawn(NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
-                left: Val::Px(8.0),
-                bottom: Val::Px(8.0),
+                left: Val::Px(UI_TEXT_MARGIN),
+                bottom: Val::Px(UI_TEXT_MARGIN),
                 ..default()
             },
             ..default()
@@ -202,8 +204,8 @@ fn spawn_level_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
         .spawn(NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
-                bottom: Val::Px(8.0),
-                right: Val::Px(8.0),
+                bottom: Val::Px(UI_TEXT_MARGIN),
+                right: Val::Px(UI_TEXT_MARGIN),
                 ..default()
             },
             ..default()
