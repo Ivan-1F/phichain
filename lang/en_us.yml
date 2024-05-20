@@ -50,6 +50,12 @@ project:
     succeed: Project saved
     failed: 'Failed to save project: %{error}'
 
+screenshot:
+  save:
+    succeed: Screenshot saved to %{path}
+    failed: 'Failed to take screenshot: %{error}'
+    locale_failed: 'Failed to locate screenshot directory: ${error}'
+
 home:
   open_project:
     label: Open an existing project
@@ -59,13 +65,13 @@ home:
     select_music: Select Music
     select_illustration: Select Illustration
     unselected: Unselected
-    
+
     name: Name
     level: Level
     composer: Composer
     charter: Charter
     illustrator: Illustrator
-    
+
     create: Create Project
 
     music_unselected: Music is not selected

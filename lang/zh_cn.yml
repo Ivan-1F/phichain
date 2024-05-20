@@ -50,6 +50,12 @@ project:
     succeed: 项目已保存
     failed: '保存项目时发生错误: %{error}'
 
+screenshot:
+  save:
+    succeed: 已将截图保存至 %{path}
+    failed: '截图时发生错误: %{error}'
+    locale_failed: '无法定位截图文件夹: ${error}'
+
 home:
   open_project:
     label: 打开一个现有项目

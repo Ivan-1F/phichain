@@ -33,15 +33,18 @@ fn take_screenshot_system(
             ));
             match screenshot_manager.save_screenshot_to_disk(main_window.single(), path.clone()) {
                 Ok(_) => {
-                    toasts.success(format!("Screenshot saved to {:?}", path));
+                    toasts.success(t!(
+                        "screenshot.save.succeed",
+                        path = path.display().to_string()
+                    ));
                 }
-                Err(_) => {
-                    toasts.success("Failed to take screenshot");
+                Err(error) => {
+                    toasts.error(t!("screenshot.save.failed", error = error));
                 }
             };
         }
         Err(error) => {
-            toasts.error(format!("Failed to locate screenshot directory: {}", error));
+            toasts.error(t!("screenshot.save.locate_failed", eror = error));
         }
     }
 }
