@@ -1,13 +1,6 @@
 use std::path::PathBuf;
 
-use bevy::{
-    prelude::*,
-    render::{
-        render_asset::RenderAssetUsages,
-        render_resource::{TextureDimension, TextureFormat},
-    },
-};
-use image::DynamicImage;
+use bevy::{prelude::*, render::render_asset::RenderAssetUsages};
 
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::{
@@ -36,24 +29,6 @@ pub struct Illustration;
 
 #[derive(Event)]
 pub struct SpawnIllustrationEvent(pub PathBuf);
-
-fn get_texture_format(image: &DynamicImage) -> TextureFormat {
-    match image {
-        DynamicImage::ImageLuma8(_) => TextureFormat::R8Unorm,
-        DynamicImage::ImageLumaA8(_) => TextureFormat::Rg8Unorm,
-        DynamicImage::ImageRgb8(_) => TextureFormat::Rgba8Unorm, // Assuming RGB8 can be mapped to RGBA8Unorm
-        DynamicImage::ImageRgba8(_) => TextureFormat::Rgba8Unorm,
-        DynamicImage::ImageLuma16(_) => TextureFormat::R16Unorm,
-        DynamicImage::ImageLumaA16(_) => TextureFormat::Rg16Unorm,
-        DynamicImage::ImageRgb16(_) => TextureFormat::Rgba16Unorm, // Assuming RGB16 can be mapped to RGBA16Unorm
-        DynamicImage::ImageRgba16(_) => TextureFormat::Rgba16Unorm,
-        DynamicImage::ImageRgb32F(_) => TextureFormat::Rgba32Float, // Assuming RGB32F can be mapped to RGBA32Float
-        DynamicImage::ImageRgba32F(_) => TextureFormat::Rgba32Float,
-        _ => {
-            unreachable!();
-        }
-    }
-}
 
 fn spawn_illustration_system(
     mut commands: Commands,
