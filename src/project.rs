@@ -6,16 +6,15 @@ use std::path::Path;
 use std::{fs::File, path::PathBuf};
 
 use crate::action::ActionRegistrationExt;
+use crate::audio::load_audio;
 use crate::exporter::phichain::PhiChainExporter;
 use crate::exporter::Exporter;
+use crate::tab::game::illustration::load_illustration;
 use crate::{
-    audio::SpawnAudioEvent,
     loader::{phichain::PhiChainLoader, Loader},
     notification::{ToastsExt, ToastsStorage},
     serialization::PhiChainChart,
-    tab::game::illustration::SpawnIllustrationEvent,
 };
-use crate::audio::load_audio;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ProjectMeta {
@@ -168,12 +167,9 @@ fn load_project_system(
             Ok(project) => {
                 // unwrap: if Project::load is ok, illustration_path() must return Some
                 let illustration_path = project.path.illustration_path().unwrap();
-                // TODO: maybe make this load_illustration(PathBuf, mut Commands) for better error handling
-                commands.add(|world: &mut World| {
-                    world.send_event(SpawnIllustrationEvent(illustration_path));
-                });
+                load_illustration(illustration_path, &mut commands);
 
-                // unwrap: if Project::load is ok, illustration_path() must return Some
+                // unwrap: if Project::load is ok, music_path() must return Some
                 let audio_path = project.path.music_path().unwrap();
                 load_audio(audio_path, &mut commands);
 
