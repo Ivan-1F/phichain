@@ -9,41 +9,41 @@ pub struct GameUiPlugin;
 
 impl Plugin for GameUiPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(TextScale(1.0))
-            .add_systems(Update, update_text_scale_system.run_if(project_loaded()))
+        app.insert_resource(BaseTextScale(1.0))
+            .add_systems(
+                Update,
+                (update_base_text_scale_system, update_text_scale_system)
+                    .chain()
+                    .run_if(project_loaded()),
+            )
+            // combo
             .add_systems(Startup, setup_combo_ui_system)
             .add_systems(Update, update_combo_system.run_if(project_loaded()))
             .add_systems(Update, hide_combo_below_3_system.run_if(project_loaded()))
-            .add_systems(
-                Update,
-                update_combo_text_scale_system.run_if(project_loaded()),
-            )
+            // score
             .add_systems(Startup, spawn_score_ui_system)
-            .add_systems(
-                Update,
-                update_score_text_scale_system.run_if(project_loaded()),
-            )
             .add_systems(Update, update_score_system.run_if(project_loaded()))
+            // name
             .add_systems(Startup, spawn_name_ui_system)
-            .add_systems(
-                Update,
-                update_name_text_scale_system.run_if(project_loaded()),
-            )
             .add_systems(Update, update_name_system.run_if(project_loaded()))
+            // level
             .add_systems(Startup, spawn_level_ui_system)
-            .add_systems(
-                Update,
-                update_level_text_scale_system.run_if(project_loaded()),
-            )
             .add_systems(Update, update_level_system.run_if(project_loaded()));
     }
 }
 
-/// Base game ui text scale
-#[derive(Resource, Debug)]
+/// Scale based on [BaseTextScale] for a specific text
+#[derive(Component, Debug)]
 struct TextScale(f32);
 
-fn update_text_scale_system(mut scale: ResMut<TextScale>, game_viewport: Res<GameViewport>) {
+/// Base game ui base text scale
+#[derive(Resource, Debug)]
+struct BaseTextScale(f32);
+
+fn update_base_text_scale_system(
+    mut scale: ResMut<BaseTextScale>,
+    game_viewport: Res<GameViewport>,
+) {
     scale.0 = if game_viewport.0.width() > game_viewport.0.height() * 0.75 {
         game_viewport.0.height() / 18.75
     } else {
@@ -88,6 +88,7 @@ fn setup_combo_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
                         ..default()
                     },
                     Combo,
+                    TextScale(1.0),
                 ))
                 .with_children(|parent| {
                     parent.spawn((
@@ -118,6 +119,7 @@ fn setup_combo_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
                             ..default()
                         },
                         ComboIndicator,
+                        TextScale(0.4),
                     ));
                 });
         });
@@ -152,6 +154,7 @@ fn spawn_score_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
                     ..default()
                 },
                 ScoreText,
+                TextScale(0.8),
             ));
         });
 }
@@ -185,6 +188,7 @@ fn spawn_name_ui_system(mut commands: Commands, asset_server: Res<AssetServer>) 
                     ..default()
                 },
                 NameText,
+                TextScale(0.5),
             ));
         });
 }
@@ -218,8 +222,15 @@ fn spawn_level_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
                     ..default()
                 },
                 LevelText,
+                TextScale(0.5),
             ));
         });
+}
+
+fn update_text_scale_system(scale: Res<BaseTextScale>, mut query: Query<(&mut Text, &TextScale)>) {
+    for (mut text, text_scale) in &mut query {
+        text.sections[0].style.font_size = scale.0 * 1.32 * text_scale.0;
+    }
 }
 
 fn update_combo_system(mut text_query: Query<&mut Text, With<ComboText>>, score: Res<GameScore>) {
@@ -239,25 +250,6 @@ fn hide_combo_below_3_system(
     };
 }
 
-fn update_combo_text_scale_system(
-    mut combo_text_query: Query<&mut Text, (With<ComboText>, Without<ComboIndicator>)>,
-    mut combo_indicator_query: Query<&mut Text, (With<ComboIndicator>, Without<ComboText>)>,
-    scale: Res<TextScale>,
-) {
-    let mut combo_text = combo_text_query.single_mut();
-    let mut combo_indicator = combo_indicator_query.single_mut();
-    combo_text.sections[0].style.font_size = scale.0 * 1.32;
-    combo_indicator.sections[0].style.font_size = scale.0 * 1.32 * 0.4;
-}
-
-fn update_score_text_scale_system(
-    mut score_text_query: Query<&mut Text, With<ScoreText>>,
-    scale: Res<TextScale>,
-) {
-    let mut score_text = score_text_query.single_mut();
-    score_text.sections[0].style.font_size = scale.0 * 1.32 * 0.8;
-}
-
 fn update_score_system(
     mut score_text_query: Query<&mut Text, With<ScoreText>>,
     score: Res<GameScore>,
@@ -266,28 +258,12 @@ fn update_score_system(
     score_text.sections[0].value = score.score_text();
 }
 
-fn update_name_text_scale_system(
-    mut name_text_query: Query<&mut Text, With<NameText>>,
-    scale: Res<TextScale>,
-) {
-    let mut score_text = name_text_query.single_mut();
-    score_text.sections[0].style.font_size = scale.0 * 1.32 * 0.5;
-}
-
 fn update_name_system(
     mut name_text_query: Query<&mut Text, With<NameText>>,
     project: Res<Project>,
 ) {
     let mut name_text = name_text_query.single_mut();
     name_text.sections[0].value = project.meta.name.replace(' ', "\u{00A0}");
-}
-
-fn update_level_text_scale_system(
-    mut name_text_query: Query<&mut Text, With<LevelText>>,
-    scale: Res<TextScale>,
-) {
-    let mut score_text = name_text_query.single_mut();
-    score_text.sections[0].style.font_size = scale.0 * 1.32 * 0.5;
 }
 
 fn update_level_system(
