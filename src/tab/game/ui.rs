@@ -90,7 +90,6 @@ fn setup_combo_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
                         ..default()
                     },
                     Combo,
-                    TextScale(1.0),
                 ))
                 .with_children(|parent| {
                     parent.spawn((
@@ -106,6 +105,7 @@ fn setup_combo_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
                             ..default()
                         },
                         ComboText,
+                        TextScale(1.0),
                     ));
 
                     parent.spawn((
