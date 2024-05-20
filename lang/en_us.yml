@@ -44,3 +44,8 @@ tab:
     point:
       beat: Beat
       bpm: BPM
+
+project:
+  save:
+    succeed: Project saved
+    failed: 'Failed to save project: %{error}'

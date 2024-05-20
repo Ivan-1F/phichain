@@ -25,7 +25,7 @@ impl Plugin for HotkeyPlugin {
 #[derive(Resource, Debug, Default)]
 struct HotkeyRegistry(HashMap<HotkeyIdentifier, Vec<KeyCode>>);
 
-trait HotkeyRegistrationExt {
+pub trait HotkeyRegistrationExt {
     fn register_hotkey(
         &mut self,
         id: impl Into<HotkeyIdentifier>,

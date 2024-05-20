@@ -25,7 +25,7 @@ mod tab;
 mod timing;
 mod widgets;
 
-use crate::action::ActionPlugin;
+use crate::action::{ActionPlugin, ActionRegistry};
 use crate::assets::AssetsPlugin;
 use crate::audio::AudioPlugin;
 use crate::chart::event::LineEvent;
@@ -35,13 +35,13 @@ use crate::exporter::phichain::PhiChainExporter;
 use crate::exporter::Exporter;
 use crate::file::FilePickingPlugin;
 use crate::home::HomePlugin;
-use crate::hotkey::HotkeyPlugin;
+use crate::hotkey::{HotkeyPlugin, HotkeyRegistrationExt};
 use crate::misc::MiscPlugin;
 use crate::misc::WorkingDirectory;
-use crate::notification::{NotificationPlugin, ToastsExt, ToastsStorage};
+use crate::notification::NotificationPlugin;
+use crate::project::project_loaded;
 use crate::project::LoadProjectEvent;
 use crate::project::ProjectPlugin;
-use crate::project::{project_loaded, Project};
 use crate::score::ScorePlugin;
 use crate::tab::game::GameCamera;
 use crate::tab::game::GameTabPlugin;
@@ -79,6 +79,8 @@ fn main() {
         .insert_resource(UiState::new())
         .add_plugins(HomePlugin)
         .add_plugins(DefaultPlugins)
+        .add_plugins(ActionPlugin)
+        .add_plugins(HotkeyPlugin)
         .add_plugins(TimingPlugin)
         .add_plugins(AudioPlugin)
         .add_plugins(GameTabPlugin)
@@ -95,14 +97,16 @@ fn main() {
         .add_plugins(AssetsPlugin)
         .add_plugins(NotificationPlugin)
         .add_plugins(FilePickingPlugin)
-        .add_plugins(ActionPlugin)
-        .add_plugins(HotkeyPlugin)
         .add_systems(Startup, setup_egui_image_loader_system)
         .add_systems(Startup, setup_egui_font_system)
         .add_systems(Startup, setup_plugin)
         .add_systems(Update, ui_system.run_if(project_loaded()))
         .add_systems(Update, debug_save_system.run_if(project_loaded()))
         .add_systems(Startup, apply_args_config_system)
+        .register_hotkey(
+            "phichain.project.save",
+            vec![KeyCode::ControlLeft, KeyCode::KeyS],
+        )
         .run();
 }
 
@@ -274,19 +278,10 @@ fn ui_system(world: &mut World) {
         egui::menu::bar(ui, |ui| {
             ui.menu_button(t!("menu_bar.file.title"), |ui| {
                 if ui.button(t!("menu_bar.file.save")).clicked() {
-                    if let Ok(chart) = PhiChainExporter::export(world) {
-                        let project = world.resource::<Project>();
-                        let result = std::fs::write(project.path.chart_path(), chart);
-                        let mut toasts = world.resource_mut::<ToastsStorage>();
-                        match result {
-                            Ok(_) => {
-                                toasts.success("Project saved");
-                            }
-                            Err(error) => {
-                                toasts.error(format!("Failed to save project: {}", error));
-                            }
-                        }
-                    }
+                    world.resource_scope(|world, mut registry: Mut<ActionRegistry>| {
+                        registry.run_action(world, "phichain.project.save");
+                    });
+                    ui.close_menu();
                 }
                 ui.separator();
                 if ui.button(t!("menu_bar.file.quit")).clicked() {

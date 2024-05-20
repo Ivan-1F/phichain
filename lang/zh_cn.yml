@@ -44,3 +44,8 @@ tab:
     point:
       beat: 时间 (拍)
       bpm: BPM
+
+project:
+  save:
+    succeed: 项目已保存
+    failed: '保存项目时发生错误: %{error}'

@@ -5,6 +5,9 @@ use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::{fs::File, path::PathBuf};
 
+use crate::action::ActionRegistrationExt;
+use crate::exporter::phichain::PhiChainExporter;
+use crate::exporter::Exporter;
 use crate::{
     audio::SpawnAudioEvent,
     loader::{phichain::PhiChainLoader, Loader},
@@ -121,7 +124,24 @@ pub struct ProjectPlugin;
 impl Plugin for ProjectPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<LoadProjectEvent>()
-            .add_systems(Update, load_project_system);
+            .add_systems(Update, load_project_system)
+            .register_action("phichain.project.save", save_project_system);
+    }
+}
+
+fn save_project_system(world: &mut World) {
+    if let Ok(chart) = PhiChainExporter::export(world) {
+        let project = world.resource::<Project>();
+        let result = std::fs::write(project.path.chart_path(), chart);
+        let mut toasts = world.resource_mut::<ToastsStorage>();
+        match result {
+            Ok(_) => {
+                toasts.success(t!("project.save.succeed"));
+            }
+            Err(error) => {
+                toasts.error(t!("project.save.failed", error = error));
+            }
+        }
     }
 }
 
