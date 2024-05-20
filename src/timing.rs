@@ -2,6 +2,8 @@ use bevy::input::mouse::MouseWheel;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use crate::action::ActionRegistrationExt;
+use crate::hotkey::HotkeyRegistrationExt;
 use crate::tab::timeline::TimelineViewport;
 use crate::{chart::beat::Beat, project::project_loaded};
 
@@ -39,12 +41,25 @@ impl Plugin for TimingPlugin {
             .add_event::<ResumeEvent>()
             .add_event::<SeekEvent>()
             .add_event::<SeekToEvent>()
-            .add_systems(Update, space_pause_resume_control.run_if(project_loaded()))
             .add_systems(Update, progress_control_system.run_if(project_loaded()))
             .add_systems(
                 Update,
                 scroll_progress_control_system.run_if(project_loaded()),
-            );
+            )
+            .register_action("phichain.toggle", toggle_system)
+            .register_hotkey("phichain.toggle", vec![KeyCode::Space]);
+    }
+}
+
+fn toggle_system(
+    paused: Res<Paused>,
+    mut pause_events: EventWriter<PauseEvent>,
+    mut resume_events: EventWriter<ResumeEvent>,
+) {
+    if paused.0 {
+        resume_events.send_default();
+    } else {
+        pause_events.send_default();
     }
 }
 
@@ -75,22 +90,6 @@ fn scroll_progress_control_system(
     {
         for ev in wheel_events.read() {
             seek_events.send(SeekEvent(ev.y / 500.0));
-        }
-    }
-}
-
-/// Toggle pause state when pressing space
-fn space_pause_resume_control(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    paused: Res<Paused>,
-    mut pause_events: EventWriter<PauseEvent>,
-    mut resume_events: EventWriter<ResumeEvent>,
-) {
-    if keyboard.just_pressed(KeyCode::Space) {
-        if paused.0 {
-            resume_events.send_default();
-        } else {
-            pause_events.send_default();
         }
     }
 }
