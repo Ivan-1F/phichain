@@ -49,3 +49,24 @@ project:
   save:
     succeed: 项目已保存
     failed: '保存项目时发生错误: %{error}'
+
+home:
+  open_project:
+    label: 打开一个现有项目
+    load: 加载项目
+  create_project:
+    label: 或创建一个新的空项目
+    select_music: 选择音乐
+    select_illustration: 选择曲绘
+    unselected: 未选择
+
+    name: 名称
+    level: 难度
+    composer: 曲师
+    charter: 谱师
+    illustrator: 画师
+
+    create: 创建项目
+
+    music_unselected: 未选择音乐
+    illustration_unselected: 未选择曲绘

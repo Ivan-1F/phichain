@@ -46,22 +46,22 @@ fn ui_system(world: &mut World) {
 
         ui.separator();
 
-        ui.label("Open an existing project");
+        ui.label(t!("home.open_project.label"));
 
-        if ui.button("Load Project").clicked() {
+        if ui.button(t!("home.open_project.load")).clicked() {
             pick_folder(world, PickingKind::OpenProject, FileDialog::new());
         }
 
         ui.separator();
 
-        ui.label("Or create a new empty project");
+        ui.label(t!("home.create_project.label"));
 
         egui::Grid::new("create_project_grid")
             .num_columns(2)
             .spacing([40.0, 2.0])
             .striped(true)
             .show(ui, |ui| {
-                if ui.button("Select Music").clicked() {
+                if ui.button(t!("home.create_project.select_music")).clicked() {
                     pick_file(
                         world,
                         PickingKind::SelectMusic,
@@ -70,13 +70,13 @@ fn ui_system(world: &mut World) {
                 }
                 let form = world.resource::<CreateProjectForm>();
                 let music_path = match &form.music {
-                    None => "Unselected".to_owned(),
+                    None => t!("home.create_project.unselected").to_string(),
                     Some(path) => path.display().to_string(),
                 };
                 ui.label(music_path);
                 ui.end_row();
 
-                if ui.button("Select Illustration").clicked() {
+                if ui.button(t!("home.create_project.select_illustration")).clicked() {
                     pick_file(
                         world,
                         PickingKind::SelectIllustration,
@@ -85,7 +85,7 @@ fn ui_system(world: &mut World) {
                 }
                 let form = world.resource::<CreateProjectForm>();
                 let illustration_text = match &form.illustration {
-                    None => "Unselected".to_owned(),
+                    None => t!("home.create_project.unselected").to_string(),
                     Some(path) => path.display().to_string(),
                 };
                 ui.label(illustration_text);
@@ -93,37 +93,37 @@ fn ui_system(world: &mut World) {
 
                 let mut form = world.resource_mut::<CreateProjectForm>();
 
-                ui.label("Name");
+                ui.label(t!("home.create_project.name"));
                 ui.text_edit_singleline(&mut form.meta.name);
                 ui.end_row();
 
-                ui.label("Level");
+                ui.label(t!("home.create_project.level"));
                 ui.text_edit_singleline(&mut form.meta.level);
                 ui.end_row();
 
-                ui.label("Composer");
+                ui.label(t!("home.create_project.composer"));
                 ui.text_edit_singleline(&mut form.meta.composer);
                 ui.end_row();
 
-                ui.label("Charter");
+                ui.label(t!("home.create_project.charter"));
                 ui.text_edit_singleline(&mut form.meta.charter);
                 ui.end_row();
 
-                ui.label("Illustrator");
+                ui.label(t!("home.create_project.illustrator"));
                 ui.text_edit_singleline(&mut form.meta.illustrator);
                 ui.end_row();
             });
 
         let form = world.resource_mut::<CreateProjectForm>();
-        if ui.button("Create Project").clicked() {
+        if ui.button(t!("home.create_project.create")).clicked() {
             if form.music.is_none() {
                 let mut toasts = world.resource_mut::<ToastsStorage>();
-                toasts.error("Music is not selected");
+                toasts.error(t!("home.create_project.music_unselected"));
                 return;
             };
             if form.illustration.is_none() {
                 let mut toasts = world.resource_mut::<ToastsStorage>();
-                toasts.error("Illustration is not selected");
+                toasts.error(t!("home.create_project.illustration_unselected"));
                 return;
             };
 

@@ -49,3 +49,24 @@ project:
   save:
     succeed: Project saved
     failed: 'Failed to save project: %{error}'
+
+home:
+  open_project:
+    label: Open an existing project
+    load: Load Project
+  create_project:
+    label: Or create a new empty project
+    select_music: Select Music
+    select_illustration: Select Illustration
+    unselected: Unselected
+    
+    name: Name
+    level: Level
+    composer: Composer
+    charter: Charter
+    illustrator: Illustrator
+    
+    create: Create Project
+
+    music_unselected: Music is not selected
+    illustration_unselected: Illustration is not selected
