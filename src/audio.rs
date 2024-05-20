@@ -5,6 +5,7 @@ use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use crate::timing::SeekToEvent;
 use crate::{
     project::project_loaded,
     timing::{ChartTime, PauseEvent, Paused, ResumeEvent, SeekEvent},
@@ -48,6 +49,7 @@ impl Plugin for AudioPlugin {
                     handle_pause_system,
                     handle_resume_system,
                     handle_seek_system,
+                    handle_seek_to_system,
                     update_time_system,
                     update_volume_system,
                 )
@@ -133,6 +135,19 @@ fn handle_seek_system(
                 }
                 PlaybackState::Queued | PlaybackState::Stopped => {}
             }
+        }
+    }
+}
+
+/// When receiving [SeekToEvent], seek the audio instance
+fn handle_seek_to_system(
+    handle: Res<InstanceHandle>,
+    mut audio_instances: ResMut<Assets<AudioInstance>>,
+    mut events: EventReader<SeekToEvent>,
+) {
+    if let Some(instance) = audio_instances.get_mut(&handle.0) {
+        for event in events.read() {
+            instance.seek_to(event.0.max(0.0).into());
         }
     }
 }

@@ -18,6 +18,7 @@ use crate::tab::timeline_setting::timeline_setting_tab;
 use bevy::{prelude::*, utils::HashMap};
 use egui::Ui;
 
+#[allow(dead_code)]
 pub fn empty_tab(In(_ui): In<&mut Ui>) {}
 
 pub struct RegisteredTab {

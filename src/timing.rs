@@ -21,9 +21,13 @@ pub struct PauseEvent;
 #[derive(Event, Default)]
 pub struct ResumeEvent;
 
-/// Seek the chart
+/// Seek the chart by certain delta
 #[derive(Event, Default)]
 pub struct SeekEvent(pub f32);
+
+/// Seek the chart to certain point
+#[derive(Event, Default)]
+pub struct SeekToEvent(pub f32);
 
 pub struct TimingPlugin;
 
@@ -34,6 +38,7 @@ impl Plugin for TimingPlugin {
             .add_event::<PauseEvent>()
             .add_event::<ResumeEvent>()
             .add_event::<SeekEvent>()
+            .add_event::<SeekToEvent>()
             .add_systems(Update, space_pause_resume_control.run_if(project_loaded()))
             .add_systems(Update, progress_control_system.run_if(project_loaded()))
             .add_systems(
