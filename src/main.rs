@@ -5,6 +5,7 @@ mod action;
 mod assets;
 mod audio;
 mod chart;
+mod cli;
 mod constants;
 mod editing;
 mod exporter;
@@ -31,6 +32,7 @@ use crate::assets::AssetsPlugin;
 use crate::audio::AudioPlugin;
 use crate::chart::event::LineEvent;
 use crate::chart::note::Note;
+use crate::cli::{Args, CliPlugin};
 use crate::editing::EditingPlugin;
 use crate::exporter::phichain::PhiChainExporter;
 use crate::exporter::Exporter;
@@ -58,28 +60,15 @@ use bevy::prelude::*;
 use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
-use clap::Parser;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 
 i18n!("lang", fallback = "en_us");
-
-/// Phichain - Phigros charting toolchain
-#[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
-struct Args {
-    /// Load project from this path when launch
-    #[arg(short, long)]
-    project: Option<String>,
-
-    /// The language phichain use
-    #[arg(short, long, default_value = "en_us")]
-    language: String,
-}
 
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::BLACK))
         .insert_resource(UiState::new())
+        .add_plugins(CliPlugin)
         .add_plugins(MiscPlugin)
         .add_plugins(HomePlugin)
         .add_plugins(DefaultPlugins)
@@ -125,14 +114,12 @@ fn debug_save_system(world: &mut World) {
 }
 
 /// Apply configurations from the command line args
-fn apply_args_config_system(mut events: EventWriter<LoadProjectEvent>) {
-    let args = Args::parse();
-
+fn apply_args_config_system(args: Res<Args>, mut events: EventWriter<LoadProjectEvent>) {
     // setup i18n locale
     rust_i18n::set_locale(&args.language[..]);
 
     // load chart if specified
-    if let Some(path) = args.project {
+    if let Some(path) = &args.project {
         events.send(LoadProjectEvent(path.into()));
     }
 }
