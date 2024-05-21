@@ -35,6 +35,7 @@ use crate::editing::EditingPlugin;
 use crate::exporter::phichain::PhiChainExporter;
 use crate::exporter::Exporter;
 use crate::file::FilePickingPlugin;
+use crate::hit_sound::HitSoundPlugin;
 use crate::home::HomePlugin;
 use crate::hotkey::{HotkeyPlugin, HotkeyRegistrationExt};
 use crate::misc::MiscPlugin;
@@ -86,6 +87,7 @@ fn main() {
         .add_plugins(ScreenshotPlugin)
         .add_plugins(TimingPlugin)
         .add_plugins(AudioPlugin)
+        .add_plugins(HitSoundPlugin)
         .add_plugins(GameTabPlugin)
         .add_plugins(ScorePlugin)
         .add_plugins(TimelineTabPlugin)

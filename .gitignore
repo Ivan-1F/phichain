@@ -2,10 +2,6 @@
 
 Chart*.json
 
-assets/*
-!assets/font/
-!assets/image/
-
 screenshots/*
 
 .DS_Store
