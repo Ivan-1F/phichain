@@ -18,6 +18,7 @@ tab:
       beat: Beat
       hold_beat: Hold Beat
       above: Is Above
+      speed: Speed
     single_event:
       start_beat: Start Beat
       end_beat: End Beat

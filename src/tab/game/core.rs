@@ -186,12 +186,13 @@ fn update_note_y_system(
         let current_distance = distance(time.0);
         for child in children {
             if let Ok((mut transform, mut sprite, note)) = note_query.get_mut(*child) {
-                let mut y = distance(bpm_list.time_at(note.beat)) - current_distance;
+                let mut y = (distance(bpm_list.time_at(note.beat)) - current_distance) * note.speed;
                 match note.kind {
                     NoteKind::Hold { hold_beat } => {
                         y = y.max(0.0);
-                        let height = distance(bpm_list.time_at(note.beat + hold_beat))
-                            - current_distance
+                        let height = (distance(bpm_list.time_at(note.beat + hold_beat))
+                            - current_distance)
+                            * note.speed
                             - y;
                         sprite.anchor = Anchor::BottomCenter;
                         transform.rotation = Quat::from_rotation_z(

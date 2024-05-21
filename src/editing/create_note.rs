@@ -60,6 +60,7 @@ pub fn create_note_system(
                 true,
                 beat,
                 x * CANVAS_WIDTH,
+                1.0,
             )));
         });
     };

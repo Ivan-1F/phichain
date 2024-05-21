@@ -125,6 +125,7 @@ impl Format for OfficialChart {
                     above,
                     t(note.time),
                     note.x / 18.0 * CANVAS_WIDTH,
+                    note.speed,
                 )
             };
 

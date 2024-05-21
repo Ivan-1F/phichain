@@ -354,6 +354,7 @@ impl Format for RpeChart {
                             note.above == 1,
                             start_beat,
                             note.position_x,
+                            note.speed,
                         )
                     })
                     .collect(),

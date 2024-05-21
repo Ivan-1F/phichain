@@ -17,15 +17,17 @@ pub struct Note {
     pub above: bool,
     pub beat: Beat,
     pub x: f32,
+    pub speed: f32,
 }
 
 impl Note {
-    pub fn new(kind: NoteKind, above: bool, beat: Beat, x: f32) -> Self {
+    pub fn new(kind: NoteKind, above: bool, beat: Beat, x: f32, speed: f32) -> Self {
         Self {
             kind,
             above,
             beat,
             x,
+            speed,
         }
     }
 }

@@ -93,5 +93,9 @@ fn single_note_inspector(ui: &mut Ui, note: &mut Note) {
 
             ui.label(t!("tab.inspector.single_note.above"));
             ui.checkbox(&mut note.above, "");
+            ui.end_row();
+
+            ui.label(t!("tab.inspector.single_note.speed"));
+            ui.add(egui::DragValue::new(&mut note.speed).speed(0.1));
         });
 }

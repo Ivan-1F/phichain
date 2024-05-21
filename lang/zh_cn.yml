@@ -18,6 +18,7 @@ tab:
       beat: 时间
       hold_beat: Hold 时间
       above: 是否在上方
+      speed: 速度
     single_event:
       start_beat: 开始时间
       end_beat: 结束时间
