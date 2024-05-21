@@ -19,6 +19,7 @@ impl Plugin for HitSoundPlugin {
 #[derive(Component, Debug)]
 struct PlayedHitSound;
 
+#[allow(clippy::too_many_arguments)]
 fn play_hit_sound_system(
     mut commands: Commands,
     query: Query<(&Note, Entity, Option<&PlayedHitSound>)>,
