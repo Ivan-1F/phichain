@@ -15,7 +15,11 @@ impl Plugin for IllustrationPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (resize_illustration_system, update_alpha_system)
+            (
+                resize_illustration_system,
+                update_alpha_system,
+                place_everything_above_illustration_system,
+            )
                 .run_if(project_loaded().and_then(any_with_component::<Illustration>)),
         );
     }
@@ -65,4 +69,12 @@ fn resize_illustration_system(
     let mut illustration = query.single_mut();
 
     illustration.custom_size = Some(viewport.0.size());
+}
+
+fn place_everything_above_illustration_system(
+    mut query: Query<&mut Transform, Without<Illustration>>,
+) {
+    for mut transform in &mut query {
+        transform.translation.z = 1.0;
+    }
 }
