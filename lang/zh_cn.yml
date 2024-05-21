@@ -85,3 +85,7 @@ home:
 
     music_unselected: 未选择音乐
     illustration_unselected: 未选择曲绘
+
+audio_setting:
+  save:
+    failed: '保存音频配置时发生错误: %{error}'

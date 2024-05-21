@@ -3,8 +3,10 @@ use std::{io::Cursor, path::PathBuf};
 
 use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
+use bevy_persistent::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use crate::misc::WorkingDirectory;
 use crate::timing::SeekToEvent;
 use crate::{
     project::project_loaded,
@@ -22,7 +24,7 @@ struct InstanceHandle(Handle<AudioInstance>);
 #[derive(Resource, Debug)]
 pub struct AudioDuration(pub Duration);
 
-#[derive(Resource)]
+#[derive(Resource, Serialize, Deserialize)]
 pub struct AudioSettings {
     pub music_volume: f32,
     pub hit_sound_volume: f32,
@@ -41,20 +43,33 @@ pub struct AudioPlugin;
 
 impl Plugin for AudioPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(AudioSettings::default())
-            .add_plugins(bevy_kira_audio::AudioPlugin)
-            .add_systems(
-                Update,
-                (
-                    handle_pause_system,
-                    handle_resume_system,
-                    handle_seek_system,
-                    handle_seek_to_system,
-                    update_time_system,
-                    update_volume_system,
-                )
-                    .run_if(project_loaded().and_then(resource_exists::<InstanceHandle>)),
-            );
+        let config_dir = app
+            .world
+            .resource::<WorkingDirectory>()
+            .config()
+            .expect("Failed to locate config directory");
+        app.insert_resource(
+            Persistent::<AudioSettings>::builder()
+                .name("Audio Settings")
+                .format(StorageFormat::Yaml)
+                .path(config_dir.join("audio.yml"))
+                .default(AudioSettings::default())
+                .build()
+                .expect("Failed to initialize audio settings"),
+        )
+        .add_plugins(bevy_kira_audio::AudioPlugin)
+        .add_systems(
+            Update,
+            (
+                handle_pause_system,
+                handle_resume_system,
+                handle_seek_system,
+                handle_seek_to_system,
+                update_time_system,
+                update_volume_system,
+            )
+                .run_if(project_loaded().and_then(resource_exists::<InstanceHandle>)),
+        );
     }
 }
 
@@ -167,7 +182,7 @@ fn update_time_system(
 fn update_volume_system(
     handle: Res<InstanceHandle>,
     mut audio_instances: ResMut<Assets<AudioInstance>>,
-    audio_settings: Res<AudioSettings>,
+    audio_settings: Res<Persistent<AudioSettings>>,
 ) {
     if let Some(instance) = audio_instances.get_mut(&handle.0) {
         instance.set_volume(

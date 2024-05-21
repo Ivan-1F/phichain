@@ -85,3 +85,7 @@ home:
 
     music_unselected: Music is not selected
     illustration_unselected: Illustration is not selected
+
+audio_setting:
+  save:
+    failed: 'Failed to save audio settings: %{error}'

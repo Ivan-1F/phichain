@@ -86,3 +86,4 @@ num_enum = "0.7.2"
 strum = { version = "0.26.2", features = ["derive"] }
 chrono = "0.4.38"
 bevy_asset_loader = "0.20.2"
+bevy-persistent = { version = "0.5.0", features = ["yaml"] }

@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
+use bevy_persistent::Persistent;
 
 use crate::assets::AudioAssets;
 use crate::project::project_loaded;
@@ -28,7 +29,7 @@ fn play_hit_sound_system(
     bpm_list: Res<BpmList>,
     assets: Res<AudioAssets>,
     audio: Res<Audio>,
-    audio_settings: Res<crate::audio::AudioSettings>,
+    audio_settings: Res<Persistent<crate::audio::AudioSettings>>,
     paused: Res<Paused>,
 ) {
     for (note, entity, played) in &query {

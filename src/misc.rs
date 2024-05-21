@@ -35,4 +35,7 @@ impl WorkingDirectory {
     pub fn screenshot(&self) -> anyhow::Result<PathBuf> {
         self.directory("screenshots")
     }
+    pub fn config(&self) -> anyhow::Result<PathBuf> {
+        self.directory("config")
+    }
 }
