@@ -3,16 +3,25 @@ use bevy_asset_loader::prelude::*;
 use bevy_egui::EguiContexts;
 use bevy_kira_audio::AudioSource;
 
-#[derive(Resource, Debug, Default)]
+#[derive(AssetCollection, Resource)]
 pub struct ImageAssets {
+    #[asset(path = "image/tap.png")]
     pub tap: Handle<Image>,
+    #[asset(path = "image/drag.png")]
     pub drag: Handle<Image>,
+    #[asset(path = "image/hold.png")]
     pub hold: Handle<Image>,
+    #[asset(path = "image/flick.png")]
     pub flick: Handle<Image>,
+    #[asset(path = "image/tap.highlight.png")]
     pub tap_highlight: Handle<Image>,
+    #[asset(path = "image/drag.highlight.png")]
     pub drag_highlight: Handle<Image>,
+    #[asset(path = "image/hold.highlight.png")]
     pub hold_highlight: Handle<Image>,
+    #[asset(path = "image/flick.highlight.png")]
     pub flick_highlight: Handle<Image>,
+    #[asset(path = "image/line.png")]
     pub line: Handle<Image>,
 }
 
@@ -30,32 +39,19 @@ pub struct AssetsPlugin;
 
 impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<ImageAssets>()
-            .add_systems(Startup, load_assets)
-            .init_collection::<AudioAssets>();
+        app.init_collection::<ImageAssets>()
+            .init_collection::<AudioAssets>()
+            .add_systems(Startup, load_assets);
     }
 }
 
-fn load_assets(
-    mut egui_context: EguiContexts,
-    mut image_assets: ResMut<ImageAssets>,
-    asset_server: Res<AssetServer>,
-) {
-    *image_assets = ImageAssets {
-        tap: asset_server.load("image/tap.png"),
-        drag: asset_server.load("image/drag.png"),
-        hold: asset_server.load("image/hold.png"),
-        flick: asset_server.load("image/flick.png"),
-        tap_highlight: asset_server.load("image/tap.highlight.png"),
-        drag_highlight: asset_server.load("image/drag.highlight.png"),
-        hold_highlight: asset_server.load("image/hold.highlight.png"),
-        flick_highlight: asset_server.load("image/flick.highlight.png"),
-        line: asset_server.load("image/line.png"),
-    };
-
-    // TODO: optimize this
+fn load_assets(mut egui_context: EguiContexts, image_assets: Res<ImageAssets>) {
     egui_context.add_image(image_assets.tap.clone());
     egui_context.add_image(image_assets.drag.clone());
     egui_context.add_image(image_assets.hold.clone());
     egui_context.add_image(image_assets.flick.clone());
+    egui_context.add_image(image_assets.tap_highlight.clone());
+    egui_context.add_image(image_assets.drag_highlight.clone());
+    egui_context.add_image(image_assets.hold_highlight.clone());
+    egui_context.add_image(image_assets.flick_highlight.clone());
 }
