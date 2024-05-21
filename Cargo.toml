@@ -85,3 +85,4 @@ log = "0.4.21"
 num_enum = "0.7.2"
 strum = { version = "0.26.2", features = ["derive"] }
 chrono = "0.4.38"
+bevy_asset_loader = "0.20.2"

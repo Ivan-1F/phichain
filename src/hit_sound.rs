@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
 
+use crate::assets::AudioAssets;
 use crate::project::project_loaded;
 use crate::timing::Paused;
 use crate::{
@@ -25,7 +26,7 @@ fn play_hit_sound_system(
     query: Query<(&Note, Entity, Option<&PlayedHitSound>)>,
     time: Res<ChartTime>,
     bpm_list: Res<BpmList>,
-    asset_server: Res<AssetServer>,
+    assets: Res<AudioAssets>,
     audio: Res<Audio>,
     audio_settings: Res<crate::audio::AudioSettings>,
     paused: Res<Paused>,
@@ -33,14 +34,14 @@ fn play_hit_sound_system(
     for (note, entity, played) in &query {
         let note_time = bpm_list.time_at(note.beat);
         if note_time <= time.0 && time.0 - note_time < 0.05 && played.is_none() && !paused.0 {
-            let path = match note.kind {
-                NoteKind::Tap => "audio/click.ogg",
-                NoteKind::Drag => "audio/drag.ogg",
-                NoteKind::Hold { hold_beat: _ } => "audio/click.ogg",
-                NoteKind::Flick => "audio/flick.ogg",
+            let handle = match note.kind {
+                NoteKind::Tap => assets.click.clone(),
+                NoteKind::Drag => assets.drag.clone(),
+                NoteKind::Hold { .. } => assets.click.clone(),
+                NoteKind::Flick => assets.flick.clone(),
             };
             audio
-                .play(asset_server.load(path))
+                .play(handle)
                 .with_volume(Volume::Amplitude(audio_settings.hit_sound_volume as f64));
             commands.entity(entity).insert(PlayedHitSound);
         } else if note_time > time.0 && played.is_some() {
