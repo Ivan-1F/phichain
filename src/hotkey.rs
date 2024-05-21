@@ -85,19 +85,17 @@ fn handle_hotkey_system(
 
     for event in events.read() {
         if event.state.is_pressed() {
-            for (id, mut keys) in hotkey.0.clone() {
+            for (id, keys) in hotkey.0.clone() {
                 // map control to command(⌘) on macOS
                 #[cfg(target_os = "macos")]
-                {
-                    keys = keys
-                        .iter()
-                        .map(|key| match key {
-                            KeyCode::ControlLeft => KeyCode::SuperLeft,
-                            KeyCode::ControlRight => KeyCode::SuperRight,
-                            _ => *key,
-                        })
-                        .collect::<Vec<_>>();
-                }
+                let keys = keys
+                    .iter()
+                    .map(|key| match key {
+                        KeyCode::ControlLeft => KeyCode::SuperLeft,
+                        KeyCode::ControlRight => KeyCode::SuperRight,
+                        _ => *key,
+                    })
+                    .collect::<Vec<_>>();
 
                 if pressed_keys.0 == keys {
                     actions_to_run.push(id);
