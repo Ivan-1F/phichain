@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_egui::EguiContexts;
 
 #[derive(Resource, Debug, Default)]
 pub struct ImageAssets {
@@ -22,7 +23,11 @@ impl Plugin for AssetsPlugin {
     }
 }
 
-fn load_assets(mut image_assets: ResMut<ImageAssets>, asset_server: Res<AssetServer>) {
+fn load_assets(
+    mut egui_context: EguiContexts,
+    mut image_assets: ResMut<ImageAssets>,
+    asset_server: Res<AssetServer>,
+) {
     *image_assets = ImageAssets {
         tap: asset_server.load("image/tap.png"),
         drag: asset_server.load("image/drag.png"),
@@ -34,4 +39,10 @@ fn load_assets(mut image_assets: ResMut<ImageAssets>, asset_server: Res<AssetSer
         flick_highlight: asset_server.load("image/flick.highlight.png"),
         line: asset_server.load("image/line.png"),
     };
+
+    // TODO: optimize this
+    egui_context.add_image(image_assets.tap.clone());
+    egui_context.add_image(image_assets.drag.clone());
+    egui_context.add_image(image_assets.hold.clone());
+    egui_context.add_image(image_assets.flick.clone());
 }

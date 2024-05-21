@@ -1,8 +1,9 @@
 use bevy::{ecs::system::SystemParam, prelude::*};
+use bevy_egui::EguiUserTextures;
 use egui::{Align2, Color32, FontId, Ui};
 use num::Rational32;
-use url::Url;
 
+use crate::assets::ImageAssets;
 use crate::audio::AudioDuration;
 use crate::widgets::event::event_ui;
 use crate::{
@@ -12,7 +13,6 @@ use crate::{
         note::{Note, NoteKind},
     },
     constants::{BASE_ZOOM, CANVAS_WIDTH, INDICATOR_POSITION},
-    misc::WorkingDirectory,
     selection::{SelectEvent, Selected, SelectedLine},
     timing::{BpmList, ChartTime},
 };
@@ -34,10 +34,12 @@ pub fn timeline_ui_system(
     bpm_list: Res<BpmList>,
     event_query: Query<(&LineEvent, &Parent, Entity, Option<&Selected>)>,
     note_query: Query<(&Note, &Parent, Entity, Option<&Selected>)>,
-    working_dir: Res<WorkingDirectory>,
     mut select_events: EventWriter<SelectEvent>,
     timeline: Timeline,
     timeline_settings: Res<TimelineSettings>,
+    assets: Res<ImageAssets>,
+    images: Res<Assets<Image>>,
+    textures: Res<EguiUserTextures>,
 ) {
     let selected_line = selected_line_query.0;
     let viewport = timeline_viewport;
@@ -116,28 +118,30 @@ pub fn timeline_ui_system(
             + (note.x / CANVAS_WIDTH + 0.5) * note_timeline_viewport.width();
         let y = timeline.time_to_y(bpm_list.time_at(note.beat));
 
-        let image = match note.kind {
-            NoteKind::Tap => "tap.png",
-            NoteKind::Drag => "drag.png",
-            NoteKind::Hold { hold_beat: _ } => "hold.png",
-            NoteKind::Flick => "flick.png",
+        let get_asset = |handle: &Handle<Image>| {
+            (
+                images.get(handle).unwrap().size(),
+                textures.image_id(handle).unwrap(),
+            )
         };
 
-        let image_size = match note.kind {
-            NoteKind::Tap => egui::Vec2::new(989.0, 100.0),
-            NoteKind::Drag => egui::Vec2::new(989.0, 60.0),
-            NoteKind::Hold { hold_beat: _ } => egui::Vec2::new(989.0, 1900.0),
-            NoteKind::Flick => egui::Vec2::new(989.0, 200.0),
+        let handle = match note.kind {
+            NoteKind::Tap => &assets.tap,
+            NoteKind::Drag => &assets.drag,
+            NoteKind::Hold { .. } => &assets.hold,
+            NoteKind::Flick => &assets.flick,
         };
+
+        let (size, image) = get_asset(handle);
 
         let size = match note.kind {
             NoteKind::Hold { hold_beat } => egui::Vec2::new(
-                note_timeline_viewport.width() / 8000.0 * image_size.x,
+                note_timeline_viewport.width() / 8000.0 * size.x as f32,
                 timeline.duration_to_height(bpm_list.time_at(hold_beat)),
             ),
             _ => egui::Vec2::new(
-                note_timeline_viewport.width() / 8000.0 * image_size.x,
-                note_timeline_viewport.width() / 8000.0 * image_size.y,
+                note_timeline_viewport.width() / 8000.0 * size.x as f32,
+                note_timeline_viewport.width() / 8000.0 * size.y as f32,
             ),
         };
 
@@ -146,11 +150,9 @@ pub fn timeline_ui_system(
             _ => egui::Pos2::new(x, y),
         };
 
-        let image_dir = working_dir.0.join("assets/image");
-
         let response = ui.put(
             egui::Rect::from_center_size(center, size),
-            egui::Image::new(Url::from_file_path(image_dir.join(image)).unwrap().as_str())
+            egui::Image::new((image, size))
                 .maintain_aspect_ratio(false)
                 .fit_to_exact_size(size)
                 .tint(if selected.is_some() {
