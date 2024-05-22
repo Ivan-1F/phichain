@@ -25,66 +25,49 @@ impl<'a> BeatValue<'a> {
 
 impl<'a> Widget for BeatValue<'a> {
     fn ui(self, ui: &mut Ui) -> Response {
-        let mut changed = false;
-        let mut drag_stopped = false;
+        ui.horizontal(|ui| {
+            let mut value = self.beat.value();
 
-        let mut response = ui
-            .horizontal(|ui| {
-                let mut value = self.beat.value();
+            let mut whole = self.beat.beat();
+            let mut numer = self.beat.numer();
+            let mut denom = self.beat.denom();
 
-                let mut whole = self.beat.beat();
-                let mut numer = self.beat.numer();
-                let mut denom = self.beat.denom();
+            let mut response = ui.add(
+                egui::DragValue::new(&mut whole)
+                    .clamp_range(0..=u32::MAX)
+                    .speed(1),
+            );
+            response |= ui.add(
+                egui::DragValue::new(&mut numer)
+                    .clamp_range(0..=u32::MAX)
+                    .speed(1),
+            );
+            response |= ui.add(
+                egui::DragValue::new(&mut denom)
+                    .clamp_range(1..=u32::MAX)
+                    .speed(1),
+            );
 
-                let response = ui.add(
-                    egui::DragValue::new(&mut whole)
-                        .clamp_range(0..=u32::MAX)
-                        .speed(1),
+            response |= ui.add(
+                egui::DragValue::new(&mut value)
+                    .clamp_range(0.0..=f32::MAX)
+                    .custom_formatter(|x, _| format!("{:?}", Beat::from(x as f32)))
+                    .speed(0.01),
+            );
+
+            if whole != self.beat.beat() || numer != self.beat.numer() || denom != self.beat.denom()
+            {
+                *self.beat = clamp_to_range(
+                    Beat::new(whole, Rational32::new(numer, denom)),
+                    &self.clamp_range,
                 );
-                changed |= response.changed();
-                drag_stopped |= response.drag_stopped();
-                let response = ui.add(
-                    egui::DragValue::new(&mut numer)
-                        .clamp_range(0..=u32::MAX)
-                        .speed(1),
-                );
-                changed |= response.changed();
-                drag_stopped |= response.drag_stopped();
-                let response = ui.add(
-                    egui::DragValue::new(&mut denom)
-                        .clamp_range(1..=u32::MAX)
-                        .speed(1),
-                );
-                changed |= response.changed();
-                drag_stopped |= response.drag_stopped();
+            } else if value != self.beat.value() {
+                *self.beat = clamp_to_range(value.into(), &self.clamp_range);
+            }
 
-                let response = ui.add(
-                    egui::DragValue::new(&mut value)
-                        .clamp_range(0.0..=f32::MAX)
-                        .custom_formatter(|x, _| format!("{:?}", Beat::from(x as f32)))
-                        .speed(0.01),
-                );
-                changed |= response.changed();
-                drag_stopped |= response.drag_stopped();
-
-                if whole != self.beat.beat()
-                    || numer != self.beat.numer()
-                    || denom != self.beat.denom()
-                {
-                    *self.beat = clamp_to_range(
-                        Beat::new(whole, Rational32::new(numer, denom)),
-                        &self.clamp_range,
-                    );
-                } else if value != self.beat.value() {
-                    *self.beat = clamp_to_range(value.into(), &self.clamp_range);
-                }
-            })
-            .response;
-
-        changed.then(|| response.mark_changed());
-        response.drag_stopped = drag_stopped;
-
-        response
+            response
+        })
+        .inner
     }
 }
 
