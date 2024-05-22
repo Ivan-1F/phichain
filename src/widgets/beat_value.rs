@@ -32,28 +32,54 @@ impl<'a> Widget for BeatValue<'a> {
             let mut numer = self.beat.numer();
             let mut denom = self.beat.denom();
 
-            let mut response = ui.add(
+            let response_whole = ui.add(
                 egui::DragValue::new(&mut whole)
                     .clamp_range(0..=u32::MAX)
                     .speed(1),
             );
-            response |= ui.add(
+            let response_numer = ui.add(
                 egui::DragValue::new(&mut numer)
                     .clamp_range(0..=u32::MAX)
                     .speed(1),
             );
-            response |= ui.add(
+            let response_denom = ui.add(
                 egui::DragValue::new(&mut denom)
                     .clamp_range(1..=u32::MAX)
                     .speed(1),
             );
 
-            response |= ui.add(
+            let response_value = ui.add(
                 egui::DragValue::new(&mut value)
                     .clamp_range(0.0..=f32::MAX)
                     .custom_formatter(|x, _| format!("{:?}", Beat::from(x as f32)))
                     .speed(0.01),
             );
+
+            // check which widget's id as the id for the whole widget,
+            // so that the focus events work as expected
+            // we assume that only one widget will be focused at the same time
+            let response = if whole != self.beat.beat() {
+                response_whole
+                    .union(response_numer)
+                    .union(response_denom)
+                    .union(response_value)
+            } else if numer != self.beat.numer() {
+                response_numer
+                    .union(response_whole)
+                    .union(response_denom)
+                    .union(response_value)
+            } else if denom != self.beat.denom() {
+                response_denom
+                    .union(response_numer)
+                    .union(response_whole)
+                    .union(response_value)
+            } else {
+                // value != self.beat.value() or nothing changed
+                response_value
+                    .union(response_denom)
+                    .union(response_numer)
+                    .union(response_whole)
+            };
 
             if whole != self.beat.beat() || numer != self.beat.numer() || denom != self.beat.denom()
             {
