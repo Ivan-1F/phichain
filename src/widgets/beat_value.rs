@@ -26,6 +26,7 @@ impl<'a> BeatValue<'a> {
 impl<'a> Widget for BeatValue<'a> {
     fn ui(self, ui: &mut Ui) -> Response {
         let mut changed = false;
+        let mut drag_stopped = false;
 
         let mut response = ui
             .horizontal(|ui| {
@@ -35,36 +36,36 @@ impl<'a> Widget for BeatValue<'a> {
                 let mut numer = self.beat.numer();
                 let mut denom = self.beat.denom();
 
-                changed |= ui
-                    .add(
-                        egui::DragValue::new(&mut whole)
-                            .clamp_range(0..=u32::MAX)
-                            .speed(1),
-                    )
-                    .changed();
-                changed |= ui
-                    .add(
-                        egui::DragValue::new(&mut numer)
-                            .clamp_range(0..=u32::MAX)
-                            .speed(1),
-                    )
-                    .changed();
-                changed |= ui
-                    .add(
-                        egui::DragValue::new(&mut denom)
-                            .clamp_range(1..=u32::MAX)
-                            .speed(1),
-                    )
-                    .changed();
+                let response = ui.add(
+                    egui::DragValue::new(&mut whole)
+                        .clamp_range(0..=u32::MAX)
+                        .speed(1),
+                );
+                changed |= response.changed();
+                drag_stopped |= response.drag_stopped();
+                let response = ui.add(
+                    egui::DragValue::new(&mut numer)
+                        .clamp_range(0..=u32::MAX)
+                        .speed(1),
+                );
+                changed |= response.changed();
+                drag_stopped |= response.drag_stopped();
+                let response = ui.add(
+                    egui::DragValue::new(&mut denom)
+                        .clamp_range(1..=u32::MAX)
+                        .speed(1),
+                );
+                changed |= response.changed();
+                drag_stopped |= response.drag_stopped();
 
-                changed |= ui
-                    .add(
-                        egui::DragValue::new(&mut value)
-                            .clamp_range(0.0..=f32::MAX)
-                            .custom_formatter(|x, _| format!("{:?}", Beat::from(x as f32)))
-                            .speed(0.01),
-                    )
-                    .changed();
+                let response = ui.add(
+                    egui::DragValue::new(&mut value)
+                        .clamp_range(0.0..=f32::MAX)
+                        .custom_formatter(|x, _| format!("{:?}", Beat::from(x as f32)))
+                        .speed(0.01),
+                );
+                changed |= response.changed();
+                drag_stopped |= response.drag_stopped();
 
                 if whole != self.beat.beat()
                     || numer != self.beat.numer()
@@ -81,6 +82,7 @@ impl<'a> Widget for BeatValue<'a> {
             .response;
 
         changed.then(|| response.mark_changed());
+        response.drag_stopped = drag_stopped;
 
         response
     }
