@@ -3,6 +3,7 @@ use crate::chart::note::Note;
 use bevy::prelude::*;
 
 use crate::project::project_loaded;
+use crate::utils::compat::ControlKeyExt;
 
 #[derive(Resource)]
 pub struct SelectedLine(pub Entity);
@@ -40,8 +41,7 @@ pub fn handle_select_event(
     >,
 ) {
     for event in select_events.read() {
-        if keyboard.pressed(KeyCode::ControlLeft) {
-            // TODO: on macOS this is SuperLeft
+        if keyboard.pressed(KeyCode::control()) {
             // selecting both notes and events is not allowed
             if note_query.get(event.0).is_ok() {
                 // target is note, unselect all events
