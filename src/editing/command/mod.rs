@@ -1,10 +1,11 @@
+pub mod event;
 pub mod note;
 
+use crate::editing::command::event::{CreateEvent, EditEvent, RemoveEvent};
 use crate::editing::command::note::{CreateNote, EditNote, RemoveNote};
 use bevy::prelude::*;
 use undo::Edit;
 
-#[allow(clippy::enum_variant_names)] // TODO: remove when added Line commands
 #[derive(Debug, Copy, Clone)]
 pub enum EditorCommand {
     #[allow(dead_code)] // TODO: remove when used CreateNote
@@ -12,6 +13,12 @@ pub enum EditorCommand {
     #[allow(dead_code)] // TODO: remove when used RemoveNote
     RemoveNote(RemoveNote),
     EditNote(EditNote),
+
+    #[allow(dead_code)] // TODO: remove when used CreateEvent
+    CreateEvent(CreateEvent),
+    #[allow(dead_code)] // TODO: remove when used RemoveEvent
+    RemoveEvent(RemoveEvent),
+    EditEvent(EditEvent),
 }
 
 macro_rules! impl_edit_for_command {
@@ -39,4 +46,11 @@ macro_rules! impl_edit_for_command {
     };
 }
 
-impl_edit_for_command!(CreateNote, RemoveNote, EditNote);
+impl_edit_for_command!(
+    CreateNote,
+    RemoveNote,
+    EditNote,
+    CreateEvent,
+    RemoveEvent,
+    EditEvent
+);

@@ -3,9 +3,10 @@ use egui::Ui;
 
 use crate::chart::event::{LineEvent, LineEventKind};
 use crate::chart::note::NoteKind;
+use crate::editing::command::event::EditEvent;
 use crate::editing::command::note::EditNote;
 use crate::editing::command::EditorCommand;
-use crate::editing::EditEvent;
+use crate::editing::DoCommandEvent;
 use crate::ui::latch;
 use crate::widgets::beat_value::BeatExt;
 use crate::widgets::easing_value::EasingValue;
@@ -14,8 +15,8 @@ use crate::{chart::note::Note, selection::Selected};
 pub fn inspector_ui_system(
     In(ui): In<&mut Ui>,
     mut selected_notes: Query<(&mut Note, Entity), With<Selected>>,
-    mut selected_events: Query<&mut LineEvent, With<Selected>>,
-    event_writer: EventWriter<EditEvent>,
+    mut selected_events: Query<(&mut LineEvent, Entity), With<Selected>>,
+    event_writer: EventWriter<DoCommandEvent>,
 ) {
     let mut selected_notes: Vec<_> = selected_notes.iter_mut().collect();
     let mut selected_events: Vec<_> = selected_events.iter_mut().collect();
@@ -23,15 +24,16 @@ pub fn inspector_ui_system(
         let (selected_note, entity) = selected_notes.get_mut(0).unwrap();
         single_note_inspector(ui, *entity, selected_note, event_writer);
     } else if selected_notes.is_empty() && selected_events.len() == 1 {
-        let selected_event = selected_events.get_mut(0).unwrap();
-        single_event_inspector(ui, selected_event, event_writer);
+        let (selected_event, entity) = selected_events.get_mut(0).unwrap();
+        single_event_inspector(ui, *entity, selected_event, event_writer);
     }
 }
 
 fn single_event_inspector(
     ui: &mut Ui,
+    entity: Entity,
     event: &mut LineEvent,
-    mut _event_writer: EventWriter<EditEvent>,
+    mut event_writer: EventWriter<DoCommandEvent>,
 ) {
     egui::Grid::new("inspector_grid")
         .num_columns(2)
@@ -82,7 +84,9 @@ fn single_event_inspector(
 
             if let Some(from) = result {
                 if from != *event {
-                    println!("{:?} -> {:?}", from, event);
+                    event_writer.send(DoCommandEvent(EditorCommand::EditEvent(EditEvent::new(
+                        entity, from, *event,
+                    ))));
                 }
             }
         });
@@ -92,7 +96,7 @@ fn single_note_inspector(
     ui: &mut Ui,
     entity: Entity,
     note: &mut Note,
-    mut event_writer: EventWriter<EditEvent>,
+    mut event_writer: EventWriter<DoCommandEvent>,
 ) {
     egui::Grid::new("inspector_grid")
         .num_columns(2)
@@ -139,7 +143,7 @@ fn single_note_inspector(
 
             if let Some(from) = result {
                 if from != *note {
-                    event_writer.send(EditEvent(EditorCommand::EditNote(EditNote::new(
+                    event_writer.send(DoCommandEvent(EditorCommand::EditNote(EditNote::new(
                         entity, from, *note,
                     ))));
                 }
