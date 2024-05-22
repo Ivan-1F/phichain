@@ -25,6 +25,7 @@ mod selection;
 mod serialization;
 mod tab;
 mod timing;
+mod ui;
 mod widgets;
 
 use crate::action::{ActionPlugin, ActionRegistry};
