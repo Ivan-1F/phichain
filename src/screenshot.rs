@@ -2,6 +2,7 @@ use crate::action::ActionRegistrationExt;
 use crate::hotkey::HotkeyRegistrationExt;
 use crate::misc::WorkingDirectory;
 use crate::notification::{ToastsExt, ToastsStorage};
+use crate::utils::compat::ControlKeyExt;
 use bevy::prelude::*;
 use bevy::render::view::screenshot::ScreenshotManager;
 use bevy::window::PrimaryWindow;
@@ -13,7 +14,7 @@ impl Plugin for ScreenshotPlugin {
         app.register_action("phichain.take_screenshot", take_screenshot_system)
             .register_hotkey(
                 "phichain.take_screenshot",
-                vec![KeyCode::ControlLeft, KeyCode::KeyP],
+                vec![KeyCode::control(), KeyCode::KeyP],
             );
     }
 }

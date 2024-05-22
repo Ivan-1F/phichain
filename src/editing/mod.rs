@@ -7,6 +7,7 @@ use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 
 use crate::project::project_loaded;
+use crate::utils::compat::ControlKeyExt;
 
 use self::create_note::create_note_system;
 
@@ -25,11 +26,11 @@ impl Plugin for EditingPlugin {
             .add_systems(Update, create_note_system.run_if(project_loaded()))
             .add_systems(Update, handle_edit_command.run_if(project_loaded()))
             .register_action("phichain.undo", undo_system)
-            .register_hotkey("phichain.undo", vec![KeyCode::ControlLeft, KeyCode::KeyZ])
+            .register_hotkey("phichain.undo", vec![KeyCode::control(), KeyCode::KeyZ])
             .register_action("phichain.redo", redo_system)
             .register_hotkey(
                 "phichain.redo",
-                vec![KeyCode::ControlLeft, KeyCode::ShiftLeft, KeyCode::KeyZ],
+                vec![KeyCode::control(), KeyCode::ShiftLeft, KeyCode::KeyZ],
             );
     }
 }

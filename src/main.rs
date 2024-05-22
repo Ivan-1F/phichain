@@ -57,6 +57,7 @@ use crate::tab::timeline::{TimelineTabPlugin, TimelineViewport};
 use crate::tab::TabPlugin;
 use crate::tab::{EditorTab, TabRegistry};
 use crate::timing::TimingPlugin;
+use crate::utils::compat::ControlKeyExt;
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_egui::egui::{Color32, Frame};
@@ -101,7 +102,7 @@ fn main() {
         .add_systems(Startup, apply_args_config_system)
         .register_hotkey(
             "phichain.project.save",
-            vec![KeyCode::ControlLeft, KeyCode::KeyS],
+            vec![KeyCode::control(), KeyCode::KeyS],
         )
         .run();
 }

@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::misc::WorkingDirectory;
 use crate::timing::SeekToEvent;
+use crate::utils::compat::ControlKeyExt;
 use crate::{
     project::project_loaded,
     timing::{ChartTime, PauseEvent, Paused, ResumeEvent, SeekEvent},
@@ -135,7 +136,7 @@ fn handle_seek_system(
         for event in events.read() {
             // holding Control will seek faster and holding Alt will seek slower
             let mut factor = 1.0;
-            if keyboard.pressed(KeyCode::ControlLeft) {
+            if keyboard.pressed(KeyCode::control()) {
                 factor *= 2.0;
             }
             if keyboard.pressed(KeyCode::AltLeft) {
