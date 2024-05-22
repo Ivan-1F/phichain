@@ -37,12 +37,20 @@ impl Edit for CreateNote {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct RemoveNote(pub Entity, pub Option<Note>);
+pub struct RemoveNote {
+    pub note_entity: Entity,
+    pub note: Option<Note>,
+    pub line_entity: Option<Entity>,
+}
 
 impl RemoveNote {
     #[allow(dead_code)]
     pub fn new(entity: Entity) -> Self {
-        Self(entity, None)
+        Self {
+            note_entity: entity,
+            note: None,
+            line_entity: None,
+        }
     }
 }
 
@@ -51,13 +59,21 @@ impl Edit for RemoveNote {
     type Output = ();
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
-        self.1 = target.entity(self.0).get::<Note>().copied();
-        target.despawn(self.0);
+        self.note = target.entity(self.note_entity).get::<Note>().copied();
+        self.line_entity = target
+            .entity(self.note_entity)
+            .get::<Parent>()
+            .map(|x| x.get());
+        target.despawn(self.note_entity);
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
-        if let Some(note) = self.1 {
-            self.0 = target.spawn(NoteBundle::new(note)).id();
+        if let Some(note) = self.note {
+            if let Some(line) = self.line_entity {
+                target.entity_mut(line).with_children(|parent| {
+                    self.note_entity = parent.spawn(NoteBundle::new(note)).id();
+                });
+            }
         }
     }
 }
@@ -103,8 +119,12 @@ mod tests {
 
     fn test_remove_note_system(world: &mut World) {
         let mut history = History::new();
+
+        let line = world.spawn(LineBundle::new()).id();
         let note = Note::new(NoteKind::Tap, true, Beat::ZERO, 0.0, 1.0);
         let entity = world.spawn(NoteBundle::new(note)).id();
+        world.entity_mut(line).add_child(entity);
+
         assert!(world.query::<&Note>().get_single(world).is_ok());
         history.edit(world, EditorCommand::RemoveNote(RemoveNote::new(entity)));
         assert!(world.query::<&Note>().get_single(world).is_err());
