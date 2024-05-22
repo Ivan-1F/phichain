@@ -22,7 +22,9 @@ impl Plugin for CoreGamePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, zoom_scale_system.run_if(project_loaded()))
             .add_systems(
-                Update,
+                // note placement runs on Update, we need to edit them after they are being spawned into the world
+                // FIXME: use SystemSet for better schedule control
+                PostUpdate,
                 (
                     update_note_scale_system,
                     update_note_system,
@@ -33,17 +35,17 @@ impl Plugin for CoreGamePlugin {
                     .run_if(project_loaded()),
             )
             .add_systems(
-                Update,
+                PostUpdate,
                 (compute_line_system, update_line_system)
                     .chain()
                     .run_if(project_loaded()),
             )
             .add_systems(
-                Update,
+                PostUpdate,
                 (update_line_texture_system, update_note_texture_system).run_if(project_loaded()),
             )
             .add_systems(
-                Update,
+                PostUpdate,
                 calculate_speed_events_system.run_if(project_loaded()),
             );
     }

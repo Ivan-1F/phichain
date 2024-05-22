@@ -6,7 +6,7 @@ use crate::editing::command::note::{CreateNote, EditNote, RemoveNote};
 use bevy::prelude::*;
 use undo::Edit;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub enum EditorCommand {
     CreateNote(CreateNote),
     #[allow(dead_code)] // TODO: remove when used RemoveNote
@@ -18,6 +18,28 @@ pub enum EditorCommand {
     #[allow(dead_code)] // TODO: remove when used RemoveEvent
     RemoveEvent(RemoveEvent),
     EditEvent(EditEvent),
+
+    CommandSequence(CommandSequence),
+}
+
+#[derive(Debug, Clone)]
+pub struct CommandSequence(pub Vec<EditorCommand>);
+
+impl Edit for CommandSequence {
+    type Target = World;
+    type Output = ();
+
+    fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
+        for command in self.0.iter_mut() {
+            command.edit(target);
+        }
+    }
+
+    fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
+        for command in self.0.iter_mut().rev() {
+            command.undo(target);
+        }
+    }
 }
 
 macro_rules! impl_edit_for_command {
@@ -51,5 +73,6 @@ impl_edit_for_command!(
     EditNote,
     CreateEvent,
     RemoveEvent,
-    EditEvent
+    EditEvent,
+    CommandSequence
 );
