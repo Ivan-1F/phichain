@@ -8,7 +8,6 @@ use undo::Edit;
 
 #[derive(Debug, Copy, Clone)]
 pub enum EditorCommand {
-    #[allow(dead_code)] // TODO: remove when used CreateNote
     CreateNote(CreateNote),
     #[allow(dead_code)] // TODO: remove when used RemoveNote
     RemoveNote(RemoveNote),

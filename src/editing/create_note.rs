@@ -1,9 +1,12 @@
 use bevy::prelude::*;
 
+use crate::editing::command::note::CreateNote;
+use crate::editing::command::EditorCommand;
+use crate::editing::DoCommandEvent;
 use crate::{
     chart::{
         beat::Beat,
-        note::{Note, NoteBundle, NoteKind},
+        note::{Note, NoteKind},
     },
     constants::CANVAS_WIDTH,
     selection::SelectedLine,
@@ -13,7 +16,6 @@ use crate::{
 
 #[allow(clippy::too_many_arguments)]
 pub fn create_note_system(
-    mut commands: Commands,
     timeline: Timeline,
     keyboard: Res<ButtonInput<KeyCode>>,
 
@@ -24,6 +26,8 @@ pub fn create_note_system(
 
     timeline_viewport: Res<TimelineViewport>,
     timeline_settings: Res<TimelineSettings>,
+
+    mut event: EventWriter<DoCommandEvent>,
 ) {
     let window = window_query.single();
     let Some(cursor_position) = window.cursor_position() else {
@@ -36,7 +40,7 @@ pub fn create_note_system(
         return;
     }
 
-    let mut spawn_note = |kind: NoteKind| {
+    let mut create_note = |kind: NoteKind| {
         let time = timeline.y_to_time(cursor_position.y);
         let mut beat = bpm_list.beat_at(time);
         beat.attach_to_beat_line(timeline_settings.density);
@@ -54,32 +58,29 @@ pub fn create_note_system(
 
         let x = x - 0.5;
 
-        commands.entity(selected_line.0).with_children(|parent| {
-            parent.spawn(NoteBundle::new(Note::new(
-                kind,
-                true,
-                beat,
-                x * CANVAS_WIDTH,
-                1.0,
-            )));
-        });
+        let note = Note::new(kind, true, beat, x * CANVAS_WIDTH, 1.0);
+
+        event.send(DoCommandEvent(EditorCommand::CreateNote(CreateNote::new(
+            selected_line.0,
+            note,
+        ))));
     };
 
     if keyboard.just_pressed(KeyCode::KeyQ) {
-        spawn_note(NoteKind::Tap);
+        create_note(NoteKind::Tap);
     }
 
     if keyboard.just_pressed(KeyCode::KeyW) {
-        spawn_note(NoteKind::Drag);
+        create_note(NoteKind::Drag);
     }
 
     if keyboard.just_pressed(KeyCode::KeyE) {
-        spawn_note(NoteKind::Flick);
+        create_note(NoteKind::Flick);
     }
 
     if keyboard.just_pressed(KeyCode::KeyR) {
         // TODO: make hold placement done with 2 `R` press
-        spawn_note(NoteKind::Hold {
+        create_note(NoteKind::Hold {
             hold_beat: Beat::ONE,
         });
     }

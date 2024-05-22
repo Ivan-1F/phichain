@@ -10,7 +10,6 @@ pub struct CreateNote {
 }
 
 impl CreateNote {
-    #[allow(dead_code)]
     pub fn new(line: Entity, note: Note) -> Self {
         Self {
             line_entity: line,
