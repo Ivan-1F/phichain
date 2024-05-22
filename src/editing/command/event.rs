@@ -28,18 +28,28 @@ impl Edit for CreateEvent {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct RemoveEvent(pub Entity, pub LineEvent);
+pub struct RemoveEvent(pub Entity, pub Option<LineEvent>);
+
+impl RemoveEvent {
+    #[allow(dead_code)]
+    pub fn new(entity: Entity) -> Self {
+        Self(entity, None)
+    }
+}
 
 impl Edit for RemoveEvent {
     type Target = World;
     type Output = ();
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
+        self.1 = target.entity(self.0).get::<LineEvent>().copied();
         target.despawn(self.0);
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
-        self.0 = target.spawn(LineEventBundle::new(self.1)).id();
+        if let Some(event) = self.1 {
+            self.0 = target.spawn(LineEventBundle::new(event)).id();
+        }
     }
 }
 

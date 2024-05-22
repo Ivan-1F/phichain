@@ -28,18 +28,28 @@ impl Edit for CreateNote {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct RemoveNote(pub Entity, pub Note);
+pub struct RemoveNote(pub Entity, pub Option<Note>);
+
+impl RemoveNote {
+    #[allow(dead_code)]
+    pub fn new(entity: Entity) -> Self {
+        Self(entity, None)
+    }
+}
 
 impl Edit for RemoveNote {
     type Target = World;
     type Output = ();
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
+        self.1 = target.entity(self.0).get::<Note>().copied();
         target.despawn(self.0);
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
-        self.0 = target.spawn(NoteBundle::new(self.1)).id();
+        if let Some(note) = self.1 {
+            self.0 = target.spawn(NoteBundle::new(note)).id();
+        }
     }
 }
 
@@ -87,7 +97,7 @@ mod tests {
         let note = Note::new(NoteKind::Tap, true, Beat::ZERO, 0.0, 1.0);
         let entity = world.spawn(NoteBundle::new(note)).id();
         assert!(world.query::<&Note>().get_single(world).is_ok());
-        history.edit(world, EditorCommand::RemoveNote(RemoveNote(entity, note)));
+        history.edit(world, EditorCommand::RemoveNote(RemoveNote::new(entity)));
         assert!(world.query::<&Note>().get_single(world).is_err());
         history.undo(world);
         assert!(world.query::<&Note>().get_single(world).is_ok());
