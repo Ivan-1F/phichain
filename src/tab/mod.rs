@@ -13,7 +13,7 @@ use crate::tab::chart_basic_setting::chart_basic_setting_tab;
 use crate::tab::game::game_tab;
 use crate::tab::inspector::inspector_ui_system;
 use crate::tab::line_list::line_list_tab;
-use crate::tab::timeline::timeline_ui_system;
+use crate::tab::timeline::timeline_tab;
 use crate::tab::timeline_setting::timeline_setting_tab;
 use bevy::{prelude::*, utils::HashMap};
 use egui::Ui;
@@ -68,11 +68,7 @@ pub struct TabPlugin;
 impl Plugin for TabPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<TabRegistry>()
-            .register_tab(
-                EditorTab::Timeline,
-                "tab.timeline.title",
-                timeline_ui_system,
-            )
+            .register_tab(EditorTab::Timeline, "tab.timeline.title", timeline_tab)
             .register_tab(EditorTab::Game, "tab.game.title", game_tab)
             .register_tab(
                 EditorTab::Inspector,
