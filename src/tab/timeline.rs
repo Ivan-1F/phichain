@@ -26,7 +26,6 @@ impl Plugin for TimelineTabPlugin {
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn timeline_ui_system(
     In(ui): In<&mut Ui>,
     selected_line_query: Res<SelectedLine>,

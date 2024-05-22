@@ -22,6 +22,7 @@ debug = false
 
 [lints.clippy]
 type_complexity = "allow"
+too_many_arguments = "allow"
 
 [package.metadata.i18n]
 available-locales = ["en_us", "zh_cn"]

@@ -14,7 +14,6 @@ use crate::{
     timing::BpmList,
 };
 
-#[allow(clippy::too_many_arguments)]
 pub fn create_note_system(
     timeline: Timeline,
     keyboard: Res<ButtonInput<KeyCode>>,

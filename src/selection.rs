@@ -23,7 +23,6 @@ impl Plugin for SelectionPlugin {
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn handle_select_event(
     mut commands: Commands,
     mut select_events: EventReader<SelectEvent>,
