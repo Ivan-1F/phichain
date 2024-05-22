@@ -55,26 +55,30 @@ impl<'a> Widget for BeatValue<'a> {
                     .speed(0.01),
             );
 
+            fn has_focus_changed(response: &Response) -> bool {
+                response.has_focus() || response.lost_focus() || response.gained_focus()
+            }
+
             // check which widget's id as the id for the whole widget,
             // so that the focus events work as expected
             // we assume that only one widget will be focused at the same time
-            let response = if whole != self.beat.beat() {
+            let response = if has_focus_changed(&response_whole) {
                 response_whole
                     .union(response_numer)
                     .union(response_denom)
                     .union(response_value)
-            } else if numer != self.beat.numer() {
+            } else if has_focus_changed(&response_numer) {
                 response_numer
                     .union(response_whole)
                     .union(response_denom)
                     .union(response_value)
-            } else if denom != self.beat.denom() {
+            } else if has_focus_changed(&response_denom) {
                 response_denom
                     .union(response_numer)
                     .union(response_whole)
                     .union(response_value)
             } else {
-                // value != self.beat.value() or nothing changed
+                // has_focus_changed(response_value) or nothing changed
                 response_value
                     .union(response_denom)
                     .union(response_numer)
