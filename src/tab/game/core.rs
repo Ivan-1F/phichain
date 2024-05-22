@@ -2,6 +2,8 @@ use bevy::{prelude::*, sprite::Anchor};
 use num::{FromPrimitive, Rational32};
 
 use crate::chart::line::LineSpeed;
+use crate::editing::pending::Pending;
+use crate::selection::Selected;
 use crate::{
     assets::ImageAssets,
     chart::{
@@ -44,6 +46,7 @@ impl Plugin for CoreGamePlugin {
                 PostUpdate,
                 (update_line_texture_system, update_note_texture_system).run_if(project_loaded()),
             )
+            .add_systems(PostUpdate, update_note_tint_system.run_if(project_loaded()))
             .add_systems(
                 PostUpdate,
                 calculate_speed_events_system.run_if(project_loaded()),
@@ -74,25 +77,25 @@ fn update_note_scale_system(
 }
 
 fn update_note_system(
-    mut query: Query<(&mut Transform, &mut Sprite, &Note)>,
+    mut query: Query<(&mut Transform, &mut Visibility, &Note)>,
     game_viewport: Res<GameViewport>,
     time: Res<ChartTime>,
     bpm_list: Res<BpmList>,
 ) {
     let beat = bpm_list.beat_at(time.0);
-    for (mut transform, mut sprite, note) in &mut query {
+    for (mut transform, mut visibility, note) in &mut query {
         transform.translation.x = (note.x / CANVAS_WIDTH) * game_viewport.0.width()
             / (game_viewport.0.width() * 3.0 / 1920.0);
-        let hold_beat = if let NoteKind::Hold { hold_beat } = note.kind {
-            hold_beat.value()
-        } else {
-            0.0
+
+        let hold_beat = match note.kind {
+            NoteKind::Hold { hold_beat } => hold_beat.value(),
+            _ => 0.0,
         };
-        sprite.color = Color::WHITE.with_a(if note.beat.value() + hold_beat < beat.into() {
-            0.0
+        *visibility = if note.beat.value() + hold_beat < beat.into() {
+            Visibility::Hidden
         } else {
-            1.0
-        })
+            Visibility::Visible
+        };
     }
 }
 
@@ -158,7 +161,7 @@ fn update_line_system(
         transform.translation.x = position.0.x / CANVAS_WIDTH * game_viewport.0.width();
         transform.translation.y = position.0.y / CANVAS_HEIGHT * game_viewport.0.height();
         transform.rotation = Quat::from_rotation_z(rotation.0);
-        sprite.color = Color::rgba(1.0, 1.0, 1.0, opacity.0);
+        sprite.color.set_a(opacity.0);
     }
 }
 
@@ -225,6 +228,20 @@ fn update_note_texture_system(
             NoteKind::Hold { hold_beat: _ } => *image = assets.hold.clone(),
             NoteKind::Flick => *image = assets.flick.clone(),
         }
+    }
+}
+
+fn update_note_tint_system(
+    mut query: Query<(&mut Sprite, Option<&Selected>, Option<&Pending>), With<Note>>,
+) {
+    for (mut sprite, selected, pending) in &mut query {
+        let tint = if selected.is_some() {
+            Color::LIME_GREEN
+        } else {
+            Color::WHITE
+        };
+        let alpha = if pending.is_some() { 40.0 / 255.0 } else { 1.0 };
+        sprite.color = tint.with_a(alpha);
     }
 }
 

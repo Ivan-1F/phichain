@@ -5,6 +5,7 @@ use num::Rational32;
 
 use crate::assets::ImageAssets;
 use crate::audio::AudioDuration;
+use crate::editing::pending::Pending;
 use crate::widgets::event::event_ui;
 use crate::{
     chart::{
@@ -32,7 +33,7 @@ pub fn timeline_ui_system(
     timeline_viewport: Res<TimelineViewport>,
     bpm_list: Res<BpmList>,
     event_query: Query<(&LineEvent, &Parent, Entity, Option<&Selected>)>,
-    note_query: Query<(&Note, &Parent, Entity, Option<&Selected>)>,
+    note_query: Query<(&Note, &Parent, Entity, Option<&Selected>, Option<&Pending>)>,
     mut select_events: EventWriter<SelectEvent>,
     timeline: Timeline,
     timeline_settings: Res<TimelineSettings>,
@@ -108,7 +109,7 @@ pub fn timeline_ui_system(
 
     let note_timeline_viewport = viewport.note_timeline_viewport();
 
-    for (note, parent, entity, selected) in note_query.iter() {
+    for (note, parent, entity, selected, pending) in note_query.iter() {
         if parent.get() != selected_line {
             continue;
         }
@@ -149,16 +150,22 @@ pub fn timeline_ui_system(
             _ => egui::Pos2::new(x, y),
         };
 
+        let mut tint = if selected.is_some() {
+            Color32::LIGHT_GREEN
+        } else {
+            Color32::WHITE
+        };
+
+        if pending.is_some() {
+            tint = Color32::from_rgba_unmultiplied(tint.r(), tint.g(), tint.b(), 20);
+        }
+
         let response = ui.put(
             egui::Rect::from_center_size(center, size),
             egui::Image::new((image, size))
                 .maintain_aspect_ratio(false)
                 .fit_to_exact_size(size)
-                .tint(if selected.is_some() {
-                    Color32::LIGHT_GREEN
-                } else {
-                    Color32::WHITE
-                })
+                .tint(tint)
                 .sense(egui::Sense::click()),
         );
 
@@ -274,6 +281,10 @@ impl Default for TimelineSettings {
 }
 
 impl TimelineSettings {
+    pub fn minimum_beat(&self) -> Beat {
+        Beat::new(0, Rational32::new(1, self.density as i32))
+    }
+
     pub fn lane_percents(&self) -> Vec<f32> {
         let lane_width = 1.0 / (self.lanes + 1) as f32;
         std::iter::repeat(0)

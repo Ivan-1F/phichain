@@ -15,6 +15,7 @@ pub mod command;
 mod create_note;
 mod delete_selected;
 pub mod history;
+pub mod pending;
 
 pub struct EditingPlugin;
 
