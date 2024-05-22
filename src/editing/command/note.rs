@@ -1,14 +1,22 @@
 use crate::chart::note::{Note, NoteBundle};
-use bevy::prelude::{Entity, World};
+use bevy::prelude::*;
 use undo::Edit;
 
 #[derive(Debug, Copy, Clone)]
-pub struct CreateNote(pub Note, pub Option<Entity>);
+pub struct CreateNote {
+    pub line_entity: Entity,
+    pub note: Note,
+    pub note_entity: Option<Entity>,
+}
 
 impl CreateNote {
     #[allow(dead_code)]
-    pub fn new(note: Note) -> Self {
-        Self(note, None)
+    pub fn new(line: Entity, note: Note) -> Self {
+        Self {
+            line_entity: line,
+            note,
+            note_entity: None,
+        }
     }
 }
 
@@ -17,11 +25,13 @@ impl Edit for CreateNote {
     type Output = ();
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
-        self.1 = Some(target.spawn(NoteBundle::new(self.0)).id());
+        target.entity_mut(self.line_entity).with_children(|parent| {
+            self.note_entity = Some(parent.spawn(NoteBundle::new(self.note)).id());
+        });
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
-        if let Some(entity) = self.1 {
+        if let Some(entity) = self.note_entity {
             target.despawn(entity);
         }
     }
@@ -87,9 +97,9 @@ impl Edit for EditNote {
 mod tests {
     use super::*;
     use crate::chart::beat::Beat;
+    use crate::chart::line::LineBundle;
     use crate::chart::note::{Note, NoteBundle, NoteKind};
     use crate::editing::command::EditorCommand;
-    use bevy::prelude::*;
     use undo::History;
 
     fn test_remove_note_system(world: &mut World) {
@@ -114,9 +124,13 @@ mod tests {
 
     fn test_create_note_system(world: &mut World) {
         let mut history = History::new();
+        let line = world.spawn(LineBundle::new()).id();
         let note = Note::new(NoteKind::Tap, true, Beat::ZERO, 0.0, 1.0);
         assert!(world.query::<&Note>().get_single(world).is_err());
-        history.edit(world, EditorCommand::CreateNote(CreateNote::new(note)));
+        history.edit(
+            world,
+            EditorCommand::CreateNote(CreateNote::new(line, note)),
+        );
         assert!(world.query::<&Note>().get_single(world).is_ok());
         history.undo(world);
         assert!(world.query::<&Note>().get_single(world).is_err());

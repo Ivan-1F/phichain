@@ -1,14 +1,23 @@
 use crate::chart::event::{LineEvent, LineEventBundle};
+use bevy::hierarchy::BuildWorldChildren;
 use bevy::prelude::{Entity, World};
 use undo::Edit;
 
 #[derive(Debug, Copy, Clone)]
-pub struct CreateEvent(pub LineEvent, pub Option<Entity>);
+pub struct CreateEvent {
+    pub line_entity: Entity,
+    pub event: LineEvent,
+    pub event_entity: Option<Entity>,
+}
 
 impl CreateEvent {
     #[allow(dead_code)]
-    pub fn new(event: LineEvent) -> Self {
-        Self(event, None)
+    pub fn new(line: Entity, event: LineEvent) -> Self {
+        Self {
+            line_entity: line,
+            event,
+            event_entity: None,
+        }
     }
 }
 
@@ -17,11 +26,13 @@ impl Edit for CreateEvent {
     type Output = ();
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
-        self.1 = Some(target.spawn(LineEventBundle::new(self.0)).id());
+        target.entity_mut(self.line_entity).with_children(|parent| {
+            self.event_entity = Some(parent.spawn(LineEventBundle::new(self.event)).id());
+        });
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
-        if let Some(entity) = self.1 {
+        if let Some(entity) = self.event_entity {
             target.despawn(entity);
         }
     }
