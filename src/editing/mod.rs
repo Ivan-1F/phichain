@@ -4,6 +4,7 @@ use crate::project::project_loaded;
 
 use self::create_note::create_note_system;
 
+mod command;
 mod create_note;
 
 pub struct EditingPlugin;
