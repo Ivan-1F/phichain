@@ -35,8 +35,7 @@ impl<'a> Widget for EasingValue<'a> {
                             }
                         }
                     }
-                })
-                .response;
+                });
 
             let (mut response, painter) = ui.allocate_painter(
                 Vec2::new(ui.available_width(), ui.available_width() / 3.0 * 2.0),
