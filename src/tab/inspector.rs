@@ -30,37 +30,53 @@ fn single_event_inspector(ui: &mut Ui, event: &mut LineEvent) {
         .spacing([20.0, 2.0])
         .striped(true)
         .show(ui, |ui| {
-            ui.label(t!("tab.inspector.single_event.start_beat"));
-            ui.beat(&mut event.start_beat);
-            ui.end_row();
+            let result = latch::latch(ui, "event", *event, |ui| {
+                let mut finished = false;
 
-            ui.label(t!("tab.inspector.single_event.end_beat"));
-            ui.beat(&mut event.end_beat);
-            ui.end_row();
+                ui.label(t!("tab.inspector.single_event.start_beat"));
+                let response = ui.beat(&mut event.start_beat);
+                finished |= response.drag_stopped() || response.lost_focus();
+                ui.end_row();
 
-            ui.label(t!("tab.inspector.single_event.start_value"));
-            let range = match event.kind {
-                LineEventKind::Opacity => 0.0..=255.0,
-                _ => f32::MIN..=f32::MAX,
-            };
-            ui.add(
-                egui::DragValue::new(&mut event.start)
-                    .clamp_range(range.clone())
-                    .speed(1.0),
-            );
-            ui.end_row();
+                ui.label(t!("tab.inspector.single_event.end_beat"));
+                let response = ui.beat(&mut event.end_beat);
+                finished |= response.drag_stopped() || response.lost_focus();
+                ui.end_row();
 
-            ui.label(t!("tab.inspector.single_event.end_value"));
-            ui.add(
-                egui::DragValue::new(&mut event.end)
-                    .clamp_range(range.clone())
-                    .speed(1.0),
-            );
-            ui.end_row();
+                ui.label(t!("tab.inspector.single_event.start_value"));
+                let range = match event.kind {
+                    LineEventKind::Opacity => 0.0..=255.0,
+                    _ => f32::MIN..=f32::MAX,
+                };
+                ui.add(
+                    egui::DragValue::new(&mut event.start)
+                        .clamp_range(range.clone())
+                        .speed(1.0),
+                );
+                ui.end_row();
 
-            ui.label(t!("tab.inspector.single_event.end_value"));
-            ui.add(EasingValue::new(&mut event.easing));
-            ui.end_row();
+                ui.label(t!("tab.inspector.single_event.end_value"));
+                let response = ui.add(
+                    egui::DragValue::new(&mut event.end)
+                        .clamp_range(range.clone())
+                        .speed(1.0),
+                );
+                finished |= response.drag_stopped() || response.lost_focus();
+                ui.end_row();
+
+                ui.label(t!("tab.inspector.single_event.end_value"));
+                let response = ui.add(EasingValue::new(&mut event.easing));
+                finished |= response.drag_stopped() || response.lost_focus();
+                ui.end_row();
+
+                finished
+            });
+
+            if let Some(from) = result {
+                if from != *event {
+                    println!("{:?} -> {:?}", from, event);
+                }
+            }
         });
 }
 
@@ -80,7 +96,6 @@ fn single_note_inspector(ui: &mut Ui, note: &mut Note) {
 
                 ui.label(t!("tab.inspector.single_note.beat"));
                 let response = ui.beat(&mut note.beat);
-                println!("{}", response.lost_focus());
                 finished |= response.drag_stopped() || response.lost_focus();
                 ui.end_row();
 
