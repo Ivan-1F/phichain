@@ -103,7 +103,7 @@ pub fn timeline_ui_system(
         )
         .clicked()
         {
-            select_events.send(SelectEvent(entity, true));
+            select_events.send(SelectEvent(entity));
         }
     }
 
@@ -164,7 +164,7 @@ pub fn timeline_ui_system(
         );
 
         if response.clicked() {
-            select_events.send(SelectEvent(entity, true));
+            select_events.send(SelectEvent(entity));
         }
     }
 

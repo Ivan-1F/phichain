@@ -12,7 +12,7 @@ pub struct Selected;
 
 /// Select a [Entity] in the world
 #[derive(Event)]
-pub struct SelectEvent(pub Entity, pub bool);
+pub struct SelectEvent(pub Entity);
 
 pub struct SelectionPlugin;
 
@@ -23,11 +23,14 @@ impl Plugin for SelectionPlugin {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn handle_select_event(
     mut commands: Commands,
     mut select_events: EventReader<SelectEvent>,
     note_query: Query<&Note>,
     event_query: Query<&LineEvent>,
+
+    keyboard: Res<ButtonInput<KeyCode>>,
 
     selected_notes_query: Query<Entity, (With<Selected>, With<Note>, Without<LineEvent>)>,
     selected_events_query: Query<Entity, (With<Selected>, With<LineEvent>, Without<Note>)>,
@@ -38,12 +41,8 @@ pub fn handle_select_event(
     >,
 ) {
     for event in select_events.read() {
-        if event.1 {
-            // unselect all notes and events
-            for entity in &selected_notes_and_events_query {
-                commands.entity(entity).remove::<Selected>();
-            }
-        } else {
+        if keyboard.pressed(KeyCode::ControlLeft) {
+            // TODO: on macOS this is SuperLeft
             // selecting both notes and events is not allowed
             if note_query.get(event.0).is_ok() {
                 // target is note, unselect all events
@@ -56,6 +55,11 @@ pub fn handle_select_event(
                 for entity in &selected_notes_query {
                     commands.entity(entity).remove::<Selected>();
                 }
+            }
+        } else {
+            // unselect all notes and events
+            for entity in &selected_notes_and_events_query {
+                commands.entity(entity).remove::<Selected>();
             }
         }
 
