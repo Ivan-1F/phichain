@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use super::beat::Beat;
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum LineEventKind {
     X,
     Y,
@@ -13,7 +13,7 @@ pub enum LineEventKind {
     Speed,
 }
 
-#[derive(Component, Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct LineEvent {
     pub kind: LineEventKind,
     pub start: f32,

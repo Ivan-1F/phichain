@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use super::beat::Beat;
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum NoteKind {
     Tap,
     Drag,
@@ -11,7 +11,7 @@ pub enum NoteKind {
     Flick,
 }
 
-#[derive(Component, Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct Note {
     pub kind: NoteKind,
     pub above: bool,
