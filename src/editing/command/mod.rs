@@ -4,8 +4,12 @@ use crate::editing::command::note::{CreateNote, EditNote, RemoveNote};
 use bevy::prelude::*;
 use undo::Edit;
 
+#[allow(clippy::enum_variant_names)] // TODO: remove when added Line commands
+#[derive(Debug, Copy, Clone)]
 pub enum EditorCommand {
+    #[allow(dead_code)] // TODO: remove when used CreateNote
     CreateNote(CreateNote),
+    #[allow(dead_code)] // TODO: remove when used RemoveNote
     RemoveNote(RemoveNote),
     EditNote(EditNote),
 }

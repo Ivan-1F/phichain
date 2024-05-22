@@ -1,8 +1,8 @@
 use crate::chart::note::{Note, NoteBundle};
-use bevy::app::{App, Update};
 use bevy::prelude::{Entity, World};
 use undo::Edit;
 
+#[derive(Debug, Copy, Clone)]
 pub struct CreateNote(pub Note, pub Option<Entity>);
 
 impl CreateNote {
@@ -27,6 +27,7 @@ impl Edit for CreateNote {
     }
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct RemoveNote(pub Entity, pub Note);
 
 impl Edit for RemoveNote {
@@ -42,6 +43,7 @@ impl Edit for RemoveNote {
     }
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct EditNote {
     entity: Entity,
     from: Note,
@@ -49,7 +51,7 @@ pub struct EditNote {
 }
 
 impl EditNote {
-    fn new(entity: Entity, from: Note, to: Note) -> Self {
+    pub fn new(entity: Entity, from: Note, to: Note) -> Self {
         Self { entity, from, to }
     }
 }
@@ -77,6 +79,7 @@ mod tests {
     use crate::chart::beat::Beat;
     use crate::chart::note::{Note, NoteBundle, NoteKind};
     use crate::editing::command::EditorCommand;
+    use bevy::prelude::*;
     use undo::History;
 
     fn test_remove_note_system(world: &mut World) {
