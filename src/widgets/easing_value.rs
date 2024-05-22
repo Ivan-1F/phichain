@@ -16,6 +16,9 @@ impl<'a> EasingValue<'a> {
 impl<'a> Widget for EasingValue<'a> {
     fn ui(self, ui: &mut Ui) -> Response {
         ui.vertical(|ui| {
+            let mut drag_stopped = false;
+
+            let mut combobox_changed = false;
             egui::ComboBox::from_label("")
                 .selected_text(format!("{}", self.value))
                 .show_ui(ui, |ui| {
@@ -24,6 +27,7 @@ impl<'a> Widget for EasingValue<'a> {
                             .selectable_label(*self.value == easing, format!("{}", easing))
                             .clicked()
                         {
+                            combobox_changed = true;
                             if let Easing::Custom(_, _, _, _) = easing {
                                 *self.value = Easing::Custom(0.5, 0.0, 0.5, 1.0);
                             } else {
@@ -31,12 +35,17 @@ impl<'a> Widget for EasingValue<'a> {
                             }
                         }
                     }
-                });
+                })
+                .response;
 
-            let (response, painter) = ui.allocate_painter(
+            let (mut response, painter) = ui.allocate_painter(
                 Vec2::new(ui.available_width(), ui.available_width() / 3.0 * 2.0),
                 Sense::hover(),
             );
+
+            // temporary workaround for change handling: .change() is reserved by egui,
+            // we use drag_stopped for change handling as the same as DragValue
+            response.drag_stopped |= combobox_changed;
 
             let to_screen = emath::RectTransform::from_to(
                 Rect::from_min_size(Pos2::ZERO, Vec2::new(1.0, 1.0)),
@@ -64,6 +73,7 @@ impl<'a> Widget for EasingValue<'a> {
                 let point_rect = Rect::from_center_size(point_in_screen, size);
                 let point_id = response.id.with(1);
                 let point_response = ui.interact(point_rect, point_id, Sense::drag());
+                drag_stopped |= point_response.drag_stopped();
 
                 p1 += point_response.drag_delta() / response.rect.size();
                 p1 = to_screen.from().clamp(p1);
@@ -72,6 +82,7 @@ impl<'a> Widget for EasingValue<'a> {
                 let point_rect = Rect::from_center_size(point_in_screen, size);
                 let point_id = response.id.with(2);
                 let point_response = ui.interact(point_rect, point_id, Sense::drag());
+                drag_stopped |= point_response.drag_stopped();
 
                 p2 += point_response.drag_delta() / response.rect.size();
                 p2 = to_screen.from().clamp(p2);
@@ -112,10 +123,12 @@ impl<'a> Widget for EasingValue<'a> {
                     [to_screen * Pos2::new(1.0, 0.0), to_screen * p2],
                     Stroke::new(2.0, Color32::GRAY),
                 );
+
+                response.drag_stopped |= drag_stopped;
             }
 
             response
         })
-        .response
+        .inner
     }
 }
