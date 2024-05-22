@@ -322,7 +322,6 @@ impl<'w> Timeline<'w> {
             + self.viewport.0.height() * INDICATOR_POSITION
     }
 
-    #[allow(dead_code)]
     pub fn y_to_time(&self, y: f32) -> f32 {
         self.current_time.0
             - (y - (self.viewport.0.min.y + self.viewport.0.height() * INDICATOR_POSITION))

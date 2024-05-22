@@ -9,13 +9,11 @@ use undo::Edit;
 #[derive(Debug, Clone)]
 pub enum EditorCommand {
     CreateNote(CreateNote),
-    #[allow(dead_code)] // TODO: remove when used RemoveNote
     RemoveNote(RemoveNote),
     EditNote(EditNote),
 
     #[allow(dead_code)] // TODO: remove when used CreateEvent
     CreateEvent(CreateEvent),
-    #[allow(dead_code)] // TODO: remove when used RemoveEvent
     RemoveEvent(RemoveEvent),
     EditEvent(EditEvent),
 
