@@ -7,7 +7,9 @@ use num::Rational32;
 
 use crate::audio::AudioDuration;
 use crate::tab::timeline::event_timeline::event_timeline_system;
-use crate::tab::timeline::note_timeline::{note_timeline_system, NoteTimelineDragSelection};
+use crate::tab::timeline::note_timeline::{
+    note_timeline_drag_select_system, note_timeline_system, NoteTimelineDragSelection,
+};
 use crate::{
     chart::beat::Beat,
     constants::{BASE_ZOOM, INDICATOR_POSITION},
@@ -113,15 +115,23 @@ pub fn timeline_tab(In(ui): In<&'static mut Ui>, world: &mut World) {
         let mut system = IntoSystem::into_system(beat_line_ui_system);
         system.initialize(world);
         system.run(&mut *(ui as *mut Ui), world);
+
         let mut system = IntoSystem::into_system(indicator_system);
         system.initialize(world);
         system.run(&mut *(ui as *mut Ui), world);
+
         let mut system = IntoSystem::into_system(separator_system);
         system.initialize(world);
         system.run(&mut *(ui as *mut Ui), world);
+
+        let mut system = IntoSystem::into_system(note_timeline_drag_select_system);
+        system.initialize(world);
+        system.run(&mut *(ui as *mut Ui), world);
+
         let mut system = IntoSystem::into_system(note_timeline_system);
         system.initialize(world);
         system.run(&mut *(ui as *mut Ui), world);
+
         let mut system = IntoSystem::into_system(event_timeline_system);
         system.initialize(world);
         system.run(&mut *(ui as *mut Ui), world);

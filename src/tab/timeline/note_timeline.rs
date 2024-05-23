@@ -15,32 +15,22 @@ use egui::{Color32, Sense, Stroke, Ui};
 #[derive(Resource, Debug, Default)]
 pub struct NoteTimelineDragSelection(pub Option<(egui::Vec2, egui::Vec2)>);
 
-pub fn note_timeline_system(
+pub fn note_timeline_drag_select_system(
     In(ui): In<&mut Ui>,
-    selected_line_query: Res<SelectedLine>,
-    timeline_viewport: Res<TimelineViewport>,
+    viewport: Res<TimelineViewport>,
     bpm_list: Res<BpmList>,
     note_query: Query<(&Note, &Parent, Entity, Option<&Selected>, Option<&Pending>)>,
     mut select_events: EventWriter<SelectEvent>,
     timeline: Timeline,
-    timeline_settings: Res<TimelineSettings>,
-    assets: Res<ImageAssets>,
-    images: Res<Assets<Image>>,
-    textures: Res<EguiUserTextures>,
 
     mut selection: ResMut<NoteTimelineDragSelection>,
-
     window_query: Query<&Window>,
 ) {
+    let note_timeline_viewport = viewport.note_timeline_viewport();
     let window = window_query.single();
     let Some(cursor_position) = window.cursor_position() else {
         return;
     };
-
-    let selected_line = selected_line_query.0;
-    let viewport = timeline_viewport;
-
-    let note_timeline_viewport = viewport.note_timeline_viewport();
 
     let calc_note_attrs = || {
         let time = timeline.y_to_time(cursor_position.y);
@@ -110,6 +100,25 @@ pub fn note_timeline_system(
         }
         selection.0 = None;
     }
+}
+
+pub fn note_timeline_system(
+    In(ui): In<&mut Ui>,
+    selected_line_query: Res<SelectedLine>,
+    timeline_viewport: Res<TimelineViewport>,
+    bpm_list: Res<BpmList>,
+    note_query: Query<(&Note, &Parent, Entity, Option<&Selected>, Option<&Pending>)>,
+    mut select_events: EventWriter<SelectEvent>,
+    timeline: Timeline,
+    timeline_settings: Res<TimelineSettings>,
+    assets: Res<ImageAssets>,
+    images: Res<Assets<Image>>,
+    textures: Res<EguiUserTextures>,
+) {
+    let selected_line = selected_line_query.0;
+    let viewport = timeline_viewport;
+
+    let note_timeline_viewport = viewport.note_timeline_viewport();
 
     for (note, parent, entity, selected, pending) in note_query.iter() {
         if parent.get() != selected_line {
