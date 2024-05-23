@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+use crate::chart::beat;
 use crate::chart::note::NoteBundle;
 use crate::editing::command::note::CreateNote;
 use crate::editing::command::EditorCommand;
@@ -58,8 +59,8 @@ fn create_note_system(
 
     let calc_note_attrs = || {
         let time = timeline.y_to_time(cursor_position.y);
-        let mut beat = bpm_list.beat_at(time);
-        beat.attach_to_beat_line(timeline_settings.density);
+        let beat = bpm_list.beat_at(time).value();
+        let beat = beat::utils::attach(beat, timeline_settings.density);
 
         let x = (cursor_position.x - note_timeline_viewport.min.x) / note_timeline_viewport.width();
 

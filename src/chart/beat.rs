@@ -16,14 +16,37 @@ impl Debug for Beat {
     }
 }
 
-impl Beat {
-    pub fn attach_to_beat_line(&mut self, density: u32) {
-        let original_fraction = self.1;
-        let target_denominator = density as i32;
-        let closest_numerator = (original_fraction.numer() * target_denominator
-            + original_fraction.denom() / 2)
-            / original_fraction.denom();
-        self.1 = Rational32::new(closest_numerator, target_denominator);
+pub mod utils {
+    use crate::chart::beat::Beat;
+    use num::Rational32;
+
+    /// Attach a beat value to beat lines with a given density
+    pub fn attach(value: f32, density: u32) -> Beat {
+        let step = 1.0 / density as f32;
+
+        let rounded_value = (value / step).round() * step;
+
+        let integer_part = rounded_value.floor() as i32;
+        let fractional_part =
+            ((rounded_value - integer_part as f32) * density as f32).round() as i32;
+
+        Beat::new(
+            integer_part,
+            Rational32::new(fractional_part, density as i32),
+        )
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        use crate::chart::beat::Beat;
+
+        #[test]
+        fn test_attach() {
+            assert_eq!(attach(1.333333, 3), Beat::new(1, Rational32::new(1, 3)));
+            assert_eq!(attach(1.3, 4), Beat::new(1, Rational32::new(1, 4)));
+            assert_eq!(attach(5.8, 2), Beat::new(6, Rational32::new(0, 1)));
+        }
     }
 }
 
