@@ -66,9 +66,10 @@ pub fn note_timeline_drag_select_system(
     }
 
     if let Some((start, now)) = selection.0 {
-        let start_x = (start.x + 0.5) * note_timeline_viewport.width();
+        let start_x =
+            note_timeline_viewport.min.x + (start.x + 0.5) * note_timeline_viewport.width();
         let start_y = timeline.time_to_y(start.y);
-        let now_x = (now.x + 0.5) * note_timeline_viewport.width();
+        let now_x = note_timeline_viewport.min.x + (now.x + 0.5) * note_timeline_viewport.width();
         let now_y = timeline.time_to_y(now.y);
         ui.painter().rect(
             egui::Rect::from_two_pos(
