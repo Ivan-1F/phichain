@@ -50,6 +50,11 @@ tab:
     point:
       beat: Beat
       bpm: BPM
+  settings:
+    title: Settings
+    category:
+      general: General
+      graphics: Graphics
 
 project:
   save:

@@ -50,6 +50,11 @@ tab:
     point:
       beat: 时间 (拍)
       bpm: BPM
+  settings:
+    title: 设置
+    category:
+      general: 常规
+      graphics: 图像
 
 project:
   save:
