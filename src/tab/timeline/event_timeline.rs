@@ -33,13 +33,7 @@ pub fn event_timeline_system(
             continue;
         }
 
-        let track = match event.kind {
-            crate::chart::event::LineEventKind::X => 1,
-            crate::chart::event::LineEventKind::Y => 2,
-            crate::chart::event::LineEventKind::Rotation => 3,
-            crate::chart::event::LineEventKind::Opacity => 4,
-            crate::chart::event::LineEventKind::Speed => 5,
-        };
+        let track: u8 = event.kind.into();
 
         let x = event_timeline_viewport.width() / 5.0 * track as f32
             - event_timeline_viewport.width() / 5.0 / 2.0

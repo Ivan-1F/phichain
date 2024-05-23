@@ -1,13 +1,16 @@
 use crate::chart::easing::{Easing, Tween};
 use bevy::prelude::*;
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
 
 use super::beat::Beat;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, IntoPrimitive, TryFromPrimitive,
+)]
 #[repr(u8)]
 pub enum LineEventKind {
-    X,
+    X = 1,
     Y,
     Rotation,
     Opacity,

@@ -46,16 +46,16 @@ pub fn create_event_system(
 
         let track = ((cursor_position.x - event_timeline_viewport.min.x)
             / (event_timeline_viewport.width() / 5.0))
-            .ceil() as u32;
+            .ceil() as u8;
 
         (track, beat)
     };
 
     if let Ok((mut pending_event, _)) = pending_event_query.get_single_mut() {
-        let (_, beat) = calc_event_attrs();
+        let (track, beat) = calc_event_attrs();
         pending_event.end_beat =
             beat.max(pending_event.start_beat + timeline_settings.minimum_beat());
-        // pending_note.x = x * CANVAS_WIDTH;
+        pending_event.kind = LineEventKind::try_from(track).expect("Unknown event track");
     }
 
     if keyboard.just_pressed(KeyCode::KeyR) {
@@ -66,14 +66,7 @@ pub fn create_event_system(
             )));
         } else {
             let (track, beat) = calc_event_attrs();
-            let kind = match track {
-                1 => LineEventKind::X,
-                2 => LineEventKind::Y,
-                3 => LineEventKind::Rotation,
-                4 => LineEventKind::Opacity,
-                5 => LineEventKind::Speed,
-                _ => unreachable!(),
-            };
+            let kind = LineEventKind::try_from(track).expect("Unknown event track");
             commands.entity(selected_line.0).with_children(|parent| {
                 parent.spawn((
                     LineEventBundle::new(LineEvent {
