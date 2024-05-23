@@ -7,6 +7,7 @@ use crate::widgets::event::event_ui;
 use bevy::hierarchy::Parent;
 use bevy::prelude::{Entity, EventWriter, In, Query, Res};
 use egui::{Color32, Ui};
+use std::iter;
 
 pub fn event_timeline_system(
     In(ui): In<&mut Ui>,
@@ -27,6 +28,26 @@ pub fn event_timeline_system(
     let viewport = timeline_viewport;
 
     let event_timeline_viewport = viewport.event_timeline_viewport();
+
+    // [0.2, 0.4, 0.6, 0.8]
+    let lane_percents = iter::repeat(0.0)
+        .take(5 - 1)
+        .enumerate()
+        .map(|(i, _)| (i + 1) as f32 * 1.0 / 5.0)
+        .collect::<Vec<_>>();
+    for percent in lane_percents {
+        ui.painter().rect_filled(
+            egui::Rect::from_center_size(
+                egui::Pos2::new(
+                    event_timeline_viewport.min.x + event_timeline_viewport.width() * percent,
+                    viewport.0.center().y,
+                ),
+                egui::Vec2::new(2.0, viewport.0.height()),
+            ),
+            0.0,
+            Color32::from_rgba_unmultiplied(255, 255, 255, 40),
+        );
+    }
 
     for (event, parent, entity, selected, pending) in event_query.iter() {
         if parent.get() != selected_line {
