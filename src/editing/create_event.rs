@@ -16,7 +16,10 @@ pub struct CreateEventPlugin;
 
 impl Plugin for CreateEventPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, create_event_system.run_if(project_loaded()));
+        app.add_systems(
+            Update,
+            (create_event_system, remove_pending_event_on_esc_system).run_if(project_loaded()),
+        );
     }
 }
 
@@ -89,6 +92,18 @@ fn create_event_system(
                     Pending,
                 ));
             });
+        }
+    }
+}
+
+fn remove_pending_event_on_esc_system(
+    mut commands: Commands,
+    keyboard: Res<ButtonInput<KeyCode>>,
+    query: Query<Entity, (With<Pending>, With<LineEvent>)>,
+) {
+    if keyboard.just_pressed(KeyCode::Escape) {
+        for entity in &query {
+            commands.entity(entity).despawn();
         }
     }
 }

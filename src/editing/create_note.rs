@@ -21,7 +21,10 @@ pub struct CreateNoteSystem;
 
 impl Plugin for CreateNoteSystem {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, create_note_system.run_if(project_loaded()));
+        app.add_systems(
+            Update,
+            (create_note_system, remove_pending_note_on_esc_system).run_if(project_loaded()),
+        );
     }
 }
 
@@ -130,6 +133,18 @@ fn create_note_system(
                     Pending,
                 ));
             });
+        }
+    }
+}
+
+fn remove_pending_note_on_esc_system(
+    mut commands: Commands,
+    keyboard: Res<ButtonInput<KeyCode>>,
+    query: Query<Entity, (With<Pending>, With<Note>)>,
+) {
+    if keyboard.just_pressed(KeyCode::Escape) {
+        for entity in &query {
+            commands.entity(entity).despawn();
         }
     }
 }
