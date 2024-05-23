@@ -8,8 +8,8 @@ use crate::editing::command::note::EditNote;
 use crate::editing::command::EditorCommand;
 use crate::editing::DoCommandEvent;
 use crate::ui::latch;
-use crate::widgets::beat_value::BeatExt;
-use crate::widgets::easing_value::EasingValue;
+use crate::ui::widgets::beat_value::BeatExt;
+use crate::ui::widgets::easing_value::EasingValue;
 use crate::{chart::note::Note, selection::Selected};
 
 pub fn inspector_ui_system(

@@ -27,7 +27,6 @@ mod tab;
 mod timing;
 mod ui;
 mod utils;
-mod widgets;
 
 use crate::action::{ActionPlugin, ActionRegistry};
 use crate::assets::AssetsPlugin;

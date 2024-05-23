@@ -1,6 +1,6 @@
 use crate::chart::beat::Beat;
 use crate::timing::{BpmList, BpmPoint};
-use crate::widgets::beat_value::BeatValue;
+use crate::ui::widgets::beat_value::BeatValue;
 use bevy::prelude::*;
 use egui::Ui;
 use num::Rational32;

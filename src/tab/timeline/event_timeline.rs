@@ -3,7 +3,7 @@ use crate::editing::pending::Pending;
 use crate::selection::{SelectEvent, Selected, SelectedLine};
 use crate::tab::timeline::{Timeline, TimelineViewport};
 use crate::timing::BpmList;
-use crate::widgets::event::event_ui;
+use crate::ui::widgets::event::event_ui;
 use bevy::app::{App, Plugin};
 use bevy::hierarchy::Parent;
 use bevy::prelude::{Entity, EventWriter, In, Query, Res, ResMut, Resource, Window};
