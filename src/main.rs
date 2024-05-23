@@ -210,6 +210,12 @@ impl egui_dock::TabViewer for TabViewer<'_> {
             .unwrap_or("Unknown".into())
             .into()
     }
+    fn scroll_bars(&self, tab: &Self::Tab) -> [bool; 2] {
+        match tab {
+            EditorTab::Game | EditorTab::Timeline => [false, false],
+            _ => [true, true],
+        }
+    }
 
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
         self.registry.tab_ui(ui, self.world, tab);
