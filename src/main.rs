@@ -56,6 +56,7 @@ use crate::tab::timeline::{TimelineTabPlugin, TimelineViewport};
 use crate::tab::TabPlugin;
 use crate::tab::{EditorTab, TabRegistry};
 use crate::timing::TimingPlugin;
+use crate::ui::UiPlugin;
 use crate::utils::compat::ControlKeyExt;
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
@@ -72,6 +73,7 @@ fn main() {
         .insert_resource(UiState::new())
         .add_plugins(CliPlugin)
         .add_plugins(MiscPlugin)
+        .add_plugins(UiPlugin)
         .add_plugins(HomePlugin)
         .add_plugins(DefaultPlugins)
         .add_plugins(ActionPlugin)

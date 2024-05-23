@@ -5,6 +5,7 @@ use bevy::ecs::system::SystemState;
 use bevy::input::keyboard::KeyboardInput;
 use bevy::prelude::*;
 use bevy::utils::HashMap;
+use bevy_egui::EguiContexts;
 use std::ops::Not;
 
 pub struct HotkeyPlugin;
@@ -54,8 +55,14 @@ pub struct PressedKeys(pub Vec<KeyCode>);
 
 fn listen_to_key_events_system(
     mut events: EventReader<KeyboardInput>,
+    mut contexts: EguiContexts,
     mut pressed_keys: ResMut<PressedKeys>,
 ) {
+    let ctx = contexts.ctx_mut();
+    // disable action dispatch when egui wants keyboard inputs, check out `crate::ui::compat`
+    if ctx.wants_keyboard_input() {
+        return;
+    }
     for event in events.read() {
         if event.state.is_pressed() {
             pressed_keys
