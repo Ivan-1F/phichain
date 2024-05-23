@@ -6,7 +6,9 @@ use egui::{Align2, Color32, FontId, Ui};
 use num::Rational32;
 
 use crate::audio::AudioDuration;
-use crate::tab::timeline::event_timeline::event_timeline_system;
+use crate::tab::timeline::event_timeline::{
+    event_timeline_drag_select_system, event_timeline_system, EventTimelinePlugin,
+};
 use crate::tab::timeline::note_timeline::{
     note_timeline_drag_select_system, note_timeline_system, NoteTimelinePlugin,
 };
@@ -21,6 +23,7 @@ pub struct TimelineTabPlugin;
 impl Plugin for TimelineTabPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(NoteTimelinePlugin)
+            .add_plugins(EventTimelinePlugin)
             .insert_resource(TimelineViewport(Rect::from_corners(Vec2::ZERO, Vec2::ZERO)))
             .insert_resource(TimelineSettings::default());
     }
@@ -129,6 +132,10 @@ pub fn timeline_tab(In(ui): In<&'static mut Ui>, world: &mut World) {
         system.run(&mut *(ui as *mut Ui), world);
 
         let mut system = IntoSystem::into_system(note_timeline_system);
+        system.initialize(world);
+        system.run(&mut *(ui as *mut Ui), world);
+
+        let mut system = IntoSystem::into_system(event_timeline_drag_select_system);
         system.initialize(world);
         system.run(&mut *(ui as *mut Ui), world);
 
