@@ -11,6 +11,14 @@ use bevy::prelude::*;
 use bevy_egui::EguiUserTextures;
 use egui::{Color32, Sense, Stroke, Ui};
 
+pub struct NoteTimelinePlugin;
+
+impl Plugin for NoteTimelinePlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<NoteTimelineDragSelection>();
+    }
+}
+
 /// Represents the drag-selection on the note timeline
 #[derive(Resource, Debug, Default)]
 pub struct NoteTimelineDragSelection(pub Option<(egui::Vec2, egui::Vec2)>);

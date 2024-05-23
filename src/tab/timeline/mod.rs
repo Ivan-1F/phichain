@@ -8,7 +8,7 @@ use num::Rational32;
 use crate::audio::AudioDuration;
 use crate::tab::timeline::event_timeline::event_timeline_system;
 use crate::tab::timeline::note_timeline::{
-    note_timeline_drag_select_system, note_timeline_system, NoteTimelineDragSelection,
+    note_timeline_drag_select_system, note_timeline_system, NoteTimelinePlugin,
 };
 use crate::{
     chart::beat::Beat,
@@ -20,7 +20,7 @@ pub struct TimelineTabPlugin;
 
 impl Plugin for TimelineTabPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(NoteTimelineDragSelection::default())
+        app.add_plugins(NoteTimelinePlugin)
             .insert_resource(TimelineViewport(Rect::from_corners(Vec2::ZERO, Vec2::ZERO)))
             .insert_resource(TimelineSettings::default());
     }
