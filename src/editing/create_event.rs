@@ -5,13 +5,22 @@ use crate::editing::command::event::CreateEvent;
 use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
+use crate::project::project_loaded;
 use crate::{
     selection::SelectedLine,
     tab::timeline::{Timeline, TimelineSettings, TimelineViewport},
     timing::BpmList,
 };
 
-pub fn create_event_system(
+pub struct CreateEventPlugin;
+
+impl Plugin for CreateEventPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Update, create_event_system.run_if(project_loaded()));
+    }
+}
+
+fn create_event_system(
     mut commands: Commands,
     timeline: Timeline,
     keyboard: Res<ButtonInput<KeyCode>>,

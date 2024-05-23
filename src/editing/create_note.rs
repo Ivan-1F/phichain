@@ -5,6 +5,7 @@ use crate::editing::command::note::CreateNote;
 use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
+use crate::project::project_loaded;
 use crate::{
     chart::{
         beat::Beat,
@@ -16,7 +17,15 @@ use crate::{
     timing::BpmList,
 };
 
-pub fn create_note_system(
+pub struct CreateNoteSystem;
+
+impl Plugin for CreateNoteSystem {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Update, create_note_system.run_if(project_loaded()));
+    }
+}
+
+fn create_note_system(
     mut commands: Commands,
     timeline: Timeline,
     keyboard: Res<ButtonInput<KeyCode>>,
