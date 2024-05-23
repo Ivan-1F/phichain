@@ -1,5 +1,6 @@
 use crate::action::ActionRegistrationExt;
 use crate::editing::command::EditorCommand;
+use crate::editing::create_event::create_event_system;
 use crate::editing::delete_selected::DeleteSelectedPlugin;
 use crate::editing::history::EditorHistory;
 use crate::hotkey::HotkeyRegistrationExt;
@@ -12,6 +13,7 @@ use crate::utils::compat::ControlKeyExt;
 use self::create_note::create_note_system;
 
 pub mod command;
+mod create_event;
 mod create_note;
 mod delete_selected;
 pub mod history;
@@ -25,6 +27,7 @@ impl Plugin for EditingPlugin {
             .init_resource::<EditorHistory>()
             .add_plugins(DeleteSelectedPlugin)
             .add_systems(Update, create_note_system.run_if(project_loaded()))
+            .add_systems(Update, create_event_system.run_if(project_loaded()))
             .add_systems(Update, handle_edit_command.run_if(project_loaded()))
             .register_action("phichain.undo", undo_system)
             .register_hotkey("phichain.undo", vec![KeyCode::control(), KeyCode::KeyZ])

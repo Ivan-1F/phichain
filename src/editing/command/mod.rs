@@ -12,7 +12,6 @@ pub enum EditorCommand {
     RemoveNote(RemoveNote),
     EditNote(EditNote),
 
-    #[allow(dead_code)] // TODO: remove when used CreateEvent
     CreateEvent(CreateEvent),
     RemoveEvent(RemoveEvent),
     EditEvent(EditEvent),

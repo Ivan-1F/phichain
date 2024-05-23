@@ -1,19 +1,11 @@
 use crate::chart::event::LineEvent;
 use egui::{Align2, Color32, FontId, Response, Sense, Ui};
 
-pub fn event_ui(ui: &mut Ui, rect: egui::Rect, event: &LineEvent, selected: bool) -> Response {
+pub fn event_ui(ui: &mut Ui, rect: egui::Rect, event: &LineEvent, color: Color32) -> Response {
     let response = ui.allocate_rect(rect, Sense::click());
     if ui.is_rect_visible(rect) {
-        ui.painter().rect(
-            rect,
-            0.0,
-            if selected {
-                Color32::LIGHT_GREEN
-            } else {
-                Color32::LIGHT_BLUE
-            },
-            egui::Stroke::new(2.0, Color32::WHITE),
-        );
+        ui.painter()
+            .rect(rect, 0.0, color, egui::Stroke::new(2.0, Color32::WHITE));
         ui.painter().text(
             rect.center_top(),
             Align2::CENTER_TOP,

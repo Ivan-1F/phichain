@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use super::beat::Beat;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[repr(u8)]
 pub enum LineEventKind {
     X,
     Y,
