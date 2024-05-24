@@ -187,17 +187,19 @@ impl UiState {
     fn new() -> Self {
         let mut state = DockState::new(vec![EditorTab::Game]);
         let tree = state.main_surface_mut();
-        let [game, _timeline] = tree.split_left(
+        let [game, timeline] = tree.split_left(
             NodeIndex::root(),
             2.0 / 3.0,
             vec![EditorTab::Timeline, EditorTab::Settings],
         );
 
+        let [_line_list, _timeline] = tree.split_left(timeline, 1.0 / 4.0, vec![EditorTab::LineList]);
+
         let [_, inspector] = tree.split_below(game, 2.0 / 5.0, vec![EditorTab::Inspector]);
         tree.split_right(
             inspector,
             1.0 / 2.0,
-            vec![EditorTab::TimelineSetting, EditorTab::LineList],
+            vec![EditorTab::TimelineSetting],
         );
 
         Self { state }

@@ -44,6 +44,12 @@ tab:
     illustrator: 画师
   line_list:
     title: 判定线列表
+    note: 音符
+    event: 事件
+    position: 位置
+    rotation: 旋转
+    opacity: 透明度
+    speed: 速度
   bpm_list:
     title: BPM 列表
     new: 新增 BPM 点

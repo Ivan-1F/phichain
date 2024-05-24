@@ -44,6 +44,12 @@ tab:
     illustrator: Illustrator
   line_list:
     title: Line List
+    note: Note
+    event: Event
+    position: Position
+    rotation: Rotation
+    opacity: Opacity
+    speed: Speed
   bpm_list:
     title: BPM List
     new: New BPM Point
