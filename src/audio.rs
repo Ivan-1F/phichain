@@ -6,7 +6,7 @@ use bevy_kira_audio::prelude::*;
 use bevy_persistent::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::misc::WorkingDirectory;
+use crate::settings::EditorSettings;
 use crate::timing::SeekToEvent;
 use crate::utils::compat::ControlKeyExt;
 use crate::{
@@ -25,41 +25,11 @@ struct InstanceHandle(Handle<AudioInstance>);
 #[derive(Resource, Debug)]
 pub struct AudioDuration(pub Duration);
 
-#[derive(Resource, Serialize, Deserialize)]
-pub struct AudioSettings {
-    pub music_volume: f32,
-    pub hit_sound_volume: f32,
-}
-
-impl Default for AudioSettings {
-    fn default() -> Self {
-        Self {
-            music_volume: 1.0,
-            hit_sound_volume: 1.0,
-        }
-    }
-}
-
 pub struct AudioPlugin;
 
 impl Plugin for AudioPlugin {
     fn build(&self, app: &mut App) {
-        let config_dir = app
-            .world
-            .resource::<WorkingDirectory>()
-            .config()
-            .expect("Failed to locate config directory");
-        app.insert_resource(
-            Persistent::<AudioSettings>::builder()
-                .name("Audio Settings")
-                .format(StorageFormat::Yaml)
-                .path(config_dir.join("audio.yml"))
-                .default(AudioSettings::default())
-                .build()
-                .expect("Failed to initialize audio settings"),
-        )
-        .add_plugins(bevy_kira_audio::AudioPlugin)
-        .add_systems(
+        app.add_plugins(bevy_kira_audio::AudioPlugin).add_systems(
             Update,
             (
                 handle_pause_system,
@@ -183,11 +153,11 @@ fn update_time_system(
 fn update_volume_system(
     handle: Res<InstanceHandle>,
     mut audio_instances: ResMut<Assets<AudioInstance>>,
-    audio_settings: Res<Persistent<AudioSettings>>,
+    settings: Res<Persistent<EditorSettings>>,
 ) {
     if let Some(instance) = audio_instances.get_mut(&handle.0) {
         instance.set_volume(
-            Volume::Amplitude(audio_settings.music_volume as f64),
+            Volume::Amplitude(settings.audio.music_volume as f64),
             AudioTween::default(),
         );
     }

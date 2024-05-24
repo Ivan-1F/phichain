@@ -38,16 +38,34 @@ impl Default for GeneralSettings {
     }
 }
 
-#[derive(Default, Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct AudioSettings {
     pub music_volume: f32,
     pub hit_sound_volume: f32,
 }
 
-#[derive(Default, Debug, Copy, Clone, Serialize, Deserialize)]
+impl Default for AudioSettings {
+    fn default() -> Self {
+        Self {
+            music_volume: 1.0,
+            hit_sound_volume: 1.0,
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct GraphicsSettings {
     pub fullscreen: bool,
     pub vsync: bool,
+}
+
+impl Default for GraphicsSettings {
+    fn default() -> Self {
+        Self {
+            fullscreen: false,
+            vsync: true,
+        }
+    }
 }
 
 #[derive(Resource, Default, Debug, Copy, Clone, Serialize, Deserialize)]

@@ -56,6 +56,10 @@ tab:
       general:
         title: General
         timeline_scroll_sensitivity: Timeline Scroll Sensitivity
+      audio:
+        title: Audio
+        music_volume: Music Volume
+        hit_sound_volume: Hit Sound Volume
       graphics:
         title: Graphics
 

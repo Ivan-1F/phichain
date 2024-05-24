@@ -1,4 +1,3 @@
-pub mod audio_setting;
 pub mod bpm_list;
 pub mod chart_basic_setting;
 pub mod game;
@@ -8,7 +7,6 @@ pub mod settings;
 pub mod timeline;
 pub mod timeline_setting;
 
-use crate::tab::audio_setting::audio_setting_tab;
 use crate::tab::bpm_list::bpm_list_tab;
 use crate::tab::chart_basic_setting::chart_basic_setting_tab;
 use crate::tab::game::game_tab;
@@ -59,7 +57,6 @@ pub enum EditorTab {
     Timeline,
     Inspector,
     TimelineSetting,
-    AudioSetting,
     ChartBasicSetting,
     LineList,
     BpmList,
@@ -82,11 +79,6 @@ impl Plugin for TabPlugin {
                 EditorTab::TimelineSetting,
                 "tab.timeline_setting.title",
                 timeline_setting_tab,
-            )
-            .register_tab(
-                EditorTab::AudioSetting,
-                "tab.audio_setting.title",
-                audio_setting_tab,
             )
             .register_tab(
                 EditorTab::ChartBasicSetting,

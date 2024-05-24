@@ -56,6 +56,10 @@ tab:
       general:
         title: 常规
         timeline_scroll_sensitivity: 时间线滚动灵敏度
+      audio:
+        title: 音频
+        music_volume: 音乐音量
+        hit_sound_volume: 打击音效音量
       graphics:
         title: 图像
 

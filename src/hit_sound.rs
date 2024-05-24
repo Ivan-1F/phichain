@@ -4,6 +4,7 @@ use bevy_persistent::Persistent;
 
 use crate::assets::AudioAssets;
 use crate::project::project_loaded;
+use crate::settings::EditorSettings;
 use crate::timing::Paused;
 use crate::{
     chart::note::{Note, NoteKind},
@@ -28,7 +29,7 @@ fn play_hit_sound_system(
     bpm_list: Res<BpmList>,
     assets: Res<AudioAssets>,
     audio: Res<Audio>,
-    audio_settings: Res<Persistent<crate::audio::AudioSettings>>,
+    settings: Res<Persistent<EditorSettings>>,
     paused: Res<Paused>,
 ) {
     for (note, entity, played) in &query {
@@ -42,7 +43,7 @@ fn play_hit_sound_system(
             };
             audio
                 .play(handle)
-                .with_volume(Volume::Amplitude(audio_settings.hit_sound_volume as f64));
+                .with_volume(Volume::Amplitude(settings.audio.hit_sound_volume as f64));
             commands.entity(entity).insert(PlayedHitSound);
         } else if note_time > time.0 && played.is_some() {
             commands.entity(entity).remove::<PlayedHitSound>();
