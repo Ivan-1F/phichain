@@ -36,6 +36,7 @@ use crate::audio::AudioPlugin;
 use crate::chart::event::LineEvent;
 use crate::chart::note::Note;
 use crate::cli::{Args, CliPlugin};
+use crate::editing::history::EditorHistory;
 use crate::editing::EditingPlugin;
 use crate::exporter::phichain::PhiChainExporter;
 use crate::exporter::Exporter;
@@ -354,6 +355,12 @@ fn ui_system(world: &mut World) {
 
             ui.label(format!("Notes: {}", notes));
             ui.label(format!("Events: {}", events));
+
+            world.resource_scope(|_world: &mut World, history: Mut<EditorHistory>| {
+                if !history.0.is_saved() {
+                    ui.label("*");
+                }
+            });
         });
     });
 

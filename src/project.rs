@@ -7,6 +7,7 @@ use std::{fs::File, path::PathBuf};
 
 use crate::action::ActionRegistrationExt;
 use crate::audio::load_audio;
+use crate::editing::history::EditorHistory;
 use crate::exporter::phichain::PhiChainExporter;
 use crate::exporter::Exporter;
 use crate::tab::game::illustration::load_illustration;
@@ -138,24 +139,27 @@ impl Plugin for ProjectPlugin {
 }
 
 fn save_project_system(world: &mut World) {
-    if let Ok(chart) = PhiChainExporter::export(world) {
-        let project = world.resource::<Project>();
-        let chart_result = std::fs::write(project.path.chart_path(), chart);
-        let meta_result = std::fs::write(
-            project.path.meta_path(),
-            serde_json::to_string(&project.meta).unwrap(),
-        );
+    world.resource_scope(|world, mut history: Mut<EditorHistory>| {
+        if let Ok(chart) = PhiChainExporter::export(world) {
+            let project = world.resource::<Project>();
+            let chart_result = std::fs::write(project.path.chart_path(), chart);
+            let meta_result = std::fs::write(
+                project.path.meta_path(),
+                serde_json::to_string(&project.meta).unwrap(),
+            );
 
-        let mut toasts = world.resource_mut::<ToastsStorage>();
-        match chart_result.and(meta_result) {
-            Ok(_) => {
-                toasts.success(t!("project.save.succeed"));
-            }
-            Err(error) => {
-                toasts.error(t!("project.save.failed", error = error));
+            let mut toasts = world.resource_mut::<ToastsStorage>();
+            match chart_result.and(meta_result) {
+                Ok(_) => {
+                    toasts.success(t!("project.save.succeed"));
+                    history.0.set_saved(true);
+                }
+                Err(error) => {
+                    toasts.error(t!("project.save.failed", error = error));
+                }
             }
         }
-    }
+    });
 }
 
 #[derive(Event, Debug)]
