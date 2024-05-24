@@ -1,4 +1,5 @@
 use crate::action::ActionRegistrationExt;
+use crate::editing::clipboard::ClipboardPlugin;
 use crate::editing::command::EditorCommand;
 use crate::editing::create_event::CreateEventPlugin;
 use crate::editing::create_note::CreateNoteSystem;
@@ -11,6 +12,7 @@ use bevy::prelude::*;
 use crate::project::project_loaded;
 use crate::utils::compat::ControlKeyExt;
 
+mod clipboard;
 pub mod command;
 mod create_event;
 mod create_note;
@@ -27,6 +29,7 @@ impl Plugin for EditingPlugin {
             .add_plugins(DeleteSelectedPlugin)
             .add_plugins(CreateNoteSystem)
             .add_plugins(CreateEventPlugin)
+            .add_plugins(ClipboardPlugin)
             .add_systems(Update, handle_edit_command.run_if(project_loaded()))
             .register_action("phichain.undo", undo_system)
             .register_hotkey("phichain.undo", vec![KeyCode::control(), KeyCode::KeyZ])
