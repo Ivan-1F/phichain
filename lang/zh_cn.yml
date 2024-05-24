@@ -1,8 +1,9 @@
 menu_bar:
   file:
     title: 文件
+    save: 保存项目
+    close: 关闭项目
     quit: 退出
-    save: 保存
   tabs:
     title: 窗口
 

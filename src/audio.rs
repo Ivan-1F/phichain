@@ -19,7 +19,7 @@ use crate::{
 pub struct Offset(pub f32);
 
 #[derive(Resource)]
-struct InstanceHandle(Handle<AudioInstance>);
+pub struct InstanceHandle(Handle<AudioInstance>);
 
 /// The duration of the audio
 #[derive(Resource, Debug)]

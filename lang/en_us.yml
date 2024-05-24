@@ -1,8 +1,9 @@
 menu_bar:
   file:
     title: File
+    save: Save Project
+    close: Close Project
     quit: Quit
-    save: Save
   tabs:
     title: Windows
 

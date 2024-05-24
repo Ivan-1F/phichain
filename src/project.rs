@@ -125,7 +125,15 @@ impl Plugin for ProjectPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<LoadProjectEvent>()
             .add_systems(Update, load_project_system)
-            .register_action("phichain.project.save", save_project_system);
+            .add_event::<UnloadProjectEvent>()
+            .add_systems(Update, unload_project_system)
+            .register_action("phichain.project.save", save_project_system)
+            .register_action(
+                "phichain.project.unload",
+                |mut events: EventWriter<UnloadProjectEvent>| {
+                    events.send(UnloadProjectEvent);
+                },
+            );
     }
 }
 
@@ -153,6 +161,24 @@ fn save_project_system(world: &mut World) {
 #[derive(Event, Debug)]
 pub struct LoadProjectEvent(pub PathBuf);
 
+/// Load a project into the editor
+///
+/// # Resources and entities involved when loading projects
+///
+/// - [InstanceHandle] and [AudioDuration] will be inserted into the world
+/// - A entity with component [Illustration] will be spawned into the world
+///
+/// ---
+///
+/// - [crate::audio::Offset] will be inserted into the world
+/// - [crate::timing::BpmList] will be inserted into the world
+/// - [crate::selection::SelectedLine] will be inserted into the world
+/// - Entities with components [crate::chart::line::LineBundle] and [crate::chart::note::NoteBundle] will be spawned into the world, with parent-child relationship
+///
+/// ---
+///
+/// - After all resources and entities above are added, [Project] will be inserted into the world,
+///   indicating the editor is now in editing mode: all systems with run condition [`project_loaded`] will start working
 fn load_project_system(
     mut commands: Commands,
     mut events: EventReader<LoadProjectEvent>,
@@ -186,6 +212,41 @@ fn load_project_system(
     events.clear();
 }
 
+#[derive(Event, Debug)]
+pub struct UnloadProjectEvent;
+
+/// Unload a project into the editor
+fn unload_project_system(
+    mut commands: Commands,
+    mut events: EventReader<UnloadProjectEvent>,
+    illustration_query: Query<Entity, With<crate::tab::game::illustration::Illustration>>,
+    line_query: Query<Entity, With<crate::chart::line::Line>>,
+) {
+    if !events.is_empty() {
+        events.clear();
+
+        // remove the project first to stop all systems
+        commands.remove_resource::<Project>();
+
+        commands.remove_resource::<crate::audio::InstanceHandle>();
+        commands.remove_resource::<crate::audio::AudioDuration>();
+
+        for entity in illustration_query.iter() {
+            commands.entity(entity).despawn_recursive();
+        }
+
+        commands.remove_resource::<crate::audio::Offset>();
+        commands.remove_resource::<crate::timing::BpmList>();
+        commands.remove_resource::<crate::selection::SelectedLine>();
+
+        for entity in line_query.iter() {
+            // notes and events will be despawned as children
+            commands.entity(entity).despawn_recursive();
+        }
+    }
+}
+
+/// Create a new empty project
 pub fn create_project(
     root_path: PathBuf,
     music_path: PathBuf,

@@ -129,7 +129,6 @@ fn debug_save_system(world: &mut World) {
 }
 
 fn apply_editor_settings_system(settings: Res<Persistent<EditorSettings>>) {
-    println!("{}", settings.general.language);
     set_locale(settings.general.language.as_str());
 }
 
@@ -298,6 +297,12 @@ fn ui_system(world: &mut World) {
                 if ui.button(t!("menu_bar.file.save")).clicked() {
                     world.resource_scope(|world, mut registry: Mut<ActionRegistry>| {
                         registry.run_action(world, "phichain.project.save");
+                    });
+                    ui.close_menu();
+                }
+                if ui.button(t!("menu_bar.file.close")).clicked() {
+                    world.resource_scope(|world, mut registry: Mut<ActionRegistry>| {
+                        registry.run_action(world, "phichain.project.unload");
                     });
                     ui.close_menu();
                 }
