@@ -1,7 +1,10 @@
+use bevy::hierarchy::Children;
+use bevy::prelude::{Entity, With, World};
 use serde::{Deserialize, Serialize};
 
 use crate::audio::Offset;
 use crate::chart::easing::Easing;
+use crate::chart::line::Line;
 use crate::{
     chart::{
         beat::Beat,
@@ -38,8 +41,8 @@ impl Default for PhiChainChart {
     }
 }
 
-/// A wrapper struct to handle line serialzation and deserialzation
-#[derive(Serialize, Deserialize)]
+/// A wrapper struct to handle line serialization and deserialization
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LineWrapper(pub Vec<Note>, pub Vec<LineEvent>);
 
 /// A default line with no notes and default events
@@ -90,5 +93,27 @@ impl Default for LineWrapper {
                 },
             ],
         )
+    }
+}
+
+impl LineWrapper {
+    pub fn serialize_line(world: &mut World, entity: Entity) -> Self {
+        let mut line_query = world.query_filtered::<&Children, With<Line>>();
+        let mut note_query = world.query::<&Note>();
+        let mut event_query = world.query::<&LineEvent>();
+
+        let children = line_query.get(world, entity).expect("Entity is not a line");
+
+        let mut notes: Vec<Note> = vec![];
+        let mut events: Vec<LineEvent> = vec![];
+        for child in children.iter() {
+            if let Ok(note) = note_query.get(world, *child) {
+                notes.push(*note);
+            } else if let Ok(event) = event_query.get(world, *child) {
+                events.push(*event);
+            }
+        }
+
+        LineWrapper(notes, events)
     }
 }
