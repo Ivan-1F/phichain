@@ -1,9 +1,10 @@
 use crate::chart::event::LineEvent;
 use crate::chart::line::{Line, LineOpacity, LinePosition, LineRotation, LineSpeed};
 use crate::chart::note::Note;
+use crate::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use crate::selection::SelectedLine;
 use bevy::prelude::*;
-use egui::Ui;
+use egui::{Color32, Sense, Stroke, Ui};
 
 pub fn line_list_tab(
     In(ui): In<&mut Ui>,
@@ -77,6 +78,90 @@ pub fn line_list_tab(
                     ui.end_row();
                 });
         });
+
+        ui.horizontal(|ui| {
+            let x = position.0.x / CANVAS_WIDTH + 0.5;
+            let y = 1.0 - (position.0.y / CANVAS_HEIGHT + 0.5);
+
+            let width = 40.0;
+            let height = 40.0 / 3.0 * 2.0;
+
+            let pos = |pos: egui::Pos2, rect: egui::Rect| {
+                egui::Pos2::new(pos.x * rect.width(), pos.y * rect.height()) + rect.min.to_vec2()
+            };
+
+            // Preview
+            let (response, painter) =
+                ui.allocate_painter(egui::Vec2::new(width, height), Sense::hover());
+            painter.rect_stroke(response.rect, 0.0, Stroke::new(1.0, Color32::WHITE));
+
+            let half = 1.5;
+
+            let x1 = rotation.0.cos() * half;
+            let y1 = rotation.0.sin() * half;
+
+            let x2 = -x1;
+            let y2 = -y1;
+
+            let p1 = pos(egui::Pos2::new(-x1 + x, y1 + y), response.rect);
+            let p2 = pos(egui::Pos2::new(-x2 + x, y2 + y), response.rect);
+            painter.line_segment(
+                [p1, p2],
+                Stroke::new(
+                    1.0,
+                    Color32::from_rgba_unmultiplied(
+                        255,
+                        255,
+                        255,
+                        (opacity.0 * 255.0).round() as u8,
+                    ),
+                ),
+            );
+
+            // Position
+            let (response, painter) =
+                ui.allocate_painter(egui::Vec2::new(width, height), Sense::hover());
+            painter.rect_stroke(response.rect, 0.0, Stroke::new(1.0, Color32::WHITE));
+
+            painter.circle_filled(
+                pos(egui::Pos2::new(x, y), response.rect),
+                2.0,
+                Color32::WHITE,
+            );
+
+            // Opacity
+            let (response, painter) =
+                ui.allocate_painter(egui::Vec2::new(width, height), Sense::hover());
+            painter.rect_stroke(response.rect, 0.0, Stroke::new(1.0, Color32::WHITE));
+            painter.rect_filled(
+                egui::Rect::from_min_max(response.rect.left_top(), response.rect.center_bottom()),
+                0.0,
+                Color32::from_rgba_unmultiplied(255, 255, 255, (opacity.0 * 255.0).round() as u8),
+            );
+            painter.rect_filled(
+                egui::Rect::from_min_max(response.rect.center_top(), response.rect.right_bottom()),
+                0.0,
+                Color32::WHITE,
+            );
+
+            // Rotation
+            let (response, painter) =
+                ui.allocate_painter(egui::Vec2::new(width, height), Sense::hover());
+            painter.rect_stroke(response.rect, 0.0, Stroke::new(1.0, Color32::WHITE));
+
+            let half = 1.5;
+
+            let x1 = rotation.0.cos() * half;
+            let y1 = rotation.0.sin() * half;
+
+            let x2 = -x1;
+            let y2 = -y1;
+
+            let p1 = pos(egui::Pos2::new(0.5 - x1, y1 + 0.5), response.rect);
+            let p2 = pos(egui::Pos2::new(0.5 - x2, y2 + 0.5), response.rect);
+            painter.line_segment([p1, p2], Stroke::new(1.0, Color32::WHITE));
+        });
+
         ui.separator();
     }
 }
