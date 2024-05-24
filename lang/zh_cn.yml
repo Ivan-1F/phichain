@@ -44,6 +44,7 @@ tab:
     illustrator: 画师
   line_list:
     title: 判定线列表
+    create_line: 创建判定线
     note: 音符
     event: 事件
     position: 位置

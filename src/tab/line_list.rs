@@ -32,7 +32,7 @@ pub fn line_list_tab(
     let mut lines = line_query.iter().collect::<Vec<_>>();
     lines.sort_by_key(|x| x.1);
     ui.with_layout(Layout::top_down_justified(egui::Align::Center), |ui| {
-        if ui.button("Create Line").clicked() {
+        if ui.button(t!("tab.line_list.create_line")).clicked() {
             do_command_event.send(DoCommandEvent(EditorCommand::CreateLine(CreateLine::new())));
         }
     });

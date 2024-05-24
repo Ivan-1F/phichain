@@ -44,6 +44,7 @@ tab:
     illustrator: Illustrator
   line_list:
     title: Line List
+    create_line: Create Line
     note: Note
     event: Event
     position: Position
