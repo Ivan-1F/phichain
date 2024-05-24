@@ -65,11 +65,11 @@ screenshot:
   save:
     succeed: Screenshot saved to %{path}
     failed: 'Failed to take screenshot: %{error}'
-    locale_failed: 'Failed to locate screenshot directory: ${error}'
+    locale_failed: 'Failed to locate screenshot directory: %{error}'
 
 illustration:
   load:
-    failed: 'Failed to load illustration: ${error}'
+    failed: 'Failed to load illustration: %{error}'
 
 home:
   open_project:
