@@ -193,14 +193,11 @@ impl UiState {
             vec![EditorTab::Timeline, EditorTab::Settings],
         );
 
-        let [_line_list, _timeline] = tree.split_left(timeline, 1.0 / 4.0, vec![EditorTab::LineList]);
+        let [_line_list, _timeline] =
+            tree.split_left(timeline, 1.0 / 4.0, vec![EditorTab::LineList]);
 
         let [_, inspector] = tree.split_below(game, 2.0 / 5.0, vec![EditorTab::Inspector]);
-        tree.split_right(
-            inspector,
-            1.0 / 2.0,
-            vec![EditorTab::TimelineSetting],
-        );
+        tree.split_right(inspector, 1.0 / 2.0, vec![EditorTab::TimelineSetting]);
 
         Self { state }
     }
