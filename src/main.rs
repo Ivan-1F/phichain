@@ -23,6 +23,7 @@ mod score;
 mod screenshot;
 mod selection;
 mod serialization;
+mod settings;
 mod tab;
 mod timing;
 mod ui;
@@ -49,6 +50,7 @@ use crate::project::LoadProjectEvent;
 use crate::project::ProjectPlugin;
 use crate::score::ScorePlugin;
 use crate::screenshot::ScreenshotPlugin;
+use crate::settings::EditorSettingsPlugin;
 use crate::tab::game::GameCamera;
 use crate::tab::game::GameTabPlugin;
 use crate::tab::game::GameViewport;
@@ -81,6 +83,7 @@ fn main() {
         .add_plugins(ScreenshotPlugin)
         .add_plugins(TimingPlugin)
         .add_plugins(AudioPlugin)
+        .add_plugins(EditorSettingsPlugin)
         .add_plugins(HitSoundPlugin)
         .add_plugins(GameTabPlugin)
         .add_plugins(ScorePlugin)

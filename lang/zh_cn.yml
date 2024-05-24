@@ -53,8 +53,11 @@ tab:
   settings:
     title: 设置
     category:
-      general: 常规
-      graphics: 图像
+      general:
+        title: 常规
+        timeline_scroll_sensitivity: 时间线滚动灵敏度
+      graphics:
+        title: 图像
 
 project:
   save:

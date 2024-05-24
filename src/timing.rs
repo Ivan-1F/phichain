@@ -1,9 +1,11 @@
 use bevy::input::mouse::MouseWheel;
 use bevy::prelude::*;
+use bevy_persistent::Persistent;
 use serde::{Deserialize, Serialize};
 
 use crate::action::ActionRegistrationExt;
 use crate::hotkey::HotkeyRegistrationExt;
+use crate::settings::EditorSettings;
 use crate::tab::timeline::TimelineViewport;
 use crate::{chart::beat::Beat, project::project_loaded};
 
@@ -82,6 +84,8 @@ fn scroll_progress_control_system(
     mut seek_events: EventWriter<SeekEvent>,
     viewport: Res<TimelineViewport>,
     window_query: Query<&Window>,
+
+    settings: Res<Persistent<EditorSettings>>,
 ) {
     let window = window_query.single();
     if window
@@ -89,7 +93,9 @@ fn scroll_progress_control_system(
         .is_some_and(|p| viewport.0.contains(p))
     {
         for ev in wheel_events.read() {
-            seek_events.send(SeekEvent(ev.y / 500.0));
+            seek_events.send(SeekEvent(
+                ev.y / 5000.0 * settings.general.timeline_scroll_sensitivity,
+            ));
         }
     }
 }

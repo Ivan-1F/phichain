@@ -53,8 +53,11 @@ tab:
   settings:
     title: Settings
     category:
-      general: General
-      graphics: Graphics
+      general:
+        title: General
+        timeline_scroll_sensitivity: Timeline Scroll Sensitivity
+      graphics:
+        title: Graphics
 
 project:
   save:

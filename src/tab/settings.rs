@@ -1,12 +1,18 @@
+mod general;
+
+use crate::notification::{ToastsExt, ToastsStorage};
+use crate::settings::EditorSettings;
+use crate::tab::settings::general::General;
 use bevy::prelude::*;
+use bevy_persistent::Persistent;
 use egui::{Layout, Ui};
 use enum_dispatch::enum_dispatch;
 use strum::{EnumIter, IntoEnumIterator};
 
 #[enum_dispatch(SettingCategories)]
-trait SettingCategory {
+pub trait SettingCategory {
     fn name(&self) -> &str;
-    fn ui(&self, ui: &mut Ui);
+    fn ui(&self, ui: &mut Ui, settings: &mut EditorSettings) -> bool;
 }
 
 #[enum_dispatch]
@@ -17,30 +23,23 @@ enum SettingCategories {
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
-struct General;
-impl SettingCategory for General {
-    fn name(&self) -> &str {
-        "tab.settings.category.general"
-    }
-
-    fn ui(&self, ui: &mut Ui) {
-        ui.label("This is the general settings tab");
-    }
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
 struct Graphics;
 impl SettingCategory for Graphics {
     fn name(&self) -> &str {
-        "tab.settings.category.graphics"
+        "tab.settings.category.graphics.title"
     }
 
-    fn ui(&self, ui: &mut Ui) {
+    fn ui(&self, ui: &mut Ui, _settings: &mut EditorSettings) -> bool {
         ui.label("This is the graphics settings tab");
+        false
     }
 }
 
-pub fn settings_tab(In(ui): In<&mut Ui>) {
+pub fn settings_tab(
+    In(ui): In<&mut Ui>,
+    mut editor_settings: ResMut<Persistent<EditorSettings>>,
+    mut toasts: ResMut<ToastsStorage>,
+) {
     let available_height = ui.available_height();
 
     let id = egui::Id::new("settings-category");
@@ -59,7 +58,7 @@ pub fn settings_tab(In(ui): In<&mut Ui>) {
             ui.set_height(available_height);
             ui.with_layout(Layout::top_down_justified(egui::Align::LEFT), |ui| {
                 ui.set_max_width(80.0);
-                
+
                 for c in SettingCategories::iter() {
                     if ui.selectable_label(category == c, t!(c.name())).clicked() {
                         ui.data_mut(|data| data.insert_temp(id, c));
@@ -71,7 +70,14 @@ pub fn settings_tab(In(ui): In<&mut Ui>) {
 
         ui.vertical(|ui| {
             ui.heading(t!(category.name()));
-            category.ui(ui);
+            if category.ui(ui, &mut editor_settings) {
+                match editor_settings.persist() {
+                    Ok(_) => {}
+                    Err(error) => {
+                        toasts.error(format!("Failed to persist editor settings: {}", error))
+                    }
+                }
+            }
         });
     });
 }
