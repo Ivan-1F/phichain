@@ -26,6 +26,7 @@ mod serialization;
 mod settings;
 mod tab;
 mod timing;
+mod translation;
 mod ui;
 mod utils;
 
@@ -58,6 +59,7 @@ use crate::tab::timeline::{TimelineTabPlugin, TimelineViewport};
 use crate::tab::TabPlugin;
 use crate::tab::{EditorTab, TabRegistry};
 use crate::timing::TimingPlugin;
+use crate::translation::TranslationPlugin;
 use crate::ui::UiPlugin;
 use crate::utils::compat::ControlKeyExt;
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
@@ -78,6 +80,7 @@ fn main() {
         .add_plugins(CliPlugin)
         .add_plugins(MiscPlugin)
         .add_plugins(UiPlugin)
+        .add_plugins(TranslationPlugin)
         .add_plugins(HomePlugin)
         .add_plugins(DefaultPlugins)
         .add_plugins(ActionPlugin)
@@ -105,7 +108,10 @@ fn main() {
         .add_systems(Startup, setup_plugin)
         .add_systems(Update, ui_system.run_if(project_loaded()))
         .add_systems(Update, debug_save_system.run_if(project_loaded()))
-        .add_systems(Startup, (apply_args_config_system, apply_editor_settings_system))
+        .add_systems(
+            Startup,
+            (apply_args_config_system, apply_editor_settings_system),
+        )
         .register_hotkey(
             "phichain.project.save",
             vec![KeyCode::control(), KeyCode::KeyS],

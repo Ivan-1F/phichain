@@ -1,6 +1,8 @@
 use crate::settings::EditorSettings;
 use crate::tab::settings::SettingCategory;
+use crate::translation::Languages;
 use crate::ui::latch;
+use bevy::prelude::World;
 use egui::Ui;
 use rust_i18n::set_locale;
 
@@ -12,7 +14,7 @@ impl SettingCategory for General {
         "tab.settings.category.general.title"
     }
 
-    fn ui(&self, ui: &mut Ui, settings: &mut EditorSettings) -> bool {
+    fn ui(&self, ui: &mut Ui, settings: &mut EditorSettings, world: &mut World) -> bool {
         egui::Grid::new("general-settings-grid")
             .num_columns(2)
             .spacing([20.0, 2.0])
@@ -20,35 +22,27 @@ impl SettingCategory for General {
             .show(ui, |ui| {
                 latch::latch(ui, "general-settings", settings.general.clone(), |ui| {
                     let mut finished = false;
+
+                    let languages = world.resource::<Languages>();
                     ui.label("Language");
                     let mut combobox_changed = false;
                     egui::ComboBox::from_label("")
                         .selected_text(
-                            match settings.general.language.as_str() {
-                                "en_us" => "English (US)",
-                                "zh_cn" => "简体中文",
-                                _ => "Unknown",
-                            },
+                            languages
+                                .0
+                                .get(&settings.general.language)
+                                .unwrap_or(&settings.general.language),
                         )
                         .show_ui(ui, |ui| {
-                            if ui
-                                .selectable_label(
-                                    settings.general.language == "en_us",
-                                    "English (US)",
-                                )
-                                .clicked()
-                            {
-                                set_locale("en_us");
-                                settings.general.language = "en_us".to_owned();
-                                combobox_changed = true;
-                            }
-                            if ui
-                                .selectable_label(settings.general.language == "zh_cn", "简体中文")
-                                .clicked()
-                            {
-                                set_locale("zh_cn");
-                                settings.general.language = "zh_cn".to_owned();
-                                combobox_changed = true;
+                            for (id, name) in &languages.0 {
+                                if ui
+                                    .selectable_label(settings.general.language == *id, name)
+                                    .clicked()
+                                {
+                                    settings.general.language.clone_from(id);
+                                    set_locale(id);
+                                    combobox_changed = true;
+                                }
                             }
                         });
                     finished |= combobox_changed;

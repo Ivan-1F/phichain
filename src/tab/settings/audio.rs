@@ -1,6 +1,7 @@
 use crate::settings::EditorSettings;
 use crate::tab::settings::SettingCategory;
 use crate::ui::latch;
+use bevy::prelude::World;
 use egui::Ui;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
@@ -11,7 +12,7 @@ impl SettingCategory for Audio {
         "tab.settings.category.audio.title"
     }
 
-    fn ui(&self, ui: &mut Ui, settings: &mut EditorSettings) -> bool {
+    fn ui(&self, ui: &mut Ui, settings: &mut EditorSettings, _world: &mut World) -> bool {
         egui::Grid::new("audio-settings-grid")
             .num_columns(2)
             .spacing([20.0, 2.0])
