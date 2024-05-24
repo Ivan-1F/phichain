@@ -23,8 +23,9 @@ pub fn line_list_tab(
 
     mut selected_line: ResMut<SelectedLine>,
 ) {
-    for (index, (line, entity, position, rotation, opacity, speed)) in line_query.iter().enumerate()
-    {
+    let mut lines = line_query.iter().collect::<Vec<_>>();
+    lines.sort_by_key(|x| x.1);
+    for (index, (line, entity, position, rotation, opacity, speed)) in lines.iter().enumerate() {
         let notes = line
             .iter()
             .filter(|child| note_query.get(**child).is_ok())
@@ -38,9 +39,9 @@ pub fn line_list_tab(
 
         ui.horizontal(|ui| {
             ui.label(format!("Line #{}", index));
-            let mut checked = selected_line.0 == entity;
+            let mut checked = selected_line.0 == *entity;
             if ui.checkbox(&mut checked, "").clicked() {
-                selected_line.0 = entity;
+                selected_line.0 = *entity;
             }
         });
 
