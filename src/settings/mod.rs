@@ -25,20 +25,24 @@ impl Plugin for EditorSettingsPlugin {
     }
 }
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct GeneralSettings {
+    pub language: String,
     pub timeline_scroll_sensitivity: f32,
 }
 
 impl Default for GeneralSettings {
     fn default() -> Self {
         Self {
+            language: "en_us".to_owned(),
             timeline_scroll_sensitivity: 10.0,
         }
     }
 }
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct AudioSettings {
     pub music_volume: f32,
     pub hit_sound_volume: f32,
@@ -53,7 +57,8 @@ impl Default for AudioSettings {
     }
 }
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct GraphicsSettings {
     pub fullscreen: bool,
     pub vsync: bool,
@@ -68,7 +73,8 @@ impl Default for GraphicsSettings {
     }
 }
 
-#[derive(Resource, Default, Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Resource, Default, Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct EditorSettings {
     pub general: GeneralSettings,
     pub audio: AudioSettings,

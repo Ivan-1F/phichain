@@ -8,10 +8,6 @@ pub struct Args {
     /// Load project from this path when launch
     #[arg(short, long)]
     pub project: Option<String>,
-
-    /// The language phichain use
-    #[arg(short, long, default_value = "en_us")]
-    pub language: String,
 }
 
 pub struct CliPlugin;

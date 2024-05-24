@@ -50,7 +50,7 @@ use crate::project::LoadProjectEvent;
 use crate::project::ProjectPlugin;
 use crate::score::ScorePlugin;
 use crate::screenshot::ScreenshotPlugin;
-use crate::settings::EditorSettingsPlugin;
+use crate::settings::{EditorSettings, EditorSettingsPlugin};
 use crate::tab::game::GameCamera;
 use crate::tab::game::GameTabPlugin;
 use crate::tab::game::GameViewport;
@@ -65,7 +65,9 @@ use bevy::prelude::*;
 use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
+use bevy_persistent::Persistent;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
+use rust_i18n::set_locale;
 
 i18n!("lang", fallback = "en_us");
 
@@ -103,7 +105,7 @@ fn main() {
         .add_systems(Startup, setup_plugin)
         .add_systems(Update, ui_system.run_if(project_loaded()))
         .add_systems(Update, debug_save_system.run_if(project_loaded()))
-        .add_systems(Startup, apply_args_config_system)
+        .add_systems(Startup, (apply_args_config_system, apply_editor_settings_system))
         .register_hotkey(
             "phichain.project.save",
             vec![KeyCode::control(), KeyCode::KeyS],
@@ -120,11 +122,13 @@ fn debug_save_system(world: &mut World) {
     }
 }
 
+fn apply_editor_settings_system(settings: Res<Persistent<EditorSettings>>) {
+    println!("{}", settings.general.language);
+    set_locale(settings.general.language.as_str());
+}
+
 /// Apply configurations from the command line args
 fn apply_args_config_system(args: Res<Args>, mut events: EventWriter<LoadProjectEvent>) {
-    // setup i18n locale
-    rust_i18n::set_locale(&args.language[..]);
-
     // load chart if specified
     if let Some(path) = &args.project {
         events.send(LoadProjectEvent(path.into()));

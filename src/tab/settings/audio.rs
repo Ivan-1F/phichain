@@ -17,7 +17,7 @@ impl SettingCategory for Audio {
             .spacing([20.0, 2.0])
             .striped(true)
             .show(ui, |ui| {
-                latch::latch(ui, "audio-settings", settings.general, |ui| {
+                latch::latch(ui, "audio-settings", settings.audio.clone(), |ui| {
                     let mut finished = false;
                     ui.label(t!("tab.settings.category.audio.music_volume"));
                     let response = ui.add(
