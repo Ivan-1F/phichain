@@ -3,7 +3,7 @@ pub mod line;
 pub mod note;
 
 use crate::editing::command::event::{CreateEvent, EditEvent, RemoveEvent};
-use crate::editing::command::line::CreateLine;
+use crate::editing::command::line::{CreateLine, RemoveLine};
 use crate::editing::command::note::{CreateNote, EditNote, RemoveNote};
 use bevy::prelude::*;
 use undo::Edit;
@@ -19,6 +19,7 @@ pub enum EditorCommand {
     EditEvent(EditEvent),
 
     CreateLine(CreateLine),
+    RemoveLine(RemoveLine),
 
     CommandSequence(CommandSequence),
 }
@@ -76,5 +77,6 @@ impl_edit_for_command!(
     RemoveEvent,
     EditEvent,
     CreateLine,
+    RemoveLine,
     CommandSequence
 );

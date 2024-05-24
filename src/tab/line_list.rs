@@ -2,7 +2,7 @@ use crate::chart::event::LineEvent;
 use crate::chart::line::{Line, LineOpacity, LinePosition, LineRotation, LineSpeed};
 use crate::chart::note::Note;
 use crate::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
-use crate::editing::command::line::CreateLine;
+use crate::editing::command::line::{CreateLine, RemoveLine};
 use crate::editing::command::EditorCommand;
 use crate::editing::DoCommandEvent;
 use crate::selection::SelectedLine;
@@ -40,6 +40,8 @@ pub fn line_list_tab(
     egui::ScrollArea::both().show(ui, |ui| {
         for (index, (line, entity, position, rotation, opacity, speed)) in lines.iter().enumerate()
         {
+            let selected = selected_line.0 == *entity;
+
             let notes = line
                 .iter()
                 .filter(|child| note_query.get(**child).is_ok())
@@ -53,10 +55,18 @@ pub fn line_list_tab(
 
             ui.horizontal(|ui| {
                 ui.label(format!("Line #{}", index));
-                let mut checked = selected_line.0 == *entity;
+                let mut checked = selected;
                 if ui.checkbox(&mut checked, "").clicked() {
                     selected_line.0 = *entity;
                 }
+
+                ui.add_enabled_ui(!selected, |ui| {
+                    if ui.button(" × ").clicked() {
+                        do_command_event.send(DoCommandEvent(EditorCommand::RemoveLine(
+                            RemoveLine::new(*entity),
+                        )));
+                    }
+                });
             });
 
             ui.columns(2, |columns| {
