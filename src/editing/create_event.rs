@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 
-use crate::chart::beat;
 use crate::chart::event::{LineEvent, LineEventBundle, LineEventKind};
 use crate::editing::command::event::CreateEvent;
 use crate::editing::command::EditorCommand;
@@ -55,7 +54,7 @@ fn create_event_system(
     let calc_event_attrs = || {
         let time = timeline.y_to_time(cursor_position.y);
         let beat = bpm_list.beat_at(time).value();
-        let beat = beat::utils::attach(beat, timeline_settings.density);
+        let beat = timeline_settings.attach(beat);
 
         let track = ((cursor_position.x - event_timeline_viewport.min.x)
             / (event_timeline_viewport.width() / 5.0))

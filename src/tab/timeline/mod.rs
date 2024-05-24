@@ -6,6 +6,7 @@ use egui::{Align2, Color32, FontId, Ui};
 use num::Rational32;
 
 use crate::audio::AudioDuration;
+use crate::chart::beat;
 use crate::tab::timeline::event_timeline::{
     event_timeline_drag_select_system, event_timeline_system, EventTimelinePlugin,
 };
@@ -188,6 +189,10 @@ impl Default for TimelineSettings {
 }
 
 impl TimelineSettings {
+    pub fn attach(&self, beat: f32) -> Beat {
+        beat::utils::attach(beat, self.density)
+    }
+
     pub fn minimum_beat(&self) -> Beat {
         Beat::new(0, Rational32::new(1, self.density as i32))
     }
