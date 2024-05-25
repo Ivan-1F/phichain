@@ -1,7 +1,7 @@
 use bevy::input::mouse::MouseWheel;
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::action::ActionRegistrationExt;
 use crate::hotkey::HotkeyRegistrationExt;
@@ -105,6 +105,7 @@ pub struct BpmPoint {
     pub beat: Beat,
     pub bpm: f32,
 
+    #[serde(skip_serializing, default)]
     time: f32,
 }
 
@@ -118,8 +119,21 @@ impl BpmPoint {
     }
 }
 
-#[derive(Resource, Debug, Clone, Serialize, Deserialize)]
+#[derive(Resource, Debug, Clone, Serialize)]
 pub struct BpmList(pub Vec<BpmPoint>);
+
+impl<'de> Deserialize<'de> for BpmList {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let points = Vec::<BpmPoint>::deserialize(deserializer)?;
+        let mut bpm_list = BpmList::new(points);
+        bpm_list.compute();
+
+        Ok(bpm_list)
+    }
+}
 
 impl Default for BpmList {
     fn default() -> Self {
@@ -209,5 +223,35 @@ mod tests {
         assert_eq!(bpm_list.beat_at(2.0 + 0.25 * 2.0), Beat::from(6.0));
         assert_eq!(bpm_list.beat_at(2.0 + 0.25 * 3.0), Beat::from(7.0));
         assert_eq!(bpm_list.beat_at(2.0 + 0.25 * 4.0), Beat::from(8.0));
+    }
+
+    #[test]
+    fn test_bpm_list_serialization() {
+        let bpm_list = BpmList::new(vec![
+            BpmPoint::new(Beat::ZERO, 120.0),
+            BpmPoint::new(Beat::ONE, 240.0),
+        ]);
+
+        let string = serde_json::to_string(&bpm_list).unwrap();
+        assert_eq!(
+            string,
+            "[{\"beat\":[0,0,1],\"bpm\":120.0},{\"beat\":[1,0,1],\"bpm\":240.0}]".to_string()
+        );
+
+        let deserialized: BpmList = serde_json::from_str(
+            "[{\"beat\":[0,0,1],\"bpm\":120.0},{\"beat\":[1,0,1],\"bpm\":240.0}]",
+        )
+        .unwrap();
+
+        let first = &deserialized.0[0];
+        let second = &deserialized.0[1];
+
+        assert_eq!(first.beat, Beat::ZERO);
+        assert_eq!(first.bpm, 120.0);
+        assert_eq!(first.time, 0.0);
+
+        assert_eq!(second.beat, Beat::ONE);
+        assert_eq!(second.bpm, 240.0);
+        assert_eq!(second.time, 0.5);
     }
 }
