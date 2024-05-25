@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Formatter};
+use std::hash::Hash;
 use std::{
     cmp::Ordering,
     ops::{Add, Sub},
@@ -9,6 +10,27 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Serialize, Deserialize)]
 pub struct Beat(i32, Rational32);
+
+impl Hash for Beat {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
+        self.1.reduced().hash(state);
+    }
+}
+
+impl Beat {
+    pub fn reduce(&mut self) {
+        let fraction = self.1.reduced();
+        self.0 += fraction.trunc().numer();
+        self.1 = fraction.fract();
+    }
+    
+    pub fn reduced(&self) -> Self {
+        let mut ret = self.clone();
+        ret.reduce();
+        ret
+    }
+}
 
 impl Debug for Beat {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -140,5 +162,15 @@ impl Ord for Beat {
             Ordering::Equal => self.1.cmp(&other.1),
             ord => ord,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_beat() {
+        assert_eq!(Rational32::new(4, 2).reduced(), Rational32::new(3, 1));
     }
 }

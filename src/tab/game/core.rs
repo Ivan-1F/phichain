@@ -3,6 +3,7 @@ use num::{FromPrimitive, Rational32};
 
 use crate::chart::line::LineSpeed;
 use crate::editing::pending::Pending;
+use crate::highlight::Highlighted;
 use crate::selection::Selected;
 use crate::{
     assets::ImageAssets,
@@ -218,15 +219,26 @@ fn update_note_y_system(
 }
 
 fn update_note_texture_system(
-    mut query: Query<(&mut Handle<Image>, &Note)>,
+    mut query: Query<(&mut Handle<Image>, &Note, Option<&Highlighted>)>,
     assets: Res<ImageAssets>,
 ) {
-    for (mut image, note) in &mut query {
-        match note.kind {
-            NoteKind::Tap => *image = assets.tap.clone(),
-            NoteKind::Drag => *image = assets.drag.clone(),
-            NoteKind::Hold { hold_beat: _ } => *image = assets.hold.clone(),
-            NoteKind::Flick => *image = assets.flick.clone(),
+    for (mut image, note, highlighted) in &mut query {
+        // match note.kind {
+        //     NoteKind::Tap => *image = assets.tap.clone(),
+        //     NoteKind::Drag => *image = assets.drag.clone(),
+        //     NoteKind::Hold { hold_beat: _ } => *image = assets.hold.clone(),
+        //     NoteKind::Flick => *image = assets.flick.clone(),
+        // }
+
+        match (note.kind, highlighted.is_some()) {
+            (NoteKind::Tap, true) => *image = assets.tap_highlight.clone(),
+            (NoteKind::Drag, true) => *image = assets.drag_highlight.clone(),
+            (NoteKind::Hold { .. }, true) => *image = assets.hold_highlight.clone(),
+            (NoteKind::Flick, true) => *image = assets.flick_highlight.clone(),
+            (NoteKind::Tap, false) => *image = assets.tap.clone(),
+            (NoteKind::Drag, false) => *image = assets.drag.clone(),
+            (NoteKind::Hold { .. }, false) => *image = assets.hold.clone(),
+            (NoteKind::Flick, false) => *image = assets.flick.clone(),
         }
     }
 }

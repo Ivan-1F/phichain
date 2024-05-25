@@ -11,6 +11,7 @@ mod editing;
 mod exporter;
 mod file;
 mod format;
+mod highlight;
 mod hit_sound;
 mod home;
 mod hotkey;
@@ -41,6 +42,7 @@ use crate::editing::EditingPlugin;
 use crate::exporter::phichain::PhiChainExporter;
 use crate::exporter::Exporter;
 use crate::file::FilePickingPlugin;
+use crate::highlight::HighlightPlugin;
 use crate::hit_sound::HitSoundPlugin;
 use crate::home::HomePlugin;
 use crate::hotkey::{HotkeyPlugin, HotkeyRegistrationExt};
@@ -85,6 +87,7 @@ fn main() {
         .add_plugins(HomePlugin)
         .add_plugins(DefaultPlugins)
         .add_plugins(ActionPlugin)
+        .add_plugins(HighlightPlugin)
         .add_plugins(HotkeyPlugin)
         .add_plugins(ScreenshotPlugin)
         .add_plugins(TimingPlugin)
