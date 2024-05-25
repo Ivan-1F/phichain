@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::audio::Offset;
 use crate::chart::easing::Easing;
 use crate::chart::line::Line;
+use crate::migration::CURRENT_FORMAT;
 use crate::{
     chart::{
         beat::Beat,
@@ -16,6 +17,7 @@ use crate::{
 
 #[derive(Serialize, Deserialize)]
 pub struct PhiChainChart {
+    pub format: u64,
     pub offset: Offset,
     pub bpm_list: BpmList,
     pub lines: Vec<LineWrapper>,
@@ -24,6 +26,7 @@ pub struct PhiChainChart {
 impl PhiChainChart {
     pub fn new(offset: f32, bpm_list: BpmList, lines: Vec<LineWrapper>) -> Self {
         Self {
+            format: CURRENT_FORMAT,
             offset: Offset(offset),
             bpm_list,
             lines,
@@ -34,6 +37,7 @@ impl PhiChainChart {
 impl Default for PhiChainChart {
     fn default() -> Self {
         Self {
+            format: CURRENT_FORMAT,
             offset: Default::default(),
             bpm_list: Default::default(),
             lines: vec![Default::default()],

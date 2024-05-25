@@ -1,7 +1,9 @@
 use std::fs::File;
 
 use bevy::prelude::*;
+use serde_json::Value;
 
+use crate::migration::migrate;
 use crate::{
     chart::{event::LineEventBundle, line::LineBundle, note::NoteBundle},
     selection::SelectedLine,
@@ -14,7 +16,11 @@ pub struct PhiChainLoader;
 
 impl Loader for PhiChainLoader {
     fn load(file: File, commands: &mut Commands) {
-        let chart: PhiChainChart = serde_json::from_reader(file).expect("Failed to load chart");
+        let chart: Value = serde_json::from_reader(file).expect("Failed to load chart");
+        let migrated = migrate(&chart).unwrap();
+        let chart: PhiChainChart =
+            serde_json::from_value(migrated).expect("Failed to deserialize chart");
+
         commands.insert_resource(chart.offset);
         commands.insert_resource(chart.bpm_list);
 

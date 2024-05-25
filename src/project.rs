@@ -102,10 +102,6 @@ impl ProjectPath {
         let meta_file = File::open(self.meta_path()).context("Failed to open meta file")?;
         let meta: ProjectMeta = serde_json::from_reader(meta_file).context("Invalid meta file")?;
 
-        let chart_file = File::open(self.chart_path()).context("Failed to open chart file")?;
-        // just do validation here
-        let _: PhiChainChart = serde_json::from_reader(chart_file).context("Invalid chart")?;
-
         Ok(Project { path: self, meta })
     }
 }
