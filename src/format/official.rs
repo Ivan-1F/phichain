@@ -177,7 +177,7 @@ impl Format for OfficialChart {
                 easing: Easing::Linear,
             });
 
-            let mut line = LineWrapper(
+            let mut line = LineWrapper::new(
                 line.notes_above
                     .iter()
                     .map(|x| create_note(true, x))
@@ -191,13 +191,13 @@ impl Format for OfficialChart {
             );
 
             let mut speed_events = line
-                .1
+                .events
                 .iter()
                 .filter(|e| matches!(e.kind, LineEventKind::Speed))
                 .collect::<Vec<_>>();
             speed_events.sort_by_key(|e| e.start_beat);
 
-            for note in &mut line.0 {
+            for note in &mut line.notes {
                 if let crate::chart::note::NoteKind::Hold { .. } = note.kind {
                     let mut speed = 0.0;
                     for event in &speed_events {

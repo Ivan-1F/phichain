@@ -43,14 +43,23 @@ impl Default for PhiChainChart {
 
 /// A wrapper struct to handle line serialization and deserialization
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LineWrapper(pub Vec<Note>, pub Vec<LineEvent>);
+pub struct LineWrapper {
+    pub notes: Vec<Note>,
+    pub events: Vec<LineEvent>,
+}
+
+impl LineWrapper {
+    pub fn new(notes: Vec<Note>, events: Vec<LineEvent>) -> Self {
+        Self { notes, events }
+    }
+}
 
 /// A default line with no notes and default events
 impl Default for LineWrapper {
     fn default() -> Self {
-        Self(
-            vec![],
-            vec![
+        Self {
+            notes: vec![],
+            events: vec![
                 LineEvent {
                     kind: LineEventKind::X,
                     start: 0.0,
@@ -92,7 +101,7 @@ impl Default for LineWrapper {
                     easing: Easing::Linear,
                 },
             ],
-        )
+        }
     }
 }
 
@@ -114,6 +123,6 @@ impl LineWrapper {
             }
         }
 
-        LineWrapper(notes, events)
+        LineWrapper::new(notes, events)
     }
 }

@@ -22,7 +22,7 @@ impl Edit for CreateLine {
         let entity = target
             .spawn(LineBundle::new())
             .with_children(|parent| {
-                for event in LineWrapper::default().1 {
+                for event in LineWrapper::default().events {
                     parent.spawn(LineEventBundle::new(event));
                 }
             })
@@ -63,10 +63,10 @@ impl Edit for RemoveLine {
             let id = target
                 .spawn(LineBundle::new())
                 .with_children(|parent| {
-                    for note in &line.0 {
+                    for note in &line.notes {
                         parent.spawn(NoteBundle::new(*note));
                     }
-                    for event in &line.1 {
+                    for event in &line.events {
                         parent.spawn(LineEventBundle::new(*event));
                     }
                 })

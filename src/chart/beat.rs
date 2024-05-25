@@ -6,10 +6,29 @@ use std::{
 };
 
 use num::{FromPrimitive, Rational32};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-#[derive(Clone, Copy, Serialize, Deserialize)]
+#[derive(Clone, Copy)]
 pub struct Beat(i32, Rational32);
+
+impl Serialize for Beat {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        (self.0, self.1.numer(), self.1.denom()).serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for Beat {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let (whole, numer, denom) = Deserialize::deserialize(deserializer)?;
+        Ok(Beat(whole, Rational32::new(numer, denom)))
+    }
+}
 
 impl Hash for Beat {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {

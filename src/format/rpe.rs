@@ -334,7 +334,7 @@ impl Format for RpeChart {
                     easing: Easing::Linear, // speed events' easing are fixed to be Linear
                 });
 
-            phichain.lines.push(LineWrapper(
+            phichain.lines.push(LineWrapper::new(
                 line.notes
                     .iter()
                     .map(|note| {
