@@ -2,6 +2,7 @@ use crate::assets::ImageAssets;
 use crate::chart::note::{Note, NoteKind};
 use crate::constants::CANVAS_WIDTH;
 use crate::editing::pending::Pending;
+use crate::highlight::Highlighted;
 use crate::selection::{SelectEvent, Selected, SelectedLine};
 use crate::tab::timeline::{Timeline, TimelineSettings, TimelineViewport};
 use crate::timing::BpmList;
@@ -116,7 +117,14 @@ pub fn note_timeline_system(
     selected_line_query: Res<SelectedLine>,
     timeline_viewport: Res<TimelineViewport>,
     bpm_list: Res<BpmList>,
-    note_query: Query<(&Note, &Parent, Entity, Option<&Selected>, Option<&Pending>)>,
+    note_query: Query<(
+        &Note,
+        &Parent,
+        Entity,
+        Option<&Highlighted>,
+        Option<&Selected>,
+        Option<&Pending>,
+    )>,
     mut select_events: EventWriter<SelectEvent>,
     timeline: Timeline,
     timeline_settings: Res<TimelineSettings>,
@@ -129,7 +137,7 @@ pub fn note_timeline_system(
 
     let note_timeline_viewport = viewport.note_timeline_viewport();
 
-    for (note, parent, entity, selected, pending) in note_query.iter() {
+    for (note, parent, entity, highlighted, selected, pending) in note_query.iter() {
         if parent.get() != selected_line {
             continue;
         }
@@ -145,11 +153,15 @@ pub fn note_timeline_system(
             )
         };
 
-        let handle = match note.kind {
-            NoteKind::Tap => &assets.tap,
-            NoteKind::Drag => &assets.drag,
-            NoteKind::Hold { .. } => &assets.hold,
-            NoteKind::Flick => &assets.flick,
+        let handle = match (note.kind, highlighted.is_some()) {
+            (NoteKind::Tap, true) => &assets.tap_highlight,
+            (NoteKind::Drag, true) => &assets.drag_highlight,
+            (NoteKind::Hold { .. }, true) => &assets.hold_highlight,
+            (NoteKind::Flick, true) => &assets.flick_highlight,
+            (NoteKind::Tap, false) => &assets.tap,
+            (NoteKind::Drag, false) => &assets.drag,
+            (NoteKind::Hold { .. }, false) => &assets.hold,
+            (NoteKind::Flick, false) => &assets.flick,
         };
 
         let (size, image) = get_asset(handle);

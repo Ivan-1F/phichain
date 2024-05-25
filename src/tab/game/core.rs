@@ -223,13 +223,6 @@ fn update_note_texture_system(
     assets: Res<ImageAssets>,
 ) {
     for (mut image, note, highlighted) in &mut query {
-        // match note.kind {
-        //     NoteKind::Tap => *image = assets.tap.clone(),
-        //     NoteKind::Drag => *image = assets.drag.clone(),
-        //     NoteKind::Hold { hold_beat: _ } => *image = assets.hold.clone(),
-        //     NoteKind::Flick => *image = assets.flick.clone(),
-        // }
-
         match (note.kind, highlighted.is_some()) {
             (NoteKind::Tap, true) => *image = assets.tap_highlight.clone(),
             (NoteKind::Drag, true) => *image = assets.drag_highlight.clone(),
