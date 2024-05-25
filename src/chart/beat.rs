@@ -26,7 +26,7 @@ impl Beat {
     }
 
     pub fn reduced(&self) -> Self {
-        let mut ret = self.clone();
+        let mut ret = *self;
         ret.reduce();
         ret
     }
