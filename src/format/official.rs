@@ -177,7 +177,7 @@ impl Format for OfficialChart {
                 easing: Easing::Linear,
             });
 
-            phichain.lines.push(LineWrapper(
+            let mut line = LineWrapper(
                 line.notes_above
                     .iter()
                     .map(|x| create_note(true, x))
@@ -188,7 +188,30 @@ impl Format for OfficialChart {
                     .chain(opacity_event_iter)
                     .chain(speed_event_iter)
                     .collect(),
-            ));
+            );
+
+            let mut speed_events = line
+                .1
+                .iter()
+                .filter(|e| matches!(e.kind, LineEventKind::Speed))
+                .collect::<Vec<_>>();
+            speed_events.sort_by_key(|e| e.start_beat);
+
+            for note in &mut line.0 {
+                if let crate::chart::note::NoteKind::Hold { .. } = note.kind {
+                    let mut speed = 0.0;
+                    for event in &speed_events {
+                        let value = event.evaluate(note.beat.value());
+                        if let Some(value) = value {
+                            speed = value;
+                        }
+                    }
+
+                    note.speed /= speed / 9.0 * 2.0;
+                }
+            }
+
+            phichain.lines.push(line);
         }
 
         Ok(phichain)

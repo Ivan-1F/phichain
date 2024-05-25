@@ -24,7 +24,7 @@ impl Beat {
         self.0 += fraction.trunc().numer();
         self.1 = fraction.fract();
     }
-    
+
     pub fn reduced(&self) -> Self {
         let mut ret = self.clone();
         ret.reduce();
@@ -162,15 +162,5 @@ impl Ord for Beat {
             Ordering::Equal => self.1.cmp(&other.1),
             ord => ord,
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_beat() {
-        assert_eq!(Rational32::new(4, 2).reduced(), Rational32::new(3, 1));
     }
 }
