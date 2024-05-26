@@ -1,3 +1,4 @@
+use anyhow::Context;
 use std::fs::File;
 
 use bevy::prelude::*;
@@ -15,11 +16,11 @@ use super::Loader;
 pub struct PhiChainLoader;
 
 impl Loader for PhiChainLoader {
-    fn load(file: File, commands: &mut Commands) {
-        let chart: Value = serde_json::from_reader(file).expect("Failed to load chart");
-        let migrated = migrate(&chart).unwrap();
+    fn load(file: File, commands: &mut Commands) -> anyhow::Result<()> {
+        let chart: Value = serde_json::from_reader(file).context("Failed to load chart")?;
+        let migrated = migrate(&chart).context("Migration failed")?;
         let chart: PhiChainChart =
-            serde_json::from_value(migrated).expect("Failed to deserialize chart");
+            serde_json::from_value(migrated).context("Failed to deserialize chart")?;
 
         commands.insert_resource(chart.offset);
         commands.insert_resource(chart.bpm_list);
@@ -44,5 +45,7 @@ impl Loader for PhiChainLoader {
         }
 
         commands.insert_resource(SelectedLine(first_line_id.unwrap()));
+
+        Ok(())
     }
 }

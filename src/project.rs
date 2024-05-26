@@ -191,6 +191,12 @@ fn load_project_system(
     if let Some(event) = events.read().last() {
         match Project::load(event.0.clone()) {
             Ok(project) => {
+                let file = File::open(project.path.chart_path()).unwrap();
+                if let Err(error) = PhiChainLoader::load(file, &mut commands) {
+                    toasts.error(format!("Failed to load chart: {:?}", error));
+                    events.clear();
+                }
+
                 // unwrap: if Project::load is ok, illustration_path() must return Some
                 let illustration_path = project.path.illustration_path().unwrap();
                 load_illustration(illustration_path, &mut commands);
@@ -198,9 +204,6 @@ fn load_project_system(
                 // unwrap: if Project::load is ok, music_path() must return Some
                 let audio_path = project.path.music_path().unwrap();
                 load_audio(audio_path, &mut commands);
-
-                let file = File::open(project.path.chart_path()).unwrap();
-                PhiChainLoader::load(file, &mut commands);
                 commands.insert_resource(project);
             }
             Err(error) => {
