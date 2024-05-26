@@ -24,6 +24,10 @@ fn get_format(chart: &Value) -> anyhow::Result<u64> {
 pub fn migrate(chart: &Value) -> anyhow::Result<Value> {
     let format = get_format(chart)?;
 
+    if format == CURRENT_FORMAT {
+        return Ok(chart.clone());
+    }
+
     let new_chart = match format {
         0 => Migration0To1::migrate(chart)?,
         _ => unreachable!(),
