@@ -194,17 +194,16 @@ fn load_project_system(
                 let file = File::open(project.path.chart_path()).unwrap();
                 if let Err(error) = PhiChainLoader::load(file, &mut commands) {
                     toasts.error(format!("Failed to load chart: {:?}", error));
-                    events.clear();
+                } else {
+                    // unwrap: if Project::load is ok, illustration_path() must return Some
+                    let illustration_path = project.path.illustration_path().unwrap();
+                    load_illustration(illustration_path, &mut commands);
+
+                    // unwrap: if Project::load is ok, music_path() must return Some
+                    let audio_path = project.path.music_path().unwrap();
+                    load_audio(audio_path, &mut commands);
+                    commands.insert_resource(project);
                 }
-
-                // unwrap: if Project::load is ok, illustration_path() must return Some
-                let illustration_path = project.path.illustration_path().unwrap();
-                load_illustration(illustration_path, &mut commands);
-
-                // unwrap: if Project::load is ok, music_path() must return Some
-                let audio_path = project.path.music_path().unwrap();
-                load_audio(audio_path, &mut commands);
-                commands.insert_resource(project);
             }
             Err(error) => {
                 toasts.error(format!("Failed to open project: {:?}", error));
