@@ -216,7 +216,11 @@ pub fn note_timeline_system(
                 egui::Vec2::new(2.0, viewport.0.height()),
             ),
             0.0,
-            Color32::from_rgba_unmultiplied(255, 255, 255, 40),
+            if percent == 0.5 {
+                Color32::from_rgba_unmultiplied(0, 255, 0, 40)
+            } else {
+                Color32::from_rgba_unmultiplied(255, 255, 255, 40)
+            },
         );
     }
 }
