@@ -17,14 +17,15 @@ impl Edit for CreateBpmPoint {
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
         let mut bpm_list = target.resource_mut::<BpmList>();
-        bpm_list.0.push(self.0);
-        bpm_list.compute();
+        bpm_list.insert(self.0);
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
         let mut bpm_list = target.resource_mut::<BpmList>();
-        bpm_list.0.pop();
-        bpm_list.compute();
+        if let Some(index) = bpm_list.0.iter().position(|point| *point == self.0) {
+            bpm_list.0.remove(index);
+            bpm_list.compute();
+        }
     }
 }
 
@@ -52,8 +53,9 @@ impl Edit for RemoveBpmPoint {
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
         let mut bpm_list = target.resource_mut::<BpmList>();
-        bpm_list.0.insert(self.index, self.point.take().unwrap());
-        bpm_list.compute();
+        if let Some(point) = self.point.take() {
+            bpm_list.insert(point);
+        }
     }
 }
 

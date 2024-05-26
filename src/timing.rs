@@ -168,6 +168,19 @@ impl BpmList {
         }
     }
 
+    /// Insert a new [`BpmPoint`] into the list
+    ///
+    /// The point will be inserted in the correct order
+    pub fn insert(&mut self, point: BpmPoint) {
+        let index = self
+            .0
+            .iter()
+            .position(|p| p.beat.value() > point.beat.value())
+            .unwrap_or(self.0.len());
+        self.0.insert(index, point);
+        self.compute();
+    }
+
     pub fn time_at(&self, beat: Beat) -> f32 {
         let point = self
             .0
