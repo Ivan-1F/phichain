@@ -168,7 +168,7 @@ pub fn event_timeline_system(
 
         let size = egui::Vec2::new(
             event_timeline_viewport.width() / 8000.0 * 989.0,
-            timeline.duration_to_height(bpm_list.time_at(event.duration())),
+            y - timeline.time_to_y(bpm_list.time_at(event.end_beat)),
         );
 
         let center = egui::Pos2::new(x, y - size.y / 2.0);

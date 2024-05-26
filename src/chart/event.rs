@@ -41,10 +41,6 @@ impl LineEvent {
 
         None
     }
-
-    pub fn duration(&self) -> Beat {
-        self.end_beat - self.start_beat
-    }
 }
 
 #[derive(Bundle)]

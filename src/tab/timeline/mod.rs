@@ -250,8 +250,4 @@ impl<'w> Timeline<'w> {
             - (y - (self.viewport.0.min.y + self.viewport.0.height() * INDICATOR_POSITION))
                 / (BASE_ZOOM * self.timeline_settings.zoom)
     }
-
-    pub fn duration_to_height(&self, duration: f32) -> f32 {
-        duration * BASE_ZOOM * self.timeline_settings.zoom
-    }
 }

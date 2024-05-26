@@ -169,7 +169,7 @@ pub fn note_timeline_system(
         let size = match note.kind {
             NoteKind::Hold { hold_beat } => egui::Vec2::new(
                 note_timeline_viewport.width() / 8000.0 * size.x as f32,
-                timeline.duration_to_height(bpm_list.time_at(hold_beat)),
+                y - timeline.time_to_y(bpm_list.time_at(note.beat + hold_beat)),
             ),
             _ => egui::Vec2::new(
                 note_timeline_viewport.width() / 8000.0 * size.x as f32,
