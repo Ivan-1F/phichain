@@ -58,11 +58,12 @@ fn single_event_inspector(
                     LineEventKind::Opacity => 0.0..=255.0,
                     _ => f32::MIN..=f32::MAX,
                 };
-                ui.add(
+                let response = ui.add(
                     egui::DragValue::new(&mut event.start)
                         .clamp_range(range.clone())
                         .speed(1.0),
                 );
+                finished |= response.drag_stopped() || response.lost_focus();
                 ui.end_row();
 
                 ui.label(t!("tab.inspector.single_event.end_value"));
