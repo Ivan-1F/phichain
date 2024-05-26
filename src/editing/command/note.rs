@@ -38,19 +38,14 @@ impl Edit for CreateNote {
 
 #[derive(Debug, Copy, Clone)]
 pub struct RemoveNote {
-    pub note_entity: Entity,
+    pub entity: Entity,
     pub note: Option<Note>,
-    pub line_entity: Option<Entity>,
 }
 
 impl RemoveNote {
     #[allow(dead_code)]
     pub fn new(entity: Entity) -> Self {
-        Self {
-            note_entity: entity,
-            note: None,
-            line_entity: None,
-        }
+        Self { entity, note: None }
     }
 }
 
@@ -59,21 +54,13 @@ impl Edit for RemoveNote {
     type Output = ();
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
-        self.note = target.entity(self.note_entity).get::<Note>().copied();
-        self.line_entity = target
-            .entity(self.note_entity)
-            .get::<Parent>()
-            .map(|x| x.get());
-        target.despawn(self.note_entity);
+        self.note = target.entity(self.entity).get::<Note>().copied();
+        target.entity_mut(self.entity).retain::<Parent>();
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
         if let Some(note) = self.note {
-            if let Some(line) = self.line_entity {
-                target.entity_mut(line).with_children(|parent| {
-                    self.note_entity = parent.spawn(NoteBundle::new(note)).id();
-                });
-            }
+            target.entity_mut(self.entity).insert(NoteBundle::new(note));
         }
     }
 }

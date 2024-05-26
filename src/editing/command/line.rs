@@ -53,15 +53,29 @@ impl Edit for RemoveLine {
     type Target = World;
     type Output = ();
 
+    // To persist entity ID for each line, we do not despawn the line entity directly
+    // Instead, we retain the entity, despawn all its children and remove all components
+    // When undoing, we restore the line entity and its children
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
         self.line = Some(LineWrapper::serialize_line(target, self.entity));
-        target.entity_mut(self.entity).despawn_recursive();
+
+        // despawn all children
+        if let Some(children) = target.entity_mut(self.entity).take::<Children>() {
+            for child in children.iter() {
+                target.entity_mut(*child).despawn_recursive();
+            }
+        }
+
+        // remove all components
+        target.entity_mut(self.entity).retain::<()>();
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
         if let Some(ref line) = self.line {
-            let id = target
-                .spawn(LineBundle::new())
+            // restore line entity and its children
+            target
+                .entity_mut(self.entity)
+                .insert(LineBundle::new())
                 .with_children(|parent| {
                     for note in &line.notes {
                         parent.spawn(NoteBundle::new(*note));
@@ -69,10 +83,7 @@ impl Edit for RemoveLine {
                     for event in &line.events {
                         parent.spawn(LineEventBundle::new(*event));
                     }
-                })
-                .id();
-
-            self.entity = id;
+                });
         }
     }
 }
