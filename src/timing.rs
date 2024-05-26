@@ -100,13 +100,19 @@ fn scroll_progress_control_system(
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct BpmPoint {
     pub beat: Beat,
     pub bpm: f32,
 
     #[serde(skip_serializing, default)]
     time: f32,
+}
+
+impl PartialEq for BpmPoint {
+    fn eq(&self, other: &Self) -> bool {
+        self.beat == other.beat && self.bpm == other.bpm
+    }
 }
 
 impl BpmPoint {

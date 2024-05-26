@@ -1,7 +1,9 @@
+pub mod bpm_list;
 pub mod event;
 pub mod line;
 pub mod note;
 
+use crate::editing::command::bpm_list::{CreateBpmPoint, EditBpmPoint, RemoveBpmPoint};
 use crate::editing::command::event::{CreateEvent, EditEvent, RemoveEvent};
 use crate::editing::command::line::{CreateLine, RemoveLine};
 use crate::editing::command::note::{CreateNote, EditNote, RemoveNote};
@@ -20,6 +22,10 @@ pub enum EditorCommand {
 
     CreateLine(CreateLine),
     RemoveLine(RemoveLine),
+
+    CreateBpmPoint(CreateBpmPoint),
+    RemoveBpmPoint(RemoveBpmPoint),
+    EditBpmPoint(EditBpmPoint),
 
     CommandSequence(CommandSequence),
 }
@@ -78,5 +84,8 @@ impl_edit_for_command!(
     EditEvent,
     CreateLine,
     RemoveLine,
+    CreateBpmPoint,
+    RemoveBpmPoint,
+    EditBpmPoint,
     CommandSequence
 );

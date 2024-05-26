@@ -1,11 +1,19 @@
 use crate::chart::beat::Beat;
+use crate::editing::command::bpm_list::{CreateBpmPoint, EditBpmPoint, RemoveBpmPoint};
+use crate::editing::command::EditorCommand;
+use crate::editing::DoCommandEvent;
 use crate::timing::{BpmList, BpmPoint};
+use crate::ui::latch;
 use crate::ui::widgets::beat_value::BeatValue;
 use bevy::prelude::*;
 use egui::Ui;
 use num::Rational32;
 
-pub fn bpm_list_tab(In(ui): In<&mut Ui>, mut bpm_list: ResMut<BpmList>) {
+pub fn bpm_list_tab(
+    In(ui): In<&mut Ui>,
+    mut bpm_list: ResMut<BpmList>,
+    mut event_writer: EventWriter<DoCommandEvent>,
+) {
     let mut changes = Vec::new();
     let mut deletes = Vec::new();
 
@@ -17,31 +25,48 @@ pub fn bpm_list_tab(In(ui): In<&mut Ui>, mut bpm_list: ResMut<BpmList>) {
         let point = bpm_list.0.get_mut(index).unwrap();
 
         ui.horizontal_top(|ui| {
-            egui::Grid::new(format!("audio_setting_grid_{}", index))
+            egui::Grid::new(format!("bpm_list_grid_{}", index))
                 .num_columns(2)
                 .spacing([20.0, 2.0])
                 .striped(true)
                 .show(ui, |ui| {
-                    let mut beat = point.beat;
+                    let result = latch::latch(ui, format!("bpm_point_{}", index), *point, |ui| {
+                        let mut finished = false;
+                        let mut beat = point.beat;
 
-                    ui.label(t!("tab.bpm_list.point.beat"));
-                    ui.add_enabled_ui(point.beat != Beat::ZERO, |ui| {
-                        let start = previous_beat
-                            .map(|x| x + Beat::new(0, Rational32::new(1, 32)))
-                            .unwrap_or(Beat::MIN);
-                        let range = start..=next_beat.unwrap_or(Beat::MAX);
-                        ui.add(BeatValue::new(&mut beat).clamp_range(range))
-                            .on_disabled_hover_text(t!("tab.bpm_list.zero_beat_not_editable"));
+                        ui.label(t!("tab.bpm_list.point.beat"));
+                        ui.add_enabled_ui(point.beat != Beat::ZERO, |ui| {
+                            let start = previous_beat
+                                .map(|x| x + Beat::new(0, Rational32::new(1, 32)))
+                                .unwrap_or(Beat::MIN);
+                            let range = start..=next_beat.unwrap_or(Beat::MAX);
+                            let response = ui
+                                .add(BeatValue::new(&mut beat).clamp_range(range))
+                                .on_disabled_hover_text(t!("tab.bpm_list.zero_beat_not_editable"));
+                            finished |= response.drag_stopped() || response.lost_focus();
+                        });
+                        ui.end_row();
+
+                        ui.label(t!("tab.bpm_list.point.bpm"));
+                        let response = ui
+                            .add(egui::DragValue::new(&mut point.bpm).clamp_range(0.01..=f32::MAX));
+                        finished |= response.drag_stopped() || response.lost_focus();
+                        ui.end_row();
+
+                        if beat != point.beat {
+                            point.beat = beat;
+                            changes.push((index, beat));
+                        }
+
+                        finished
                     });
-                    ui.end_row();
 
-                    ui.label(t!("tab.bpm_list.point.bpm"));
-                    ui.add(egui::DragValue::new(&mut point.bpm).clamp_range(0.01..=f32::MAX));
-                    ui.end_row();
-
-                    if beat != point.beat {
-                        point.beat = beat;
-                        changes.push((index, beat));
+                    if let Some(from) = result {
+                        if from != *point {
+                            event_writer.send(DoCommandEvent(EditorCommand::EditBpmPoint(
+                                EditBpmPoint::new(index, from, *point),
+                            )));
+                        }
                     }
                 });
 
@@ -67,8 +92,9 @@ pub fn bpm_list_tab(In(ui): In<&mut Ui>, mut bpm_list: ResMut<BpmList>) {
             .last()
             .map(|x| x.beat + Beat::ONE)
             .unwrap_or(Beat::ONE);
-        bpm_list.0.push(BpmPoint::new(beat, 120.0));
-        bpm_list.compute();
+        event_writer.send(DoCommandEvent(EditorCommand::CreateBpmPoint(
+            CreateBpmPoint::new(BpmPoint::new(beat, 120.0)),
+        )));
     }
 
     // recompute after all changes are applied
@@ -78,7 +104,9 @@ pub fn bpm_list_tab(In(ui): In<&mut Ui>, mut bpm_list: ResMut<BpmList>) {
 
     if !deletes.is_empty() {
         for i in deletes {
-            bpm_list.0.remove(i);
+            event_writer.send(DoCommandEvent(EditorCommand::RemoveBpmPoint(
+                RemoveBpmPoint::new(i),
+            )));
         }
         bpm_list.compute();
     }
