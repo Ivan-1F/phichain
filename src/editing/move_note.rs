@@ -1,9 +1,8 @@
-use crate::beat;
-use crate::chart::beat::Beat;
 use crate::chart::note::Note;
 use crate::selection::Selected;
 use crate::tab::timeline::TimelineSettings;
 use bevy::prelude::*;
+use num::{FromPrimitive, Rational32};
 
 pub struct MoveNotePlugin;
 
@@ -20,20 +19,42 @@ fn move_note_system(
 ) {
     if keyboard.just_pressed(KeyCode::ArrowUp) {
         if let Some(start) = selected_notes.iter().min_by_key(|note| note.beat) {
-            let delta = timeline_settings
-                .attach((start.beat + beat!(1, timeline_settings.density)).value())
-                - start.beat;
+            let to =
+                timeline_settings.attach((start.beat + timeline_settings.minimum_beat()).value());
+            let delta = to - start.beat;
             for mut note in selected_notes.iter_mut() {
                 note.beat = note.beat + delta;
             }
         }
     } else if keyboard.just_pressed(KeyCode::ArrowDown) {
         if let Some(start) = selected_notes.iter().max_by_key(|note| note.beat) {
-            let delta = timeline_settings
-                .attach((start.beat - beat!(1, timeline_settings.density)).value())
-                - start.beat;
+            let to =
+                timeline_settings.attach((start.beat - timeline_settings.minimum_beat()).value());
+            let delta = to - start.beat;
             for mut note in selected_notes.iter_mut() {
                 note.beat = note.beat + delta;
+            }
+        }
+    } else if keyboard.just_pressed(KeyCode::ArrowLeft) {
+        if let Some(start) = selected_notes
+            .iter()
+            .min_by_key(|note| Rational32::from_f32(note.x))
+        {
+            let to = timeline_settings.attach_x(start.x - timeline_settings.minimum_lane());
+            let delta = to - start.x;
+            for mut note in selected_notes.iter_mut() {
+                note.x += delta;
+            }
+        }
+    } else if keyboard.just_pressed(KeyCode::ArrowRight) {
+        if let Some(start) = selected_notes
+            .iter()
+            .max_by_key(|note| Rational32::from_f32(note.x))
+        {
+            let to = timeline_settings.attach_x(start.x + timeline_settings.minimum_lane());
+            let delta = to - start.x;
+            for mut note in selected_notes.iter_mut() {
+                note.x += delta;
             }
         }
     }

@@ -7,6 +7,7 @@ use num::Rational32;
 
 use crate::audio::AudioDuration;
 use crate::chart::beat;
+use crate::constants::CANVAS_WIDTH;
 use crate::tab::timeline::event_timeline::{
     event_timeline_drag_select_system, event_timeline_system, EventTimelinePlugin,
 };
@@ -204,6 +205,18 @@ impl TimelineSettings {
             .enumerate()
             .map(|(i, _)| (i + 1) as f32 * lane_width)
             .collect()
+    }
+
+    pub fn minimum_lane(&self) -> f32 {
+        CANVAS_WIDTH / self.lanes as f32
+    }
+
+    pub fn attach_x(&self, x: f32) -> f32 {
+        self.lane_percents()
+            .iter()
+            .map(|x| (x - 0.5) * CANVAS_WIDTH)
+            .min_by(|a, b| (a - x).abs().partial_cmp(&(b - x).abs()).unwrap())
+            .unwrap_or(x)
     }
 }
 
