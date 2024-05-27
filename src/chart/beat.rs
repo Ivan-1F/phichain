@@ -145,6 +145,25 @@ impl Beat {
     }
 }
 
+#[macro_export]
+macro_rules! beat {
+    ($whole:expr, $numer:expr, $denom:expr) => {
+        Beat::new(
+            $whole as i32,
+            num::Rational32::new($numer as i32, $denom as i32),
+        )
+    };
+    ($numer:expr, $denom:expr) => {
+        Beat::new(0, num::Rational32::new($numer as i32, $denom as i32))
+    };
+    ($whole:expr) => {
+        Beat::new($whole as i32, num::Rational32::new(0, 1))
+    };
+    () => {
+        Beat::new(0, num::Rational32::new(0, 1))
+    };
+}
+
 impl Sub for Beat {
     type Output = Self;
 
