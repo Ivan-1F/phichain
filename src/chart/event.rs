@@ -41,6 +41,19 @@ impl LineEvent {
 
         None
     }
+
+    pub fn evaluate_start_no_effect(&self, beat: f32) -> Option<f32> {
+        let start_beat = self.start_beat.value();
+        let end_beat = self.end_beat.value();
+        if beat > start_beat && beat <= end_beat {
+            let percent = (beat - start_beat) / (end_beat - start_beat);
+            return Some(self.start.ease_to(self.end, percent, self.easing));
+        } else if beat > end_beat {
+            return Some(self.end);
+        }
+
+        None
+    }
 }
 
 #[derive(Bundle)]
