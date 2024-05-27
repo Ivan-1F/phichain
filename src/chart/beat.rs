@@ -59,8 +59,8 @@ impl Debug for Beat {
 }
 
 pub mod utils {
+    use crate::beat;
     use crate::chart::beat::Beat;
-    use num::Rational32;
 
     /// Attach a beat value to beat lines with a given density
     pub fn attach(value: f32, density: u32) -> Beat {
@@ -72,10 +72,7 @@ pub mod utils {
         let fractional_part =
             ((rounded_value - integer_part as f32) * density as f32).round() as i32;
 
-        Beat::new(
-            integer_part,
-            Rational32::new(fractional_part, density as i32),
-        )
+        beat!(integer_part, fractional_part, density)
     }
 
     #[cfg(test)]
@@ -85,9 +82,9 @@ pub mod utils {
 
         #[test]
         fn test_attach() {
-            assert_eq!(attach(1.333333, 3), Beat::new(1, Rational32::new(1, 3)));
-            assert_eq!(attach(1.3, 4), Beat::new(1, Rational32::new(1, 4)));
-            assert_eq!(attach(5.8, 2), Beat::new(6, Rational32::new(0, 1)));
+            assert_eq!(attach(1.333333, 3), beat!(1, 1, 3));
+            assert_eq!(attach(1.3, 4), beat!(1, 1, 4));
+            assert_eq!(attach(5.8, 2), beat!(6));
         }
     }
 }

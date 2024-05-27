@@ -3,7 +3,6 @@ mod note_timeline;
 
 use bevy::{ecs::system::SystemParam, prelude::*};
 use egui::{Align2, Color32, FontId, Ui};
-use num::Rational32;
 
 use crate::audio::AudioDuration;
 use crate::chart::beat;
@@ -15,6 +14,7 @@ use crate::tab::timeline::note_timeline::{
     note_timeline_drag_select_system, note_timeline_system, NoteTimelinePlugin,
 };
 use crate::{
+    beat,
     chart::beat::Beat,
     constants::{BASE_ZOOM, INDICATOR_POSITION},
     timing::{BpmList, ChartTime},
@@ -195,7 +195,7 @@ impl TimelineSettings {
     }
 
     pub fn minimum_beat(&self) -> Beat {
-        Beat::new(0, Rational32::new(1, self.density as i32))
+        beat!(0, 1, self.density)
     }
 
     pub fn lane_percents(&self) -> Vec<f32> {
@@ -243,10 +243,8 @@ impl<'w> Timeline<'w> {
         std::iter::repeat(0)
             .enumerate()
             .map(|(i, _)| {
-                self.bpm_list.time_at(Beat::new(
-                    0,
-                    Rational32::new(i as i32, self.timeline_settings.density as i32),
-                ))
+                self.bpm_list
+                    .time_at(beat!(0, i, self.timeline_settings.density))
             })
             .take_while(|x| x <= &self.audio_duration.0.as_secs_f32())
             .collect()

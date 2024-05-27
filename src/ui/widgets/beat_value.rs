@@ -1,6 +1,6 @@
+use crate::beat;
 use crate::chart::beat::Beat;
 use egui::{Response, Ui, Widget};
-use num::Rational32;
 use std::cmp::Ordering;
 use std::ops::RangeInclusive;
 
@@ -87,10 +87,7 @@ impl<'a> Widget for BeatValue<'a> {
 
             if whole != self.beat.beat() || numer != self.beat.numer() || denom != self.beat.denom()
             {
-                *self.beat = clamp_to_range(
-                    Beat::new(whole, Rational32::new(numer, denom)),
-                    &self.clamp_range,
-                );
+                *self.beat = clamp_to_range(beat!(whole, numer, denom), &self.clamp_range);
             } else if value != self.beat.value() {
                 *self.beat = clamp_to_range(value.into(), &self.clamp_range);
             }

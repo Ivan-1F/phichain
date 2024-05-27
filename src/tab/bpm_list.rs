@@ -1,3 +1,4 @@
+use crate::beat;
 use crate::chart::beat::Beat;
 use crate::editing::command::bpm_list::{CreateBpmPoint, EditBpmPoint, RemoveBpmPoint};
 use crate::editing::command::EditorCommand;
@@ -7,7 +8,6 @@ use crate::ui::latch;
 use crate::ui::widgets::beat_value::BeatValue;
 use bevy::prelude::*;
 use egui::Ui;
-use num::Rational32;
 
 pub fn bpm_list_tab(
     In(ui): In<&mut Ui>,
@@ -37,7 +37,7 @@ pub fn bpm_list_tab(
                         ui.label(t!("tab.bpm_list.point.beat"));
                         ui.add_enabled_ui(point.beat != Beat::ZERO, |ui| {
                             let start = previous_beat
-                                .map(|x| x + Beat::new(0, Rational32::new(1, 32)))
+                                .map(|x| x + beat!(0, 1, 32))
                                 .unwrap_or(Beat::MIN);
                             let range = start..=next_beat.unwrap_or(Beat::MAX);
                             let response = ui
