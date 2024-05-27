@@ -23,7 +23,7 @@ fn move_note_system(
                 timeline_settings.attach((start.beat + timeline_settings.minimum_beat()).value());
             let delta = to - start.beat;
             for mut note in selected_notes.iter_mut() {
-                note.beat = note.beat + delta;
+                note.beat += delta;
             }
         }
     } else if keyboard.just_pressed(KeyCode::ArrowDown) {
@@ -32,7 +32,7 @@ fn move_note_system(
                 timeline_settings.attach((start.beat - timeline_settings.minimum_beat()).value());
             let delta = to - start.beat;
             for mut note in selected_notes.iter_mut() {
-                note.beat = note.beat + delta;
+                note.beat += delta;
             }
         }
     } else if keyboard.just_pressed(KeyCode::ArrowLeft) {

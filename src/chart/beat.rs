@@ -1,5 +1,6 @@
 use std::fmt::{Debug, Formatter};
 use std::hash::Hash;
+use std::ops::{AddAssign, SubAssign};
 use std::{
     cmp::Ordering,
     ops::{Add, Sub},
@@ -172,11 +173,25 @@ impl Sub for Beat {
     }
 }
 
+impl SubAssign for Beat {
+    fn sub_assign(&mut self, rhs: Self) {
+        self.0 -= rhs.0;
+        self.1 -= rhs.1;
+    }
+}
+
 impl Add for Beat {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
         Self(self.0 + rhs.0, self.1 + rhs.1)
+    }
+}
+
+impl AddAssign for Beat {
+    fn add_assign(&mut self, rhs: Self) {
+        self.0 += rhs.0;
+        self.1 += rhs.1;
     }
 }
 
