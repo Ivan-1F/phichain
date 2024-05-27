@@ -8,6 +8,7 @@ mod chart;
 mod cli;
 mod constants;
 mod editing;
+mod export;
 mod exporter;
 mod file;
 mod format;
@@ -40,9 +41,10 @@ use crate::chart::note::Note;
 use crate::cli::{Args, CliPlugin};
 use crate::editing::history::EditorHistory;
 use crate::editing::EditingPlugin;
+use crate::export::ExportPlugin;
 use crate::exporter::phichain::PhiChainExporter;
 use crate::exporter::Exporter;
-use crate::file::FilePickingPlugin;
+use crate::file::{pick_folder, FilePickingPlugin, PickingKind};
 use crate::highlight::HighlightPlugin;
 use crate::hit_sound::HitSoundPlugin;
 use crate::home::HomePlugin;
@@ -73,6 +75,7 @@ use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
 use bevy_persistent::Persistent;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
+use rfd::FileDialog;
 use rust_i18n::set_locale;
 
 i18n!("lang", fallback = "en_us");
@@ -101,6 +104,7 @@ fn main() {
         .add_plugins(DefaultPickingPlugins)
         .add_plugins(EguiPlugin)
         .add_plugins(ProjectPlugin)
+        .add_plugins(ExportPlugin)
         .add_plugins(selection::SelectionPlugin)
         .add_plugins(TabPlugin)
         .add_plugins(EditingPlugin)
@@ -342,6 +346,13 @@ fn ui_system(world: &mut World) {
                         }
                     });
                 });
+            });
+
+            ui.menu_button("Export", |ui| {
+                if ui.button("Export as official").clicked() {
+                    pick_folder(world, PickingKind::ExportOfficial, FileDialog::new());
+                    ui.close_menu();
+                }
             });
         });
     });

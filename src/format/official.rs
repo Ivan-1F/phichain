@@ -279,8 +279,8 @@ impl Format for OfficialChart {
 
             // -------- Events --------
 
-            fn connect_events(events: &Vec<LineEvent>) -> Vec<LineEvent> {
-                let mut events = events.clone();
+            fn connect_events(events: &[LineEvent]) -> Vec<LineEvent> {
+                let mut events = events.to_owned();
                 events.sort_by_key(|e| e.start_beat);
 
                 let mut split_beats = vec![];
@@ -316,12 +316,18 @@ impl Format for OfficialChart {
                 connected_events
             }
 
-            fn process_events<F, T>(line: &LineWrapper, kind: LineEventKind, mut transform: F, target: &mut Vec<T>)
-                where
-                    F: FnMut(&LineEvent) -> T,
+            fn process_events<F, T>(
+                line: &LineWrapper,
+                kind: LineEventKind,
+                mut transform: F,
+                target: &mut Vec<T>,
+            ) where
+                F: FnMut(&LineEvent) -> T,
             {
                 let events = connect_events(
-                    &line.events.iter()
+                    &line
+                        .events
+                        .iter()
                         .filter(|e| e.kind == kind)
                         .copied()
                         .collect::<Vec<_>>(),
@@ -329,31 +335,47 @@ impl Format for OfficialChart {
 
                 for event in events {
                     let events = cut_event(event);
-                    let mut transformed_events = events.iter().map(&mut transform).collect::<Vec<_>>();
+                    let mut transformed_events =
+                        events.iter().map(&mut transform).collect::<Vec<_>>();
                     target.append(&mut transformed_events);
                 }
             }
 
-            process_events(&line, LineEventKind::Rotation, |e| NumbericLineEvent {
-                start_time: e.start_beat.value() * 60.0 / 1.875,
-                end_time: e.end_beat.value() * 60.0 / 1.875,
-                start: e.start,
-                end: e.end,
-            }, &mut official_line.rotate_events);
+            process_events(
+                &line,
+                LineEventKind::Rotation,
+                |e| NumbericLineEvent {
+                    start_time: e.start_beat.value() * 60.0 / 1.875,
+                    end_time: e.end_beat.value() * 60.0 / 1.875,
+                    start: e.start,
+                    end: e.end,
+                },
+                &mut official_line.rotate_events,
+            );
 
-            process_events(&line, LineEventKind::Opacity, |e| NumbericLineEvent {
-                start_time: e.start_beat.value() * 60.0 / 1.875,
-                end_time: e.end_beat.value() * 60.0 / 1.875,
-                start: e.start / 255.0,
-                end: e.end / 255.0,
-            }, &mut official_line.opacity_events);
+            process_events(
+                &line,
+                LineEventKind::Opacity,
+                |e| NumbericLineEvent {
+                    start_time: e.start_beat.value() * 60.0 / 1.875,
+                    end_time: e.end_beat.value() * 60.0 / 1.875,
+                    start: e.start / 255.0,
+                    end: e.end / 255.0,
+                },
+                &mut official_line.opacity_events,
+            );
 
-            process_events(&line, LineEventKind::Speed, |e| SpeedEvent {
-                start_time: e.start_beat.value() * 60.0 / 1.875,
-                end_time: e.end_beat.value() * 60.0 / 1.875,
-                value: e.start / 9.0 * 2.0,
-                floor_position: 0.0,  // this will be calculated later
-            }, &mut official_line.speed_events);
+            process_events(
+                &line,
+                LineEventKind::Speed,
+                |e| SpeedEvent {
+                    start_time: e.start_beat.value() * 60.0 / 1.875,
+                    end_time: e.end_beat.value() * 60.0 / 1.875,
+                    value: e.start / 9.0 * 2.0,
+                    floor_position: 0.0, // this will be calculated later
+                },
+                &mut official_line.speed_events,
+            );
 
             // -------- Move events --------
 
