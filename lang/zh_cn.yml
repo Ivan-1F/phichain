@@ -68,6 +68,7 @@ tab:
         title: 音频
         music_volume: 音乐音量
         hit_sound_volume: 打击音效音量
+        playback_rate: 播放速率
       graphics:
         title: 图像
 

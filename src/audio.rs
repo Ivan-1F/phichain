@@ -38,6 +38,7 @@ impl Plugin for AudioPlugin {
                 handle_seek_to_system,
                 update_time_system,
                 update_volume_system,
+                update_playback_rate_system,
             )
                 .run_if(project_loaded().and_then(resource_exists::<InstanceHandle>)),
         );
@@ -160,5 +161,15 @@ fn update_volume_system(
             Volume::Amplitude(settings.audio.music_volume as f64),
             AudioTween::default(),
         );
+    }
+}
+
+fn update_playback_rate_system(
+    handle: Res<InstanceHandle>,
+    mut audio_instances: ResMut<Assets<AudioInstance>>,
+    settings: Res<Persistent<EditorSettings>>,
+) {
+    if let Some(instance) = audio_instances.get_mut(&handle.0) {
+        instance.set_playback_rate(settings.audio.playback_rate as f64, AudioTween::default());
     }
 }

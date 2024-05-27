@@ -68,6 +68,7 @@ tab:
         title: Audio
         music_volume: Music Volume
         hit_sound_volume: Hit Sound Volume
+        playback_rate: Playback Rate
       graphics:
         title: Graphics
 

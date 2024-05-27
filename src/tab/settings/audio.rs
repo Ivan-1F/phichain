@@ -38,6 +38,15 @@ impl SettingCategory for Audio {
                     finished |= response.drag_stopped() || response.lost_focus();
                     ui.end_row();
 
+                    ui.label(t!("tab.settings.category.audio.playback_rate"));
+                    let response = ui.add(
+                        egui::DragValue::new(&mut settings.audio.playback_rate)
+                            .clamp_range(0.01..=2.0)
+                            .speed(0.01),
+                    );
+                    finished |= response.drag_stopped() || response.lost_focus();
+                    ui.end_row();
+
                     finished
                 })
                 .is_some()

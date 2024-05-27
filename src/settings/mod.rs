@@ -46,6 +46,8 @@ impl Default for GeneralSettings {
 pub struct AudioSettings {
     pub music_volume: f32,
     pub hit_sound_volume: f32,
+
+    pub playback_rate: f32,
 }
 
 impl Default for AudioSettings {
@@ -53,6 +55,7 @@ impl Default for AudioSettings {
         Self {
             music_volume: 1.0,
             hit_sound_volume: 1.0,
+            playback_rate: 1.0,
         }
     }
 }
