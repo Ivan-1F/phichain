@@ -70,10 +70,10 @@ fn progress_control_system(
     keyboard: Res<ButtonInput<KeyCode>>,
     mut events: EventWriter<SeekEvent>,
 ) {
-    if keyboard.pressed(KeyCode::ArrowLeft) {
+    if keyboard.pressed(KeyCode::BracketLeft) {
         events.send(SeekEvent(-0.02));
     }
-    if keyboard.pressed(KeyCode::ArrowRight) {
+    if keyboard.pressed(KeyCode::BracketRight) {
         events.send(SeekEvent(0.02));
     }
 }
