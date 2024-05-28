@@ -13,7 +13,17 @@ use crate::utils::compat::ControlKeyExt;
 use bevy::prelude::*;
 
 #[derive(Resource, Default)]
-struct EditorClipboard(pub Vec<Entity>);
+struct EditorClipboard {
+    notes: Vec<Note>,
+    events: Vec<LineEvent>,
+}
+
+impl EditorClipboard {
+    fn clear(&mut self) {
+        self.notes.clear();
+        self.events.clear();
+    }
+}
 
 pub struct ClipboardPlugin;
 
@@ -29,16 +39,25 @@ impl Plugin for ClipboardPlugin {
 
 fn copy_system(
     mut clipboard: ResMut<EditorClipboard>,
+
+    note_query: Query<&Note>,
+    event_query: Query<&LineEvent>,
+
     selected_query: Query<Entity, With<Selected>>,
 ) {
-    clipboard.0 = selected_query.iter().collect();
+    clipboard.clear();
+
+    for entity in &selected_query {
+        if let Ok(note) = note_query.get(entity) {
+            clipboard.notes.push(*note);
+        } else if let Ok(event) = event_query.get(entity) {
+            clipboard.events.push(*event);
+        }
+    }
 }
 
 fn paste_system(
     clipboard: Res<EditorClipboard>,
-
-    note_query: Query<&Note>,
-    event_query: Query<&LineEvent>,
 
     window_query: Query<&Window>,
 
@@ -60,16 +79,8 @@ fn paste_system(
         return;
     }
 
-    let mut notes = Vec::new();
-    let mut events = Vec::new();
-
-    for entity in &clipboard.0 {
-        if let Ok(note) = note_query.get(*entity) {
-            notes.push(note);
-        } else if let Ok(event) = event_query.get(*entity) {
-            events.push(event);
-        }
-    }
+    let notes = clipboard.notes.to_vec();
+    let events = clipboard.events.to_vec();
 
     if let Some(min_beat) = notes
         .iter()
@@ -85,7 +96,7 @@ fn paste_system(
         let mut sequence = CommandSequence(vec![]);
 
         for note in notes {
-            let mut new_note = *note;
+            let mut new_note = note;
             new_note.beat = note.beat + delta;
             sequence.0.push(EditorCommand::CreateNote(CreateNote::new(
                 selected_line.0,
@@ -93,7 +104,7 @@ fn paste_system(
             )));
         }
         for event in events {
-            let mut new_event = *event;
+            let mut new_event = event;
             new_event.start_beat = event.start_beat + delta;
             new_event.end_beat = event.end_beat + delta;
             sequence.0.push(EditorCommand::CreateEvent(CreateEvent::new(
