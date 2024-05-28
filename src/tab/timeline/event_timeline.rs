@@ -177,7 +177,7 @@ pub fn event_timeline_system(
         let mut color = if selected.is_some() {
             Color32::LIGHT_GREEN
         } else {
-            Color32::WHITE
+            Color32::LIGHT_BLUE
         };
 
         if pending.is_some() {
