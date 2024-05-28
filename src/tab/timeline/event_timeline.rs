@@ -108,9 +108,7 @@ pub fn event_timeline_drag_select_system(
                     .map(|x| x.2)
                     .collect::<Vec<_>>();
 
-                for entity in events {
-                    select_events.send(SelectEvent(entity));
-                }
+                select_events.send(SelectEvent(events));
             }
         }
         selection.0 = None;
@@ -187,7 +185,7 @@ pub fn event_timeline_system(
         }
 
         if event_ui(ui, egui::Rect::from_center_size(center, size), event, color).clicked() {
-            select_events.send(SelectEvent(entity));
+            select_events.send(SelectEvent(vec![entity]));
         }
     }
 }

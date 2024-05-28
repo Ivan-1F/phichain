@@ -106,9 +106,7 @@ pub fn note_timeline_drag_select_system(
                     .map(|x| x.2)
                     .collect::<Vec<_>>();
 
-                for entity in notes {
-                    select_events.send(SelectEvent(entity));
-                }
+                select_events.send(SelectEvent(notes));
             }
         }
         selection.0 = None;
@@ -205,7 +203,7 @@ pub fn note_timeline_system(
         );
 
         if response.clicked() {
-            select_events.send(SelectEvent(entity));
+            select_events.send(SelectEvent(vec![entity]));
         }
     }
 
