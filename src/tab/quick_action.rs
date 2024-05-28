@@ -12,7 +12,7 @@ pub fn quick_action_tab(
         ui.add(
             egui::DragValue::new(&mut editor_settings.audio.playback_rate)
                 .suffix("x")
-                .clamp_range(0.01..=1.2)
+                .clamp_range(0.01..=1.0)
                 .speed(0.01),
         );
     });
