@@ -62,6 +62,7 @@ use crate::settings::{EditorSettings, EditorSettingsPlugin};
 use crate::tab::game::GameCamera;
 use crate::tab::game::GameTabPlugin;
 use crate::tab::game::GameViewport;
+use crate::tab::quick_action::quick_action_tab;
 use crate::tab::timeline::{TimelineTabPlugin, TimelineViewport};
 use crate::tab::TabPlugin;
 use crate::tab::{EditorTab, TabRegistry};
@@ -75,6 +76,7 @@ use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
 use bevy_persistent::Persistent;
+use egui::Ui;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use rfd::FileDialog;
 use rust_i18n::set_locale;
@@ -356,6 +358,16 @@ fn ui_system(world: &mut World) {
                 }
             });
         });
+
+        ui.add(egui::Separator::default().spacing(1.0));
+
+        unsafe {
+            let mut system = IntoSystem::into_system(quick_action_tab);
+            system.initialize(world);
+            system.run(&mut *(ui as *mut Ui), world)
+        };
+
+        ui.add_space(1.0);
     });
 
     let notes: Vec<_> = world.query::<&Note>().iter(world).collect();

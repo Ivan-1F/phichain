@@ -3,6 +3,7 @@ pub mod chart_basic_setting;
 pub mod game;
 pub mod inspector;
 pub mod line_list;
+pub mod quick_action;
 pub mod settings;
 pub mod timeline;
 pub mod timeline_setting;
