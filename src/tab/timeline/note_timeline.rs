@@ -34,6 +34,8 @@ pub fn note_timeline_drag_select_system(
 
     mut selection: ResMut<NoteTimelineDragSelection>,
     window_query: Query<&Window>,
+
+    selected_line: Res<SelectedLine>,
 ) {
     let note_timeline_viewport = viewport.note_timeline_viewport();
     let window = window_query.single();
@@ -96,6 +98,7 @@ pub fn note_timeline_drag_select_system(
 
                 let notes = note_query
                     .iter()
+                    .filter(|x| x.1.get() == selected_line.0)
                     .filter(|x| {
                         let note = x.0;
                         x_range.contains(note.x) && time_range.contains(bpm_list.time_at(note.beat))

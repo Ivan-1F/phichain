@@ -38,6 +38,8 @@ pub fn event_timeline_drag_select_system(
 
     mut selection: ResMut<EventTimelineDragSelection>,
     window_query: Query<&Window>,
+
+    selected_line: Res<SelectedLine>,
 ) {
     let event_timeline_viewport = viewport.event_timeline_viewport();
     let window = window_query.single();
@@ -96,6 +98,7 @@ pub fn event_timeline_drag_select_system(
 
                 let events = event_query
                     .iter()
+                    .filter(|x| x.1.get() == selected_line.0)
                     .filter(|x| {
                         let event = x.0;
                         let track: u8 = event.kind.into();
