@@ -359,7 +359,12 @@ fn ui_system(world: &mut World) {
             });
         });
 
-        ui.add(egui::Separator::default().spacing(1.0));
+        ui.add(
+            egui::Separator::default()
+                .spacing(1.0)
+                // fill the left and right gap
+                .grow(20.0),
+        );
 
         unsafe {
             let mut system = IntoSystem::into_system(quick_action_tab);
