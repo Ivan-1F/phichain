@@ -57,6 +57,7 @@ use crate::project::LoadProjectEvent;
 use crate::project::ProjectPlugin;
 use crate::score::ScorePlugin;
 use crate::screenshot::ScreenshotPlugin;
+use crate::selection::Selected;
 use crate::settings::{EditorSettings, EditorSettingsPlugin};
 use crate::tab::game::GameCamera;
 use crate::tab::game::GameTabPlugin;
@@ -362,6 +363,17 @@ fn ui_system(world: &mut World) {
     let events: Vec<_> = world.query::<&LineEvent>().iter(world).collect();
     let events = events.len();
 
+    let selected_notes: Vec<_> = world
+        .query_filtered::<&Note, With<Selected>>()
+        .iter(world)
+        .collect();
+    let selected_notes = selected_notes.len();
+    let selected_events: Vec<_> = world
+        .query_filtered::<&LineEvent, With<Selected>>()
+        .iter(world)
+        .collect();
+    let selected_events = selected_events.len();
+
     egui::TopBottomPanel::bottom("phichain.StatusBar").show(ctx, |ui| {
         ui.horizontal(|ui| {
             ui.label(format!("PhiChain v{}", env!("CARGO_PKG_VERSION")));
@@ -370,6 +382,9 @@ fn ui_system(world: &mut World) {
 
             ui.label(format!("Notes: {}", notes));
             ui.label(format!("Events: {}", events));
+
+            ui.label(format!("Selected Notes: {}", selected_notes));
+            ui.label(format!("Selected Events: {}", selected_events));
 
             world.resource_scope(|_world: &mut World, history: Mut<EditorHistory>| {
                 if !history.0.is_saved() {
