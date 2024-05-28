@@ -17,7 +17,7 @@ use crate::{
     serialization::PhiChainChart,
 };
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct ProjectMeta {
     pub composer: String,
     pub charter: String,

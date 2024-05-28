@@ -1,11 +1,13 @@
 pub mod bpm_list;
 pub mod event;
 pub mod line;
+pub mod meta;
 pub mod note;
 
 use crate::editing::command::bpm_list::{CreateBpmPoint, EditBpmPoint, RemoveBpmPoint};
 use crate::editing::command::event::{CreateEvent, EditEvent, RemoveEvent};
 use crate::editing::command::line::{CreateLine, RemoveLine};
+use crate::editing::command::meta::{EditMeta, EditOffset};
 use crate::editing::command::note::{CreateNote, EditNote, RemoveNote};
 use bevy::prelude::*;
 use undo::Edit;
@@ -26,6 +28,9 @@ pub enum EditorCommand {
     CreateBpmPoint(CreateBpmPoint),
     RemoveBpmPoint(RemoveBpmPoint),
     EditBpmPoint(EditBpmPoint),
+
+    EditMeta(EditMeta),
+    EditOffset(EditOffset),
 
     CommandSequence(CommandSequence),
 }
@@ -87,5 +92,7 @@ impl_edit_for_command!(
     CreateBpmPoint,
     RemoveBpmPoint,
     EditBpmPoint,
+    EditMeta,
+    EditOffset,
     CommandSequence
 );
