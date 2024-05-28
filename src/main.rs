@@ -351,8 +351,8 @@ fn ui_system(world: &mut World) {
                 });
             });
 
-            ui.menu_button("Export", |ui| {
-                if ui.button("Export as official").clicked() {
+            ui.menu_button(t!("menu_bar.export.title"), |ui| {
+                if ui.button(t!("menu_bar.export.as_official")).clicked() {
                     pick_folder(world, PickingKind::ExportOfficial, FileDialog::new());
                     ui.close_menu();
                 }

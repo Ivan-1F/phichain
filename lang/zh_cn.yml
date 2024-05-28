@@ -6,6 +6,9 @@ menu_bar:
     quit: 退出
   tabs:
     title: 窗口
+  export:
+    title: 导出
+    as_official: 导出为官谱
 
 tab:
   game:

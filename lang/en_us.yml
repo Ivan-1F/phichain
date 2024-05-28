@@ -6,6 +6,9 @@ menu_bar:
     quit: Quit
   tabs:
     title: Windows
+  export:
+    title: Export
+    as_official: Export as official
 
 tab:
   game:
