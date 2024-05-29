@@ -3,11 +3,11 @@ use bevy::prelude::{Entity, With, World};
 use phichain_chart::beat::Beat;
 use serde::{Deserialize, Serialize};
 
-use crate::migration::CURRENT_FORMAT;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::easing::Easing;
 use phichain_chart::event::{LineEvent, LineEventKind};
 use phichain_chart::line::Line;
+use phichain_chart::migration::CURRENT_FORMAT;
 use phichain_chart::note::Note;
 use phichain_chart::offset::Offset;
 

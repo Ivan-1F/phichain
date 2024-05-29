@@ -32,8 +32,7 @@ serde = { version = "1.0.197", features = ["derive"] }
 strum = { version = "0.26.2", features = ["derive"] }
 simple-easing = "1.0.1"
 num_enum = "0.7.2"
-
-[dev-dependencies]
+anyhow = "1.0.86"
 serde_json = "1.0.117"
 
 [features]

@@ -4,5 +4,6 @@ pub mod easing;
 pub mod event;
 #[cfg(feature = "bevy")]
 pub mod line;
+pub mod migration;
 pub mod note;
 pub mod offset;

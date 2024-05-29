@@ -17,7 +17,6 @@ mod home;
 mod hotkey;
 mod identifier;
 mod loader;
-mod migration;
 mod misc;
 mod notification;
 mod project;
