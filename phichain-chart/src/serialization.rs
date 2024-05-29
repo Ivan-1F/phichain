@@ -1,15 +1,15 @@
+use crate::beat::Beat;
 use bevy::hierarchy::Children;
 use bevy::prelude::{Entity, With, World};
-use phichain_chart::beat::Beat;
 use serde::{Deserialize, Serialize};
 
-use phichain_chart::bpm_list::BpmList;
-use phichain_chart::easing::Easing;
-use phichain_chart::event::{LineEvent, LineEventKind};
-use phichain_chart::line::Line;
-use phichain_chart::migration::CURRENT_FORMAT;
-use phichain_chart::note::Note;
-use phichain_chart::offset::Offset;
+use crate::bpm_list::BpmList;
+use crate::easing::Easing;
+use crate::event::{LineEvent, LineEventKind};
+use crate::line::Line;
+use crate::migration::CURRENT_FORMAT;
+use crate::note::Note;
+use crate::offset::Offset;
 
 #[derive(Serialize, Deserialize)]
 pub struct PhiChainChart {

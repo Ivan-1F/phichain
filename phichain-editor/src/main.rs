@@ -23,7 +23,6 @@ mod project;
 mod score;
 mod screenshot;
 mod selection;
-mod serialization;
 mod settings;
 mod tab;
 mod timing;

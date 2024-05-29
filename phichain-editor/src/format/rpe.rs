@@ -1,11 +1,11 @@
 //! Re:PhiEdit json format
 
 use crate::format::Format;
-use crate::serialization::{LineWrapper, PhiChainChart};
 use bevy::prelude::*;
 use num::Rational32;
 use phichain_chart::easing::Easing;
 use phichain_chart::event::{LineEvent, LineEventKind};
+use phichain_chart::serialization::{LineWrapper, PhiChainChart};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use strum::IntoEnumIterator;

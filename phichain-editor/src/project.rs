@@ -2,6 +2,7 @@ use anyhow::{anyhow, bail, Context};
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use phichain_chart::serialization::PhiChainChart;
 use std::path::Path;
 use std::{fs::File, path::PathBuf};
 
@@ -14,7 +15,6 @@ use crate::tab::game::illustration::load_illustration;
 use crate::{
     loader::{phichain::PhiChainLoader, Loader},
     notification::{ToastsExt, ToastsStorage},
-    serialization::PhiChainChart,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]

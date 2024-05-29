@@ -2,13 +2,13 @@
 
 use crate::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use crate::format::Format;
-use crate::serialization::{LineWrapper, PhiChainChart};
 use anyhow::bail;
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::{BpmList, BpmPoint};
 use phichain_chart::easing::Easing;
 use phichain_chart::event::{LineEvent, LineEventKind};
+use phichain_chart::serialization::{LineWrapper, PhiChainChart};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 

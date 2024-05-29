@@ -7,11 +7,9 @@ use phichain_chart::line::LineBundle;
 use phichain_chart::note::NoteBundle;
 use serde_json::Value;
 
-use crate::{
-    selection::SelectedLine,
-    serialization::{LineWrapper, PhiChainChart},
-};
+use crate::selection::SelectedLine;
 use phichain_chart::migration::migrate;
+use phichain_chart::serialization::{LineWrapper, PhiChainChart};
 
 use super::Loader;
 

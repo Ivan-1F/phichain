@@ -1,8 +1,8 @@
-use crate::serialization::LineWrapper;
 use bevy::prelude::*;
 use phichain_chart::event::LineEventBundle;
 use phichain_chart::line::LineBundle;
 use phichain_chart::note::NoteBundle;
+use phichain_chart::serialization::LineWrapper;
 use undo::Edit;
 
 #[derive(Debug, Copy, Clone)]

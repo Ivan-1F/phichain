@@ -1,4 +1,4 @@
-use crate::serialization::PhiChainChart;
+use phichain_chart::serialization::PhiChainChart;
 
 pub mod official;
 pub mod rpe;
