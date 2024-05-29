@@ -1,5 +1,6 @@
 use crate::chart::event::LineEvent;
 use crate::chart::note::Note;
+use crate::editing::pending::Pending;
 use bevy::prelude::*;
 
 use crate::project::project_loaded;
@@ -30,6 +31,8 @@ pub fn handle_select_event(
 
     keyboard: Res<ButtonInput<KeyCode>>,
 
+    pending_query: Query<&Pending>,
+
     selected_notes_and_events_query: Query<
         Entity,
         (With<Selected>, Or<(With<Note>, With<LineEvent>)>),
@@ -44,6 +47,10 @@ pub fn handle_select_event(
         }
 
         for entity in &event.0 {
+            // pending entities cannot be selected
+            if pending_query.get(*entity).is_ok() {
+                continue;
+            }
             commands.entity(*entity).insert(Selected);
         }
     }
