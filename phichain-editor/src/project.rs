@@ -238,7 +238,7 @@ fn unload_project_system(
         }
 
         commands.remove_resource::<crate::audio::Offset>();
-        commands.remove_resource::<crate::timing::BpmList>();
+        commands.remove_resource::<phichain_chart::bpm_list::BpmList>();
         commands.remove_resource::<crate::selection::SelectedLine>();
 
         for entity in line_query.iter() {

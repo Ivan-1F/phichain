@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use phichain_chart::bpm_list::BpmList;
 
 use crate::editing::command::event::CreateEvent;
 use crate::editing::command::EditorCommand;
@@ -8,7 +9,6 @@ use crate::project::project_loaded;
 use crate::{
     selection::SelectedLine,
     tab::timeline::{Timeline, TimelineSettings, TimelineViewport},
-    timing::BpmList,
 };
 use phichain_chart::event::{LineEvent, LineEventBundle, LineEventKind};
 

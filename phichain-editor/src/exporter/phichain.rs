@@ -1,12 +1,10 @@
 use anyhow::Context;
 use bevy::prelude::*;
+use phichain_chart::bpm_list::BpmList;
 use phichain_chart::line::Line;
 
 use crate::audio::Offset;
-use crate::{
-    serialization::{LineWrapper, PhiChainChart},
-    timing::BpmList,
-};
+use crate::serialization::{LineWrapper, PhiChainChart};
 
 use super::Exporter;
 

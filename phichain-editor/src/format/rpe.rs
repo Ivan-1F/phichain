@@ -256,10 +256,12 @@ struct YControl {
 
 impl Format for RpeChart {
     fn into_phichain(self) -> anyhow::Result<PhiChainChart> {
-        let mut bpm_list = crate::timing::BpmList::new(
+        let mut bpm_list = phichain_chart::bpm_list::BpmList::new(
             self.bpm_list
                 .iter()
-                .map(|x| crate::timing::BpmPoint::new(x.start_time.clone().into(), x.bpm))
+                .map(|x| {
+                    phichain_chart::bpm_list::BpmPoint::new(x.start_time.clone().into(), x.bpm)
+                })
                 .collect(),
         );
         bpm_list.compute();

@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use phichain_chart::beat::Beat;
+use phichain_chart::bpm_list::BpmList;
 use phichain_chart::note::{Note, NoteKind};
 
 use crate::editing::command::note::CreateNote;
@@ -11,7 +12,6 @@ use crate::{
     constants::CANVAS_WIDTH,
     selection::SelectedLine,
     tab::timeline::{Timeline, TimelineSettings, TimelineViewport},
-    timing::BpmList,
 };
 use phichain_chart::note::NoteBundle;
 

@@ -1,10 +1,8 @@
 use bevy::prelude::*;
+use phichain_chart::bpm_list::BpmList;
 use phichain_chart::note::Note;
 
-use crate::{
-    project::project_loaded,
-    timing::{BpmList, ChartTime},
-};
+use crate::{project::project_loaded, timing::ChartTime};
 
 pub struct ScorePlugin;
 

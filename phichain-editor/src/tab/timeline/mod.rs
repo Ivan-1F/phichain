@@ -14,10 +14,11 @@ use crate::tab::timeline::note_timeline::{
 };
 use crate::{
     constants::{BASE_ZOOM, INDICATOR_POSITION},
-    timing::{BpmList, ChartTime},
+    timing::ChartTime,
 };
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
+use phichain_chart::bpm_list::BpmList;
 
 pub struct TimelineTabPlugin;
 

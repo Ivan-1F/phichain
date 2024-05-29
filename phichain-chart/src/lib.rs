@@ -1,4 +1,5 @@
 pub mod beat;
+pub mod bpm_list;
 pub mod easing;
 pub mod event;
 #[cfg(feature = "bevy")]

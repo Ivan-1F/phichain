@@ -5,9 +5,10 @@ pub mod ui;
 use crate::audio::AudioDuration;
 use bevy::{prelude::*, render::camera::Viewport};
 use egui::Ui;
+use phichain_chart::bpm_list::BpmList;
 
 use crate::project::project_loaded;
-use crate::timing::{BpmList, ChartTime, SeekToEvent};
+use crate::timing::{ChartTime, SeekToEvent};
 
 use self::{core::CoreGamePlugin, illustration::IllustrationPlugin, ui::GameUiPlugin};
 

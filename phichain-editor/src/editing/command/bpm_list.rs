@@ -1,5 +1,5 @@
-use crate::timing::{BpmList, BpmPoint};
 use bevy::prelude::World;
+use phichain_chart::bpm_list::{BpmList, BpmPoint};
 use undo::Edit;
 
 #[derive(Debug, Copy, Clone)]

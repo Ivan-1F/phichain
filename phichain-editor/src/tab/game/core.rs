@@ -1,5 +1,6 @@
 use bevy::{prelude::*, sprite::Anchor};
 use num::{FromPrimitive, Rational32};
+use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{LineEvent, LineEventKind};
 use phichain_chart::line::{Line, LineOpacity, LinePosition, LineRotation};
 
@@ -10,7 +11,7 @@ use crate::{
     assets::ImageAssets,
     constants::{CANVAS_HEIGHT, CANVAS_WIDTH},
     project::project_loaded,
-    timing::{BpmList, ChartTime},
+    timing::ChartTime,
 };
 use phichain_chart::line::LineSpeed;
 use phichain_chart::note::{Note, NoteKind};

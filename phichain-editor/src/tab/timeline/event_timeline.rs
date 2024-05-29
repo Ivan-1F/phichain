@@ -1,12 +1,12 @@
 use crate::editing::pending::Pending;
 use crate::selection::{SelectEvent, Selected, SelectedLine};
 use crate::tab::timeline::{Timeline, TimelineViewport};
-use crate::timing::BpmList;
 use crate::ui::widgets::event::event_ui;
 use bevy::app::{App, Plugin};
 use bevy::hierarchy::Parent;
 use bevy::prelude::{Entity, EventWriter, In, Query, Res, ResMut, Resource, Window};
 use egui::{Color32, Sense, Stroke, Ui};
+use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::LineEvent;
 use std::iter;
 

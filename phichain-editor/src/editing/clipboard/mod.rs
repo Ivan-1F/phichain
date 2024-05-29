@@ -6,9 +6,9 @@ use crate::editing::DoCommandEvent;
 use crate::hotkey::HotkeyRegistrationExt;
 use crate::selection::{Selected, SelectedLine};
 use crate::tab::timeline::{Timeline, TimelineSettings, TimelineViewport};
-use crate::timing::BpmList;
 use crate::utils::compat::ControlKeyExt;
 use bevy::prelude::*;
+use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::LineEvent;
 use phichain_chart::note::Note;
 

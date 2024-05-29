@@ -4,12 +4,12 @@ use crate::editing::pending::Pending;
 use crate::highlight::Highlighted;
 use crate::selection::{SelectEvent, Selected, SelectedLine};
 use crate::tab::timeline::{Timeline, TimelineSettings, TimelineViewport};
-use crate::timing::BpmList;
 use bevy::asset::{Assets, Handle};
 use bevy::hierarchy::Parent;
 use bevy::prelude::*;
 use bevy_egui::EguiUserTextures;
 use egui::{Color32, Sense, Stroke, Ui};
+use phichain_chart::bpm_list::BpmList;
 use phichain_chart::note::{Note, NoteKind};
 
 pub struct NoteTimelinePlugin;
