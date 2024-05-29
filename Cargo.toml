@@ -1,9 +1,8 @@
-[package]
-name = "phichain"
-version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[workspace]
+members = [
+    "phichain-editor"
+]
+resolver = "2"
 
 # Enable only a small amount of optimization in debug mode
 [profile.dev]
@@ -19,75 +18,3 @@ opt-level = 3
 codegen-units = 1
 incremental = false
 debug = false
-
-[lints.clippy]
-type_complexity = "allow"
-too_many_arguments = "allow"
-
-[package.metadata.i18n]
-available-locales = ["en_us", "zh_cn"]
-default-locale = "en_us"
-load-path = "lang"
-
-[dependencies]
-bevy = { version = "0.13.2", default-features = false, features = [
-    "animation",
-    "bevy_asset",
-    "bevy_gilrs",
-    "bevy_scene",
-    "bevy_winit",
-    "bevy_core_pipeline",
-    "bevy_pbr",
-    "bevy_gltf",
-    "bevy_render",
-    "bevy_sprite",
-    "bevy_text",
-    "bevy_ui",
-    "multi-threaded",
-    "png",
-    "hdr",
-    "x11",
-    "bevy_gizmos",
-    "tonemapping_luts",
-    "default_font",
-    "webgl2",
-    "bevy_debug_stepping",
-] }
-bevy_mod_picking = "0.18"
-bevy_kira_audio = { version = "0.19.0", features = [
-    "mp3",
-    "ogg",
-    "flac",
-    "wav",
-] }
-bevy_egui = "0.27"
-egui = "0.27"
-egui_dock = "0.12"
-egui_extras = { version = "*", features = ["all_loaders"] }
-image = { version = "0.24", features = ["jpeg", "png"] }
-
-serde = { version = "1.0.197", features = ["derive"] }
-serde_json = "1.0.114"
-serde_repr = "0.1"
-
-iyes_perf_ui = "0.2.3"
-bevy-inspector-egui = "0.24.0"
-url = "2.5.0"
-num = { version = "0.4.3", features = ["serde"] }
-serde_yaml = "0.9.34"
-rfd = "0.14.1"
-futures-lite = "2.3.0"
-anyhow = "1.0.83"
-egui-toast = "0.13.0"
-rust-i18n = "3.0.1"
-clap = { version = "4.5.4", features = ["derive"] }
-simple-easing = "1.0.1"
-log = "0.4.21"
-num_enum = "0.7.2"
-strum = { version = "0.26.2", features = ["derive"] }
-chrono = "0.4.38"
-bevy_asset_loader = "0.20.2"
-bevy-persistent = { version = "0.5.0", features = ["yaml"] }
-undo = "0.51.0"
-enum_dispatch = "0.3.13"
-zip = "2.1.0"

@@ -5,11 +5,26 @@ use std::path::{Path, PathBuf};
 
 pub struct MiscPlugin;
 
+impl MiscPlugin {
+    // https://github.com/bevyengine/bevy/blob/dc3b4b6c850898c922dff9fd6d312823e07096f1/crates/bevy_asset/src/io/file_asset_io.rs#L65
+    pub fn get_base_path() -> PathBuf {
+        if let Ok(manifest_dir) = std::env::var("CARGO_MANIFEST_DIR") {
+            PathBuf::from(manifest_dir)
+        } else {
+            std::env::current_exe()
+                .map(|path| {
+                    path.parent()
+                        .map(|exe_parent_path| exe_parent_path.to_owned())
+                        .unwrap()
+                })
+                .unwrap()
+        }
+    }
+}
+
 impl Plugin for MiscPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(WorkingDirectory(
-            std::env::current_dir().expect("Failed to locate working directory"),
-        ));
+        app.insert_resource(WorkingDirectory(Self::get_base_path()));
     }
 }
 

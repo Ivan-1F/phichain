@@ -2,10 +2,6 @@
 
 Chart*.json
 
-# phichain files
-screenshots/*
-config/*
-
 .DS_Store
 
 # IDE
