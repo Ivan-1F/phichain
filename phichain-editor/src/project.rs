@@ -237,7 +237,7 @@ fn unload_project_system(
             commands.entity(entity).despawn_recursive();
         }
 
-        commands.remove_resource::<crate::audio::Offset>();
+        commands.remove_resource::<phichain_chart::offset::Offset>();
         commands.remove_resource::<phichain_chart::bpm_list::BpmList>();
         commands.remove_resource::<crate::selection::SelectedLine>();
 

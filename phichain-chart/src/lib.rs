@@ -5,3 +5,4 @@ pub mod event;
 #[cfg(feature = "bevy")]
 pub mod line;
 pub mod note;
+pub mod offset;

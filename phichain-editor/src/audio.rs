@@ -4,7 +4,7 @@ use std::{io::Cursor, path::PathBuf};
 use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
 use bevy_persistent::prelude::*;
-use serde::{Deserialize, Serialize};
+use phichain_chart::offset::Offset;
 
 use crate::settings::EditorSettings;
 use crate::timing::SeekToEvent;
@@ -13,10 +13,6 @@ use crate::{
     project::project_loaded,
     timing::{ChartTime, PauseEvent, Paused, ResumeEvent, SeekEvent},
 };
-
-/// Chart offset in milliseconds
-#[derive(Debug, Default, Resource, Serialize, Deserialize)]
-pub struct Offset(pub f32);
 
 #[derive(Resource)]
 pub struct InstanceHandle(Handle<AudioInstance>);

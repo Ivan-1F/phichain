@@ -1,4 +1,3 @@
-use crate::audio::Offset;
 use crate::editing::command::meta::{EditMeta, EditOffset};
 use crate::editing::command::EditorCommand;
 use crate::editing::DoCommandEvent;
@@ -6,6 +5,7 @@ use crate::project::Project;
 use crate::ui::latch;
 use bevy::prelude::*;
 use egui::Ui;
+use phichain_chart::offset::Offset;
 
 pub fn chart_basic_setting_tab(
     In(ui): In<&mut Ui>,

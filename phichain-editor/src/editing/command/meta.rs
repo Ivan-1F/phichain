@@ -1,6 +1,6 @@
-use crate::audio::Offset;
 use crate::project::{Project, ProjectMeta};
 use bevy::prelude::World;
+use phichain_chart::offset::Offset;
 use undo::Edit;
 
 #[derive(Debug, Clone)]
