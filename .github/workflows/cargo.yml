@@ -2,12 +2,6 @@ name: Dev Builds
 
 on:
   push:
-    paths:
-      - Cargo.lock
-      - Cargo.toml
-      - src/**
-      - assets/**
-      - ".github/**"
   pull_request:
 
 env:
