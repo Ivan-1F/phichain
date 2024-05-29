@@ -70,7 +70,7 @@ struct SpeedEvent {
     end_time: f32,
     value: f32,
 
-    #[serde(rename = "floorPosition")]
+    #[serde(rename = "floorPosition", default)]
     floor_position: f32,
 }
 
