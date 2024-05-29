@@ -63,7 +63,7 @@ jobs:
         id: version
         uses: SebRollen/toml-action@v1.2.0
         with:
-          file: Cargo.toml
+          file: phichain-editor/Cargo.toml
           field: package.version
 
       # Dev: 0.1.0+build.10
@@ -88,7 +88,7 @@ jobs:
       - name: Update version in Cargo.toml
         uses: colathro/toml-editor@1.1.0
         with:
-          file: Cargo.toml
+          file: phichain-editor/Cargo.toml
           key: package.version
           value: ${{ steps.full_version.outputs.phichain_version }}
 
@@ -117,7 +117,7 @@ jobs:
             cp ./target/${{ matrix.target }}/release/phichain "./build/phichain"
           fi
 
-          mv LICENSE README.md assets lang ./build
+          mv LICENSE README.md phichain-editor/assets phichain-editor/lang ./build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
