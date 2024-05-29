@@ -30,6 +30,8 @@ pub fn inspector_ui_system(
         single_event_inspector(ui, *entity, selected_event, event_writer);
     } else if selected_notes.len() > 1 && selected_events.is_empty() {
         multiple_notes_inspector(ui, &selected_notes, event_writer);
+    } else if selected_notes.is_empty() && selected_events.len() > 1 {
+        multiple_events_inspector(ui, &selected_events, event_writer);
     }
 }
 
@@ -248,6 +250,39 @@ fn multiple_notes_inspector(
             into_kind(NoteKind::Hold {
                 hold_beat: beat!(1, 32),
             });
+        }
+    });
+}
+
+fn multiple_events_inspector(
+    ui: &mut Ui,
+    notes: &[(Mut<LineEvent>, Entity)],
+    mut event_writer: EventWriter<DoCommandEvent>,
+) {
+    ui.with_layout(Layout::top_down_justified(Align::LEFT), |ui| {
+        if ui
+            .button(t!("tab.inspector.multiple_events.negate"))
+            .clicked()
+        {
+            let commands = notes
+                .iter()
+                .filter(|(event, _)| event.kind != LineEventKind::Opacity)
+                .map(|(event, entity)| {
+                    EditorCommand::EditEvent(EditEvent::new(
+                        *entity,
+                        **event,
+                        LineEvent {
+                            start: -event.start,
+                            end: -event.end,
+                            ..**event
+                        },
+                    ))
+                })
+                .collect::<Vec<_>>();
+
+            event_writer.send(DoCommandEvent(EditorCommand::CommandSequence(
+                CommandSequence(commands),
+            )));
         }
     });
 }

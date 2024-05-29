@@ -35,6 +35,8 @@ tab:
       into_drag: 转换为 Drag
       into_flick: 转换为 Flick
       into_hold: 转换为 Hold
+    multiple_events:
+      negate: 数值取反 (除透明度事件外)
   timeline_setting:
     title: 时间线设置
     zoom: 时间线缩放

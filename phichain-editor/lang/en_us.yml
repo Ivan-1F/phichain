@@ -30,11 +30,13 @@ tab:
       end_value: End Value
     multiple_notes:
       flip_by_x: Flip by X
-      flip_by_selection: Flip by Selection
+      flip_by_selection: Flip by selection
       into_tap: Into Tap
       into_drag: Into Drag
       into_flick: Into Flick
       into_hold: Into Hold
+    multiple_events:
+      negate: Negate values (except opacity events)
   timeline_setting:
     title: Timeline Setting
     zoom: Timeline Zoom
