@@ -1,6 +1,4 @@
 use crate::beat::Beat;
-use bevy::hierarchy::Children;
-use bevy::prelude::{Entity, With, World};
 use serde::{Deserialize, Serialize};
 
 use crate::bpm_list::BpmList;
@@ -105,9 +103,11 @@ impl Default for LineWrapper {
     }
 }
 
+#[cfg(feature = "bevy")]
 impl LineWrapper {
-    pub fn serialize_line(world: &mut World, entity: Entity) -> Self {
-        let mut line_query = world.query_filtered::<&Children, With<Line>>();
+    pub fn serialize_line(world: &mut bevy::prelude::World, entity: bevy::prelude::Entity) -> Self {
+        let mut line_query =
+            world.query_filtered::<&bevy::prelude::Children, bevy::prelude::With<Line>>();
         let mut note_query = world.query::<&Note>();
         let mut event_query = world.query::<&LineEvent>();
 
