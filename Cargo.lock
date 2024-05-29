@@ -4340,6 +4340,17 @@ dependencies = [
  "serde_repr",
  "simple-easing",
  "strum",
+ "tracing",
+]
+
+[[package]]
+name = "phichain-converter"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "phichain-chart",
+ "serde_json",
 ]
 
 [[package]]
