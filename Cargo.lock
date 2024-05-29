@@ -4337,6 +4337,7 @@ dependencies = [
  "num_enum",
  "serde",
  "serde_json",
+ "serde_repr",
  "simple-easing",
  "strum",
 ]

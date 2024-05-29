@@ -10,7 +10,6 @@ mod editing;
 mod export;
 mod exporter;
 mod file;
-mod format;
 mod highlight;
 mod hit_sound;
 mod home;

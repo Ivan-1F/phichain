@@ -1,14 +1,14 @@
 //! Phigros official json chart format
 
+use crate::beat;
+use crate::beat::Beat;
+use crate::bpm_list::{BpmList, BpmPoint};
 use crate::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
+use crate::easing::Easing;
+use crate::event::{LineEvent, LineEventKind};
 use crate::format::Format;
+use crate::serialization::{LineWrapper, PhiChainChart};
 use anyhow::bail;
-use phichain_chart::beat;
-use phichain_chart::beat::Beat;
-use phichain_chart::bpm_list::{BpmList, BpmPoint};
-use phichain_chart::easing::Easing;
-use phichain_chart::event::{LineEvent, LineEventKind};
-use phichain_chart::serialization::{LineWrapper, PhiChainChart};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
@@ -120,16 +120,16 @@ impl Format for OfficialChart {
             let y: fn(f32) -> f32 = |x| (x - 0.5) * CANVAS_HEIGHT;
 
             let create_note = |above: bool, note: &Note| {
-                let kind: phichain_chart::note::NoteKind = match note.kind {
-                    NoteKind::Tap => phichain_chart::note::NoteKind::Tap,
-                    NoteKind::Drag => phichain_chart::note::NoteKind::Drag,
-                    NoteKind::Hold => phichain_chart::note::NoteKind::Hold {
+                let kind: crate::note::NoteKind = match note.kind {
+                    NoteKind::Tap => crate::note::NoteKind::Tap,
+                    NoteKind::Drag => crate::note::NoteKind::Drag,
+                    NoteKind::Hold => crate::note::NoteKind::Hold {
                         hold_beat: t(note.hold_time),
                     },
-                    NoteKind::Flick => phichain_chart::note::NoteKind::Flick,
+                    NoteKind::Flick => crate::note::NoteKind::Flick,
                 };
 
-                phichain_chart::note::Note::new(
+                crate::note::Note::new(
                     kind,
                     above,
                     t(note.time),
@@ -207,7 +207,7 @@ impl Format for OfficialChart {
             speed_events.sort_by_key(|e| e.start_beat);
 
             for note in &mut line.notes {
-                if let phichain_chart::note::NoteKind::Hold { .. } = note.kind {
+                if let crate::note::NoteKind::Hold { .. } = note.kind {
                     let mut speed = 0.0;
                     for event in &speed_events {
                         let value = event.evaluate(note.beat.value());
@@ -463,14 +463,14 @@ impl Format for OfficialChart {
 
             for note in notes {
                 let kind = match note.kind {
-                    phichain_chart::note::NoteKind::Tap => NoteKind::Tap,
-                    phichain_chart::note::NoteKind::Drag => NoteKind::Drag,
-                    phichain_chart::note::NoteKind::Hold { .. } => NoteKind::Hold,
-                    phichain_chart::note::NoteKind::Flick => NoteKind::Flick,
+                    crate::note::NoteKind::Tap => NoteKind::Tap,
+                    crate::note::NoteKind::Drag => NoteKind::Drag,
+                    crate::note::NoteKind::Hold { .. } => NoteKind::Hold,
+                    crate::note::NoteKind::Flick => NoteKind::Flick,
                 };
 
                 let above = note.above;
-                let speed = if matches!(note.kind, phichain_chart::note::NoteKind::Hold { .. }) {
+                let speed = if matches!(note.kind, crate::note::NoteKind::Hold { .. }) {
                     let mut speed = 0.0;
                     for event in &speed_events {
                         let value = event.evaluate(note.beat.value());
@@ -488,7 +488,7 @@ impl Format for OfficialChart {
                     kind,
                     time: note.beat.value() * 60.0 / 1.875,
                     hold_time: match note.kind {
-                        phichain_chart::note::NoteKind::Hold { hold_beat } => {
+                        crate::note::NoteKind::Hold { hold_beat } => {
                             hold_beat.value() * 60.0 / 1.875
                         }
                         _ => 0.0,

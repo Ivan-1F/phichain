@@ -1,11 +1,11 @@
 use crate::file::{PickingEvent, PickingKind};
-use crate::format::official::OfficialChart;
-use crate::format::Format;
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::project::{project_loaded, Project};
 use anyhow::{bail, Context};
 use bevy::app::App;
 use bevy::prelude::*;
+use phichain_chart::format::official::OfficialChart;
+use phichain_chart::format::Format;
 use phichain_chart::serialization::PhiChainChart;
 use std::fs;
 use std::io::{Read, Write};
