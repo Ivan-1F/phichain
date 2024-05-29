@@ -4,11 +4,14 @@ use crate::easing::Easing;
 use crate::event::{LineEvent, LineEventKind};
 use crate::format::Format;
 use crate::serialization::{LineWrapper, PhiChainChart};
-use bevy::prelude::*;
+#[cfg(feature = "bevy")]
+use bevy::log::warn;
 use num::Rational32;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use strum::IntoEnumIterator;
+#[cfg(not(feature = "bevy"))]
+use tracing::warn;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
