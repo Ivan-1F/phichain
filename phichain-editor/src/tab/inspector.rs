@@ -1,9 +1,11 @@
 use bevy::prelude::*;
-use egui::Ui;
+use egui::{Align, Layout, Ui};
+use phichain_chart::beat;
+use phichain_chart::beat::Beat;
 
 use crate::editing::command::event::EditEvent;
 use crate::editing::command::note::EditNote;
-use crate::editing::command::EditorCommand;
+use crate::editing::command::{CommandSequence, EditorCommand};
 use crate::editing::DoCommandEvent;
 use crate::selection::Selected;
 use crate::ui::latch;
@@ -26,6 +28,8 @@ pub fn inspector_ui_system(
     } else if selected_notes.is_empty() && selected_events.len() == 1 {
         let (selected_event, entity) = selected_events.get_mut(0).unwrap();
         single_event_inspector(ui, *entity, selected_event, event_writer);
+    } else if selected_notes.len() > 1 && selected_events.is_empty() {
+        multiple_notes_inspector(ui, &selected_notes, event_writer);
     }
 }
 
@@ -150,4 +154,100 @@ fn single_note_inspector(
                 }
             }
         });
+}
+
+fn multiple_notes_inspector(
+    ui: &mut Ui,
+    notes: &[(Mut<Note>, Entity)],
+    mut event_writer: EventWriter<DoCommandEvent>,
+) {
+    ui.with_layout(Layout::top_down_justified(Align::LEFT), |ui| {
+        if ui
+            .button(t!("tab.inspector.multiple_notes.flip_by_x"))
+            .clicked()
+        {
+            let commands = notes
+                .iter()
+                .map(|(note, entity)| {
+                    EditorCommand::EditNote(EditNote::new(
+                        *entity,
+                        **note,
+                        Note {
+                            x: -note.x,
+                            ..**note
+                        },
+                    ))
+                })
+                .collect::<Vec<_>>();
+
+            event_writer.send(DoCommandEvent(EditorCommand::CommandSequence(
+                CommandSequence(commands),
+            )));
+        }
+        if ui
+            .button(t!("tab.inspector.multiple_notes.flip_by_selection"))
+            .clicked()
+        {
+            let x_sum: f32 = notes.iter().map(|(note, _)| note.x).sum();
+            let x_avg = x_sum / notes.len() as f32;
+
+            let commands = notes
+                .iter()
+                .map(|(note, entity)| {
+                    EditorCommand::EditNote(EditNote::new(
+                        *entity,
+                        **note,
+                        Note {
+                            x: 2.0 * x_avg - note.x,
+                            ..**note
+                        },
+                    ))
+                })
+                .collect::<Vec<_>>();
+
+            event_writer.send(DoCommandEvent(EditorCommand::CommandSequence(
+                CommandSequence(commands),
+            )));
+        }
+
+        let mut into_kind = |kind: NoteKind| {
+            let commands = notes
+                .iter()
+                .map(|(note, entity)| {
+                    EditorCommand::EditNote(EditNote::new(*entity, **note, Note { kind, ..**note }))
+                })
+                .collect::<Vec<_>>();
+
+            event_writer.send(DoCommandEvent(EditorCommand::CommandSequence(
+                CommandSequence(commands),
+            )));
+        };
+
+        if ui
+            .button(t!("tab.inspector.multiple_notes.into_tap"))
+            .clicked()
+        {
+            into_kind(NoteKind::Tap);
+        }
+        if ui
+            .button(t!("tab.inspector.multiple_notes.into_drag"))
+            .clicked()
+        {
+            into_kind(NoteKind::Drag);
+        }
+        if ui
+            .button(t!("tab.inspector.multiple_notes.into_flick"))
+            .clicked()
+        {
+            into_kind(NoteKind::Flick);
+        }
+        if ui
+            .button(t!("tab.inspector.multiple_notes.into_hold"))
+            .clicked()
+        {
+            into_kind(NoteKind::Hold {
+                hold_beat: beat!(1, 32),
+            });
+        }
+    });
 }

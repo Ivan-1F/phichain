@@ -28,6 +28,13 @@ tab:
       end_beat: End Beat
       start_value: Start Value
       end_value: End Value
+    multiple_notes:
+      flip_by_x: Flip by X
+      flip_by_selection: Flip by Selection
+      into_tap: Into Tap
+      into_drag: Into Drag
+      into_flick: Into Flick
+      into_hold: Into Hold
   timeline_setting:
     title: Timeline Setting
     zoom: Timeline Zoom
