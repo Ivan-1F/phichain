@@ -102,7 +102,8 @@ pub fn event_timeline_drag_select_system(
                     .filter(|x| {
                         let event = x.0;
                         let track: u8 = event.kind.into();
-                        x_range.contains(track as f32 * (1.0 / 5.0))
+                        let target_x = (track - 1) as f32 * (1.0 / 5.0) + (1.0 / (5.0 * 2.0));
+                        x_range.contains(target_x)
                             && time_range.contains(bpm_list.time_at(event.start_beat))
                     })
                     .map(|x| x.2)
