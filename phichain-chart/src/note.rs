@@ -1,4 +1,3 @@
-use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::beat::Beat;
@@ -11,7 +10,8 @@ pub enum NoteKind {
     Flick,
 }
 
-#[derive(Component, Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "bevy", derive(bevy::prelude::Component))]
 pub struct Note {
     pub kind: NoteKind,
     pub above: bool,
@@ -32,16 +32,18 @@ impl Note {
     }
 }
 
-#[derive(Bundle)]
+#[cfg(feature = "bevy")]
+#[derive(bevy::prelude::Bundle)]
 pub struct NoteBundle {
-    sprite: SpriteBundle,
+    sprite: bevy::prelude::SpriteBundle,
     note: Note,
 }
 
+#[cfg(feature = "bevy")]
 impl NoteBundle {
     pub fn new(note: Note) -> Self {
         Self {
-            sprite: SpriteBundle::default(),
+            sprite: bevy::prelude::SpriteBundle::default(),
             note,
         }
     }

@@ -1,5 +1,4 @@
 use crate::easing::{Easing, Tween};
-use bevy::prelude::*;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
 
@@ -17,7 +16,8 @@ pub enum LineEventKind {
     Speed,
 }
 
-#[derive(Component, Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "bevy", derive(bevy::prelude::Component))]
 pub struct LineEvent {
     pub kind: LineEventKind,
     pub start: f32,
@@ -56,11 +56,13 @@ impl LineEvent {
     }
 }
 
-#[derive(Bundle)]
+#[cfg(feature = "bevy")]
+#[derive(bevy::prelude::Bundle)]
 pub struct LineEventBundle {
     event: LineEvent,
 }
 
+#[cfg(feature = "bevy")]
 impl LineEventBundle {
     pub fn new(event: LineEvent) -> Self {
         Self { event }

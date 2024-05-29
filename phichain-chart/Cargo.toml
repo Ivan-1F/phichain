@@ -26,9 +26,12 @@ bevy = { version = "0.13.2", default-features = false, features = [
     "default_font",
     "webgl2",
     "bevy_debug_stepping",
-] }
+], optional = true }
 num = { version = "0.4.3", features = ["serde"] }
 serde = { version = "1.0.197", features = ["derive"] }
 strum = { version = "0.26.2", features = ["derive"] }
 simple-easing = "1.0.1"
 num_enum = "0.7.2"
+
+[features]
+bevy = ["dep:bevy"]

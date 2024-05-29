@@ -77,4 +77,4 @@ undo = "0.51.0"
 enum_dispatch = "0.3.13"
 zip = "2.1.0"
 
-phichain-chart = { path = "../phichain-chart" }
+phichain-chart = { path = "../phichain-chart", features = ["bevy"] }
