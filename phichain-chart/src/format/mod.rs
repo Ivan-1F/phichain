@@ -1,9 +1,11 @@
 use crate::serialization::PhiChainChart;
+use serde::de::DeserializeOwned;
+use serde::Serialize;
 
 pub mod official;
 pub mod rpe;
 
-pub trait Format {
+pub trait Format: Serialize + DeserializeOwned {
     #[allow(dead_code)]
     fn into_phichain(self) -> anyhow::Result<PhiChainChart>;
 
