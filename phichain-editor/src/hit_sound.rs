@@ -1,15 +1,13 @@
 use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
 use bevy_persistent::Persistent;
+use phichain_chart::note::{Note, NoteKind};
 
 use crate::assets::AudioAssets;
 use crate::project::project_loaded;
 use crate::settings::EditorSettings;
 use crate::timing::Paused;
-use crate::{
-    chart::note::{Note, NoteKind},
-    timing::{BpmList, ChartTime},
-};
+use crate::timing::{BpmList, ChartTime};
 
 pub struct HitSoundPlugin;
 

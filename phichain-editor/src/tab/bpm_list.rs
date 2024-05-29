@@ -1,5 +1,3 @@
-use crate::beat;
-use crate::chart::beat::Beat;
 use crate::editing::command::bpm_list::{CreateBpmPoint, EditBpmPoint, RemoveBpmPoint};
 use crate::editing::command::EditorCommand;
 use crate::editing::DoCommandEvent;
@@ -8,6 +6,8 @@ use crate::ui::latch;
 use crate::ui::widgets::beat_value::BeatValue;
 use bevy::prelude::*;
 use egui::Ui;
+use phichain_chart::beat;
+use phichain_chart::beat::Beat;
 
 pub fn bpm_list_tab(
     In(ui): In<&mut Ui>,

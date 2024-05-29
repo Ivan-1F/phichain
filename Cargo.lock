@@ -4313,6 +4313,7 @@ dependencies = [
  "log",
  "num",
  "num_enum",
+ "phichain-chart",
  "rfd",
  "rust-i18n",
  "serde",
@@ -4324,6 +4325,18 @@ dependencies = [
  "undo",
  "url",
  "zip",
+]
+
+[[package]]
+name = "phichain-chart"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "num",
+ "num_enum",
+ "serde",
+ "simple-easing",
+ "strum",
 ]
 
 [[package]]

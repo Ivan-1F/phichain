@@ -1,6 +1,6 @@
-use crate::beat;
-use crate::chart::beat::Beat;
 use egui::{Response, Ui, Widget};
+use phichain_chart::beat;
+use phichain_chart::beat::Beat;
 use std::cmp::Ordering;
 use std::ops::RangeInclusive;
 

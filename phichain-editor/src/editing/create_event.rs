@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 
-use crate::chart::event::{LineEvent, LineEventBundle, LineEventKind};
 use crate::editing::command::event::CreateEvent;
 use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
@@ -11,6 +10,7 @@ use crate::{
     tab::timeline::{Timeline, TimelineSettings, TimelineViewport},
     timing::BpmList,
 };
+use phichain_chart::event::{LineEvent, LineEventBundle, LineEventKind};
 
 pub struct CreateEventPlugin;
 

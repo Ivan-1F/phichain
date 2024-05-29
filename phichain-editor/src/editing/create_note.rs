@@ -1,21 +1,19 @@
 use bevy::prelude::*;
+use phichain_chart::beat::Beat;
+use phichain_chart::note::{Note, NoteKind};
 
-use crate::chart::note::NoteBundle;
 use crate::editing::command::note::CreateNote;
 use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
 use crate::project::project_loaded;
 use crate::{
-    chart::{
-        beat::Beat,
-        note::{Note, NoteKind},
-    },
     constants::CANVAS_WIDTH,
     selection::SelectedLine,
     tab::timeline::{Timeline, TimelineSettings, TimelineViewport},
     timing::BpmList,
 };
+use phichain_chart::note::NoteBundle;
 
 pub struct CreateNoteSystem;
 

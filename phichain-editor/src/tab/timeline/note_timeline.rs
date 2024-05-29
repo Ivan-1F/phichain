@@ -1,5 +1,4 @@
 use crate::assets::ImageAssets;
-use crate::chart::note::{Note, NoteKind};
 use crate::constants::CANVAS_WIDTH;
 use crate::editing::pending::Pending;
 use crate::highlight::Highlighted;
@@ -11,6 +10,7 @@ use bevy::hierarchy::Parent;
 use bevy::prelude::*;
 use bevy_egui::EguiUserTextures;
 use egui::{Color32, Sense, Stroke, Ui};
+use phichain_chart::note::{Note, NoteKind};
 
 pub struct NoteTimelinePlugin;
 

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
+use phichain_chart::note::Note;
 
 use crate::{
-    chart::note::Note,
     project::project_loaded,
     timing::{BpmList, ChartTime},
 };

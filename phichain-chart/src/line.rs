@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-#[derive(Component)]
+#[derive(Component, Debug, Default)]
 pub struct Line;
 
 #[derive(Component, Debug, Default)]
@@ -12,11 +12,11 @@ pub struct LineRotation(pub f32);
 #[derive(Component, Debug, Default)]
 pub struct LineOpacity(pub f32);
 
-/// This will not affect line entity, it is only used to show realtime speed of lines in [crate::tab::line_list]
+/// This will not affect line entity, it is only used to show realtime speed of lines in [phichain::tab::line_list]
 #[derive(Component, Debug, Default)]
 pub struct LineSpeed(pub f32);
 
-#[derive(Bundle)]
+#[derive(Bundle, Default)]
 pub struct LineBundle {
     sprite: SpriteBundle,
     line: Line,
@@ -28,13 +28,6 @@ pub struct LineBundle {
 
 impl LineBundle {
     pub fn new() -> Self {
-        Self {
-            sprite: SpriteBundle::default(),
-            line: Line,
-            position: Default::default(),
-            rotation: Default::default(),
-            opacity: Default::default(),
-            speed: Default::default(),
-        }
+        Self::default()
     }
 }

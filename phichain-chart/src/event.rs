@@ -1,9 +1,9 @@
-use crate::chart::easing::{Easing, Tween};
+use crate::easing::{Easing, Tween};
 use bevy::prelude::*;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
 
-use super::beat::Beat;
+use crate::beat::Beat;
 
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, IntoPrimitive, TryFromPrimitive,

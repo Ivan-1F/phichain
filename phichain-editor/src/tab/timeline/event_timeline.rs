@@ -1,4 +1,3 @@
-use crate::chart::event::LineEvent;
 use crate::editing::pending::Pending;
 use crate::selection::{SelectEvent, Selected, SelectedLine};
 use crate::tab::timeline::{Timeline, TimelineViewport};
@@ -8,6 +7,7 @@ use bevy::app::{App, Plugin};
 use bevy::hierarchy::Parent;
 use bevy::prelude::{Entity, EventWriter, In, Query, Res, ResMut, Resource, Window};
 use egui::{Color32, Sense, Stroke, Ui};
+use phichain_chart::event::LineEvent;
 use std::iter;
 
 pub struct EventTimelinePlugin;

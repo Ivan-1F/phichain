@@ -1,21 +1,19 @@
 use bevy::{prelude::*, sprite::Anchor};
 use num::{FromPrimitive, Rational32};
+use phichain_chart::event::{LineEvent, LineEventKind};
+use phichain_chart::line::{Line, LineOpacity, LinePosition, LineRotation};
 
-use crate::chart::line::LineSpeed;
 use crate::editing::pending::Pending;
 use crate::highlight::Highlighted;
 use crate::selection::Selected;
 use crate::{
     assets::ImageAssets,
-    chart::{
-        event::{LineEvent, LineEventKind},
-        line::{Line, LineOpacity, LinePosition, LineRotation},
-        note::{Note, NoteKind},
-    },
     constants::{CANVAS_HEIGHT, CANVAS_WIDTH},
     project::project_loaded,
     timing::{BpmList, ChartTime},
 };
+use phichain_chart::line::LineSpeed;
+use phichain_chart::note::{Note, NoteKind};
 
 use super::{GameCamera, GameViewport};
 

@@ -173,7 +173,7 @@ pub struct LoadProjectEvent(pub PathBuf);
 /// - [crate::audio::Offset] will be inserted into the world
 /// - [crate::timing::BpmList] will be inserted into the world
 /// - [crate::selection::SelectedLine] will be inserted into the world
-/// - Entities with components [crate::chart::line::LineBundle] and [crate::chart::note::NoteBundle] will be spawned into the world, with parent-child relationship
+/// - Entities with components [phichain_chart::line::LineBundle] and [phichain_chart::note::NoteBundle] will be spawned into the world, with parent-child relationship
 ///
 /// ---
 ///
@@ -222,7 +222,7 @@ fn unload_project_system(
     mut commands: Commands,
     mut events: EventReader<UnloadProjectEvent>,
     illustration_query: Query<Entity, With<crate::tab::game::illustration::Illustration>>,
-    line_query: Query<Entity, With<crate::chart::line::Line>>,
+    line_query: Query<Entity, With<phichain_chart::line::Line>>,
 ) {
     if !events.is_empty() {
         events.clear();

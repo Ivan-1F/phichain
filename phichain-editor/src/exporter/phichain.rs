@@ -1,9 +1,9 @@
 use anyhow::Context;
 use bevy::prelude::*;
+use phichain_chart::line::Line;
 
 use crate::audio::Offset;
 use crate::{
-    chart::line::Line,
     serialization::{LineWrapper, PhiChainChart},
     timing::BpmList,
 };

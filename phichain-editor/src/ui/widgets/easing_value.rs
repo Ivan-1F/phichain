@@ -1,6 +1,6 @@
-use crate::chart::easing::Easing;
 use egui::epaint::PathShape;
 use egui::{emath, Color32, Pos2, Rect, Response, Sense, Stroke, Ui, Vec2, Widget};
+use phichain_chart::easing::Easing;
 use strum::IntoEnumIterator;
 
 pub struct EasingValue<'a> {

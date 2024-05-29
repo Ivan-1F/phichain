@@ -1,16 +1,16 @@
 use bevy::prelude::*;
 use egui::Ui;
 
-use crate::chart::event::{LineEvent, LineEventKind};
-use crate::chart::note::NoteKind;
 use crate::editing::command::event::EditEvent;
 use crate::editing::command::note::EditNote;
 use crate::editing::command::EditorCommand;
 use crate::editing::DoCommandEvent;
+use crate::selection::Selected;
 use crate::ui::latch;
 use crate::ui::widgets::beat_value::BeatExt;
 use crate::ui::widgets::easing_value::EasingValue;
-use crate::{chart::note::Note, selection::Selected};
+use phichain_chart::event::{LineEvent, LineEventKind};
+use phichain_chart::note::{Note, NoteKind};
 
 pub fn inspector_ui_system(
     In(ui): In<&mut Ui>,

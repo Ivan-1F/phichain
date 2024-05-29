@@ -1,6 +1,4 @@
 use crate::action::ActionRegistrationExt;
-use crate::chart::event::LineEvent;
-use crate::chart::note::Note;
 use crate::editing::command::event::RemoveEvent;
 use crate::editing::command::note::RemoveNote;
 use crate::editing::command::{CommandSequence, EditorCommand};
@@ -8,6 +6,8 @@ use crate::editing::DoCommandEvent;
 use crate::hotkey::HotkeyRegistrationExt;
 use crate::selection::Selected;
 use bevy::prelude::*;
+use phichain_chart::event::LineEvent;
+use phichain_chart::note::Note;
 
 pub struct DeleteSelectedPlugin;
 

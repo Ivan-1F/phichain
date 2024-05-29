@@ -1,8 +1,8 @@
-use crate::chart::event::LineEventBundle;
-use crate::chart::line::LineBundle;
-use crate::chart::note::NoteBundle;
 use crate::serialization::LineWrapper;
 use bevy::prelude::*;
+use phichain_chart::event::LineEventBundle;
+use phichain_chart::line::LineBundle;
+use phichain_chart::note::NoteBundle;
 use undo::Edit;
 
 #[derive(Debug, Copy, Clone)]

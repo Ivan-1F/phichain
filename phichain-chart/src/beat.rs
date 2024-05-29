@@ -60,7 +60,7 @@ impl Debug for Beat {
 
 pub mod utils {
     use crate::beat;
-    use crate::chart::beat::Beat;
+    use crate::beat::Beat;
 
     /// Attach a beat value to beat lines with a given density
     pub fn attach(value: f32, density: u32) -> Beat {
@@ -78,7 +78,7 @@ pub mod utils {
     #[cfg(test)]
     mod tests {
         use super::*;
-        use crate::chart::beat::Beat;
+        use crate::beat::Beat;
 
         #[test]
         fn test_attach() {

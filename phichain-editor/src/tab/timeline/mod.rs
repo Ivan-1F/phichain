@@ -5,7 +5,6 @@ use bevy::{ecs::system::SystemParam, prelude::*};
 use egui::{Align2, Color32, FontId, Ui};
 
 use crate::audio::AudioDuration;
-use crate::chart::beat;
 use crate::constants::CANVAS_WIDTH;
 use crate::tab::timeline::event_timeline::{
     event_timeline_drag_select_system, event_timeline_system, EventTimelinePlugin,
@@ -14,11 +13,11 @@ use crate::tab::timeline::note_timeline::{
     note_timeline_drag_select_system, note_timeline_system, NoteTimelinePlugin,
 };
 use crate::{
-    beat,
-    chart::beat::Beat,
     constants::{BASE_ZOOM, INDICATOR_POSITION},
     timing::{BpmList, ChartTime},
 };
+use phichain_chart::beat;
+use phichain_chart::beat::Beat;
 
 pub struct TimelineTabPlugin;
 

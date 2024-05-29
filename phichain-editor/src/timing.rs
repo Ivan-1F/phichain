@@ -1,13 +1,14 @@
 use bevy::input::mouse::MouseWheel;
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
+use phichain_chart::beat::Beat;
 use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::action::ActionRegistrationExt;
 use crate::hotkey::HotkeyRegistrationExt;
+use crate::project::project_loaded;
 use crate::settings::EditorSettings;
 use crate::tab::timeline::TimelineViewport;
-use crate::{chart::beat::Beat, project::project_loaded};
 
 /// Represents the current time in seconds
 #[derive(Resource)]

@@ -1,6 +1,3 @@
-use crate::chart::event::LineEvent;
-use crate::chart::line::{Line, LineOpacity, LinePosition, LineRotation, LineSpeed};
-use crate::chart::note::Note;
 use crate::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use crate::editing::command::line::{CreateLine, RemoveLine};
 use crate::editing::command::EditorCommand;
@@ -8,6 +5,9 @@ use crate::editing::DoCommandEvent;
 use crate::selection::SelectedLine;
 use bevy::prelude::*;
 use egui::{Color32, Layout, Sense, Stroke, Ui};
+use phichain_chart::event::LineEvent;
+use phichain_chart::line::{Line, LineOpacity, LinePosition, LineRotation, LineSpeed};
+use phichain_chart::note::Note;
 
 pub fn line_list_tab(
     In(ui): In<&mut Ui>,

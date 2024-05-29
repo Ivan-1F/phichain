@@ -1,11 +1,11 @@
 //! Re:PhiEdit json format
 
-use crate::chart::easing::Easing;
-use crate::chart::event::{LineEvent, LineEventKind};
 use crate::format::Format;
 use crate::serialization::{LineWrapper, PhiChainChart};
 use bevy::prelude::*;
 use num::Rational32;
+use phichain_chart::easing::Easing;
+use phichain_chart::event::{LineEvent, LineEventKind};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use strum::IntoEnumIterator;
@@ -25,9 +25,9 @@ enum NoteKind {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 struct Beat(i32, i32, i32);
 
-impl From<Beat> for crate::chart::beat::Beat {
+impl From<Beat> for phichain_chart::beat::Beat {
     fn from(val: Beat) -> Self {
-        crate::chart::beat::Beat::new(val.0, Rational32::new(val.1, val.2))
+        phichain_chart::beat::Beat::new(val.0, Rational32::new(val.1, val.2))
     }
 }
 
@@ -338,18 +338,18 @@ impl Format for RpeChart {
                 line.notes
                     .iter()
                     .map(|note| {
-                        let start_beat = crate::chart::beat::Beat::from(note.start_time.clone());
-                        let end_beat = crate::chart::beat::Beat::from(note.end_time.clone());
-                        let kind: crate::chart::note::NoteKind = match note.kind {
-                            NoteKind::Tap => crate::chart::note::NoteKind::Tap,
-                            NoteKind::Drag => crate::chart::note::NoteKind::Drag,
-                            NoteKind::Hold => crate::chart::note::NoteKind::Hold {
+                        let start_beat = phichain_chart::beat::Beat::from(note.start_time.clone());
+                        let end_beat = phichain_chart::beat::Beat::from(note.end_time.clone());
+                        let kind: phichain_chart::note::NoteKind = match note.kind {
+                            NoteKind::Tap => phichain_chart::note::NoteKind::Tap,
+                            NoteKind::Drag => phichain_chart::note::NoteKind::Drag,
+                            NoteKind::Hold => phichain_chart::note::NoteKind::Hold {
                                 hold_beat: end_beat - start_beat,
                             },
-                            NoteKind::Flick => crate::chart::note::NoteKind::Flick,
+                            NoteKind::Flick => phichain_chart::note::NoteKind::Flick,
                         };
 
-                        crate::chart::note::Note::new(
+                        phichain_chart::note::Note::new(
                             kind,
                             note.above == 1,
                             start_beat,

@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "phichain-chart",
     "phichain-editor"
 ]
 resolver = "2"

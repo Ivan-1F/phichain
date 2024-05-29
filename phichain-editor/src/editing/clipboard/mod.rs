@@ -1,6 +1,4 @@
 use crate::action::ActionRegistrationExt;
-use crate::chart::event::LineEvent;
-use crate::chart::note::Note;
 use crate::editing::command::event::CreateEvent;
 use crate::editing::command::note::CreateNote;
 use crate::editing::command::{CommandSequence, EditorCommand};
@@ -11,6 +9,8 @@ use crate::tab::timeline::{Timeline, TimelineSettings, TimelineViewport};
 use crate::timing::BpmList;
 use crate::utils::compat::ControlKeyExt;
 use bevy::prelude::*;
+use phichain_chart::event::LineEvent;
+use phichain_chart::note::Note;
 
 #[derive(Resource, Default)]
 struct EditorClipboard {

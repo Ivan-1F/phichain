@@ -1,6 +1,6 @@
-use crate::chart::event::{LineEvent, LineEventBundle};
 use bevy::hierarchy::BuildWorldChildren;
 use bevy::prelude::*;
+use phichain_chart::event::{LineEvent, LineEventBundle};
 use undo::Edit;
 
 #[derive(Debug, Copy, Clone)]

@@ -1,10 +1,10 @@
-use crate::chart::event::LineEvent;
 use crate::editing::command::event::EditEvent;
 use crate::editing::command::{CommandSequence, EditorCommand};
 use crate::editing::DoCommandEvent;
 use crate::selection::Selected;
 use crate::tab::timeline::TimelineSettings;
 use bevy::prelude::*;
+use phichain_chart::event::LineEvent;
 
 pub struct MoveEventPlugin;
 

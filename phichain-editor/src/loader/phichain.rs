@@ -2,11 +2,13 @@ use anyhow::Context;
 use std::fs::File;
 
 use bevy::prelude::*;
+use phichain_chart::event::LineEventBundle;
+use phichain_chart::line::LineBundle;
+use phichain_chart::note::NoteBundle;
 use serde_json::Value;
 
 use crate::migration::migrate;
 use crate::{
-    chart::{event::LineEventBundle, line::LineBundle, note::NoteBundle},
     selection::SelectedLine,
     serialization::{LineWrapper, PhiChainChart},
 };

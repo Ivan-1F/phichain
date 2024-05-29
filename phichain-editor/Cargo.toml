@@ -76,3 +76,5 @@ bevy-persistent = { version = "0.5.0", features = ["yaml"] }
 undo = "0.51.0"
 enum_dispatch = "0.3.13"
 zip = "2.1.0"
+
+phichain-chart = { path = "../phichain-chart" }

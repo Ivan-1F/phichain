@@ -1,5 +1,5 @@
-use crate::chart::event::LineEvent;
 use egui::{Align2, Color32, FontId, Response, Sense, Ui};
+use phichain_chart::event::LineEvent;
 
 pub fn event_ui(ui: &mut Ui, rect: egui::Rect, event: &LineEvent, color: Color32) -> Response {
     let response = ui.allocate_rect(rect, Sense::click());

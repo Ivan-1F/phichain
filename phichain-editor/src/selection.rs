@@ -1,7 +1,7 @@
-use crate::chart::event::LineEvent;
-use crate::chart::note::Note;
 use crate::editing::pending::Pending;
 use bevy::prelude::*;
+use phichain_chart::event::LineEvent;
+use phichain_chart::note::Note;
 
 use crate::project::project_loaded;
 use crate::utils::compat::ControlKeyExt;

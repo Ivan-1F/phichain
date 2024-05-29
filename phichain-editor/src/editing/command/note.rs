@@ -1,5 +1,5 @@
-use crate::chart::note::{Note, NoteBundle};
 use bevy::prelude::*;
+use phichain_chart::note::{Note, NoteBundle};
 use undo::Edit;
 
 #[derive(Debug, Copy, Clone)]
@@ -98,10 +98,10 @@ impl Edit for EditNote {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::chart::beat::Beat;
-    use crate::chart::line::LineBundle;
-    use crate::chart::note::{Note, NoteBundle, NoteKind};
     use crate::editing::command::EditorCommand;
+    use phichain_chart::beat::Beat;
+    use phichain_chart::line::LineBundle;
+    use phichain_chart::note::{Note, NoteBundle, NoteKind};
     use undo::History;
 
     fn test_remove_note_system(world: &mut World) {

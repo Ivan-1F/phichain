@@ -1,7 +1,7 @@
-use crate::chart::beat::Beat;
-use crate::chart::note::Note;
 use bevy::prelude::*;
 use bevy::utils::HashMap;
+use phichain_chart::beat::Beat;
+use phichain_chart::note::Note;
 
 pub struct HighlightPlugin;
 
