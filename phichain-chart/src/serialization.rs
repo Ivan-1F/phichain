@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::bpm_list::BpmList;
 use crate::easing::Easing;
 use crate::event::{LineEvent, LineEventKind};
-use crate::line::Line;
+use crate::format::Format;
 use crate::migration::CURRENT_FORMAT;
 use crate::note::Note;
 use crate::offset::Offset;
@@ -15,6 +15,19 @@ pub struct PhiChainChart {
     pub offset: Offset,
     pub bpm_list: BpmList,
     pub lines: Vec<LineWrapper>,
+}
+
+impl Format for PhiChainChart {
+    fn into_phichain(self) -> anyhow::Result<PhiChainChart> {
+        Ok(self)
+    }
+
+    fn from_phichain(phichain: PhiChainChart) -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
+        Ok(phichain)
+    }
 }
 
 impl PhiChainChart {
@@ -106,8 +119,8 @@ impl Default for LineWrapper {
 #[cfg(feature = "bevy")]
 impl LineWrapper {
     pub fn serialize_line(world: &mut bevy::prelude::World, entity: bevy::prelude::Entity) -> Self {
-        let mut line_query =
-            world.query_filtered::<&bevy::prelude::Children, bevy::prelude::With<Line>>();
+        let mut line_query = world
+            .query_filtered::<&bevy::prelude::Children, bevy::prelude::With<crate::line::Line>>();
         let mut note_query = world.query::<&Note>();
         let mut event_query = world.query::<&LineEvent>();
 
