@@ -208,8 +208,10 @@ impl PartialOrd for Beat {
 
 impl Ord for Beat {
     fn cmp(&self, other: &Self) -> Ordering {
-        match self.0.cmp(&other.0) {
-            Ordering::Equal => self.1.cmp(&other.1),
+        let a = self.reduced();
+        let b = other.reduced();
+        match a.0.cmp(&b.0) {
+            Ordering::Equal => a.1.cmp(&b.1),
             ord => ord,
         }
     }
