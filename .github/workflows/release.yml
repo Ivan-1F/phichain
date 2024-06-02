@@ -1,0 +1,64 @@
+name: Release
+
+on:
+  release:
+    types:
+      - published
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  show_action_parameters:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Show action parameters
+        run: |
+          cat <<EOF > $GITHUB_STEP_SUMMARY
+          ## Action Parameters
+          - target_release_tag: \`${{ github.event.inputs.target_release_tag }}\`
+          EOF
+
+  # ensure the input release tag is valid
+  validate_release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get github release information
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: cardinalby/git-get-release-action@1.2.4
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          tag: ${{ github.event.inputs.target_release_tag }}
+
+  build:
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    needs:
+      - validate_release
+    with:
+      release: true
+
+  release:
+    needs:
+      - build
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Display context
+        run: |
+          echo ref_name = ${{ github.ref_name }}
+          echo target_release_tag = ${{ github.event.inputs.target_release_tag }}
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: build-artifacts
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: build-artifacts/*
+          tag_name: ${{ github.event.inputs.target_release_tag }}
