@@ -64,6 +64,7 @@ jobs:
         with:
           path: build-artifacts
           merge-multiple: true
+          skip_unpack: true
 
       - uses: softprops/action-gh-release@v2
         with:
