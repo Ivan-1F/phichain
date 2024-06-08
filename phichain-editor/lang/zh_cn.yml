@@ -42,6 +42,11 @@ tab:
     zoom: 时间线缩放
     density: 节拍线密度
     lane: 垂直参考线
+    note_side_filter:
+      title: 音符所属侧
+      all: 所有
+      above: 上方
+      below: 下方
   audio_setting:
     title: 音频设置
     music_volume: 音乐音量

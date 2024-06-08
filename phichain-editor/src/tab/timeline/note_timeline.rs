@@ -3,7 +3,7 @@ use crate::constants::CANVAS_WIDTH;
 use crate::editing::pending::Pending;
 use crate::highlight::Highlighted;
 use crate::selection::{SelectEvent, Selected, SelectedLine};
-use crate::tab::timeline::{Timeline, TimelineSettings, TimelineViewport};
+use crate::tab::timeline::{Timeline, TimelineFilter, TimelineSettings, TimelineViewport};
 use bevy::asset::{Assets, Handle};
 use bevy::hierarchy::Parent;
 use bevy::prelude::*;
@@ -139,6 +139,10 @@ pub fn note_timeline_system(
     let note_timeline_viewport = viewport.note_timeline_viewport();
 
     for (note, parent, entity, highlighted, selected, pending) in note_query.iter() {
+        if !timeline_settings.note_side_filter.filter(*note) {
+            continue;
+        }
+
         if parent.get() != selected_line {
             continue;
         }

@@ -19,6 +19,7 @@ use crate::{
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
+use phichain_chart::note::Note;
 
 pub struct TimelineTabPlugin;
 
@@ -172,11 +173,35 @@ impl TimelineViewport {
     }
 }
 
+pub trait TimelineFilter<T> {
+    fn filter(&self, value: T) -> bool;
+}
+
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum NoteSideFilter {
+    #[default]
+    All,
+    Above,
+    Below,
+}
+
+impl TimelineFilter<Note> for NoteSideFilter {
+    fn filter(&self, note: Note) -> bool {
+        match self {
+            NoteSideFilter::All => true,
+            NoteSideFilter::Above => note.above,
+            NoteSideFilter::Below => !note.above,
+        }
+    }
+}
+
 #[derive(Resource)]
 pub struct TimelineSettings {
     pub zoom: f32,
     pub density: u32,
     pub lanes: u32,
+
+    pub note_side_filter: NoteSideFilter,
 }
 
 impl Default for TimelineSettings {
@@ -185,6 +210,8 @@ impl Default for TimelineSettings {
             zoom: 2.0,
             density: 4,
             lanes: 11,
+
+            note_side_filter: NoteSideFilter::default(),
         }
     }
 }

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use egui::Ui;
 
-use super::timeline::TimelineSettings;
+use super::timeline::{NoteSideFilter, TimelineSettings};
 
 pub fn timeline_setting_tab(In(ui): In<&mut Ui>, mut timeline_settings: ResMut<TimelineSettings>) {
     egui::Grid::new("timeline_setting_grid")
@@ -31,6 +31,26 @@ pub fn timeline_setting_tab(In(ui): In<&mut Ui>, mut timeline_settings: ResMut<T
                     .clamp_range(1..=32)
                     .speed(1),
             );
+            ui.end_row();
+
+            ui.label(t!("tab.timeline_setting.note_side_filter.title"));
+            ui.horizontal(|ui| {
+                ui.selectable_value(
+                    &mut timeline_settings.note_side_filter,
+                    NoteSideFilter::All,
+                    t!("tab.timeline_setting.note_side_filter.all"),
+                );
+                ui.selectable_value(
+                    &mut timeline_settings.note_side_filter,
+                    NoteSideFilter::Above,
+                    t!("tab.timeline_setting.note_side_filter.above"),
+                );
+                ui.selectable_value(
+                    &mut timeline_settings.note_side_filter,
+                    NoteSideFilter::Below,
+                    t!("tab.timeline_setting.note_side_filter.below"),
+                );
+            });
             ui.end_row();
         });
 }
