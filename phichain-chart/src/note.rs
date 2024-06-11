@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 
 use crate::beat::Beat;
 
@@ -18,6 +19,12 @@ pub struct Note {
     pub beat: Beat,
     pub x: f32,
     pub speed: f32,
+}
+
+impl PartialOrd for Note {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.beat.partial_cmp(&other.beat)
+    }
 }
 
 impl Note {

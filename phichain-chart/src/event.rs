@@ -1,6 +1,7 @@
 use crate::easing::{Easing, Tween};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 
 use crate::beat::Beat;
 
@@ -26,6 +27,12 @@ pub struct LineEvent {
     pub end_beat: Beat,
 
     pub easing: Easing,
+}
+
+impl PartialOrd for LineEvent {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.start_beat.partial_cmp(&other.start_beat)
+    }
 }
 
 impl LineEvent {
