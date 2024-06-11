@@ -5,6 +5,8 @@
 
 Phigros chart editor written in Rust and Bevy
 
+![screenshot](screenshots/phichain-editor.png)
+
 ## Thanks
 
 - Re:PhiEdit by [cmdysj](https://space.bilibili.com/252635690)
