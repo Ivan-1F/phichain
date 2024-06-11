@@ -39,6 +39,8 @@ fn create_event_system(
     mut event: EventWriter<DoCommandEvent>,
 
     mut pending_event_query: Query<(&mut LineEvent, Entity), With<Pending>>,
+
+    event_query: Query<(&LineEvent, &Parent), Without<Pending>>,
 ) {
     let window = window_query.single();
     let Some(cursor_position) = window.cursor_position() else {
@@ -72,9 +74,34 @@ fn create_event_system(
 
     if keyboard.just_pressed(KeyCode::KeyR) {
         if let Ok((pending_event, entity)) = pending_event_query.get_single() {
+            // inherit event's start & end value from neighbor events
+            let mut new_event = *pending_event;
+            let mut events = event_query.iter().collect::<Vec<_>>();
+            events.sort_by_key(|x| x.0.start_beat);
+            if let Some(last_event) = events
+                .iter()
+                .filter(|(e, _)| e.kind == pending_event.kind)
+                .filter(|(_, p)| p.get() == selected_line.0)
+                .take_while(|(e, _)| e.start_beat <= pending_event.start_beat)
+                .map(|x| x.0)
+                .next()
+            {
+                new_event.start = last_event.end;
+            }
+            events.reverse();
+            if let Some(next_event) = events
+                .iter()
+                .filter(|(e, _)| e.kind == pending_event.kind)
+                .filter(|(_, p)| p.get() == selected_line.0)
+                .take_while(|(e, _)| e.end_beat >= pending_event.end_beat)
+                .map(|x| x.0)
+                .next()
+            {
+                new_event.end = next_event.start;
+            }
             commands.entity(entity).despawn();
             event.send(DoCommandEvent(EditorCommand::CreateEvent(
-                CreateEvent::new(selected_line.0, *pending_event),
+                CreateEvent::new(selected_line.0, new_event),
             )));
         } else {
             let (track, beat) = calc_event_attrs();
