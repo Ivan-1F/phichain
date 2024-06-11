@@ -216,3 +216,124 @@ impl Ord for Beat {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_eq() {
+        assert_eq!(beat!(1, 2, 1), beat!(1, 2, 1));
+        assert_eq!(beat!(1, 2), beat!(1, 2));
+    }
+
+    #[test]
+    fn test_not_eq() {
+        assert_ne!(beat!(1, 2, 1), beat!(3, 4, 1));
+        assert_ne!(beat!(5, 6, 1), beat!(7, 8, 1));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_with_zero() {
+        beat!(0, 0);
+        beat!(1, 0);
+        beat!(2, 0);
+    }
+
+    #[test]
+    fn test_with_negative_numbers() {
+        assert_eq!(beat!(-1, -2, 1), beat!(-1, -2, 1));
+        assert_ne!(beat!(-1, -2, 1), beat!(1, 2, 1));
+    }
+
+    #[test]
+    fn test_with_large_numbers() {
+        assert_eq!(beat!(1000000, 2000000, 1), beat!(1000000, 2000000, 1));
+        assert_ne!(beat!(1000000, 2000000, 1), beat!(2000000, 4000000, 1));
+    }
+
+    #[test]
+    fn test_with_mixed_sign_numbers() {
+        assert_eq!(beat!(1, -2, 1), beat!(1, -2, 1));
+        assert_ne!(beat!(1, -2, 1), beat!(-1, 2, 1));
+    }
+
+    #[test]
+    fn test_addition() {
+        let beat1 = beat!(1, 2, 1);
+        let beat2 = beat!(3, 4, 1);
+        let result = beat1 + beat2;
+        assert_eq!(result, Beat(4, Rational32::new(6, 1)));
+    }
+
+    #[test]
+    fn test_subtraction() {
+        let beat1 = beat!(5, 3, 1);
+        let beat2 = beat!(2, 1, 1);
+        let result = beat1 - beat2;
+        assert_eq!(result, Beat(3, Rational32::new(2, 1)));
+    }
+
+    #[test]
+    fn test_comparison() {
+        assert!(beat!(1, 2, 1) < beat!(3, 4, 1));
+        assert!(beat!(5, 6, 1) > beat!(3, 4, 1));
+        assert_eq!(beat!(7, 8, 1), beat!(7, 8, 1));
+    }
+
+    #[test]
+    fn test_serialize() {
+        let beat = beat!(1, 2, 1);
+        let serialized = serde_json::to_string(&beat).unwrap();
+        assert_eq!(serialized, "[1,2,1]");
+    }
+
+    #[test]
+    fn test_deserialize() {
+        let serialized = "[1,2,1]";
+        let deserialized: Beat = serde_json::from_str(serialized).unwrap();
+        assert_eq!(deserialized, beat!(1, 2, 1));
+    }
+
+    #[test]
+    fn test_reduce() {
+        let mut beat = beat!(1, 3, 2);
+        beat.reduce();
+        assert_eq!(beat, Beat(2, Rational32::new(1, 2)));
+    }
+
+    #[test]
+    fn test_reduced() {
+        let beat = beat!(1, 3, 2);
+        let reduced = beat.reduced();
+        assert_eq!(reduced, Beat(2, Rational32::new(1, 2)));
+    }
+
+    #[test]
+    fn test_from_f32() {
+        let beat: Beat = 1.5f32.into();
+        assert_eq!(beat, Beat(1, Rational32::new(1, 2)));
+    }
+
+    #[test]
+    fn test_from_rational32() {
+        let rational = Rational32::new(3, 2);
+        let beat: Beat = rational.into();
+        assert_eq!(beat, Beat(1, Rational32::new(1, 2)));
+    }
+
+    #[test]
+    fn test_from_beat_to_f32() {
+        let beat = beat!(1, 1, 2);
+        let float: f32 = beat.into();
+        assert_eq!(float, 1.5);
+    }
+
+    #[test]
+    fn test_from_beat_to_rational32() {
+        let beat = beat!(1, 1, 2);
+        let rational: Rational32 = beat.into();
+        assert_eq!(rational, Rational32::new(3, 2));
+    }
+}
