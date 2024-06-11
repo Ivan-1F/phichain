@@ -1,9 +1,12 @@
 > [!WARNING]
 > Still in early stages of development, expect incomplete feature and unexpected behavior
 
-# phichain - Phigros charting toolchain
+## Phichain
 
-Phigros chart editor written in Rust and Bevy
+[![GitHub License](https://img.shields.io/github/license/Ivan-1F/phichain)](https://github.com/Ivan-1F/phichain/blob/master/LICENSE)
+[![Dev Builds](https://github.com/Ivan-1F/phichain/actions/workflows/cargo.yml/badge.svg)](https://github.com/Ivan-1F/phichain/actions/workflows/cargo.yml)
+
+Phigros charting toolchain written in Rust and Bevy
 
 ![screenshot](screenshots/phichain-editor.png)
 
