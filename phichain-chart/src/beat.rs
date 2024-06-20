@@ -78,7 +78,6 @@ pub mod utils {
     #[cfg(test)]
     mod tests {
         use super::*;
-        use crate::beat::Beat;
 
         #[test]
         fn test_attach() {
@@ -146,19 +145,19 @@ impl Beat {
 #[macro_export]
 macro_rules! beat {
     ($whole:expr, $numer:expr, $denom:expr) => {
-        Beat::new(
+        $crate::beat::Beat::new(
             $whole as i32,
             num::Rational32::new($numer as i32, $denom as i32),
         )
     };
     ($numer:expr, $denom:expr) => {
-        Beat::new(0, num::Rational32::new($numer as i32, $denom as i32))
+        $crate::beat::Beat::new(0, num::Rational32::new($numer as i32, $denom as i32))
     };
     ($whole:expr) => {
-        Beat::new($whole as i32, num::Rational32::new(0, 1))
+        $crate::beat::Beat::new($whole as i32, num::Rational32::new(0, 1))
     };
     () => {
-        Beat::new(0, num::Rational32::new(0, 1))
+        $crate::beat::Beat::new(0, num::Rational32::new(0, 1))
     };
 }
 

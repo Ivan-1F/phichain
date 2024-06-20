@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use egui::{Align, Layout, Ui};
 use phichain_chart::beat;
-use phichain_chart::beat::Beat;
 
 use crate::editing::command::event::EditEvent;
 use crate::editing::command::note::EditNote;
