@@ -257,8 +257,10 @@ impl Format for OfficialChart {
             events
         }
 
-        let bpm = phichain.bpm_list.0[0].bpm; // TODO: handle multiple bpm
+        let bpm = phichain.bpm_list.0[0].bpm; // take first bpm as base bpm for all lines, normalize all beats using this bpm
         let offset = phichain.offset.0 / 1000.0;
+
+        let time = |beat: Beat| phichain.bpm_list.normalize_beat(bpm, beat).value() * 60.0 / 1.875;
 
         let mut chart = OfficialChart {
             format_version: 3,
@@ -345,8 +347,8 @@ impl Format for OfficialChart {
                 &line,
                 LineEventKind::Rotation,
                 |e| NumbericLineEvent {
-                    start_time: e.start_beat.value() * 60.0 / 1.875,
-                    end_time: e.end_beat.value() * 60.0 / 1.875,
+                    start_time: time(e.start_beat),
+                    end_time: time(e.end_beat),
                     start: e.start,
                     end: e.end,
                 },
@@ -357,8 +359,8 @@ impl Format for OfficialChart {
                 &line,
                 LineEventKind::Opacity,
                 |e| NumbericLineEvent {
-                    start_time: e.start_beat.value() * 60.0 / 1.875,
-                    end_time: e.end_beat.value() * 60.0 / 1.875,
+                    start_time: time(e.start_beat),
+                    end_time: time(e.end_beat),
                     start: e.start / 255.0,
                     end: e.end / 255.0,
                 },
@@ -369,8 +371,8 @@ impl Format for OfficialChart {
                 &line,
                 LineEventKind::Speed,
                 |e| SpeedEvent {
-                    start_time: e.start_beat.value() * 60.0 / 1.875,
-                    end_time: e.end_beat.value() * 60.0 / 1.875,
+                    start_time: time(e.start_beat),
+                    end_time: time(e.end_beat),
                     value: e.start / 9.0 * 2.0,
                     floor_position: 0.0, // this will be calculated later
                 },
@@ -440,8 +442,8 @@ impl Format for OfficialChart {
                 let end_y = evaluate(&y_events, end_beat, false) / CANVAS_HEIGHT + 0.5;
 
                 official_line.move_events.push(PositionLineEvent {
-                    start_time: start_beat.value() * 60.0 / 1.875,
-                    end_time: end_beat.value() * 60.0 / 1.875,
+                    start_time: time(start_beat),
+                    end_time: time(end_beat),
                     start_x,
                     start_y,
                     end_x,
@@ -486,10 +488,10 @@ impl Format for OfficialChart {
 
                 let note = Note {
                     kind,
-                    time: note.beat.value() * 60.0 / 1.875,
+                    time: time(note.beat),
                     hold_time: match note.kind {
                         crate::note::NoteKind::Hold { hold_beat } => {
-                            hold_beat.value() * 60.0 / 1.875
+                            time(note.beat + hold_beat) - time(note.beat)
                         }
                         _ => 0.0,
                     },

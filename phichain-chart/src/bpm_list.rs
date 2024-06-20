@@ -1,3 +1,4 @@
+use crate::beat;
 use crate::beat::Beat;
 use serde::{Deserialize, Deserializer, Serialize};
 
@@ -106,6 +107,26 @@ impl BpmList {
 
         Beat::from(point.beat.value() + (time - point.time) * point.bpm / 60.0)
     }
+
+    /// Normalize a [`Beat`] on this [`BpmList`] to a [`Beat`] on a fixed BPM
+    ///
+    /// ```rust
+    /// # use phichain_chart::beat;
+    /// # use phichain_chart::beat::Beat;
+    /// # use phichain_chart::bpm_list::{BpmList, BpmPoint};
+    /// let bpm_list = BpmList::new(vec![
+    ///     BpmPoint::new(beat!(0), 120.0),
+    ///     BpmPoint::new(beat!(4), 240.0),
+    /// ]);
+    ///
+    /// assert_eq!(bpm_list.normalize_beat(120.0, beat!(4)), beat!(4));
+    /// assert_eq!(bpm_list.normalize_beat(120.0, beat!(8)), beat!(6));
+    /// ```
+    pub fn normalize_beat(&self, base: f32, beat: Beat) -> Beat {
+        let single_bpm_list = BpmList::new(vec![BpmPoint::new(beat!(0), base)]);
+        let time = self.time_at(beat);
+        single_bpm_list.beat_at(time)
+    }
 }
 
 #[cfg(test)]
@@ -174,5 +195,18 @@ mod tests {
         assert_eq!(second.beat, Beat::ONE);
         assert_eq!(second.bpm, 240.0);
         assert_eq!(second.time, 0.5);
+    }
+
+    #[test]
+    fn test_normalize_beat() {
+        let bpm_list = BpmList::new(vec![
+            BpmPoint::new(beat!(0), 120.0),
+            BpmPoint::new(beat!(4), 240.0),
+        ]);
+
+        assert_eq!(bpm_list.normalize_beat(120.0, beat!(4)), beat!(4));
+        assert_eq!(bpm_list.normalize_beat(120.0, beat!(8)), beat!(6));
+
+        assert_eq!(bpm_list.normalize_beat(60.0, beat!(4)), beat!(2));
     }
 }
