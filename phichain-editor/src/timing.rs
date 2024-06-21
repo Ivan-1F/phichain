@@ -1,6 +1,7 @@
 use bevy::input::mouse::MouseWheel;
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
+use phichain_chart::bpm_list::BpmList;
 
 use crate::action::ActionRegistrationExt;
 use crate::hotkey::HotkeyRegistrationExt;
@@ -43,6 +44,11 @@ impl Plugin for TimingPlugin {
             .add_event::<SeekEvent>()
             .add_event::<SeekToEvent>()
             .add_systems(Update, progress_control_system.run_if(project_loaded()))
+            .add_systems(
+                Update,
+                compute_bpm_list_system
+                    .run_if(project_loaded().and_then(resource_changed::<BpmList>)),
+            )
             .add_systems(
                 Update,
                 scroll_progress_control_system.run_if(project_loaded()),
@@ -97,4 +103,8 @@ fn scroll_progress_control_system(
             ));
         }
     }
+}
+
+fn compute_bpm_list_system(mut bpm_list: ResMut<BpmList>) {
+    bpm_list.compute();
 }
