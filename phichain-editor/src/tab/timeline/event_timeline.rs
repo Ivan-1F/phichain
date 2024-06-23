@@ -1,4 +1,7 @@
+use crate::editing::command::event::EditEvent;
+use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
+use crate::editing::DoCommandEvent;
 use crate::selection::{SelectEvent, Selected, SelectedLine};
 use crate::tab::timeline::{Timeline, TimelineViewport};
 use crate::ui::widgets::event::event_ui;
@@ -121,8 +124,8 @@ pub fn event_timeline_system(
     selected_line_query: Res<SelectedLine>,
     timeline_viewport: Res<TimelineViewport>,
     bpm_list: Res<BpmList>,
-    event_query: Query<(
-        &LineEvent,
+    mut event_query: Query<(
+        &mut LineEvent,
         &Parent,
         Entity,
         Option<&Selected>,
@@ -130,6 +133,7 @@ pub fn event_timeline_system(
     )>,
     mut select_events: EventWriter<SelectEvent>,
     timeline: Timeline,
+    mut event_writer: EventWriter<DoCommandEvent>,
 ) {
     let selected_line = selected_line_query.0;
     let viewport = timeline_viewport;
@@ -156,7 +160,7 @@ pub fn event_timeline_system(
         );
     }
 
-    for (event, parent, entity, selected, pending) in event_query.iter() {
+    for (mut event, parent, entity, selected, pending) in &mut event_query {
         if parent.get() != selected_line {
             continue;
         }
@@ -185,7 +189,22 @@ pub fn event_timeline_system(
             color = Color32::from_rgba_unmultiplied(color.r(), color.g(), color.b(), 20);
         }
 
-        if event_ui(ui, egui::Rect::from_center_size(center, size), event, color).clicked() {
+        let on_event_change = |old_event, new_event| {
+            event_writer.send(DoCommandEvent(EditorCommand::EditEvent(EditEvent::new(
+                entity, old_event, new_event,
+            ))));
+        };
+
+        if event_ui(
+            ui,
+            egui::Rect::from_center_size(center, size),
+            &mut event,
+            color,
+            &timeline,
+            on_event_change,
+        )
+        .clicked()
+        {
             select_events.send(SelectEvent(vec![entity]));
         }
     }

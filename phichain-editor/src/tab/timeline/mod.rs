@@ -250,7 +250,7 @@ impl TimelineSettings {
 #[derive(SystemParam)]
 pub struct Timeline<'w> {
     bpm_list: Res<'w, BpmList>,
-    timeline_settings: Res<'w, TimelineSettings>,
+    pub timeline_settings: Res<'w, TimelineSettings>,
     current_time: Res<'w, ChartTime>,
     viewport: Res<'w, TimelineViewport>,
 
@@ -283,9 +283,17 @@ impl<'w> Timeline<'w> {
             + self.viewport.0.height() * INDICATOR_POSITION
     }
 
+    pub fn beat_to_y(&self, beat: Beat) -> f32 {
+        self.time_to_y(self.bpm_list.time_at(beat))
+    }
+
     pub fn y_to_time(&self, y: f32) -> f32 {
         self.current_time.0
             - (y - (self.viewport.0.min.y + self.viewport.0.height() * INDICATOR_POSITION))
                 / (BASE_ZOOM * self.timeline_settings.zoom)
+    }
+
+    pub fn y_to_beat(&self, y: f32) -> Beat {
+        self.bpm_list.beat_at(self.y_to_time(y))
     }
 }
