@@ -11,7 +11,6 @@ pub struct CreateEvent {
 }
 
 impl CreateEvent {
-    #[allow(dead_code)]
     pub fn new(line: Entity, event: LineEvent) -> Self {
         Self {
             line_entity: line,
@@ -45,7 +44,6 @@ pub struct RemoveEvent {
 }
 
 impl RemoveEvent {
-    #[allow(dead_code)]
     pub fn new(entity: Entity) -> Self {
         Self {
             entity,

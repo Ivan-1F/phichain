@@ -43,7 +43,6 @@ pub struct RemoveNote {
 }
 
 impl RemoveNote {
-    #[allow(dead_code)]
     pub fn new(entity: Entity) -> Self {
         Self { entity, note: None }
     }
