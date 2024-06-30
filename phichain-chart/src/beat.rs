@@ -193,7 +193,9 @@ impl AddAssign for Beat {
 
 impl PartialEq for Beat {
     fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0 && self.1 == other.1
+        let a = self.reduced();
+        let b = other.reduced();
+        a.0 == b.0 && a.1 == b.1
     }
 }
 
