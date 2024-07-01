@@ -22,11 +22,10 @@ where
             let drag_zone = Rect::from_x_y_ranges(
                 rect.x_range(),
                 if start {
-                    Rangef::from(rect.max.y..=rect.max.y)
+                    Rangef::from(rect.max.y - 5.0..=rect.max.y)
                 } else {
-                    Rangef::from(rect.min.y..=rect.min.y)
-                }
-                .expand(5.0),
+                    Rangef::from(rect.min.y..=rect.min.y + 5.0)
+                },
             );
             let response = ui
                 .allocate_rect(drag_zone, Sense::drag())
