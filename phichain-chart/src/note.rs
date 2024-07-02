@@ -47,14 +47,13 @@ impl Note {
             _ => self.beat,
         }
     }
-    
+
     /// Set the end beat of this [`Note`]
-    /// 
+    ///
     /// This only has effect when `self.kind` is [`NoteKind::Hold`]
     pub fn set_end_beat(&mut self, end_beat: Beat) {
-        match self.kind {
-            NoteKind::Hold { ref mut hold_beat } => *hold_beat = end_beat - self.beat,
-            _ => {},
+        if let NoteKind::Hold { ref mut hold_beat } = self.kind {
+            *hold_beat = end_beat - self.beat
         }
     }
 }
