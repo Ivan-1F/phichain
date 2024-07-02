@@ -40,10 +40,10 @@ where
 
                 if start {
                     let new_y = timeline.beat_to_y(event.start_beat) + drag_delta.y;
-                    event.start_beat = timeline.y_to_beat(new_y); // will be attached when stop dragging
+                    event.start_beat = timeline.y_to_beat(new_y.round()); // will be attached when stop dragging
                 } else {
                     let new_y = timeline.beat_to_y(event.end_beat) + drag_delta.y;
-                    event.end_beat = timeline.y_to_beat(new_y); // will be attached when stop dragging
+                    event.end_beat = timeline.y_to_beat(new_y.round()); // will be attached when stop dragging
                 }
             }
 

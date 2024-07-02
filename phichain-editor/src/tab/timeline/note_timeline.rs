@@ -9,7 +9,6 @@ use bevy::hierarchy::Parent;
 use bevy::prelude::*;
 use bevy_egui::EguiUserTextures;
 use egui::{Color32, Rangef, Sense, Stroke, Ui};
-use phichain_chart::beat;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::note::{Note, NoteKind};
 
@@ -233,10 +232,10 @@ pub fn note_timeline_system(
 
                     if start {
                         let new_y = timeline.beat_to_y(note.beat) + drag_delta.y;
-                        note.beat = timeline.y_to_beat(new_y); // will be attached when stop dragging
+                        note.beat = timeline.y_to_beat(new_y.round()); // will be attached when stop dragging
                     } else {
                         let new_y = timeline.beat_to_y(note.end_beat()) + drag_delta.y;
-                        let end_beat = timeline.y_to_beat(new_y);
+                        let end_beat = timeline.y_to_beat(new_y.round());
                         note.set_end_beat(end_beat); // will be attached when stop dragging
                     }
                 }
