@@ -37,6 +37,26 @@ impl Note {
             speed,
         }
     }
+
+    /// Get the end beat of this [`Note`]
+    ///
+    /// If `self.kind` is not [`NoteKind::Hold`], this returns the beat of this [`Note`]
+    pub fn end_beat(&self) -> Beat {
+        match self.kind {
+            NoteKind::Hold { hold_beat } => self.beat + hold_beat,
+            _ => self.beat,
+        }
+    }
+    
+    /// Set the end beat of this [`Note`]
+    /// 
+    /// This only has effect when `self.kind` is [`NoteKind::Hold`]
+    pub fn set_end_beat(&mut self, end_beat: Beat) {
+        match self.kind {
+            NoteKind::Hold { ref mut hold_beat } => *hold_beat = end_beat - self.beat,
+            _ => {},
+        }
+    }
 }
 
 #[cfg(feature = "bevy")]

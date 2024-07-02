@@ -8,7 +8,8 @@ use bevy::asset::{Assets, Handle};
 use bevy::hierarchy::Parent;
 use bevy::prelude::*;
 use bevy_egui::EguiUserTextures;
-use egui::{Color32, Sense, Stroke, Ui};
+use egui::{Color32, Rangef, Sense, Stroke, Ui};
+use phichain_chart::beat;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::note::{Note, NoteKind};
 
@@ -118,8 +119,8 @@ pub fn note_timeline_system(
     selected_line_query: Res<SelectedLine>,
     timeline_viewport: Res<TimelineViewport>,
     bpm_list: Res<BpmList>,
-    note_query: Query<(
-        &Note,
+    mut note_query: Query<(
+        &mut Note,
         &Parent,
         Entity,
         Option<&Highlighted>,
@@ -138,7 +139,7 @@ pub fn note_timeline_system(
 
     let note_timeline_viewport = viewport.note_timeline_viewport();
 
-    for (note, parent, entity, highlighted, selected, pending) in note_query.iter() {
+    for (mut note, parent, entity, highlighted, selected, pending) in &mut note_query {
         if !timeline_settings.note_side_filter.filter(*note) {
             continue;
         }
@@ -197,14 +198,68 @@ pub fn note_timeline_system(
             tint = Color32::from_rgba_unmultiplied(tint.r(), tint.g(), tint.b(), 20);
         }
 
+        let rect = egui::Rect::from_center_size(center, size);
+
         let response = ui.put(
-            egui::Rect::from_center_size(center, size),
+            rect,
             egui::Image::new((image, size))
                 .maintain_aspect_ratio(false)
                 .fit_to_exact_size(size)
                 .tint(tint)
                 .sense(Sense::click()),
         );
+
+        // FIXME: attempt to multiply with overflow
+        if let NoteKind::Hold { .. } = note.kind {
+            let mut make_drag_zone = |start: bool| {
+                let drag_zone = egui::Rect::from_x_y_ranges(
+                    rect.x_range(),
+                    if start {
+                        Rangef::from(rect.max.y - 5.0..=rect.max.y)
+                    } else {
+                        Rangef::from(rect.min.y..=rect.min.y + 5.0)
+                    },
+                );
+                let response = ui
+                    .allocate_rect(drag_zone, Sense::drag())
+                    .on_hover_and_drag_cursor(egui::CursorIcon::ResizeVertical);
+
+                if response.drag_started() {
+                    ui.data_mut(|data| data.insert_temp(egui::Id::new("hold-drag"), *note));
+                }
+
+                if response.dragged() {
+                    let drag_delta = response.drag_delta();
+
+                    if start {
+                        let new_y = timeline.beat_to_y(note.beat) + drag_delta.y;
+                        note.beat = timeline.y_to_beat(new_y); // will be attached when stop dragging
+                    } else {
+                        let new_y = timeline.beat_to_y(note.end_beat()) + drag_delta.y;
+                        let end_beat = timeline.y_to_beat(new_y);
+                        note.set_end_beat(end_beat); // will be attached when stop dragging
+                    }
+                }
+
+                if response.drag_stopped() {
+                    let from =
+                        ui.data(|data| data.get_temp::<Note>(egui::Id::new("hold-drag")).unwrap());
+                    ui.data_mut(|data| data.remove::<Note>(egui::Id::new("hold-drag")));
+                    if start {
+                        note.beat = timeline.timeline_settings.attach(note.beat.value());
+                    } else {
+                        let end_beat = timeline.timeline_settings.attach(note.end_beat().value());
+                        note.set_end_beat(end_beat);
+                    }
+                    if from != *note {
+                        println!("{:?} -> {:?}", from, note)
+                    }
+                }
+            };
+
+            make_drag_zone(true);
+            make_drag_zone(false);
+        }
 
         if response.clicked() {
             select_events.send(SelectEvent(vec![entity]));
