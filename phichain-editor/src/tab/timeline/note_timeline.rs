@@ -1,6 +1,9 @@
 use crate::assets::ImageAssets;
 use crate::constants::CANVAS_WIDTH;
+use crate::editing::command::note::EditNote;
+use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
+use crate::editing::DoCommandEvent;
 use crate::highlight::Highlighted;
 use crate::selection::{SelectEvent, Selected, SelectedLine};
 use crate::tab::timeline::{Timeline, TimelineFilter, TimelineSettings, TimelineViewport};
@@ -132,6 +135,7 @@ pub fn note_timeline_system(
     assets: Res<ImageAssets>,
     images: Res<Assets<Image>>,
     textures: Res<EguiUserTextures>,
+    mut event_writer: EventWriter<DoCommandEvent>,
 ) {
     let selected_line = selected_line_query.0;
     let viewport = timeline_viewport;
@@ -251,7 +255,9 @@ pub fn note_timeline_system(
                         note.set_end_beat(end_beat);
                     }
                     if from != *note {
-                        println!("{:?} -> {:?}", from, note)
+                        event_writer.send(DoCommandEvent(EditorCommand::EditNote(EditNote::new(
+                            entity, from, *note,
+                        ))));
                     }
                 }
             };
