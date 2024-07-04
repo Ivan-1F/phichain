@@ -1,5 +1,6 @@
 pub mod event;
 pub mod note;
+pub mod drag_selection;
 
 use crate::audio::AudioDuration;
 use crate::constants::{BASE_ZOOM, INDICATOR_POSITION};

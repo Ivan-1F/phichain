@@ -13,6 +13,7 @@ use crate::timeline::Timeline;
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
 use phichain_chart::note::Note;
+use crate::timeline::drag_selection::TimelineDragSelectionPlugin;
 
 pub struct TimelineTabPlugin;
 
@@ -21,6 +22,7 @@ impl Plugin for TimelineTabPlugin {
         app
             // .add_plugins(NoteTimelinePlugin)
             // .add_plugins(EventTimelinePlugin)
+            .add_plugins(TimelineDragSelectionPlugin)
             .insert_resource(TimelineViewport(Rect::from_corners(Vec2::ZERO, Vec2::ZERO)))
             .insert_resource(TimelineSettings::default());
     }
@@ -57,6 +59,7 @@ pub fn timeline_tab(In(ui): In<&'static mut Ui>, world: &mut World) {
     });
     timeline::common::beat_line_ui(ui, world);
     timeline::common::indicator_ui(ui, world);
+    timeline::drag_selection::timeline_drag_selection(ui, world);
 }
 
 #[derive(Resource, Debug)]
