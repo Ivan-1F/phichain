@@ -33,6 +33,14 @@ pub fn timeline_setting_tab(In(ui): In<&mut Ui>, mut timeline_settings: ResMut<T
             );
             ui.end_row();
 
+            ui.label(t!("tab.timeline_setting.show_note_timeline"));
+            ui.checkbox(&mut timeline_settings.show_note_timeline, "");
+            ui.end_row();
+
+            ui.label(t!("tab.timeline_setting.show_event_timeline"));
+            ui.checkbox(&mut timeline_settings.show_event_timeline, "");
+            ui.end_row();
+
             ui.label(t!("tab.timeline_setting.note_side_filter.title"));
             ui.horizontal(|ui| {
                 ui.selectable_value(

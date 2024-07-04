@@ -42,6 +42,8 @@ tab:
     zoom: 时间线缩放
     density: 节拍线密度
     lane: 垂直参考线
+    show_note_timeline: 显示音符时间线
+    show_event_timeline: 显示事件时间线
     note_side_filter:
       title: 音符所属侧
       all: 所有

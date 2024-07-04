@@ -29,18 +29,34 @@ impl Plugin for TimelineTabPlugin {
 pub fn timeline_tab(In(ui): In<&'static mut Ui>, world: &mut World) {
     world.resource_scope(|world: &mut World, selected_line: Mut<SelectedLine>| {
         let viewport = world.resource::<TimelineViewport>();
+        let timeline_settings = world.resource::<TimelineSettings>();
         let rect = egui::Rect::from_min_max(
             egui::Pos2::new(viewport.0.min.x, viewport.0.min.y),
             egui::Pos2::new(viewport.0.max.x, viewport.0.max.y),
         );
-        let note_viewport = rect.with_max_x(rect.min.x + rect.width() / 3.0 * 2.0);
-        let event_viewport = rect.with_min_x(rect.min.x + rect.width() / 3.0 * 2.0);
-        NoteTimeline::new(selected_line.0).ui(ui, world, note_viewport);
-        EventTimeline::new(selected_line.0).ui(ui, world, event_viewport);
+
+        match (
+            timeline_settings.show_note_timeline,
+            timeline_settings.show_event_timeline,
+        ) {
+            (true, true) => {
+                let note_viewport = rect.with_max_x(rect.min.x + rect.width() / 3.0 * 2.0);
+                let event_viewport = rect.with_min_x(rect.min.x + rect.width() / 3.0 * 2.0);
+                NoteTimeline::new(selected_line.0).ui(ui, world, note_viewport);
+                EventTimeline::new(selected_line.0).ui(ui, world, event_viewport);
+                timeline::common::separator_ui(ui, world);
+            }
+            (true, false) => {
+                NoteTimeline::new(selected_line.0).ui(ui, world, rect);
+            }
+            (false, true) => {
+                EventTimeline::new(selected_line.0).ui(ui, world, rect);
+            }
+            (false, false) => {}
+        }
     });
     timeline::common::beat_line_ui(ui, world);
     timeline::common::indicator_ui(ui, world);
-    timeline::common::separator_ui(ui, world);
 }
 
 #[derive(Resource, Debug)]
@@ -96,6 +112,9 @@ pub struct TimelineSettings {
     pub density: u32,
     pub lanes: u32,
 
+    pub show_note_timeline: bool,
+    pub show_event_timeline: bool,
+
     pub note_side_filter: NoteSideFilter,
 }
 
@@ -105,6 +124,9 @@ impl Default for TimelineSettings {
             zoom: 2.0,
             density: 4,
             lanes: 11,
+
+            show_note_timeline: true,
+            show_event_timeline: true,
 
             note_side_filter: NoteSideFilter::default(),
         }

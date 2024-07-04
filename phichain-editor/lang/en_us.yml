@@ -42,6 +42,8 @@ tab:
     zoom: Timeline Zoom
     density: Timeline Density
     lane: Vertical Lane
+    show_note_timeline: Show Note Timeline
+    show_event_timeline: Show Event Timeline
     note_side_filter:
       title: Note Side
       all: All
