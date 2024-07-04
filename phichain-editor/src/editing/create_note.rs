@@ -8,12 +8,9 @@ use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
 use crate::project::project_loaded;
+use crate::timeline::settings::TimelineSettings;
 use crate::timeline::TimelineContext;
-use crate::{
-    constants::CANVAS_WIDTH,
-    selection::SelectedLine,
-    tab::timeline::{TimelineSettings, TimelineViewport},
-};
+use crate::{constants::CANVAS_WIDTH, selection::SelectedLine, tab::timeline::TimelineViewport};
 use phichain_chart::note::NoteBundle;
 
 pub struct CreateNoteSystem;

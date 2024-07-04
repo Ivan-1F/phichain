@@ -4,16 +4,14 @@ mod note_timeline;
 use bevy::prelude::*;
 use egui::Ui;
 
-use crate::constants::CANVAS_WIDTH;
 use crate::selection::SelectedLine;
 use crate::timeline;
+use crate::timeline::drag_selection::TimelineDragSelectionPlugin;
 use crate::timeline::event::EventTimeline;
 use crate::timeline::note::NoteTimeline;
+use crate::timeline::settings::TimelineSettings;
 use crate::timeline::Timeline;
-use phichain_chart::beat;
-use phichain_chart::beat::Beat;
 use phichain_chart::note::Note;
-use crate::timeline::drag_selection::TimelineDragSelectionPlugin;
 
 pub struct TimelineTabPlugin;
 
@@ -106,63 +104,5 @@ impl TimelineFilter<Note> for NoteSideFilter {
             NoteSideFilter::Above => note.above,
             NoteSideFilter::Below => !note.above,
         }
-    }
-}
-
-#[derive(Resource)]
-pub struct TimelineSettings {
-    pub zoom: f32,
-    pub density: u32,
-    pub lanes: u32,
-
-    pub show_note_timeline: bool,
-    pub show_event_timeline: bool,
-
-    pub note_side_filter: NoteSideFilter,
-}
-
-impl Default for TimelineSettings {
-    fn default() -> Self {
-        Self {
-            zoom: 2.0,
-            density: 4,
-            lanes: 11,
-
-            show_note_timeline: true,
-            show_event_timeline: true,
-
-            note_side_filter: NoteSideFilter::default(),
-        }
-    }
-}
-
-impl TimelineSettings {
-    pub fn attach(&self, beat: f32) -> Beat {
-        beat::utils::attach(beat, self.density)
-    }
-
-    pub fn minimum_beat(&self) -> Beat {
-        beat!(0, 1, self.density)
-    }
-
-    pub fn lane_percents(&self) -> Vec<f32> {
-        let lane_width = 1.0 / (self.lanes + 1) as f32;
-        std::iter::repeat(0)
-            .take(self.lanes as usize)
-            .enumerate()
-            .map(|(i, _)| (i + 1) as f32 * lane_width)
-            .collect()
-    }
-
-    pub fn minimum_lane(&self) -> f32 {
-        CANVAS_WIDTH / self.lanes as f32
-    }
-
-    pub fn attach_x(&self, x: f32) -> f32 {
-        self.lane_percents()
-            .iter()
-            .map(|x| (x - 0.5) * CANVAS_WIDTH)
-            .min_by(|a, b| (a - x).abs().partial_cmp(&(b - x).abs()).unwrap())
-            .unwrap_or(x)
     }
 }

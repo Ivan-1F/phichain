@@ -6,11 +6,9 @@ use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
 use crate::project::project_loaded;
+use crate::timeline::settings::TimelineSettings;
 use crate::timeline::TimelineContext;
-use crate::{
-    selection::SelectedLine,
-    tab::timeline::{TimelineSettings, TimelineViewport},
-};
+use crate::{selection::SelectedLine, tab::timeline::TimelineViewport};
 use phichain_chart::event::{LineEvent, LineEventBundle, LineEventKind};
 
 pub struct CreateEventPlugin;

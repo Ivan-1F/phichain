@@ -1,10 +1,12 @@
+pub mod drag_selection;
 pub mod event;
 pub mod note;
-pub mod drag_selection;
+pub mod settings;
 
 use crate::audio::AudioDuration;
 use crate::constants::{BASE_ZOOM, INDICATOR_POSITION};
-use crate::tab::timeline::{TimelineSettings, TimelineViewport};
+use crate::tab::timeline::TimelineViewport;
+use crate::timeline::settings::TimelineSettings;
 use crate::timing::ChartTime;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::{Res, World};

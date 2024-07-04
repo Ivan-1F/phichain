@@ -1,7 +1,8 @@
+use crate::timeline::settings::TimelineSettings;
 use bevy::prelude::*;
 use egui::Ui;
 
-use super::timeline::{NoteSideFilter, TimelineSettings};
+use super::timeline::NoteSideFilter;
 
 pub fn timeline_setting_tab(In(ui): In<&mut Ui>, mut timeline_settings: ResMut<TimelineSettings>) {
     egui::Grid::new("timeline_setting_grid")
