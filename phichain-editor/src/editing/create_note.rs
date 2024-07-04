@@ -8,10 +8,11 @@ use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
 use crate::project::project_loaded;
+use crate::timeline::TimelineContext;
 use crate::{
     constants::CANVAS_WIDTH,
     selection::SelectedLine,
-    tab::timeline::{Timeline, TimelineSettings, TimelineViewport},
+    tab::timeline::{TimelineSettings, TimelineViewport},
 };
 use phichain_chart::note::NoteBundle;
 
@@ -28,7 +29,7 @@ impl Plugin for CreateNoteSystem {
 
 fn create_note_system(
     mut commands: Commands,
-    timeline: Timeline,
+    timeline: TimelineContext,
     keyboard: Res<ButtonInput<KeyCode>>,
 
     selected_line: Res<SelectedLine>,

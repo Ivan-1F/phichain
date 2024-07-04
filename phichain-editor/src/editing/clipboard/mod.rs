@@ -5,7 +5,8 @@ use crate::editing::command::{CommandSequence, EditorCommand};
 use crate::editing::DoCommandEvent;
 use crate::hotkey::HotkeyRegistrationExt;
 use crate::selection::{Selected, SelectedLine};
-use crate::tab::timeline::{Timeline, TimelineSettings, TimelineViewport};
+use crate::tab::timeline::{TimelineSettings, TimelineViewport};
+use crate::timeline::TimelineContext;
 use crate::utils::compat::ControlKeyExt;
 use bevy::prelude::*;
 use phichain_chart::bpm_list::BpmList;
@@ -63,7 +64,7 @@ fn paste_system(
 
     selected_line: Res<SelectedLine>,
 
-    timeline: Timeline,
+    timeline: TimelineContext,
     timeline_viewport: Res<TimelineViewport>,
     bpm_list: Res<BpmList>,
     timeline_settings: Res<TimelineSettings>,

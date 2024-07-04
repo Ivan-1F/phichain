@@ -1,17 +1,13 @@
-use crate::editing::command::event::EditEvent;
-use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
-use crate::editing::DoCommandEvent;
 use crate::selection::{SelectEvent, Selected, SelectedLine};
-use crate::tab::timeline::{Timeline, TimelineViewport};
-use crate::ui::widgets::event::event_ui;
+use crate::tab::timeline::TimelineViewport;
+use crate::timeline::TimelineContext;
 use bevy::app::{App, Plugin};
 use bevy::hierarchy::Parent;
 use bevy::prelude::{Entity, EventWriter, In, Query, Res, ResMut, Resource, Window};
 use egui::{Color32, Sense, Stroke, Ui};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::LineEvent;
-use std::iter;
 
 pub struct EventTimelinePlugin;
 
@@ -25,6 +21,7 @@ impl Plugin for EventTimelinePlugin {
 #[derive(Resource, Debug, Default)]
 pub struct EventTimelineDragSelection(pub Option<(egui::Vec2, egui::Vec2)>);
 
+#[allow(dead_code)]
 pub fn event_timeline_drag_select_system(
     In(ui): In<&mut Ui>,
     viewport: Res<TimelineViewport>,
@@ -37,7 +34,7 @@ pub fn event_timeline_drag_select_system(
         Option<&Pending>,
     )>,
     mut select_events: EventWriter<SelectEvent>,
-    timeline: Timeline,
+    timeline: TimelineContext,
 
     mut selection: ResMut<EventTimelineDragSelection>,
     window_query: Query<&Window>,
@@ -116,96 +113,5 @@ pub fn event_timeline_drag_select_system(
             }
         }
         selection.0 = None;
-    }
-}
-
-pub fn event_timeline_system(
-    In(ui): In<&mut Ui>,
-    selected_line_query: Res<SelectedLine>,
-    timeline_viewport: Res<TimelineViewport>,
-    bpm_list: Res<BpmList>,
-    mut event_query: Query<(
-        &mut LineEvent,
-        &Parent,
-        Entity,
-        Option<&Selected>,
-        Option<&Pending>,
-    )>,
-    mut select_events: EventWriter<SelectEvent>,
-    timeline: Timeline,
-    mut event_writer: EventWriter<DoCommandEvent>,
-) {
-    let selected_line = selected_line_query.0;
-    let viewport = timeline_viewport;
-
-    let event_timeline_viewport = viewport.event_timeline_viewport();
-
-    // [0.2, 0.4, 0.6, 0.8]
-    let lane_percents = iter::repeat(0.0)
-        .take(5 - 1)
-        .enumerate()
-        .map(|(i, _)| (i + 1) as f32 * 1.0 / 5.0)
-        .collect::<Vec<_>>();
-    for percent in lane_percents {
-        ui.painter().rect_filled(
-            egui::Rect::from_center_size(
-                egui::Pos2::new(
-                    event_timeline_viewport.min.x + event_timeline_viewport.width() * percent,
-                    viewport.0.center().y,
-                ),
-                egui::Vec2::new(2.0, viewport.0.height()),
-            ),
-            0.0,
-            Color32::from_rgba_unmultiplied(255, 255, 255, 40),
-        );
-    }
-
-    for (mut event, parent, entity, selected, pending) in &mut event_query {
-        if parent.get() != selected_line {
-            continue;
-        }
-
-        let track: u8 = event.kind.into();
-
-        let x = event_timeline_viewport.width() / 5.0 * track as f32
-            - event_timeline_viewport.width() / 5.0 / 2.0
-            + event_timeline_viewport.min.x;
-        let y = timeline.time_to_y(bpm_list.time_at(event.start_beat));
-
-        let size = egui::Vec2::new(
-            event_timeline_viewport.width() / 8000.0 * 989.0,
-            y - timeline.time_to_y(bpm_list.time_at(event.end_beat)),
-        );
-
-        let center = egui::Pos2::new(x, y - size.y / 2.0);
-
-        let mut color = if selected.is_some() {
-            Color32::LIGHT_GREEN
-        } else {
-            Color32::LIGHT_BLUE
-        };
-
-        if pending.is_some() {
-            color = Color32::from_rgba_unmultiplied(color.r(), color.g(), color.b(), 20);
-        }
-
-        let on_event_change = |old_event, new_event| {
-            event_writer.send(DoCommandEvent(EditorCommand::EditEvent(EditEvent::new(
-                entity, old_event, new_event,
-            ))));
-        };
-
-        if event_ui(
-            ui,
-            egui::Rect::from_center_size(center, size),
-            &mut event,
-            color,
-            &timeline,
-            on_event_change,
-        )
-        .clicked()
-        {
-            select_events.send(SelectEvent(vec![entity]));
-        }
     }
 }

@@ -1,19 +1,13 @@
-use crate::assets::ImageAssets;
 use crate::constants::CANVAS_WIDTH;
-use crate::editing::command::note::EditNote;
-use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
-use crate::editing::DoCommandEvent;
-use crate::highlight::Highlighted;
 use crate::selection::{SelectEvent, Selected, SelectedLine};
-use crate::tab::timeline::{Timeline, TimelineFilter, TimelineSettings, TimelineViewport};
-use bevy::asset::{Assets, Handle};
+use crate::tab::timeline::TimelineViewport;
+use crate::timeline::TimelineContext;
 use bevy::hierarchy::Parent;
 use bevy::prelude::*;
-use bevy_egui::EguiUserTextures;
-use egui::{Color32, Rangef, Sense, Stroke, Ui};
+use egui::{Color32, Sense, Stroke, Ui};
 use phichain_chart::bpm_list::BpmList;
-use phichain_chart::note::{Note, NoteKind};
+use phichain_chart::note::Note;
 
 pub struct NoteTimelinePlugin;
 
@@ -27,13 +21,14 @@ impl Plugin for NoteTimelinePlugin {
 #[derive(Resource, Debug, Default)]
 pub struct NoteTimelineDragSelection(pub Option<(egui::Vec2, egui::Vec2)>);
 
+#[allow(dead_code)]
 pub fn note_timeline_drag_select_system(
     In(ui): In<&mut Ui>,
     viewport: Res<TimelineViewport>,
     bpm_list: Res<BpmList>,
     note_query: Query<(&Note, &Parent, Entity, Option<&Selected>, Option<&Pending>)>,
     mut select_events: EventWriter<SelectEvent>,
-    timeline: Timeline,
+    timeline: TimelineContext,
 
     mut selection: ResMut<NoteTimelineDragSelection>,
     window_query: Query<&Window>,
@@ -113,179 +108,5 @@ pub fn note_timeline_drag_select_system(
             }
         }
         selection.0 = None;
-    }
-}
-
-pub fn note_timeline_system(
-    In(ui): In<&mut Ui>,
-    selected_line_query: Res<SelectedLine>,
-    timeline_viewport: Res<TimelineViewport>,
-    bpm_list: Res<BpmList>,
-    mut note_query: Query<(
-        &mut Note,
-        &Parent,
-        Entity,
-        Option<&Highlighted>,
-        Option<&Selected>,
-        Option<&Pending>,
-    )>,
-    mut select_events: EventWriter<SelectEvent>,
-    timeline: Timeline,
-    timeline_settings: Res<TimelineSettings>,
-    assets: Res<ImageAssets>,
-    images: Res<Assets<Image>>,
-    textures: Res<EguiUserTextures>,
-    mut event_writer: EventWriter<DoCommandEvent>,
-) {
-    let selected_line = selected_line_query.0;
-    let viewport = timeline_viewport;
-
-    let note_timeline_viewport = viewport.note_timeline_viewport();
-
-    for (mut note, parent, entity, highlighted, selected, pending) in &mut note_query {
-        if !timeline_settings.note_side_filter.filter(*note) {
-            continue;
-        }
-
-        if parent.get() != selected_line {
-            continue;
-        }
-
-        let x = note_timeline_viewport.min.x
-            + (note.x / CANVAS_WIDTH + 0.5) * note_timeline_viewport.width();
-        let y = timeline.time_to_y(bpm_list.time_at(note.beat));
-
-        let get_asset = |handle: &Handle<Image>| {
-            (
-                images.get(handle).unwrap().size(),
-                textures.image_id(handle).unwrap(),
-            )
-        };
-
-        let handle = match (note.kind, highlighted.is_some()) {
-            (NoteKind::Tap, true) => &assets.tap_highlight,
-            (NoteKind::Drag, true) => &assets.drag_highlight,
-            (NoteKind::Hold { .. }, true) => &assets.hold_highlight,
-            (NoteKind::Flick, true) => &assets.flick_highlight,
-            (NoteKind::Tap, false) => &assets.tap,
-            (NoteKind::Drag, false) => &assets.drag,
-            (NoteKind::Hold { .. }, false) => &assets.hold,
-            (NoteKind::Flick, false) => &assets.flick,
-        };
-
-        let (size, image) = get_asset(handle);
-
-        let size = match note.kind {
-            NoteKind::Hold { hold_beat } => egui::Vec2::new(
-                note_timeline_viewport.width() / 8000.0 * size.x as f32,
-                y - timeline.time_to_y(bpm_list.time_at(note.beat + hold_beat)),
-            ),
-            _ => egui::Vec2::new(
-                note_timeline_viewport.width() / 8000.0 * size.x as f32,
-                note_timeline_viewport.width() / 8000.0 * size.y as f32,
-            ),
-        };
-
-        let center = match note.kind {
-            NoteKind::Hold { hold_beat: _ } => egui::Pos2::new(x, y - size.y / 2.0),
-            _ => egui::Pos2::new(x, y),
-        };
-
-        let mut tint = if selected.is_some() {
-            Color32::LIGHT_GREEN
-        } else {
-            Color32::WHITE
-        };
-
-        if pending.is_some() {
-            tint = Color32::from_rgba_unmultiplied(tint.r(), tint.g(), tint.b(), 20);
-        }
-
-        let rect = egui::Rect::from_center_size(center, size);
-
-        let response = ui.put(
-            rect,
-            egui::Image::new((image, size))
-                .maintain_aspect_ratio(false)
-                .fit_to_exact_size(size)
-                .tint(tint)
-                .sense(Sense::click()),
-        );
-
-        // FIXME: attempt to multiply with overflow
-        if let NoteKind::Hold { .. } = note.kind {
-            let mut make_drag_zone = |start: bool| {
-                let drag_zone = egui::Rect::from_x_y_ranges(
-                    rect.x_range(),
-                    if start {
-                        Rangef::from(rect.max.y - 5.0..=rect.max.y)
-                    } else {
-                        Rangef::from(rect.min.y..=rect.min.y + 5.0)
-                    },
-                );
-                let response = ui
-                    .allocate_rect(drag_zone, Sense::drag())
-                    .on_hover_and_drag_cursor(egui::CursorIcon::ResizeVertical);
-
-                if response.drag_started() {
-                    ui.data_mut(|data| data.insert_temp(egui::Id::new("hold-drag"), *note));
-                }
-
-                if response.dragged() {
-                    let drag_delta = response.drag_delta();
-
-                    if start {
-                        let new_y = timeline.beat_to_y(note.beat) + drag_delta.y;
-                        note.beat = timeline.y_to_beat(new_y.round()); // will be attached when stop dragging
-                    } else {
-                        let new_y = timeline.beat_to_y(note.end_beat()) + drag_delta.y;
-                        let end_beat = timeline.y_to_beat(new_y.round());
-                        note.set_end_beat(end_beat); // will be attached when stop dragging
-                    }
-                }
-
-                if response.drag_stopped() {
-                    let from =
-                        ui.data(|data| data.get_temp::<Note>(egui::Id::new("hold-drag")).unwrap());
-                    ui.data_mut(|data| data.remove::<Note>(egui::Id::new("hold-drag")));
-                    if start {
-                        note.beat = timeline.timeline_settings.attach(note.beat.value());
-                    } else {
-                        let end_beat = timeline.timeline_settings.attach(note.end_beat().value());
-                        note.set_end_beat(end_beat);
-                    }
-                    if from != *note {
-                        event_writer.send(DoCommandEvent(EditorCommand::EditNote(EditNote::new(
-                            entity, from, *note,
-                        ))));
-                    }
-                }
-            };
-
-            make_drag_zone(true);
-            make_drag_zone(false);
-        }
-
-        if response.clicked() {
-            select_events.send(SelectEvent(vec![entity]));
-        }
-    }
-
-    for percent in timeline_settings.lane_percents() {
-        ui.painter().rect_filled(
-            egui::Rect::from_center_size(
-                egui::Pos2::new(
-                    note_timeline_viewport.min.x + note_timeline_viewport.width() * percent,
-                    viewport.0.center().y,
-                ),
-                egui::Vec2::new(2.0, viewport.0.height()),
-            ),
-            0.0,
-            if percent == 0.5 {
-                Color32::from_rgba_unmultiplied(0, 255, 0, 40)
-            } else {
-                Color32::from_rgba_unmultiplied(255, 255, 255, 40)
-            },
-        );
     }
 }

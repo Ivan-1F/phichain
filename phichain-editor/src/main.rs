@@ -24,6 +24,7 @@ mod screenshot;
 mod selection;
 mod settings;
 mod tab;
+mod timeline;
 mod timing;
 mod translation;
 mod ui;
