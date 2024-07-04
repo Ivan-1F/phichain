@@ -1,4 +1,5 @@
 use crate::tab::timeline::NoteSideFilter;
+use crate::timeline::Timelines;
 use bevy::prelude::Resource;
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
@@ -13,6 +14,9 @@ pub struct TimelineSettings {
     pub show_note_timeline: bool,
     pub show_event_timeline: bool,
 
+    // (timeline, max x percent)
+    pub timelines: Vec<(Timelines, f32)>,
+
     pub note_side_filter: NoteSideFilter,
 }
 
@@ -25,6 +29,8 @@ impl Default for TimelineSettings {
 
             show_note_timeline: true,
             show_event_timeline: true,
+
+            timelines: vec![],
 
             note_side_filter: NoteSideFilter::default(),
         }

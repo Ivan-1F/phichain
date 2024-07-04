@@ -6,11 +6,14 @@ pub mod settings;
 use crate::audio::AudioDuration;
 use crate::constants::{BASE_ZOOM, INDICATOR_POSITION};
 use crate::tab::timeline::TimelineViewport;
+use crate::timeline::event::EventTimeline;
+use crate::timeline::note::NoteTimeline;
 use crate::timeline::settings::TimelineSettings;
 use crate::timing::ChartTime;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::{Entity, Res, World};
 use egui::{Rect, Ui};
+use enum_dispatch::enum_dispatch;
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
@@ -66,6 +69,7 @@ impl<'w> TimelineContext<'w> {
     }
 }
 
+#[enum_dispatch(Timelines)]
 pub trait Timeline {
     fn ui(&self, ui: &mut Ui, world: &mut World, viewport: Rect);
 
@@ -77,6 +81,13 @@ pub trait Timeline {
     ///
     /// The return value of this function will be a vector contains all entities that are selected
     fn on_drag_selection(&self, world: &mut World, selection: Rect) -> Vec<Entity>;
+}
+
+#[enum_dispatch]
+#[derive(Debug, Clone)]
+pub enum Timelines {
+    Note(NoteTimeline),
+    Event(EventTimeline),
 }
 
 pub mod common {
@@ -142,17 +153,20 @@ pub mod common {
     pub fn separator_ui(ui: &mut Ui, world: &mut World) {
         let mut state: SystemState<TimelineContext> = SystemState::new(world);
         let ctx = state.get(world);
-        ui.painter().rect_filled(
-            egui::Rect::from_center_size(
-                egui::Pos2::new(
-                    ctx.viewport.note_timeline_viewport().max.x,
-                    ctx.viewport.0.center().y,
+
+        for percent in ctx.timeline_settings.timelines.iter().map(|x| x.1) {
+            ui.painter().rect_filled(
+                egui::Rect::from_center_size(
+                    egui::Pos2::new(
+                        ctx.viewport.0.min.x + percent * ctx.viewport.0.width(),
+                        ctx.viewport.0.center().y,
+                    ),
+                    egui::Vec2::new(2.0, ctx.viewport.0.height()),
                 ),
-                egui::Vec2::new(2.0, ctx.viewport.0.height()),
-            ),
-            0.0,
-            Color32::WHITE,
-        );
+                0.0,
+                Color32::WHITE,
+            );
+        }
     }
 
     pub fn indicator_ui(ui: &mut Ui, world: &mut World) {

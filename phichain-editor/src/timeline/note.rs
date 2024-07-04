@@ -15,6 +15,7 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::CANVAS_WIDTH;
 use phichain_chart::note::{Note, NoteKind};
 
+#[derive(Debug, Clone)]
 pub struct NoteTimeline(Entity);
 
 impl NoteTimeline {

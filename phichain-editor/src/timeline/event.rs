@@ -12,6 +12,7 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::LineEvent;
 use std::iter;
 
+#[derive(Debug, Clone)]
 pub struct EventTimeline(Entity);
 
 impl EventTimeline {
