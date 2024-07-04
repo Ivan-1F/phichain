@@ -171,4 +171,26 @@ impl Timeline for EventTimeline {
             );
         }
     }
+
+    fn on_drag_selection(&self, world: &mut World, selection: Rect) -> Vec<Entity> {
+        let x_range = selection.x_range();
+        let time_range = selection.y_range();
+
+        let mut state: SystemState<(Query<(&LineEvent, &Parent, Entity)>, Res<BpmList>)> =
+            SystemState::new(world);
+        let (event_query, bpm_list) = state.get_mut(world);
+
+        event_query
+            .iter()
+            .filter(|x| x.1.get() == self.0)
+            .filter(|x| {
+                let event = x.0;
+                let track: u8 = event.kind.into();
+                let target_x = (track - 1) as f32 * (1.0 / 5.0) + (1.0 / (5.0 * 2.0));
+                x_range.contains(target_x)
+                    && time_range.contains(bpm_list.time_at(event.start_beat))
+            })
+            .map(|x| x.2)
+            .collect()
+    }
 }

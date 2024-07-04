@@ -9,7 +9,7 @@ use crate::tab::timeline::TimelineViewport;
 use crate::timeline::settings::TimelineSettings;
 use crate::timing::ChartTime;
 use bevy::ecs::system::SystemParam;
-use bevy::prelude::{Res, World};
+use bevy::prelude::{Entity, Res, World};
 use egui::{Rect, Ui};
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
@@ -68,6 +68,15 @@ impl<'w> TimelineContext<'w> {
 
 pub trait Timeline {
     fn ui(&self, ui: &mut Ui, world: &mut World, viewport: Rect);
+
+    /// Handle drag selection on the timeline
+    ///
+    /// The selection param will be a rect where x represents the x value and y represents the time
+    ///
+    /// The selection will be cropped to fit the timeline, which means the x of the left-top corner of the timeline will be 0
+    ///
+    /// The return value of this function will be a vector contains all entities that are selected
+    fn on_drag_selection(&self, world: &mut World, selection: Rect) -> Vec<Entity>;
 }
 
 pub mod common {
