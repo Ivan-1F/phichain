@@ -1,3 +1,5 @@
+use crate::timeline::event::EventTimeline;
+use crate::timeline::note::NoteTimeline;
 use crate::timeline::TimelineItem;
 use egui::Rect;
 
@@ -18,12 +20,29 @@ pub struct AllocatedTimeline<'a> {
 /// A container holds all the timelines on the timeline tab
 ///
 /// Responsible for allocating viewports for each timeline
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct TimelineContainer {
     /// All [`ManagedTimeline`] this [`TimelineContainer`] holds
     ///
     /// This vector is guaranteed to be sorted by [`fraction`](ManagedTimeline.fraction)
     pub timelines: Vec<ManagedTimeline>,
+}
+
+impl Default for TimelineContainer {
+    fn default() -> Self {
+        TimelineContainer {
+            timelines: vec![
+                ManagedTimeline {
+                    timeline: TimelineItem::Note(NoteTimeline::new_binding()),
+                    fraction: 2.0 / 3.0,
+                },
+                ManagedTimeline {
+                    timeline: TimelineItem::Event(EventTimeline::new_binding()),
+                    fraction: 1.0,
+                },
+            ],
+        }
+    }
 }
 
 impl TimelineContainer {
