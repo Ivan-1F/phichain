@@ -12,7 +12,6 @@ pub struct ManagedTimeline {
 #[derive(Debug, Clone)]
 pub struct AllocatedTimeline<'a> {
     pub timeline: &'a TimelineItem,
-    pub fraction: f32,
     pub viewport: Rect,
 }
 
@@ -95,7 +94,6 @@ impl TimelineContainer {
             .enumerate()
             .map(|(index, timeline)| AllocatedTimeline {
                 timeline: &timeline.timeline,
-                fraction: timeline.fraction,
                 viewport: self.get_timeline_viewport(index, viewport),
             })
             .collect()
