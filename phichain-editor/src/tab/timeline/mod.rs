@@ -48,9 +48,10 @@ fn sync_timeline_line_entity_system(
                 TimelineItem::Note(NoteTimeline::new(selected_line.0)),
                 2.0 / 3.0,
             ));
-            timeline_settings
-                .timelines
-                .push((TimelineItem::Event(EventTimeline::new(selected_line.0)), 1.0));
+            timeline_settings.timelines.push((
+                TimelineItem::Event(EventTimeline::new(selected_line.0)),
+                1.0,
+            ));
         }
         // ensure all timelines are on selected line
         for (timeline, _) in &mut timeline_settings.timelines {
