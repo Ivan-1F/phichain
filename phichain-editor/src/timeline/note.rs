@@ -206,7 +206,7 @@ impl Timeline for NoteTimeline {
         }
     }
 
-    fn on_drag_selection(&self, world: &mut World, selection: Rect) -> Vec<Entity> {
+    fn on_drag_selection(&self, world: &mut World, viewport: Rect, selection: Rect) -> Vec<Entity> {
         let x_range = selection.x_range();
         let time_range = selection.y_range();
 
@@ -219,7 +219,7 @@ impl Timeline for NoteTimeline {
             .filter(|x| x.1.get() == self.0)
             .filter(|x| {
                 let note = x.0;
-                x_range.contains(note.x + CANVAS_WIDTH / 2.0)
+                x_range.contains((note.x / CANVAS_WIDTH + 0.5) * viewport.width())
                     && time_range.contains(bpm_list.time_at(note.beat))
             })
             .map(|x| x.2)

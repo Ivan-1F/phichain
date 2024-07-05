@@ -26,7 +26,7 @@ impl Default for TimelineSettings {
             density: 4,
             lanes: 11,
 
-            multi_line_editing: true,
+            multi_line_editing: false,
 
             timelines: vec![],
 

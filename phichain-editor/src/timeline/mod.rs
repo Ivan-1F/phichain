@@ -90,7 +90,7 @@ pub trait Timeline {
     /// The selection will be cropped to fit the timeline, which means the x of the left-top corner of the timeline will be 0
     ///
     /// The return value of this function will be a vector contains all entities that are selected
-    fn on_drag_selection(&self, world: &mut World, selection: Rect) -> Vec<Entity>;
+    fn on_drag_selection(&self, world: &mut World, viewport: Rect, selection: Rect) -> Vec<Entity>;
 }
 
 #[enum_dispatch]

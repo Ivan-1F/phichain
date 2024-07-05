@@ -177,7 +177,7 @@ impl Timeline for EventTimeline {
         }
     }
 
-    fn on_drag_selection(&self, world: &mut World, selection: Rect) -> Vec<Entity> {
+    fn on_drag_selection(&self, world: &mut World, viewport: Rect, selection: Rect) -> Vec<Entity> {
         let x_range = selection.x_range();
         let time_range = selection.y_range();
 
@@ -192,7 +192,7 @@ impl Timeline for EventTimeline {
                 let event = x.0;
                 let track: u8 = event.kind.into();
                 let target_x = (track - 1) as f32 * (1.0 / 5.0) + (1.0 / (5.0 * 2.0));
-                x_range.contains(target_x)
+                x_range.contains(target_x * viewport.width())
                     && time_range.contains(bpm_list.time_at(event.start_beat))
             })
             .map(|x| x.2)

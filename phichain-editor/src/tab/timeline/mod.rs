@@ -1,6 +1,3 @@
-mod event_timeline;
-mod note_timeline;
-
 use bevy::prelude::*;
 use egui::Ui;
 
@@ -18,10 +15,7 @@ pub struct TimelineTabPlugin;
 
 impl Plugin for TimelineTabPlugin {
     fn build(&self, app: &mut App) {
-        app
-            // .add_plugins(NoteTimelinePlugin)
-            // .add_plugins(EventTimelinePlugin)
-            .add_plugins(TimelineDragSelectionPlugin)
+        app.add_plugins(TimelineDragSelectionPlugin)
             .insert_resource(TimelineViewport(Rect::from_corners(Vec2::ZERO, Vec2::ZERO)))
             .insert_resource(TimelineSettings::default())
             .add_systems(
