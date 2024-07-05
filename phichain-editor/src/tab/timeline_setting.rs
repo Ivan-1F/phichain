@@ -3,7 +3,7 @@ use crate::timeline::note::NoteTimeline;
 use crate::timeline::settings::TimelineSettings;
 use crate::timeline::TimelineItem;
 use bevy::prelude::*;
-use egui::Ui;
+use egui::{RichText, Ui};
 use phichain_chart::line::Line;
 
 use super::timeline::NoteSideFilter;
@@ -67,10 +67,20 @@ pub fn timeline_setting_tab(
             ui.end_row();
         });
 
-    if timeline_settings.multi_line_editing {
+    {
         ui.separator();
         ui.columns(2, |columns| {
             columns[0].menu_button("New Note Timeline", |ui| {
+                if ui.button(RichText::new("Binding").strong()).clicked() {
+                    for (_, percent) in &mut timeline_settings.timelines {
+                        *percent /= 1.2;
+                    }
+                    timeline_settings
+                        .timelines
+                        .push((TimelineItem::Note(NoteTimeline::new_binding()), 1.0));
+                    ui.close_menu();
+                }
+                ui.separator();
                 for (index, (_, entity)) in line_query.iter().enumerate() {
                     // TODO: use a readable identifier for this (e.g. name)
                     // TODO: move timeline selector to dedicated widget
@@ -86,6 +96,16 @@ pub fn timeline_setting_tab(
                 }
             });
             columns[1].menu_button("New Event Timeline", |ui| {
+                if ui.button(RichText::new("Binding").strong()).clicked() {
+                    for (_, percent) in &mut timeline_settings.timelines {
+                        *percent /= 1.2;
+                    }
+                    timeline_settings
+                        .timelines
+                        .push((TimelineItem::Event(EventTimeline::new_binding()), 1.0));
+                    ui.close_menu();
+                }
+                ui.separator();
                 for (index, (_, entity)) in line_query.iter().enumerate() {
                     // TODO: use a readable identifier for this (e.g. name)
                     if ui.button(format!("Line #{}", index)).clicked() {

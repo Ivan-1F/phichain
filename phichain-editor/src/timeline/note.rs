@@ -4,7 +4,7 @@ use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
 use crate::highlight::Highlighted;
-use crate::selection::{SelectEvent, Selected};
+use crate::selection::{SelectEvent, Selected, SelectedLine};
 use crate::tab::timeline::TimelineFilter;
 use crate::timeline::{Timeline, TimelineContext};
 use bevy::ecs::system::SystemState;
@@ -16,20 +16,33 @@ use phichain_chart::constants::CANVAS_WIDTH;
 use phichain_chart::note::{Note, NoteKind};
 
 #[derive(Debug, Clone)]
-pub struct NoteTimeline(Entity);
+pub struct NoteTimeline(Option<Entity>);
 
 impl NoteTimeline {
     pub fn new(line: Entity) -> Self {
-        Self(line)
+        Self(Some(line))
+    }
+
+    pub fn new_binding() -> Self {
+        Self(None)
+    }
+
+    fn line_entity(&self, world: &mut World) -> Entity {
+        match self.0 {
+            None => world.resource::<SelectedLine>().0,
+            Some(entity) => entity,
+        }
     }
 
     pub fn set_line(&mut self, line: Entity) {
-        self.0 = line;
+        self.0 = Some(line);
     }
 }
 
 impl Timeline for NoteTimeline {
     fn ui(&self, ui: &mut Ui, world: &mut World, viewport: Rect) {
+        let line_entity = self.line_entity(world);
+
         let mut state: SystemState<(
             TimelineContext,
             Query<(
@@ -63,7 +76,7 @@ impl Timeline for NoteTimeline {
             if !ctx.timeline_settings.note_side_filter.filter(*note) {
                 continue;
             }
-            if parent.get() != self.0 {
+            if parent.get() != line_entity {
                 continue;
             }
 
@@ -207,6 +220,8 @@ impl Timeline for NoteTimeline {
     }
 
     fn on_drag_selection(&self, world: &mut World, viewport: Rect, selection: Rect) -> Vec<Entity> {
+        let line_entity = self.line_entity(world);
+
         let x_range = selection.x_range();
         let time_range = selection.y_range();
 
@@ -216,7 +231,7 @@ impl Timeline for NoteTimeline {
 
         note_query
             .iter()
-            .filter(|x| x.1.get() == self.0)
+            .filter(|x| x.1.get() == line_entity)
             .filter(|x| {
                 let note = x.0;
                 x_range.contains((note.x / CANVAS_WIDTH + 0.5) * viewport.width())
