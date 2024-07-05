@@ -71,39 +71,43 @@ pub fn timeline_setting_tab(
         });
 
     if timeline_settings.multi_line_editing {
-        ui.menu_button("New Note Timeline", |ui| {
-            for (index, (_, entity)) in line_query.iter().enumerate() {
-                // TODO: use a readable identifier for this (e.g. name)
-                // TODO: move timeline selector to dedicated widget
-                if ui.button(format!("Line #{}", index)).clicked() {
-                    for (_, percent) in &mut timeline_settings.timelines {
-                        *percent /= 1.2;
+        ui.separator();
+        ui.columns(2, |columns| {
+            columns[0].menu_button("New Note Timeline", |ui| {
+                for (index, (_, entity)) in line_query.iter().enumerate() {
+                    // TODO: use a readable identifier for this (e.g. name)
+                    // TODO: move timeline selector to dedicated widget
+                    if ui.button(format!("Line #{}", index)).clicked() {
+                        for (_, percent) in &mut timeline_settings.timelines {
+                            *percent /= 1.2;
+                        }
+                        timeline_settings
+                            .timelines
+                            .push((Timelines::Note(NoteTimeline::new(entity)), 1.0));
+                        ui.close_menu();
                     }
-                    timeline_settings
-                        .timelines
-                        .push((Timelines::Note(NoteTimeline::new(entity)), 1.0));
-                    ui.close_menu();
                 }
-            }
-        });
-        ui.menu_button("New Event Timeline", |ui| {
-            for (index, (_, entity)) in line_query.iter().enumerate() {
-                // TODO: use a readable identifier for this (e.g. name)
-                if ui.button(format!("Line #{}", index)).clicked() {
-                    for (_, percent) in &mut timeline_settings.timelines {
-                        *percent /= 1.2;
+            });
+            columns[1].menu_button("New Event Timeline", |ui| {
+                for (index, (_, entity)) in line_query.iter().enumerate() {
+                    // TODO: use a readable identifier for this (e.g. name)
+                    if ui.button(format!("Line #{}", index)).clicked() {
+                        for (_, percent) in &mut timeline_settings.timelines {
+                            *percent /= 1.2;
+                        }
+                        timeline_settings
+                            .timelines
+                            .push((Timelines::Event(EventTimeline::new(entity)), 1.0));
+                        ui.close_menu();
                     }
-                    timeline_settings
-                        .timelines
-                        .push((Timelines::Event(EventTimeline::new(entity)), 1.0));
-                    ui.close_menu();
                 }
-            }
+            });
         });
 
         ui.end_row();
 
         let timelines = &mut timeline_settings.timelines;
+        let mut deletes = vec![];
 
         for index in 0..timelines.len() {
             let prev = (index > 0)
@@ -115,15 +119,22 @@ pub fn timeline_setting_tab(
             ui.horizontal(|ui| {
                 ui.horizontal(|ui| {
                     ui.label(format!("{:?}", timeline));
-                    let start = prev.map(|x| x + 0.05).unwrap_or(0.0);
+                    let start = prev.unwrap_or(0.0) + 0.05;
                     let end = next.map(|x| x - 0.05).unwrap_or(1.0);
                     ui.add(
                         egui::DragValue::new(percent)
                             .speed(0.005)
                             .clamp_range(start..=end),
                     );
+                    if ui.button(" × ").clicked() {
+                        deletes.push(index);
+                    }
                 });
             });
+        }
+
+        for index in deletes {
+            timelines.remove(index);
         }
     }
 }
