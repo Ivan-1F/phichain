@@ -1,4 +1,6 @@
 use crate::tab::timeline::NoteSideFilter;
+use crate::timeline::event::EventTimeline;
+use crate::timeline::note::NoteTimeline;
 use crate::timeline::TimelineItem;
 use bevy::prelude::Resource;
 use phichain_chart::beat;
@@ -24,7 +26,10 @@ impl Default for TimelineSettings {
             density: 4,
             lanes: 11,
 
-            timelines: vec![],
+            timelines: vec![
+                (TimelineItem::Note(NoteTimeline::new_binding()), 2.0 / 3.0),
+                (TimelineItem::Event(EventTimeline::new_binding()), 1.0),
+            ],
 
             note_side_filter: NoteSideFilter::default(),
         }
