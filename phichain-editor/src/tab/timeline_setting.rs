@@ -68,12 +68,9 @@ pub fn timeline_setting_tab(
         ui.columns(2, |columns| {
             columns[0].menu_button("New Note Timeline", |ui| {
                 if ui.button(RichText::new("Binding").strong()).clicked() {
-                    for (_, percent) in &mut timeline_settings.timelines {
-                        *percent /= 1.2;
-                    }
                     timeline_settings
-                        .timelines
-                        .push((TimelineItem::Note(NoteTimeline::new_binding()), 1.0));
+                        .timelines_container
+                        .push_right(TimelineItem::Note(NoteTimeline::new_binding()));
                     ui.close_menu();
                 }
                 ui.separator();
@@ -81,36 +78,27 @@ pub fn timeline_setting_tab(
                     // TODO: use a readable identifier for this (e.g. name)
                     // TODO: move timeline selector to dedicated widget
                     if ui.button(format!("Line #{}", index)).clicked() {
-                        for (_, percent) in &mut timeline_settings.timelines {
-                            *percent /= 1.2;
-                        }
                         timeline_settings
-                            .timelines
-                            .push((TimelineItem::Note(NoteTimeline::new(entity)), 1.0));
+                            .timelines_container
+                            .push_right(TimelineItem::Note(NoteTimeline::new(entity)));
                         ui.close_menu();
                     }
                 }
             });
             columns[1].menu_button("New Event Timeline", |ui| {
                 if ui.button(RichText::new("Binding").strong()).clicked() {
-                    for (_, percent) in &mut timeline_settings.timelines {
-                        *percent /= 1.2;
-                    }
                     timeline_settings
-                        .timelines
-                        .push((TimelineItem::Event(EventTimeline::new_binding()), 1.0));
+                        .timelines_container
+                        .push_right(TimelineItem::Event(EventTimeline::new_binding()));
                     ui.close_menu();
                 }
                 ui.separator();
                 for (index, (_, entity)) in line_query.iter().enumerate() {
                     // TODO: use a readable identifier for this (e.g. name)
                     if ui.button(format!("Line #{}", index)).clicked() {
-                        for (_, percent) in &mut timeline_settings.timelines {
-                            *percent /= 1.2;
-                        }
                         timeline_settings
-                            .timelines
-                            .push((TimelineItem::Event(EventTimeline::new(entity)), 1.0));
+                            .timelines_container
+                            .push_right(TimelineItem::Event(EventTimeline::new(entity)));
                         ui.close_menu();
                     }
                 }
@@ -119,26 +107,13 @@ pub fn timeline_setting_tab(
 
         ui.end_row();
 
-        let timelines = &mut timeline_settings.timelines;
+        let timelines = &mut timeline_settings.timelines_container;
         let mut deletes = vec![];
 
-        for index in 0..timelines.len() {
-            let prev = (index > 0)
-                .then(|| timelines.get(index - 1).map(|x| x.1))
-                .flatten();
-            let next = timelines.get(index + 1).map(|x| x.1);
-            let (timeline, percent) = timelines.get_mut(index).unwrap();
-
+        for (index, timeline) in timelines.timelines.iter().enumerate() {
             ui.horizontal(|ui| {
                 ui.horizontal(|ui| {
                     ui.label(format!("{:?}", timeline));
-                    let start = prev.unwrap_or(0.0) + 0.05;
-                    let end = next.map(|x| x - 0.05).unwrap_or(1.0);
-                    ui.add(
-                        egui::DragValue::new(percent)
-                            .speed(0.005)
-                            .clamp_range(start..=end),
-                    );
                     if ui.button(" × ").clicked() {
                         deletes.push(index);
                     }

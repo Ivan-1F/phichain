@@ -1,7 +1,5 @@
 use crate::tab::timeline::NoteSideFilter;
-use crate::timeline::event::EventTimeline;
-use crate::timeline::note::NoteTimeline;
-use crate::timeline::TimelineItem;
+use crate::timeline::container::TimelineContainer;
 use bevy::prelude::Resource;
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
@@ -13,8 +11,7 @@ pub struct TimelineSettings {
     pub density: u32,
     pub lanes: u32,
 
-    // (timeline, max x percent)
-    pub timelines: Vec<(TimelineItem, f32)>,
+    pub timelines_container: TimelineContainer,
 
     pub note_side_filter: NoteSideFilter,
 }
@@ -26,10 +23,7 @@ impl Default for TimelineSettings {
             density: 4,
             lanes: 11,
 
-            timelines: vec![
-                (TimelineItem::Note(NoteTimeline::new_binding()), 2.0 / 3.0),
-                (TimelineItem::Event(EventTimeline::new_binding()), 1.0),
-            ],
+            timelines_container: TimelineContainer::default(),
 
             note_side_filter: NoteSideFilter::default(),
         }

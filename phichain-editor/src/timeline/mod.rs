@@ -1,3 +1,4 @@
+pub mod container;
 pub mod drag_selection;
 pub mod event;
 pub mod note;
@@ -164,15 +165,12 @@ pub mod common {
         let mut state: SystemState<TimelineContext> = SystemState::new(world);
         let mut ctx = state.get_mut(world);
 
-        for percent in ctx
-            .timeline_settings
-            .timelines
-            .iter_mut()
-            .map(|(_, percent)| percent)
-        {
+        let timelines = ctx.timeline_settings.timelines_container.timelines.clone();
+
+        for (index, timeline) in timelines.iter().enumerate() {
             let rect = egui::Rect::from_center_size(
                 egui::Pos2::new(
-                    ctx.viewport.0.min.x + *percent * ctx.viewport.0.width(),
+                    ctx.viewport.0.min.x + timeline.fraction * ctx.viewport.0.width(),
                     ctx.viewport.0.center().y,
                 ),
                 egui::Vec2::new(2.0, ctx.viewport.0.height()),
@@ -185,8 +183,10 @@ pub mod common {
             if response.dragged() {
                 let delta_x = response.drag_delta().x;
                 let delta_percent = delta_x / ctx.viewport.0.width();
-                // TODO: handle clamp range
-                *percent += delta_percent;
+                // TODO: make ManagedTimeline a handle so we can use `timeline.offset(delta_percent)`
+                ctx.timeline_settings
+                    .timelines_container
+                    .offset_timeline(index, delta_percent);
             }
         }
     }

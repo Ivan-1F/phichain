@@ -26,14 +26,10 @@ pub fn timeline_tab(In(ui): In<&'static mut Ui>, world: &mut World) {
         egui::Pos2::new(viewport.0.max.x, viewport.0.max.y),
     );
 
-    let mut viewport = rect;
+    let timelines = timeline_settings.timelines_container.clone();
 
-    let timelines = timeline_settings.timelines.clone();
-
-    for (timeline, percent) in &timelines {
-        viewport = viewport.with_max_x(rect.min.x + percent * rect.width());
-        timeline.ui(ui, world, viewport);
-        viewport = viewport.with_min_x(viewport.max.x);
+    for item in &timelines.allocate(rect) {
+        item.timeline.ui(ui, world, item.viewport);
     }
     timeline::common::beat_line_ui(ui, world);
     timeline::common::indicator_ui(ui, world);

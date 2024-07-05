@@ -73,25 +73,22 @@ pub fn timeline_drag_selection(ui: &mut Ui, world: &mut World) {
                 .translate(egui::Vec2::new(ctx.viewport.0.min.x, 0.0));
             // ignore too small selections. e.g. click on a note
             if selection_rect.area() >= 0.001 {
-                let timelines = ctx.timeline_settings.timelines.clone();
-                let mut viewport = egui::Rect::from_min_max(
+                let timelines = ctx.timeline_settings.timelines_container.clone();
+                let viewport = egui::Rect::from_min_max(
                     egui::Pos2::new(ctx.viewport.0.min.x, ctx.viewport.0.min.y),
                     egui::Pos2::new(ctx.viewport.0.max.x, ctx.viewport.0.max.y),
                 );
-                let viewport_width = ctx.viewport.0.width();
-                let viewport_left = ctx.viewport.0.min.x;
                 let mut all = vec![];
-                for (timeline, percent) in &timelines {
-                    viewport = viewport.with_max_x(viewport_left + percent * viewport_width);
-                    let rect = selection_rect.with_min_x(selection_rect.min.x.max(viewport.left()));
-                    let rect = rect.with_max_x(rect.max.x.min(viewport.right()));
-                    let selected = timeline.on_drag_selection(
+                for item in timelines.allocate(viewport) {
+                    let rect =
+                        selection_rect.with_min_x(selection_rect.min.x.max(item.viewport.left()));
+                    let rect = rect.with_max_x(rect.max.x.min(item.viewport.right()));
+                    let selected = item.timeline.on_drag_selection(
                         world,
-                        viewport,
-                        rect.translate(egui::Vec2::new(-viewport.left(), 0.0)),
+                        item.viewport,
+                        rect.translate(egui::Vec2::new(-item.viewport.left(), 0.0)),
                     );
                     all.extend(selected);
-                    viewport = viewport.with_min_x(viewport.max.x);
                 }
                 let mut state: SystemState<EventWriter<SelectEvent>> = SystemState::new(world);
                 let mut select_events = state.get_mut(world);
