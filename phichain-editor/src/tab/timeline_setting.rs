@@ -63,10 +63,7 @@ pub fn timeline_setting_tab(
             ui.end_row();
 
             ui.label("Enable Multi-Line Edit");
-            if ui
-                .checkbox(&mut timeline_settings.multi_line_editing, "")
-                .changed()
-            {}
+            ui.checkbox(&mut timeline_settings.multi_line_editing, "");
             ui.end_row();
         });
 

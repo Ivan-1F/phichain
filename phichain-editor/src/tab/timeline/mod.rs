@@ -26,26 +26,49 @@ impl Plugin for TimelineTabPlugin {
             .insert_resource(TimelineSettings::default())
             .add_systems(
                 Update,
-                update_timeline_line_entity_system
-                    .run_if(project_loaded().and_then(resource_changed::<SelectedLine>)),
+                sync_timeline_line_entity_system.run_if(project_loaded()),
             );
     }
 }
 
-/// TODO: placeholder here
-fn update_timeline_line_entity_system(
+/// Sync timelines with [`SelectedLine`] when `timeline_settings.multi_line_editing` is off
+fn sync_timeline_line_entity_system(
     selected_line: Res<SelectedLine>,
     mut timeline_settings: ResMut<TimelineSettings>,
 ) {
+    // TODO: optimize this
     if !timeline_settings.multi_line_editing {
-        timeline_settings.timelines.clear();
-        timeline_settings.timelines.push((
-            Timelines::Note(NoteTimeline::new(selected_line.0)),
-            2.0 / 3.0,
-        ));
-        timeline_settings
-            .timelines
-            .push((Timelines::Event(EventTimeline::new(selected_line.0)), 1.0));
+        // only one note timeline and one event timeline for the selected line in single line editing
+        if timeline_settings.timelines.len() != 2
+            || !timeline_settings
+                .timelines
+                .iter()
+                .any(|x| matches!(x.0, Timelines::Note(_)))
+            || !timeline_settings
+                .timelines
+                .iter()
+                .any(|x| matches!(x.0, Timelines::Event(_)))
+        {
+            timeline_settings.timelines.clear();
+            timeline_settings.timelines.push((
+                Timelines::Note(NoteTimeline::new(selected_line.0)),
+                2.0 / 3.0,
+            ));
+            timeline_settings
+                .timelines
+                .push((Timelines::Event(EventTimeline::new(selected_line.0)), 1.0));
+        }
+        // ensure all timelines are on selected line
+        for (timeline, _) in &mut timeline_settings.timelines {
+            match timeline {
+                Timelines::Note(timeline) => {
+                    timeline.set_line(selected_line.0);
+                }
+                Timelines::Event(timeline) => {
+                    timeline.set_line(selected_line.0);
+                }
+            }
+        }
     }
 }
 

@@ -22,6 +22,10 @@ impl NoteTimeline {
     pub fn new(line: Entity) -> Self {
         Self(line)
     }
+
+    pub fn set_line(&mut self, line: Entity) {
+        self.0 = line;
+    }
 }
 
 impl Timeline for NoteTimeline {
