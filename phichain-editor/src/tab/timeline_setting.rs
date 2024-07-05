@@ -66,43 +66,59 @@ pub fn timeline_setting_tab(
     {
         ui.separator();
         ui.columns(2, |columns| {
-            columns[0].menu_button("New Note Timeline", |ui| {
-                if ui.button(RichText::new("Binding").strong()).clicked() {
-                    timeline_settings
-                        .timelines_container
-                        .push_right(TimelineItem::Note(NoteTimeline::new_binding()));
-                    ui.close_menu();
-                }
-                ui.separator();
-                for (index, (_, entity)) in line_query.iter().enumerate() {
-                    // TODO: use a readable identifier for this (e.g. name)
-                    // TODO: move timeline selector to dedicated widget
-                    if ui.button(format!("Line #{}", index)).clicked() {
+            columns[0].menu_button(
+                t!("tab.timeline_setting.timelines.new_note_timeline"),
+                |ui| {
+                    if ui
+                        .button(
+                            RichText::new(t!("tab.timeline_setting.timelines.binding")).strong(),
+                        )
+                        .clicked()
+                    {
                         timeline_settings
                             .timelines_container
-                            .push_right(TimelineItem::Note(NoteTimeline::new(entity)));
+                            .push_right(TimelineItem::Note(NoteTimeline::new_binding()));
                         ui.close_menu();
                     }
-                }
-            });
-            columns[1].menu_button("New Event Timeline", |ui| {
-                if ui.button(RichText::new("Binding").strong()).clicked() {
-                    timeline_settings
-                        .timelines_container
-                        .push_right(TimelineItem::Event(EventTimeline::new_binding()));
-                    ui.close_menu();
-                }
-                ui.separator();
-                for (index, (_, entity)) in line_query.iter().enumerate() {
-                    // TODO: use a readable identifier for this (e.g. name)
-                    if ui.button(format!("Line #{}", index)).clicked() {
+                    ui.separator();
+                    for (index, (_, entity)) in line_query.iter().enumerate() {
+                        // TODO: use a readable identifier for this (e.g. name)
+                        // TODO: move timeline selector to dedicated widget
+                        if ui.button(format!("Line #{}", index)).clicked() {
+                            timeline_settings
+                                .timelines_container
+                                .push_right(TimelineItem::Note(NoteTimeline::new(entity)));
+                            ui.close_menu();
+                        }
+                    }
+                },
+            );
+            columns[1].menu_button(
+                t!("tab.timeline_setting.timelines.new_event_timeline"),
+                |ui| {
+                    if ui
+                        .button(
+                            RichText::new(t!("tab.timeline_setting.timelines.binding")).strong(),
+                        )
+                        .clicked()
+                    {
                         timeline_settings
                             .timelines_container
-                            .push_right(TimelineItem::Event(EventTimeline::new(entity)));
+                            .push_right(TimelineItem::Event(EventTimeline::new_binding()));
                         ui.close_menu();
                     }
-                }
-            });
+                    ui.separator();
+                    for (index, (_, entity)) in line_query.iter().enumerate() {
+                        // TODO: use a readable identifier for this (e.g. name)
+                        if ui.button(format!("Line #{}", index)).clicked() {
+                            timeline_settings
+                                .timelines_container
+                                .push_right(TimelineItem::Event(EventTimeline::new(entity)));
+                            ui.close_menu();
+                        }
+                    }
+                },
+            );
         });
 
         ui.end_row();

@@ -42,13 +42,15 @@ tab:
     zoom: Timeline Zoom
     density: Timeline Density
     lane: Vertical Lane
-    show_note_timeline: Show Note Timeline
-    show_event_timeline: Show Event Timeline
     note_side_filter:
       title: Note Side
       all: All
       above: Above
       Below: Below
+    timelines:
+      new_note_timeline: + Note Timeline
+      new_event_timeline: + Event Timeline
+      binding: Binding
   audio_setting:
     title: Audio Setting
     music_volume: Music Volume
