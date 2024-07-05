@@ -1,7 +1,7 @@
 use crate::timeline::event::EventTimeline;
 use crate::timeline::note::NoteTimeline;
 use crate::timeline::settings::TimelineSettings;
-use crate::timeline::Timelines;
+use crate::timeline::TimelineItem;
 use bevy::prelude::*;
 use egui::Ui;
 use phichain_chart::line::Line;
@@ -80,7 +80,7 @@ pub fn timeline_setting_tab(
                         }
                         timeline_settings
                             .timelines
-                            .push((Timelines::Note(NoteTimeline::new(entity)), 1.0));
+                            .push((TimelineItem::Note(NoteTimeline::new(entity)), 1.0));
                         ui.close_menu();
                     }
                 }
@@ -94,7 +94,7 @@ pub fn timeline_setting_tab(
                         }
                         timeline_settings
                             .timelines
-                            .push((Timelines::Event(EventTimeline::new(entity)), 1.0));
+                            .push((TimelineItem::Event(EventTimeline::new(entity)), 1.0));
                         ui.close_menu();
                     }
                 }

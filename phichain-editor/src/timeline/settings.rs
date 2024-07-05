@@ -1,5 +1,5 @@
 use crate::tab::timeline::NoteSideFilter;
-use crate::timeline::Timelines;
+use crate::timeline::TimelineItem;
 use bevy::prelude::Resource;
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
@@ -14,7 +14,7 @@ pub struct TimelineSettings {
     pub multi_line_editing: bool,
 
     // (timeline, max x percent)
-    pub timelines: Vec<(Timelines, f32)>,
+    pub timelines: Vec<(TimelineItem, f32)>,
 
     pub note_side_filter: NoteSideFilter,
 }

@@ -79,7 +79,7 @@ impl<'w> TimelineContext<'w> {
     }
 }
 
-#[enum_dispatch(Timelines)]
+#[enum_dispatch(TimelineItem)]
 pub trait Timeline {
     fn ui(&self, ui: &mut Ui, world: &mut World, viewport: Rect);
 
@@ -95,7 +95,7 @@ pub trait Timeline {
 
 #[enum_dispatch]
 #[derive(Debug, Clone)]
-pub enum Timelines {
+pub enum TimelineItem {
     Note(NoteTimeline),
     Event(EventTimeline),
 }
