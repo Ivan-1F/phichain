@@ -45,6 +45,12 @@ tab:
     timelines:
       new_note_timeline: + 音符时间线
       new_event_timeline: + 事件时间线
+      note_timeline:
+        for_line: '%{line} 的音符时间线'
+        binding: 绑定音符时间线
+      event_timeline:
+        for_line: '%{line} 的事件时间线'
+        binding: 绑定事件时间线
       binding: 绑定
     note_side_filter:
       title: 音符所属侧

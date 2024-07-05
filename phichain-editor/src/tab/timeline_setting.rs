@@ -129,10 +129,26 @@ pub fn timeline_setting_tab(
         for (index, timeline) in timelines.timelines.iter().enumerate() {
             ui.horizontal(|ui| {
                 ui.horizontal(|ui| {
-                    ui.label(format!("{:?}", timeline));
                     if ui.button(" × ").clicked() {
                         deletes.push(index);
                     }
+                    let label = match &timeline.timeline {
+                        TimelineItem::Note(timeline) => match timeline.0 {
+                            None => t!("tab.timeline_setting.timelines.note_timeline.binding"),
+                            Some(entity) => t!(
+                                "tab.timeline_setting.timelines.note_timeline.for_line",
+                                line = format!("{:?}", entity)
+                            ),
+                        },
+                        TimelineItem::Event(timeline) => match timeline.0 {
+                            None => t!("tab.timeline_setting.timelines.event_timeline.binding"),
+                            Some(entity) => t!(
+                                "tab.timeline_setting.timelines.event_timeline.for_line",
+                                line = format!("{:?}", entity)
+                            ),
+                        },
+                    };
+                    ui.label(label);
                 });
             });
         }

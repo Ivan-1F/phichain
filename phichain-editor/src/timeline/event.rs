@@ -13,7 +13,7 @@ use phichain_chart::event::LineEvent;
 use std::iter;
 
 #[derive(Debug, Clone)]
-pub struct EventTimeline(Option<Entity>);
+pub struct EventTimeline(pub Option<Entity>);
 
 impl EventTimeline {
     pub fn new(line: Entity) -> Self {

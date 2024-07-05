@@ -16,7 +16,7 @@ use phichain_chart::constants::CANVAS_WIDTH;
 use phichain_chart::note::{Note, NoteKind};
 
 #[derive(Debug, Clone)]
-pub struct NoteTimeline(Option<Entity>);
+pub struct NoteTimeline(pub Option<Entity>);
 
 impl NoteTimeline {
     pub fn new(line: Entity) -> Self {
