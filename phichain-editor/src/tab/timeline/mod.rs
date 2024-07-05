@@ -39,28 +39,6 @@ pub fn timeline_tab(In(ui): In<&'static mut Ui>, world: &mut World) {
 #[derive(Resource, Debug)]
 pub struct TimelineViewport(pub Rect);
 
-impl TimelineViewport {
-    pub fn note_timeline_viewport(&self) -> Rect {
-        Rect::from_corners(
-            self.0.min,
-            Vec2 {
-                x: self.0.min.x + self.0.width() / 3.0 * 2.0,
-                y: self.0.max.y,
-            },
-        )
-    }
-
-    pub fn event_timeline_viewport(&self) -> Rect {
-        Rect::from_corners(
-            Vec2 {
-                x: self.0.min.x + self.0.width() / 3.0 * 2.0,
-                y: self.0.min.y,
-            },
-            self.0.max,
-        )
-    }
-}
-
 pub trait TimelineFilter<T> {
     fn filter(&self, value: T) -> bool;
 }

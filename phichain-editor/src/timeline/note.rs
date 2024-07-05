@@ -27,11 +27,12 @@ impl NoteTimeline {
         Self(None)
     }
 
-    fn line_entity(&self, world: &mut World) -> Entity {
-        match self.0 {
-            None => world.resource::<SelectedLine>().0,
-            Some(entity) => entity,
-        }
+    pub fn line_entity(&self, world: &mut World) -> Entity {
+        self.line_entity_from_fallback(world.resource::<SelectedLine>().0)
+    }
+
+    pub fn line_entity_from_fallback(&self, fallback: Entity) -> Entity {
+        self.0.unwrap_or(fallback)
     }
 }
 

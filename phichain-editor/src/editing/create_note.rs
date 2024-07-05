@@ -8,8 +8,8 @@ use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
 use crate::project::project_loaded;
-use crate::timeline::TimelineContext;
-use crate::{constants::CANVAS_WIDTH, selection::SelectedLine, tab::timeline::TimelineViewport};
+use crate::timeline::{TimelineContext, TimelineItem};
+use crate::{constants::CANVAS_WIDTH, selection::SelectedLine};
 use phichain_chart::note::NoteBundle;
 
 pub struct CreateNoteSystem;
@@ -25,15 +25,13 @@ impl Plugin for CreateNoteSystem {
 
 fn create_note_system(
     mut commands: Commands,
-    timeline: TimelineContext,
+    ctx: TimelineContext,
     keyboard: Res<ButtonInput<KeyCode>>,
 
     selected_line: Res<SelectedLine>,
 
     window_query: Query<&Window>,
     bpm_list: Res<BpmList>,
-
-    timeline_viewport: Res<TimelineViewport>,
 
     mut event: EventWriter<DoCommandEvent>,
 
@@ -44,90 +42,100 @@ fn create_note_system(
         return;
     };
 
-    let note_timeline_viewport = timeline_viewport.note_timeline_viewport();
+    let rect = egui::Rect::from_min_max(
+        egui::Pos2::new(ctx.viewport.0.min.x, ctx.viewport.0.min.y),
+        egui::Pos2::new(ctx.viewport.0.max.x, ctx.viewport.0.max.y),
+    );
 
-    if !note_timeline_viewport.contains(cursor_position) {
-        return;
-    }
+    for item in &ctx.timeline_settings.timelines_container.allocate(rect) {
+        if let TimelineItem::Note(timeline) = &item.timeline {
+            let viewport = item.viewport;
+            let line_entity = timeline.line_entity_from_fallback(selected_line.0);
 
-    let calc_note_attrs = || {
-        let time = timeline.y_to_time(cursor_position.y);
-        let beat = bpm_list.beat_at(time).value();
-        let beat = timeline.timeline_settings.attach(beat);
+            if !viewport.contains(egui::Pos2::new(cursor_position.x, cursor_position.y)) {
+                continue;
+            }
 
-        let x = (cursor_position.x - note_timeline_viewport.min.x) / note_timeline_viewport.width();
+            let calc_note_attrs = || {
+                let time = ctx.y_to_time(cursor_position.y);
+                let beat = bpm_list.beat_at(time).value();
+                let beat = ctx.timeline_settings.attach(beat);
 
-        let lane_percents = timeline.timeline_settings.lane_percents();
+                let x = (cursor_position.x - viewport.min.x) / viewport.width();
 
-        let x = lane_percents
-            .iter()
-            .map(|p| (p, (p - x).abs()))
-            .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
-            .unwrap()
-            .0;
+                let lane_percents = ctx.timeline_settings.lane_percents();
 
-        let x = x - 0.5;
+                let x = lane_percents
+                    .iter()
+                    .map(|p| (p, (p - x).abs()))
+                    .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+                    .unwrap()
+                    .0;
 
-        (x, beat)
-    };
+                let x = x - 0.5;
 
-    let mut create_note = |kind: NoteKind| {
-        let (x, beat) = calc_note_attrs();
-
-        let note = Note::new(kind, true, beat, x * CANVAS_WIDTH, 1.0);
-
-        event.send(DoCommandEvent(EditorCommand::CreateNote(CreateNote::new(
-            selected_line.0,
-            note,
-        ))));
-    };
-
-    if keyboard.just_pressed(KeyCode::KeyQ) {
-        create_note(NoteKind::Tap);
-    }
-
-    if keyboard.just_pressed(KeyCode::KeyW) {
-        create_note(NoteKind::Drag);
-    }
-
-    if let Ok((mut pending_note, _)) = pending_note_query.get_single_mut() {
-        if let NoteKind::Hold { .. } = pending_note.kind {
-            let (x, beat) = calc_note_attrs();
-            pending_note.kind = NoteKind::Hold {
-                hold_beat: (beat - pending_note.beat)
-                    .max(timeline.timeline_settings.minimum_beat()),
+                (x, beat)
             };
-            pending_note.x = x * CANVAS_WIDTH;
-        }
-    }
 
-    if keyboard.just_pressed(KeyCode::KeyE) {
-        create_note(NoteKind::Flick);
-    }
+            let mut create_note = |kind: NoteKind| {
+                let (x, beat) = calc_note_attrs();
 
-    if keyboard.just_pressed(KeyCode::KeyR) {
-        if let Ok((pending_note, entity)) = pending_note_query.get_single() {
-            commands.entity(entity).despawn();
-            event.send(DoCommandEvent(EditorCommand::CreateNote(CreateNote::new(
-                selected_line.0,
-                *pending_note,
-            ))));
-        } else {
-            let (x, beat) = calc_note_attrs();
-            commands.entity(selected_line.0).with_children(|parent| {
-                parent.spawn((
-                    NoteBundle::new(Note::new(
-                        NoteKind::Hold {
-                            hold_beat: Beat::ONE,
-                        },
-                        true,
-                        beat,
-                        x,
-                        1.0,
-                    )),
-                    Pending,
-                ));
-            });
+                let note = Note::new(kind, true, beat, x * CANVAS_WIDTH, 1.0);
+
+                event.send(DoCommandEvent(EditorCommand::CreateNote(CreateNote::new(
+                    line_entity,
+                    note,
+                ))));
+            };
+
+            if keyboard.just_pressed(KeyCode::KeyQ) {
+                create_note(NoteKind::Tap);
+            }
+
+            if keyboard.just_pressed(KeyCode::KeyW) {
+                create_note(NoteKind::Drag);
+            }
+
+            if let Ok((mut pending_note, _)) = pending_note_query.get_single_mut() {
+                if let NoteKind::Hold { .. } = pending_note.kind {
+                    let (x, beat) = calc_note_attrs();
+                    pending_note.kind = NoteKind::Hold {
+                        hold_beat: (beat - pending_note.beat)
+                            .max(ctx.timeline_settings.minimum_beat()),
+                    };
+                    pending_note.x = x * CANVAS_WIDTH;
+                }
+            }
+
+            if keyboard.just_pressed(KeyCode::KeyE) {
+                create_note(NoteKind::Flick);
+            }
+
+            if keyboard.just_pressed(KeyCode::KeyR) {
+                if let Ok((pending_note, entity)) = pending_note_query.get_single() {
+                    commands.entity(entity).despawn();
+                    event.send(DoCommandEvent(EditorCommand::CreateNote(CreateNote::new(
+                        line_entity,
+                        *pending_note,
+                    ))));
+                } else {
+                    let (x, beat) = calc_note_attrs();
+                    commands.entity(line_entity).with_children(|parent| {
+                        parent.spawn((
+                            NoteBundle::new(Note::new(
+                                NoteKind::Hold {
+                                    hold_beat: Beat::ONE,
+                                },
+                                true,
+                                beat,
+                                x,
+                                1.0,
+                            )),
+                            Pending,
+                        ));
+                    });
+                }
+            }
         }
     }
 }
