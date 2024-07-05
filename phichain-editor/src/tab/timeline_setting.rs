@@ -1,10 +1,18 @@
+use crate::timeline::event::EventTimeline;
+use crate::timeline::note::NoteTimeline;
 use crate::timeline::settings::TimelineSettings;
+use crate::timeline::Timelines;
 use bevy::prelude::*;
 use egui::Ui;
+use phichain_chart::line::Line;
 
 use super::timeline::NoteSideFilter;
 
-pub fn timeline_setting_tab(In(ui): In<&mut Ui>, mut timeline_settings: ResMut<TimelineSettings>) {
+pub fn timeline_setting_tab(
+    In(ui): In<&mut Ui>,
+    mut timeline_settings: ResMut<TimelineSettings>,
+    line_query: Query<(&Line, Entity)>,
+) {
     egui::Grid::new("timeline_setting_grid")
         .num_columns(2)
         .spacing([20.0, 2.0])
@@ -34,14 +42,6 @@ pub fn timeline_setting_tab(In(ui): In<&mut Ui>, mut timeline_settings: ResMut<T
             );
             ui.end_row();
 
-            ui.label(t!("tab.timeline_setting.show_note_timeline"));
-            ui.checkbox(&mut timeline_settings.show_note_timeline, "");
-            ui.end_row();
-
-            ui.label(t!("tab.timeline_setting.show_event_timeline"));
-            ui.checkbox(&mut timeline_settings.show_event_timeline, "");
-            ui.end_row();
-
             ui.label(t!("tab.timeline_setting.note_side_filter.title"));
             ui.horizontal(|ui| {
                 ui.selectable_value(
@@ -61,5 +61,69 @@ pub fn timeline_setting_tab(In(ui): In<&mut Ui>, mut timeline_settings: ResMut<T
                 );
             });
             ui.end_row();
+
+            ui.label("Enable Multi-Line Edit");
+            if ui
+                .checkbox(&mut timeline_settings.multi_line_editing, "")
+                .changed()
+            {}
+            ui.end_row();
         });
+
+    if timeline_settings.multi_line_editing {
+        ui.menu_button("New Note Timeline", |ui| {
+            for (index, (_, entity)) in line_query.iter().enumerate() {
+                // TODO: use a readable identifier for this (e.g. name)
+                // TODO: move timeline selector to dedicated widget
+                if ui.button(format!("Line #{}", index)).clicked() {
+                    for (_, percent) in &mut timeline_settings.timelines {
+                        *percent /= 1.2;
+                    }
+                    timeline_settings
+                        .timelines
+                        .push((Timelines::Note(NoteTimeline::new(entity)), 1.0));
+                    ui.close_menu();
+                }
+            }
+        });
+        ui.menu_button("New Event Timeline", |ui| {
+            for (index, (_, entity)) in line_query.iter().enumerate() {
+                // TODO: use a readable identifier for this (e.g. name)
+                if ui.button(format!("Line #{}", index)).clicked() {
+                    for (_, percent) in &mut timeline_settings.timelines {
+                        *percent /= 1.2;
+                    }
+                    timeline_settings
+                        .timelines
+                        .push((Timelines::Event(EventTimeline::new(entity)), 1.0));
+                    ui.close_menu();
+                }
+            }
+        });
+
+        ui.end_row();
+
+        let timelines = &mut timeline_settings.timelines;
+
+        for index in 0..timelines.len() {
+            let prev = (index > 0)
+                .then(|| timelines.get(index - 1).map(|x| x.1))
+                .flatten();
+            let next = timelines.get(index + 1).map(|x| x.1);
+            let (timeline, percent) = timelines.get_mut(index).unwrap();
+
+            ui.horizontal(|ui| {
+                ui.horizontal(|ui| {
+                    ui.label(format!("{:?}", timeline));
+                    let start = prev.map(|x| x + 0.05).unwrap_or(0.0);
+                    let end = next.map(|x| x - 0.05).unwrap_or(1.0);
+                    ui.add(
+                        egui::DragValue::new(percent)
+                            .speed(0.005)
+                            .clamp_range(start..=end),
+                    );
+                });
+            });
+        }
+    }
 }

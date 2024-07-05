@@ -37,14 +37,16 @@ fn update_timeline_line_entity_system(
     selected_line: Res<SelectedLine>,
     mut timeline_settings: ResMut<TimelineSettings>,
 ) {
-    timeline_settings.timelines.clear();
-    timeline_settings.timelines.push((
-        Timelines::Note(NoteTimeline::new(selected_line.0)),
-        2.0 / 3.0,
-    ));
-    timeline_settings
-        .timelines
-        .push((Timelines::Event(EventTimeline::new(selected_line.0)), 1.0));
+    if !timeline_settings.multi_line_editing {
+        timeline_settings.timelines.clear();
+        timeline_settings.timelines.push((
+            Timelines::Note(NoteTimeline::new(selected_line.0)),
+            2.0 / 3.0,
+        ));
+        timeline_settings
+            .timelines
+            .push((Timelines::Event(EventTimeline::new(selected_line.0)), 1.0));
+    }
 }
 
 pub fn timeline_tab(In(ui): In<&'static mut Ui>, world: &mut World) {

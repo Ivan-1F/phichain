@@ -11,8 +11,7 @@ pub struct TimelineSettings {
     pub density: u32,
     pub lanes: u32,
 
-    pub show_note_timeline: bool,
-    pub show_event_timeline: bool,
+    pub multi_line_editing: bool,
 
     // (timeline, max x percent)
     pub timelines: Vec<(Timelines, f32)>,
@@ -27,8 +26,7 @@ impl Default for TimelineSettings {
             density: 4,
             lanes: 11,
 
-            show_note_timeline: true,
-            show_event_timeline: true,
+            multi_line_editing: true,
 
             timelines: vec![],
 
