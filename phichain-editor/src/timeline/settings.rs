@@ -11,8 +11,6 @@ pub struct TimelineSettings {
     pub density: u32,
     pub lanes: u32,
 
-    pub multi_line_editing: bool,
-
     // (timeline, max x percent)
     pub timelines: Vec<(TimelineItem, f32)>,
 
@@ -25,8 +23,6 @@ impl Default for TimelineSettings {
             zoom: 2.0,
             density: 4,
             lanes: 11,
-
-            multi_line_editing: false,
 
             timelines: vec![],
 

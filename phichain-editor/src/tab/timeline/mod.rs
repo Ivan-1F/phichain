@@ -1,14 +1,10 @@
 use bevy::prelude::*;
 use egui::Ui;
 
-use crate::project::project_loaded;
-use crate::selection::SelectedLine;
 use crate::timeline;
 use crate::timeline::drag_selection::TimelineDragSelectionPlugin;
-use crate::timeline::event::EventTimeline;
-use crate::timeline::note::NoteTimeline;
 use crate::timeline::settings::TimelineSettings;
-use crate::timeline::{Timeline, TimelineItem};
+use crate::timeline::Timeline;
 use phichain_chart::note::Note;
 
 pub struct TimelineTabPlugin;
@@ -17,53 +13,7 @@ impl Plugin for TimelineTabPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(TimelineDragSelectionPlugin)
             .insert_resource(TimelineViewport(Rect::from_corners(Vec2::ZERO, Vec2::ZERO)))
-            .insert_resource(TimelineSettings::default())
-            .add_systems(
-                Update,
-                sync_timeline_line_entity_system.run_if(project_loaded()),
-            );
-    }
-}
-
-/// Sync timelines with [`SelectedLine`] when `timeline_settings.multi_line_editing` is off
-fn sync_timeline_line_entity_system(
-    selected_line: Res<SelectedLine>,
-    mut timeline_settings: ResMut<TimelineSettings>,
-) {
-    // TODO: optimize this
-    if !timeline_settings.multi_line_editing {
-        // only one note timeline and one event timeline for the selected line in single line editing
-        if timeline_settings.timelines.len() != 2
-            || !timeline_settings
-                .timelines
-                .iter()
-                .any(|x| matches!(x.0, TimelineItem::Note(_)))
-            || !timeline_settings
-                .timelines
-                .iter()
-                .any(|x| matches!(x.0, TimelineItem::Event(_)))
-        {
-            timeline_settings.timelines.clear();
-            timeline_settings.timelines.push((
-                TimelineItem::Note(NoteTimeline::new(selected_line.0)),
-                2.0 / 3.0,
-            ));
-            timeline_settings.timelines.push((
-                TimelineItem::Event(EventTimeline::new(selected_line.0)),
-                1.0,
-            ));
-        }
-        // ensure all timelines are on selected line
-        for (timeline, _) in &mut timeline_settings.timelines {
-            match timeline {
-                TimelineItem::Note(timeline) => {
-                    timeline.set_line(selected_line.0);
-                }
-                TimelineItem::Event(timeline) => {
-                    timeline.set_line(selected_line.0);
-                }
-            }
-        }
+            .insert_resource(TimelineSettings::default());
     }
 }
 

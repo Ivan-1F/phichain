@@ -33,10 +33,6 @@ impl NoteTimeline {
             Some(entity) => entity,
         }
     }
-
-    pub fn set_line(&mut self, line: Entity) {
-        self.0 = Some(line);
-    }
 }
 
 impl Timeline for NoteTimeline {
