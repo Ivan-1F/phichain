@@ -6,7 +6,6 @@ use crate::editing::DoCommandEvent;
 use crate::hotkey::HotkeyRegistrationExt;
 use crate::selection::{Selected, SelectedLine};
 use crate::tab::timeline::TimelineViewport;
-use crate::timeline::settings::TimelineSettings;
 use crate::timeline::TimelineContext;
 use crate::utils::compat::ControlKeyExt;
 use bevy::prelude::*;
@@ -68,7 +67,6 @@ fn paste_system(
     timeline: TimelineContext,
     timeline_viewport: Res<TimelineViewport>,
     bpm_list: Res<BpmList>,
-    timeline_settings: Res<TimelineSettings>,
 
     mut event_writer: EventWriter<DoCommandEvent>,
 ) {
@@ -91,7 +89,9 @@ fn paste_system(
         .min()
     {
         let time = timeline.y_to_time(cursor_position.y);
-        let beat = timeline_settings.attach(bpm_list.beat_at(time).value());
+        let beat = timeline
+            .timeline_settings
+            .attach(bpm_list.beat_at(time).value());
 
         let delta = beat - min_beat;
 

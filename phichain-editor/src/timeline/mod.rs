@@ -11,19 +11,29 @@ use crate::timeline::note::NoteTimeline;
 use crate::timeline::settings::TimelineSettings;
 use crate::timing::ChartTime;
 use bevy::ecs::system::SystemParam;
-use bevy::prelude::{Entity, Res, World};
+use bevy::prelude::{Entity, Res, ResMut, World};
 use egui::{Rect, Ui};
 use enum_dispatch::enum_dispatch;
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
 
+// TODO: make all resources mutable
+/// Resources and context to work with timelines
+///
+/// This [`SystemParam`] conflicts with all mutable resources it contains (https://bevyengine.org/learn/errors/b0002/):
+///
+/// - [`TimelineSettings`]
+///
+/// So it is impossible to have both [`TimelineContext`] and [`Res<TimelineSettings>`] (or [`ResMut<TimelineSettings>`]) params of a system
+///
+/// Instead, access the required resources directly from [`TimelineContext`]: `ctx.timeline_settings`
 #[derive(SystemParam)]
 pub struct TimelineContext<'w> {
     bpm_list: Res<'w, BpmList>,
-    pub timeline_settings: Res<'w, TimelineSettings>,
+    pub timeline_settings: ResMut<'w, TimelineSettings>,
     current_time: Res<'w, ChartTime>,
-    viewport: Res<'w, TimelineViewport>,
+    pub viewport: Res<'w, TimelineViewport>,
 
     audio_duration: Res<'w, AudioDuration>,
 }
@@ -95,11 +105,11 @@ pub mod common {
     use crate::timeline::TimelineContext;
     use bevy::ecs::system::SystemState;
     use bevy::prelude::*;
-    use egui::{Align2, Color32, FontId, Ui};
+    use egui::{Align2, Color32, FontId, Sense, Ui};
 
     pub fn beat_line_ui(ui: &mut Ui, world: &mut World) {
         let mut state: SystemState<TimelineContext> = SystemState::new(world);
-        let ctx = state.get(world);
+        let ctx = state.get_mut(world);
         for (index, beat_time) in ctx.primary_beat_times().iter().enumerate() {
             let rect = egui::Rect::from_center_size(
                 egui::Pos2::new(
@@ -152,26 +162,38 @@ pub mod common {
 
     pub fn separator_ui(ui: &mut Ui, world: &mut World) {
         let mut state: SystemState<TimelineContext> = SystemState::new(world);
-        let ctx = state.get(world);
+        let mut ctx = state.get_mut(world);
 
-        for percent in ctx.timeline_settings.timelines.iter().map(|x| x.1) {
-            ui.painter().rect_filled(
-                egui::Rect::from_center_size(
-                    egui::Pos2::new(
-                        ctx.viewport.0.min.x + percent * ctx.viewport.0.width(),
-                        ctx.viewport.0.center().y,
-                    ),
-                    egui::Vec2::new(2.0, ctx.viewport.0.height()),
+        for percent in ctx
+            .timeline_settings
+            .timelines
+            .iter_mut()
+            .map(|(_, percent)| percent)
+        {
+            let rect = egui::Rect::from_center_size(
+                egui::Pos2::new(
+                    ctx.viewport.0.min.x + *percent * ctx.viewport.0.width(),
+                    ctx.viewport.0.center().y,
                 ),
-                0.0,
-                Color32::WHITE,
+                egui::Vec2::new(2.0, ctx.viewport.0.height()),
             );
+            ui.painter().rect_filled(rect, 0.0, Color32::WHITE);
+
+            let response = ui
+                .allocate_rect(rect, Sense::drag())
+                .on_hover_cursor(egui::CursorIcon::ResizeHorizontal);
+            if response.dragged() {
+                let delta_x = response.drag_delta().x;
+                let delta_percent = delta_x / ctx.viewport.0.width();
+                // TODO: handle clamp range
+                *percent += delta_percent;
+            }
         }
     }
 
     pub fn indicator_ui(ui: &mut Ui, world: &mut World) {
         let mut state: SystemState<TimelineContext> = SystemState::new(world);
-        let ctx = state.get(world);
+        let ctx = state.get_mut(world);
         ui.painter().rect_filled(
             egui::Rect::from_center_size(
                 egui::Pos2::new(

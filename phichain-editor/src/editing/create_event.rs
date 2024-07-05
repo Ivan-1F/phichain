@@ -6,9 +6,8 @@ use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
 use crate::project::project_loaded;
-use crate::timeline::settings::TimelineSettings;
+use crate::selection::SelectedLine;
 use crate::timeline::TimelineContext;
-use crate::{selection::SelectedLine, tab::timeline::TimelineViewport};
 use phichain_chart::event::{LineEvent, LineEventBundle, LineEventKind};
 
 pub struct CreateEventPlugin;
@@ -32,9 +31,6 @@ fn create_event_system(
     window_query: Query<&Window>,
     bpm_list: Res<BpmList>,
 
-    timeline_viewport: Res<TimelineViewport>,
-    timeline_settings: Res<TimelineSettings>,
-
     mut event: EventWriter<DoCommandEvent>,
 
     mut pending_event_query: Query<(&mut LineEvent, Entity), With<Pending>>,
@@ -46,7 +42,7 @@ fn create_event_system(
         return;
     };
 
-    let event_timeline_viewport = timeline_viewport.event_timeline_viewport();
+    let event_timeline_viewport = timeline.viewport.event_timeline_viewport();
 
     if !event_timeline_viewport.contains(cursor_position) {
         return;
@@ -55,7 +51,7 @@ fn create_event_system(
     let calc_event_attrs = || {
         let time = timeline.y_to_time(cursor_position.y);
         let beat = bpm_list.beat_at(time).value();
-        let beat = timeline_settings.attach(beat);
+        let beat = timeline.timeline_settings.attach(beat);
 
         let track = ((cursor_position.x - event_timeline_viewport.min.x)
             / (event_timeline_viewport.width() / 5.0))
@@ -67,7 +63,7 @@ fn create_event_system(
     if let Ok((mut pending_event, _)) = pending_event_query.get_single_mut() {
         let (track, beat) = calc_event_attrs();
         pending_event.end_beat =
-            beat.max(pending_event.start_beat + timeline_settings.minimum_beat());
+            beat.max(pending_event.start_beat + timeline.timeline_settings.minimum_beat());
         pending_event.kind = LineEventKind::try_from(track).expect("Unknown event track");
     }
 
@@ -112,7 +108,7 @@ fn create_event_system(
                         start: 0.0,
                         end: 0.0,
                         start_beat: beat,
-                        end_beat: beat + timeline_settings.minimum_beat(),
+                        end_beat: beat + timeline.timeline_settings.minimum_beat(),
                         easing: Default::default(),
                     }),
                     Pending,

@@ -8,7 +8,6 @@ use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
 use crate::project::project_loaded;
-use crate::timeline::settings::TimelineSettings;
 use crate::timeline::TimelineContext;
 use crate::{constants::CANVAS_WIDTH, selection::SelectedLine, tab::timeline::TimelineViewport};
 use phichain_chart::note::NoteBundle;
@@ -35,7 +34,6 @@ fn create_note_system(
     bpm_list: Res<BpmList>,
 
     timeline_viewport: Res<TimelineViewport>,
-    timeline_settings: Res<TimelineSettings>,
 
     mut event: EventWriter<DoCommandEvent>,
 
@@ -55,11 +53,11 @@ fn create_note_system(
     let calc_note_attrs = || {
         let time = timeline.y_to_time(cursor_position.y);
         let beat = bpm_list.beat_at(time).value();
-        let beat = timeline_settings.attach(beat);
+        let beat = timeline.timeline_settings.attach(beat);
 
         let x = (cursor_position.x - note_timeline_viewport.min.x) / note_timeline_viewport.width();
 
-        let lane_percents = timeline_settings.lane_percents();
+        let lane_percents = timeline.timeline_settings.lane_percents();
 
         let x = lane_percents
             .iter()
@@ -96,7 +94,8 @@ fn create_note_system(
         if let NoteKind::Hold { .. } = pending_note.kind {
             let (x, beat) = calc_note_attrs();
             pending_note.kind = NoteKind::Hold {
-                hold_beat: (beat - pending_note.beat).max(timeline_settings.minimum_beat()),
+                hold_beat: (beat - pending_note.beat)
+                    .max(timeline.timeline_settings.minimum_beat()),
             };
             pending_note.x = x * CANVAS_WIDTH;
         }
