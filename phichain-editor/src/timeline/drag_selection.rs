@@ -1,5 +1,6 @@
 use crate::selection::SelectEvent;
 use crate::timeline::{Timeline, TimelineContext};
+use crate::utils::convert::BevyEguiConvert;
 use bevy::app::App;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::{EventWriter, Plugin, Query, ResMut, Resource, Window, World};
@@ -30,13 +31,7 @@ pub fn timeline_drag_selection(ui: &mut Ui, world: &mut World) {
         return;
     };
 
-    let response = ui.allocate_rect(
-        egui::Rect::from_min_max(
-            egui::Pos2::new(viewport.min.x, viewport.min.y),
-            egui::Pos2::new(viewport.max.x, viewport.max.y),
-        ),
-        Sense::drag(),
-    );
+    let response = ui.allocate_rect(viewport.into_egui(), Sense::drag());
 
     let calculate_x = || cursor_position.x - viewport.min.x;
     let calculate_time = || ctx.y_to_time(cursor_position.y);
@@ -74,12 +69,8 @@ pub fn timeline_drag_selection(ui: &mut Ui, world: &mut World) {
             // ignore too small selections. e.g. click on a note
             if selection_rect.area() >= 0.001 {
                 let timelines = ctx.timeline_settings.timelines_container.clone();
-                let viewport = egui::Rect::from_min_max(
-                    egui::Pos2::new(ctx.viewport.0.min.x, ctx.viewport.0.min.y),
-                    egui::Pos2::new(ctx.viewport.0.max.x, ctx.viewport.0.max.y),
-                );
                 let mut all = vec![];
-                for item in timelines.allocate(viewport) {
+                for item in timelines.allocate(ctx.viewport.0.into_egui()) {
                     let rect =
                         selection_rect.with_min_x(selection_rect.min.x.max(item.viewport.left()));
                     let rect = rect.with_max_x(rect.max.x.min(item.viewport.right()));

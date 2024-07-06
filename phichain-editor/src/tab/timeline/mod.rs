@@ -5,6 +5,7 @@ use crate::timeline;
 use crate::timeline::drag_selection::TimelineDragSelectionPlugin;
 use crate::timeline::settings::TimelineSettings;
 use crate::timeline::Timeline;
+use crate::utils::convert::BevyEguiConvert;
 use phichain_chart::note::Note;
 
 pub struct TimelineTabPlugin;
@@ -21,14 +22,10 @@ pub fn timeline_tab(In(ui): In<&'static mut Ui>, world: &mut World) {
     timeline::drag_selection::timeline_drag_selection(ui, world);
     let viewport = world.resource::<TimelineViewport>();
     let timeline_settings = world.resource::<TimelineSettings>();
-    let rect = egui::Rect::from_min_max(
-        egui::Pos2::new(viewport.0.min.x, viewport.0.min.y),
-        egui::Pos2::new(viewport.0.max.x, viewport.0.max.y),
-    );
 
     let timelines = timeline_settings.timelines_container.clone();
 
-    for item in &timelines.allocate(rect) {
+    for item in &timelines.allocate(viewport.0.into_egui()) {
         item.timeline.ui(ui, world, item.viewport);
     }
     timeline::common::beat_line_ui(ui, world);

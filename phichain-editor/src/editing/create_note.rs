@@ -9,6 +9,7 @@ use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
 use crate::project::project_loaded;
 use crate::timeline::{TimelineContext, TimelineItem};
+use crate::utils::convert::BevyEguiConvert;
 use crate::{constants::CANVAS_WIDTH, selection::SelectedLine};
 use phichain_chart::note::NoteBundle;
 
@@ -42,17 +43,14 @@ fn create_note_system(
         return;
     };
 
-    let rect = egui::Rect::from_min_max(
-        egui::Pos2::new(ctx.viewport.0.min.x, ctx.viewport.0.min.y),
-        egui::Pos2::new(ctx.viewport.0.max.x, ctx.viewport.0.max.y),
-    );
+    let rect = ctx.viewport.0.into_egui();
 
     for item in &ctx.timeline_settings.timelines_container.allocate(rect) {
         if let TimelineItem::Note(timeline) = &item.timeline {
             let viewport = item.viewport;
             let line_entity = timeline.line_entity_from_fallback(selected_line.0);
 
-            if !viewport.contains(egui::Pos2::new(cursor_position.x, cursor_position.y)) {
+            if !viewport.contains(cursor_position.into_egui().to_pos2()) {
                 continue;
             }
 
