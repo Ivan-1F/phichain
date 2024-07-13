@@ -7,17 +7,35 @@ pub mod settings;
 use crate::audio::AudioDuration;
 use crate::constants::{BASE_ZOOM, INDICATOR_POSITION};
 use crate::tab::timeline::TimelineViewport;
+use crate::timeline::drag_selection::TimelineDragSelectionPlugin;
 use crate::timeline::event::EventTimeline;
 use crate::timeline::note::NoteTimeline;
 use crate::timeline::settings::TimelineSettings;
 use crate::timing::ChartTime;
+use bevy::app::{App, Plugin, PostUpdate};
 use bevy::ecs::system::SystemParam;
-use bevy::prelude::{Entity, Res, ResMut, World};
+use bevy::math::Vec2;
+use bevy::prelude::*;
 use egui::{Rect, Ui};
 use enum_dispatch::enum_dispatch;
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
+use phichain_chart::line::Line;
+
+pub struct TimelinePlugin;
+
+impl Plugin for TimelinePlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugins(TimelineDragSelectionPlugin)
+            .insert_resource(TimelineViewport(bevy::math::Rect::from_corners(
+                Vec2::ZERO,
+                Vec2::ZERO,
+            )))
+            .insert_resource(TimelineSettings::default())
+            .add_systems(PostUpdate, clean_dangle_timelines_system);
+    }
+}
 
 // TODO: make all resources mutable
 /// Resources and context to work with timelines
@@ -200,5 +218,26 @@ pub mod common {
             0.0,
             Color32::WHITE,
         );
+    }
+}
+
+fn clean_dangle_timelines_system(
+    mut query: RemovedComponents<Line>,
+    mut timeline_settings: ResMut<TimelineSettings>,
+) {
+    for entity in query.read() {
+        if let Some(index) =
+            timeline_settings
+                .container
+                .timelines
+                .iter()
+                .position(|x| match &x.timeline {
+                    TimelineItem::Note(timeline) => timeline.0 == Some(entity),
+                    TimelineItem::Event(timeline) => timeline.0 == Some(entity),
+                })
+        {
+            info!("Removed timeline due to removal of line");
+            timeline_settings.container.remove(index);
+        }
     }
 }

@@ -58,9 +58,10 @@ use crate::tab::game::GameCamera;
 use crate::tab::game::GameTabPlugin;
 use crate::tab::game::GameViewport;
 use crate::tab::quick_action::quick_action_tab;
-use crate::tab::timeline::{TimelineTabPlugin, TimelineViewport};
+use crate::tab::timeline::TimelineViewport;
 use crate::tab::TabPlugin;
 use crate::tab::{EditorTab, TabRegistry};
+use crate::timeline::TimelinePlugin;
 use crate::timing::TimingPlugin;
 use crate::translation::TranslationPlugin;
 use crate::ui::UiPlugin;
@@ -100,7 +101,7 @@ fn main() {
         .add_plugins(HitSoundPlugin)
         .add_plugins(GameTabPlugin)
         .add_plugins(ScorePlugin)
-        .add_plugins(TimelineTabPlugin)
+        .add_plugins(TimelinePlugin)
         .add_plugins(DefaultPickingPlugins)
         .add_plugins(EguiPlugin)
         .add_plugins(ProjectPlugin)

@@ -2,21 +2,10 @@ use bevy::prelude::*;
 use egui::Ui;
 
 use crate::timeline;
-use crate::timeline::drag_selection::TimelineDragSelectionPlugin;
 use crate::timeline::settings::TimelineSettings;
 use crate::timeline::Timeline;
 use crate::utils::convert::BevyEguiConvert;
 use phichain_chart::note::Note;
-
-pub struct TimelineTabPlugin;
-
-impl Plugin for TimelineTabPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins(TimelineDragSelectionPlugin)
-            .insert_resource(TimelineViewport(Rect::from_corners(Vec2::ZERO, Vec2::ZERO)))
-            .insert_resource(TimelineSettings::default());
-    }
-}
 
 pub fn timeline_tab(In(ui): In<&mut Ui>, world: &mut World) {
     timeline::drag_selection::timeline_drag_selection(ui, world);
