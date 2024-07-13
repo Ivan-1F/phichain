@@ -32,7 +32,7 @@ use phichain_chart::bpm_list::BpmList;
 #[derive(SystemParam)]
 pub struct TimelineContext<'w> {
     bpm_list: Res<'w, BpmList>,
-    pub timeline_settings: ResMut<'w, TimelineSettings>,
+    pub settings: ResMut<'w, TimelineSettings>,
     current_time: Res<'w, ChartTime>,
     pub viewport: Res<'w, TimelineViewport>,
 
@@ -51,16 +51,13 @@ impl<'w> TimelineContext<'w> {
     pub fn secondary_beat_times(&self) -> Vec<f32> {
         std::iter::repeat(0)
             .enumerate()
-            .map(|(i, _)| {
-                self.bpm_list
-                    .time_at(beat!(0, i, self.timeline_settings.density))
-            })
+            .map(|(i, _)| self.bpm_list.time_at(beat!(0, i, self.settings.density)))
             .take_while(|x| x <= &self.audio_duration.0.as_secs_f32())
             .collect()
     }
 
     pub fn time_to_y(&self, time: f32) -> f32 {
-        (self.current_time.0 - time) * BASE_ZOOM * self.timeline_settings.zoom
+        (self.current_time.0 - time) * BASE_ZOOM * self.settings.zoom
             + self.viewport.0.min.y
             + self.viewport.0.height() * INDICATOR_POSITION
     }
@@ -72,7 +69,7 @@ impl<'w> TimelineContext<'w> {
     pub fn y_to_time(&self, y: f32) -> f32 {
         self.current_time.0
             - (y - (self.viewport.0.min.y + self.viewport.0.height() * INDICATOR_POSITION))
-                / (BASE_ZOOM * self.timeline_settings.zoom)
+                / (BASE_ZOOM * self.settings.zoom)
     }
 
     pub fn y_to_beat(&self, y: f32) -> Beat {
@@ -134,7 +131,7 @@ pub mod common {
         }
 
         for (index, beat_time) in ctx.secondary_beat_times().iter().enumerate() {
-            if index as u32 % ctx.timeline_settings.density == 0 {
+            if index as u32 % ctx.settings.density == 0 {
                 continue;
             }
             let rect = egui::Rect::from_center_size(
@@ -150,7 +147,7 @@ pub mod common {
                 Color32::from_rgba_unmultiplied(255, 255, 255, 40),
             );
             let numer = index as u32;
-            let denom = ctx.timeline_settings.density;
+            let denom = ctx.settings.density;
             ui.painter().text(
                 rect.left_top() + egui::Vec2::new(4.0, 0.0),
                 Align2::LEFT_BOTTOM,
@@ -165,7 +162,7 @@ pub mod common {
         let mut state: SystemState<TimelineContext> = SystemState::new(world);
         let mut ctx = state.get_mut(world);
 
-        let timelines = ctx.timeline_settings.timelines_container.timelines.clone();
+        let timelines = ctx.settings.container.timelines.clone();
 
         for (index, timeline) in timelines.iter().enumerate() {
             let rect = egui::Rect::from_center_size(
@@ -184,9 +181,7 @@ pub mod common {
                 let delta_x = response.drag_delta().x;
                 let delta_percent = delta_x / ctx.viewport.0.width();
                 // TODO: make ManagedTimeline a handle so we can use `timeline.offset(delta_percent)`
-                ctx.timeline_settings
-                    .timelines_container
-                    .offset_timeline(index, delta_percent);
+                ctx.settings.container.offset_timeline(index, delta_percent);
             }
         }
     }

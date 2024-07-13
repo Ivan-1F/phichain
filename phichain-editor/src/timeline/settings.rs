@@ -11,7 +11,7 @@ pub struct TimelineSettings {
     pub density: u32,
     pub lanes: u32,
 
-    pub timelines_container: TimelineContainer,
+    pub container: TimelineContainer,
 
     pub note_side_filter: NoteSideFilter,
 }
@@ -23,7 +23,7 @@ impl Default for TimelineSettings {
             density: 4,
             lanes: 11,
 
-            timelines_container: TimelineContainer::default(),
+            container: TimelineContainer::default(),
 
             note_side_filter: NoteSideFilter::default(),
         }

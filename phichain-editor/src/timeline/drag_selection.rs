@@ -68,7 +68,7 @@ pub fn timeline_drag_selection(ui: &mut Ui, world: &mut World) {
                 .translate(egui::Vec2::new(ctx.viewport.0.min.x, 0.0));
             // ignore too small selections. e.g. click on a note
             if selection_rect.area() >= 0.001 {
-                let timelines = ctx.timeline_settings.timelines_container.clone();
+                let timelines = ctx.settings.container.clone();
                 let mut all = vec![];
                 for item in timelines.allocate(ctx.viewport.0.into_egui()) {
                     let rect =

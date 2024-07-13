@@ -45,7 +45,7 @@ fn create_note_system(
 
     let rect = ctx.viewport.0.into_egui();
 
-    for item in &ctx.timeline_settings.timelines_container.allocate(rect) {
+    for item in &ctx.settings.container.allocate(rect) {
         if let TimelineItem::Note(timeline) = &item.timeline {
             let viewport = item.viewport;
             let line_entity = timeline.line_entity_from_fallback(selected_line.0);
@@ -57,11 +57,11 @@ fn create_note_system(
             let calc_note_attrs = || {
                 let time = ctx.y_to_time(cursor_position.y);
                 let beat = bpm_list.beat_at(time).value();
-                let beat = ctx.timeline_settings.attach(beat);
+                let beat = ctx.settings.attach(beat);
 
                 let x = (cursor_position.x - viewport.min.x) / viewport.width();
 
-                let lane_percents = ctx.timeline_settings.lane_percents();
+                let lane_percents = ctx.settings.lane_percents();
 
                 let x = lane_percents
                     .iter()
@@ -98,8 +98,7 @@ fn create_note_system(
                 if let NoteKind::Hold { .. } = pending_note.kind {
                     let (x, beat) = calc_note_attrs();
                     pending_note.kind = NoteKind::Hold {
-                        hold_beat: (beat - pending_note.beat)
-                            .max(ctx.timeline_settings.minimum_beat()),
+                        hold_beat: (beat - pending_note.beat).max(ctx.settings.minimum_beat()),
                     };
                     pending_note.x = x * CANVAS_WIDTH;
                 }

@@ -131,10 +131,9 @@ impl Timeline for EventTimeline {
                         });
                         ui.data_mut(|data| data.remove::<LineEvent>(egui::Id::new("event-drag")));
                         if start {
-                            event.start_beat =
-                                ctx.timeline_settings.attach(event.start_beat.value());
+                            event.start_beat = ctx.settings.attach(event.start_beat.value());
                         } else {
-                            event.end_beat = ctx.timeline_settings.attach(event.end_beat.value());
+                            event.end_beat = ctx.settings.attach(event.end_beat.value());
                         }
                         if from != *event {
                             on_event_change(from, *event);

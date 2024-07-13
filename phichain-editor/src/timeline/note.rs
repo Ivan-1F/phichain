@@ -70,7 +70,7 @@ impl Timeline for NoteTimeline {
         ) = state.get_mut(world);
 
         for (mut note, parent, entity, highlighted, selected, pending) in &mut note_query {
-            if !ctx.timeline_settings.note_side_filter.filter(*note) {
+            if !ctx.settings.note_side_filter.filter(*note) {
                 continue;
             }
             if parent.get() != line_entity {
@@ -175,9 +175,9 @@ impl Timeline for NoteTimeline {
                         });
                         ui.data_mut(|data| data.remove::<Note>(egui::Id::new("hold-drag")));
                         if start {
-                            note.beat = ctx.timeline_settings.attach(note.beat.value());
+                            note.beat = ctx.settings.attach(note.beat.value());
                         } else {
-                            let end_beat = ctx.timeline_settings.attach(note.end_beat().value());
+                            let end_beat = ctx.settings.attach(note.end_beat().value());
                             note.set_end_beat(end_beat);
                         }
                         if from != *note {
@@ -197,7 +197,7 @@ impl Timeline for NoteTimeline {
             }
         }
 
-        for percent in ctx.timeline_settings.lane_percents() {
+        for percent in ctx.settings.lane_percents() {
             ui.painter().rect_filled(
                 Rect::from_center_size(
                     egui::Pos2::new(

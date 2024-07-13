@@ -89,9 +89,7 @@ fn paste_system(
         .min()
     {
         let time = timeline.y_to_time(cursor_position.y);
-        let beat = timeline
-            .timeline_settings
-            .attach(bpm_list.beat_at(time).value());
+        let beat = timeline.settings.attach(bpm_list.beat_at(time).value());
 
         let delta = beat - min_beat;
 

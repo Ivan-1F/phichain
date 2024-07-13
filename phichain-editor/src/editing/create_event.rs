@@ -45,7 +45,7 @@ fn create_event_system(
 
     let rect = ctx.viewport.0.into_egui();
 
-    for item in &ctx.timeline_settings.timelines_container.allocate(rect) {
+    for item in &ctx.settings.container.allocate(rect) {
         if let TimelineItem::Event(timeline) = &item.timeline {
             let viewport = item.viewport;
             let line_entity = timeline.line_entity_from_fallback(selected_line.0);
@@ -57,7 +57,7 @@ fn create_event_system(
             let calc_event_attrs = || {
                 let time = ctx.y_to_time(cursor_position.y);
                 let beat = bpm_list.beat_at(time).value();
-                let beat = ctx.timeline_settings.attach(beat);
+                let beat = ctx.settings.attach(beat);
 
                 let track =
                     ((cursor_position.x - viewport.min.x) / (viewport.width() / 5.0)).ceil() as u8;
@@ -68,7 +68,7 @@ fn create_event_system(
             if let Ok((mut pending_event, _)) = pending_event_query.get_single_mut() {
                 let (track, beat) = calc_event_attrs();
                 pending_event.end_beat =
-                    beat.max(pending_event.start_beat + ctx.timeline_settings.minimum_beat());
+                    beat.max(pending_event.start_beat + ctx.settings.minimum_beat());
                 pending_event.kind = LineEventKind::try_from(track).expect("Unknown event track");
             }
 
@@ -113,7 +113,7 @@ fn create_event_system(
                                 start: 0.0,
                                 end: 0.0,
                                 start_beat: beat,
-                                end_beat: beat + ctx.timeline_settings.minimum_beat(),
+                                end_beat: beat + ctx.settings.minimum_beat(),
                                 easing: Default::default(),
                             }),
                             Pending,

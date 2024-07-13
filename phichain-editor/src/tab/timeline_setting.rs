@@ -76,7 +76,7 @@ pub fn timeline_setting_tab(
                         .clicked()
                     {
                         timeline_settings
-                            .timelines_container
+                            .container
                             .push_right(TimelineItem::Note(NoteTimeline::new_binding()));
                         ui.close_menu();
                     }
@@ -86,7 +86,7 @@ pub fn timeline_setting_tab(
                         // TODO: move timeline selector to dedicated widget
                         if ui.button(format!("Line #{}", index)).clicked() {
                             timeline_settings
-                                .timelines_container
+                                .container
                                 .push_right(TimelineItem::Note(NoteTimeline::new(entity)));
                             ui.close_menu();
                         }
@@ -103,7 +103,7 @@ pub fn timeline_setting_tab(
                         .clicked()
                     {
                         timeline_settings
-                            .timelines_container
+                            .container
                             .push_right(TimelineItem::Event(EventTimeline::new_binding()));
                         ui.close_menu();
                     }
@@ -112,7 +112,7 @@ pub fn timeline_setting_tab(
                         // TODO: use a readable identifier for this (e.g. name)
                         if ui.button(format!("Line #{}", index)).clicked() {
                             timeline_settings
-                                .timelines_container
+                                .container
                                 .push_right(TimelineItem::Event(EventTimeline::new(entity)));
                             ui.close_menu();
                         }
@@ -123,7 +123,7 @@ pub fn timeline_setting_tab(
 
         ui.end_row();
 
-        let timelines = &mut timeline_settings.timelines_container;
+        let timelines = &mut timeline_settings.container;
         let mut deletes = vec![];
 
         for (index, timeline) in timelines.timelines.iter().enumerate() {

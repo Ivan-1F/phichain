@@ -23,7 +23,7 @@ pub fn timeline_tab(In(ui): In<&'static mut Ui>, world: &mut World) {
     let viewport = world.resource::<TimelineViewport>();
     let timeline_settings = world.resource::<TimelineSettings>();
 
-    let timelines = timeline_settings.timelines_container.clone();
+    let timelines = timeline_settings.container.clone();
 
     for item in &timelines.allocate(viewport.0.into_egui()) {
         item.timeline.ui(ui, world, item.viewport);
