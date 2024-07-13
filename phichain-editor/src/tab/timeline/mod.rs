@@ -18,7 +18,7 @@ impl Plugin for TimelineTabPlugin {
     }
 }
 
-pub fn timeline_tab(In(ui): In<&'static mut Ui>, world: &mut World) {
+pub fn timeline_tab(In(ui): In<&mut Ui>, world: &mut World) {
     timeline::drag_selection::timeline_drag_selection(ui, world);
     let viewport = world.resource::<TimelineViewport>();
     let timeline_settings = world.resource::<TimelineSettings>();
