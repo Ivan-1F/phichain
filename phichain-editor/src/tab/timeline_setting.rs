@@ -1,9 +1,18 @@
+use crate::timeline::event::EventTimeline;
+use crate::timeline::note::NoteTimeline;
+use crate::timeline::settings::TimelineSettings;
+use crate::timeline::TimelineItem;
 use bevy::prelude::*;
-use egui::Ui;
+use egui::{RichText, Ui};
+use phichain_chart::line::Line;
 
-use super::timeline::{NoteSideFilter, TimelineSettings};
+use super::timeline::NoteSideFilter;
 
-pub fn timeline_setting_tab(In(ui): In<&mut Ui>, mut timeline_settings: ResMut<TimelineSettings>) {
+pub fn timeline_setting_tab(
+    In(ui): In<&mut Ui>,
+    mut timeline_settings: ResMut<TimelineSettings>,
+    line_query: Query<(&Line, Entity)>,
+) {
     egui::Grid::new("timeline_setting_grid")
         .num_columns(2)
         .spacing([20.0, 2.0])
@@ -53,4 +62,99 @@ pub fn timeline_setting_tab(In(ui): In<&mut Ui>, mut timeline_settings: ResMut<T
             });
             ui.end_row();
         });
+
+    {
+        ui.separator();
+        ui.columns(2, |columns| {
+            columns[0].menu_button(
+                t!("tab.timeline_setting.timelines.new_note_timeline"),
+                |ui| {
+                    if ui
+                        .button(
+                            RichText::new(t!("tab.timeline_setting.timelines.binding")).strong(),
+                        )
+                        .clicked()
+                    {
+                        timeline_settings
+                            .container
+                            .push_right(TimelineItem::Note(NoteTimeline::new_binding()));
+                        ui.close_menu();
+                    }
+                    ui.separator();
+                    for (index, (_, entity)) in line_query.iter().enumerate() {
+                        // TODO: use a readable identifier for this (e.g. name)
+                        // TODO: move timeline selector to dedicated widget
+                        if ui.button(format!("Line #{}", index)).clicked() {
+                            timeline_settings
+                                .container
+                                .push_right(TimelineItem::Note(NoteTimeline::new(entity)));
+                            ui.close_menu();
+                        }
+                    }
+                },
+            );
+            columns[1].menu_button(
+                t!("tab.timeline_setting.timelines.new_event_timeline"),
+                |ui| {
+                    if ui
+                        .button(
+                            RichText::new(t!("tab.timeline_setting.timelines.binding")).strong(),
+                        )
+                        .clicked()
+                    {
+                        timeline_settings
+                            .container
+                            .push_right(TimelineItem::Event(EventTimeline::new_binding()));
+                        ui.close_menu();
+                    }
+                    ui.separator();
+                    for (index, (_, entity)) in line_query.iter().enumerate() {
+                        // TODO: use a readable identifier for this (e.g. name)
+                        if ui.button(format!("Line #{}", index)).clicked() {
+                            timeline_settings
+                                .container
+                                .push_right(TimelineItem::Event(EventTimeline::new(entity)));
+                            ui.close_menu();
+                        }
+                    }
+                },
+            );
+        });
+
+        ui.end_row();
+
+        let timelines = &mut timeline_settings.container;
+        let mut deletes = vec![];
+
+        for (index, timeline) in timelines.timelines.iter().enumerate() {
+            ui.horizontal(|ui| {
+                ui.horizontal(|ui| {
+                    if ui.button(" × ").clicked() {
+                        deletes.push(index);
+                    }
+                    let label = match &timeline.timeline {
+                        TimelineItem::Note(timeline) => match timeline.0 {
+                            None => t!("tab.timeline_setting.timelines.note_timeline.binding"),
+                            Some(entity) => t!(
+                                "tab.timeline_setting.timelines.note_timeline.for_line",
+                                line = format!("{:?}", entity)
+                            ),
+                        },
+                        TimelineItem::Event(timeline) => match timeline.0 {
+                            None => t!("tab.timeline_setting.timelines.event_timeline.binding"),
+                            Some(entity) => t!(
+                                "tab.timeline_setting.timelines.event_timeline.for_line",
+                                line = format!("{:?}", entity)
+                            ),
+                        },
+                    };
+                    ui.label(label);
+                });
+            });
+        }
+
+        for index in deletes {
+            timelines.remove(index);
+        }
+    }
 }

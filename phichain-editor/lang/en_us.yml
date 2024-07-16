@@ -47,6 +47,16 @@ tab:
       all: All
       above: Above
       Below: Below
+    timelines:
+      new_note_timeline: + Note Timeline
+      new_event_timeline: + Event Timeline
+      note_timeline:
+        for_line: 'Note Timeline for %{line}'
+        binding: Binding Note Timeline
+      event_timeline:
+        for_line: 'Event Timeline for %{line}'
+        binding: Binding Event Timeline
+      binding: Binding
   audio_setting:
     title: Audio Setting
     music_volume: Music Volume

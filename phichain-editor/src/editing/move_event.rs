@@ -2,7 +2,7 @@ use crate::editing::command::event::EditEvent;
 use crate::editing::command::{CommandSequence, EditorCommand};
 use crate::editing::DoCommandEvent;
 use crate::selection::Selected;
-use crate::tab::timeline::TimelineSettings;
+use crate::timeline::settings::TimelineSettings;
 use bevy::prelude::*;
 use phichain_chart::event::LineEvent;
 
