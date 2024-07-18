@@ -23,7 +23,7 @@ impl Default for GameScore {
     fn default() -> Self {
         Self {
             combo: Default::default(),
-            note_amount: 1, // the denominator cannot be 0
+            note_amount: 0,
         }
     }
 }
@@ -34,7 +34,10 @@ impl GameScore {
     }
 
     pub fn score(&self) -> f32 {
-        (100_0000.0 * self.combo as f32 / self.note_amount as f32).round()
+        match self.note_amount {
+            0 => 0.0,
+            _ => (100_0000.0 * self.combo as f32 / self.note_amount as f32).round()
+        }
     }
 
     pub fn score_text(&self) -> String {
