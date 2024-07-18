@@ -13,19 +13,10 @@ impl Plugin for ScorePlugin {
     }
 }
 
-#[derive(Resource, Debug)]
+#[derive(Resource, Debug, Default)]
 pub struct GameScore {
     combo: u32,
     note_amount: u32,
-}
-
-impl Default for GameScore {
-    fn default() -> Self {
-        Self {
-            combo: Default::default(),
-            note_amount: 0,
-        }
-    }
 }
 
 impl GameScore {
@@ -36,7 +27,7 @@ impl GameScore {
     pub fn score(&self) -> f32 {
         match self.note_amount {
             0 => 0.0,
-            _ => (100_0000.0 * self.combo as f32 / self.note_amount as f32).round()
+            _ => (100_0000.0 * self.combo as f32 / self.note_amount as f32).round(),
         }
     }
 
