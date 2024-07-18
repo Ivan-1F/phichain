@@ -90,8 +90,13 @@ impl<'w> TimelineContext<'w> {
                 / (BASE_ZOOM * self.settings.zoom)
     }
 
+    #[allow(dead_code)]
     pub fn y_to_beat(&self, y: f32) -> Beat {
         self.bpm_list.beat_at(self.y_to_time(y))
+    }
+
+    pub fn y_to_beat_f32(&self, y: f32) -> f32 {
+        self.bpm_list.beat_at_f32(self.y_to_time(y))
     }
 }
 

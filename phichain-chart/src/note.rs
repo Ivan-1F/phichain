@@ -38,6 +38,30 @@ impl Note {
         }
     }
 
+    /// Get the hold beat of this [`Note`] if possible
+    ///
+    /// Returns [`Some`] wrapping the inner `hold_beat` when self if a [`Hold`](NoteKind::Hold)
+    ///
+    /// Otherwise, return [`None`]
+    pub fn hold_beat(&self) -> Option<&Beat> {
+        match self.kind {
+            NoteKind::Hold { ref hold_beat } => Some(hold_beat),
+            _ => None,
+        }
+    }
+
+    /// Get the mutable reference of the hold beat of this [`Note`] if possible
+    ///
+    /// Returns [`Some`] wrapping the mutable reference of the inner `hold_beat` when self if a [`Hold`](NoteKind::Hold)
+    ///
+    /// Otherwise, return [`None`]
+    pub fn hold_beat_mut(&mut self) -> Option<&mut Beat> {
+        match self.kind {
+            NoteKind::Hold { ref mut hold_beat } => Some(hold_beat),
+            _ => None,
+        }
+    }
+
     /// Get the end beat of this [`Note`]
     ///
     /// If `self.kind` is not [`NoteKind::Hold`], this returns the beat of this [`Note`]

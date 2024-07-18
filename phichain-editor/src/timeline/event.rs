@@ -117,10 +117,14 @@ impl Timeline for EventTimeline {
 
                         if start {
                             let new_y = ctx.beat_to_y(event.start_beat) + drag_delta.y;
-                            event.start_beat = ctx.y_to_beat(new_y.round()); // will be attached when stop dragging
+                            let new_beat = ctx.y_to_beat_f32(new_y);
+                            // will be attached when stop dragging
+                            *event.start_beat.float_mut() += new_beat - event.start_beat.value();
                         } else {
                             let new_y = ctx.beat_to_y(event.end_beat) + drag_delta.y;
-                            event.end_beat = ctx.y_to_beat(new_y.round()); // will be attached when stop dragging
+                            let new_beat = ctx.y_to_beat_f32(new_y);
+                            // will be attached when stop dragging
+                            *event.end_beat.float_mut() += new_beat - event.end_beat.value();
                         }
                     }
 

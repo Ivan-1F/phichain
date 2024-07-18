@@ -97,6 +97,11 @@ impl BpmList {
     }
 
     pub fn beat_at(&self, time: f32) -> Beat {
+        Beat::from(self.beat_at_f32(time))
+    }
+
+    /// Get the beat at the given time without converting the result to [`Beat`]
+    pub fn beat_at_f32(&self, time: f32) -> f32 {
         let point = self
             .0
             .iter()
@@ -105,7 +110,7 @@ impl BpmList {
             .or_else(|| self.0.first())
             .expect("No bpm points available");
 
-        Beat::from(point.beat.value() + (time - point.time) * point.bpm / 60.0)
+        point.beat.value() + (time - point.time) * point.bpm / 60.0
     }
 
     /// Normalize a [`Beat`] on this [`BpmList`] to a [`Beat`] on a fixed BPM

@@ -137,7 +137,6 @@ impl Timeline for NoteTimeline {
                     .sense(Sense::click()),
             );
 
-            // FIXME: attempt to multiply with overflow
             if let NoteKind::Hold { .. } = note.kind {
                 let mut make_drag_zone = |start: bool| {
                     let drag_zone = egui::Rect::from_x_y_ranges(
@@ -161,11 +160,16 @@ impl Timeline for NoteTimeline {
 
                         if start {
                             let new_y = ctx.beat_to_y(note.beat) + drag_delta.y;
-                            note.beat = ctx.y_to_beat(new_y.round()); // will be attached when stop dragging
+                            let new_beat = ctx.y_to_beat_f32(new_y);
+                            // will be attached when stop dragging
+                            *note.beat.float_mut() += new_beat - note.beat.value();
                         } else {
                             let new_y = ctx.beat_to_y(note.end_beat()) + drag_delta.y;
-                            let end_beat = ctx.y_to_beat(new_y.round());
-                            note.set_end_beat(end_beat); // will be attached when stop dragging
+                            let end_beat = ctx.y_to_beat_f32(new_y);
+                            let hold_beat = end_beat - note.beat.value();
+                            // will be attached when stop dragging
+                            *note.hold_beat_mut().unwrap().float_mut() +=
+                                hold_beat - note.hold_beat().unwrap().value();
                         }
                     }
 
