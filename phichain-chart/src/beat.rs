@@ -46,7 +46,7 @@ impl<'de> Deserialize<'de> for Beat {
         D: Deserializer<'de>,
     {
         let (whole, numer, denom) = Deserialize::deserialize(deserializer)?;
-        Ok(Beat(whole, Rational32::new(numer, denom)))
+        Ok(Beat::new(whole, Rational32::new(numer, denom)))
     }
 }
 
@@ -108,11 +108,11 @@ pub mod utils {
 }
 
 impl Beat {
-    pub const MAX: Self = Beat(i32::MAX, Rational32::ZERO);
-    pub const MIN: Self = Beat(i32::MIN, Rational32::ZERO);
+    pub const MAX: Self = Beat::new(i32::MAX, Rational32::ZERO);
+    pub const MIN: Self = Beat::new(i32::MIN, Rational32::ZERO);
 
-    pub const ZERO: Self = Beat(0, Rational32::ZERO);
-    pub const ONE: Self = Beat(1, Rational32::ZERO);
+    pub const ZERO: Self = Beat::new(0, Rational32::ZERO);
+    pub const ONE: Self = Beat::new(1, Rational32::ZERO);
 }
 
 impl From<Beat> for f32 {
