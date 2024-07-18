@@ -9,6 +9,25 @@ use std::{
 use num::{FromPrimitive, Rational32};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
+#[macro_export]
+macro_rules! beat {
+    ($whole:expr, $numer:expr, $denom:expr) => {
+        $crate::beat::Beat::new(
+            $whole as i32,
+            num::Rational32::new($numer as i32, $denom as i32),
+        )
+    };
+    ($numer:expr, $denom:expr) => {
+        $crate::beat::Beat::new(0, num::Rational32::new($numer as i32, $denom as i32))
+    };
+    ($whole:expr) => {
+        $crate::beat::Beat::new($whole as i32, num::Rational32::new(0, 1))
+    };
+    () => {
+        $crate::beat::Beat::new(0, num::Rational32::new(0, 1))
+    };
+}
+
 #[derive(Clone, Copy)]
 pub struct Beat(i32, Rational32);
 
@@ -142,25 +161,6 @@ impl Beat {
     }
 }
 
-#[macro_export]
-macro_rules! beat {
-    ($whole:expr, $numer:expr, $denom:expr) => {
-        $crate::beat::Beat::new(
-            $whole as i32,
-            num::Rational32::new($numer as i32, $denom as i32),
-        )
-    };
-    ($numer:expr, $denom:expr) => {
-        $crate::beat::Beat::new(0, num::Rational32::new($numer as i32, $denom as i32))
-    };
-    ($whole:expr) => {
-        $crate::beat::Beat::new($whole as i32, num::Rational32::new(0, 1))
-    };
-    () => {
-        $crate::beat::Beat::new(0, num::Rational32::new(0, 1))
-    };
-}
-
 impl Sub for Beat {
     type Output = Self;
 
@@ -265,7 +265,7 @@ mod tests {
         let beat1 = beat!(1, 2, 1);
         let beat2 = beat!(3, 4, 1);
         let result = beat1 + beat2;
-        assert_eq!(result, Beat(4, Rational32::new(6, 1)));
+        assert_eq!(result, beat!(4, 6, 1));
     }
 
     #[test]
@@ -273,7 +273,7 @@ mod tests {
         let beat1 = beat!(5, 3, 1);
         let beat2 = beat!(2, 1, 1);
         let result = beat1 - beat2;
-        assert_eq!(result, Beat(3, Rational32::new(2, 1)));
+        assert_eq!(result, beat!(3, 2, 1));
     }
 
     #[test]
@@ -301,27 +301,27 @@ mod tests {
     fn test_reduce() {
         let mut beat = beat!(1, 3, 2);
         beat.reduce();
-        assert_eq!(beat, Beat(2, Rational32::new(1, 2)));
+        assert_eq!(beat, beat!(2, 1, 2));
     }
 
     #[test]
     fn test_reduced() {
         let beat = beat!(1, 3, 2);
         let reduced = beat.reduced();
-        assert_eq!(reduced, Beat(2, Rational32::new(1, 2)));
+        assert_eq!(reduced, beat!(2, 1, 2));
     }
 
     #[test]
     fn test_from_f32() {
         let beat: Beat = 1.5f32.into();
-        assert_eq!(beat, Beat(1, Rational32::new(1, 2)));
+        assert_eq!(beat, beat!(1, 1, 2));
     }
 
     #[test]
     fn test_from_rational32() {
         let rational = Rational32::new(3, 2);
         let beat: Beat = rational.into();
-        assert_eq!(beat, Beat(1, Rational32::new(1, 2)));
+        assert_eq!(beat, beat!(1, 1, 2));
     }
 
     #[test]
