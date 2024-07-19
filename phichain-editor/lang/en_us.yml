@@ -46,7 +46,7 @@ tab:
       title: Note Side
       all: All
       above: Above
-      Below: Below
+      below: Below
     timelines:
       new_note_timeline: + Note Timeline
       new_event_timeline: + Event Timeline
