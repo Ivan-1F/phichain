@@ -84,7 +84,7 @@ fn create_event_system(
                         .filter(|(_, p)| p.get() == line_entity)
                         .take_while(|(e, _)| e.start_beat <= pending_event.start_beat)
                         .map(|x| x.0)
-                        .next()
+                        .last()
                     {
                         new_event.start = last_event.end;
                     }
@@ -95,7 +95,7 @@ fn create_event_system(
                         .filter(|(_, p)| p.get() == line_entity)
                         .take_while(|(e, _)| e.end_beat >= pending_event.end_beat)
                         .map(|x| x.0)
-                        .next()
+                        .last()
                     {
                         new_event.end = next_event.start;
                     }
