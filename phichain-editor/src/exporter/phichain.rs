@@ -18,7 +18,8 @@ impl Exporter for PhiChainExporter {
 
         let mut line_query = world.query_filtered::<Entity, With<Line>>();
 
-        let lines = line_query.iter(world).collect::<Vec<_>>();
+        let mut lines = line_query.iter(world).collect::<Vec<_>>();
+        lines.sort();
         for entity in lines {
             chart.lines.push(LineWrapper::serialize_line(world, entity));
         }
