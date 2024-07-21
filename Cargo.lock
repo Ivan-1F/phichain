@@ -4290,7 +4290,7 @@ dependencies = [
 
 [[package]]
 name = "phichain"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "bevy",
@@ -4329,7 +4329,7 @@ dependencies = [
 
 [[package]]
 name = "phichain-chart"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "bevy",
@@ -4345,7 +4345,7 @@ dependencies = [
 
 [[package]]
 name = "phichain-converter"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "clap",
