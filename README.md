@@ -1,16 +1,20 @@
 > [!WARNING]
-> Still in early stages of development, expect incomplete feature and unexpected behavior
+> 仍处于开发的早期阶段，可能存在不完整的功能和未预期的行为
 
 ## Phichain
+
+**中文** | [English](https://github.com/Ivan-1F/phichain/blob/master/README_en.md)
 
 [![GitHub License](https://img.shields.io/github/license/Ivan-1F/phichain)](https://github.com/Ivan-1F/phichain/blob/master/LICENSE)
 [![Dev Builds](https://github.com/Ivan-1F/phichain/actions/workflows/cargo.yml/badge.svg)](https://github.com/Ivan-1F/phichain/actions/workflows/cargo.yml)
 
-Phigros charting toolchain written in Rust and Bevy
+基于 Rust 和 Bevy 的 Phigros 制谱工具链
+
+QQ群: [768476938](https://qm.qq.com/q/lWGARUtgiI)
 
 ![screenshot](screenshots/phichain-editor.png)
 
-## Thanks
+## 致谢
 
-- Re:PhiEdit by [cmdysj](https://space.bilibili.com/252635690)
-- The resource assets under `assets/image` and `assets/audio` are from [https://github.com/MisaLiu/phi-chart-render], and are licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)
+- [cmdysj](https://space.bilibili.com/252635690) 的 Re:PhiEdit
+- `assets/image` 和 `assets/audio` 目录下的资源文件来自 [https://github.com/MisaLiu/phi-chart-render], 并且遵循 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) 许可协议
