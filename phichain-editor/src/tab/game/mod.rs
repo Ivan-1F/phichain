@@ -1,4 +1,5 @@
 pub mod core;
+pub mod hit_effect;
 pub mod illustration;
 pub mod ui;
 
@@ -8,6 +9,7 @@ use egui::Ui;
 use phichain_chart::bpm_list::BpmList;
 
 use crate::project::project_loaded;
+use crate::tab::game::hit_effect::HitEffectPlugin;
 use crate::timing::{ChartTime, SeekToEvent};
 
 use self::{core::CoreGamePlugin, illustration::IllustrationPlugin, ui::GameUiPlugin};
@@ -59,7 +61,8 @@ impl Plugin for GameTabPlugin {
             )
             .add_plugins(GameUiPlugin)
             .add_plugins(IllustrationPlugin)
-            .add_plugins(CoreGamePlugin);
+            .add_plugins(CoreGamePlugin)
+            .add_plugins(HitEffectPlugin);
     }
 }
 

@@ -23,6 +23,8 @@ pub struct ImageAssets {
     pub flick_highlight: Handle<Image>,
     #[asset(path = "image/line.png")]
     pub line: Handle<Image>,
+    #[asset(path = "image/hit.png")]
+    pub hit: Handle<Image>,
 }
 
 #[derive(AssetCollection, Resource)]
