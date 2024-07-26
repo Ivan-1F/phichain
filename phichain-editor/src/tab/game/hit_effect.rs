@@ -3,6 +3,7 @@ use crate::project::project_loaded;
 use crate::tab::game::GameViewport;
 use crate::timing::{ChartTime, Paused};
 use bevy::prelude::*;
+use bevy::transform::TransformSystem;
 use bevy_hanabi::prelude::*;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::note::{Note, NoteKind};
@@ -18,7 +19,7 @@ impl Plugin for HitEffectPlugin {
             Update,
             (
                 spawn_hit_effect_system,
-                update_hit_effect_system,
+                update_hit_effect_system.after(TransformSystem::TransformPropagate),
                 update_hit_effect_scale_system,
                 animate_hit_effect_system,
             )
@@ -111,13 +112,9 @@ fn animate_hit_effect_system(
     }
 }
 
-fn update_hit_effect_system(
-    mut query: Query<(&mut Transform, &Parent, &HitEffect)>,
-    parent_query: Query<&Transform, Without<HitEffect>>,
-) {
-    for (mut transform, parent, effect) in &mut query {
+fn update_hit_effect_system(mut query: Query<(&mut Transform, &HitEffect)>) {
+    for (mut transform, effect) in &mut query {
         transform.translation = Vec3::new(effect.0.x, effect.0.y, 10.0);
-        transform.rotation = parent_query.get(parent.get()).unwrap().rotation.inverse();
     }
 }
 
@@ -126,9 +123,7 @@ fn update_hit_effect_scale_system(
     game_viewport: Res<GameViewport>,
 ) {
     for mut transform in &mut query {
-        transform.scale = Vec3::splat(
-            game_viewport.0.width() / 8000.0 / (game_viewport.0.width() * 3.0 / 1920.0) * 6.0,
-        )
+        transform.scale = Vec3::splat(game_viewport.0.width() / 8000.0 * 6.0)
     }
 }
 
@@ -137,7 +132,7 @@ struct PlayedHitEffect(f32);
 
 fn spawn_hit_effect_system(
     mut commands: Commands,
-    query: Query<(&Note, &Transform, Entity, &Parent, Option<&PlayedHitEffect>)>,
+    query: Query<(&Note, &GlobalTransform, Entity, Option<&PlayedHitEffect>)>,
     time: Res<ChartTime>,
     bpm_list: Res<BpmList>,
     assets: Res<ImageAssets>,
@@ -146,38 +141,37 @@ fn spawn_hit_effect_system(
     texture_atlas_layout_handle: Res<TextureAtlasLayoutHandle>,
     effect_asset_handle: Res<EffectAssetHandle>,
 ) {
-    for (note, transform, entity, parent, played) in &query {
+    for (note, global_transform, entity, played) in &query {
         let mut spawn = || {
-            commands.entity(parent.get()).with_children(|p| {
-                p.spawn((
-                    SpriteBundle {
-                        texture: assets.hit.clone(),
-                        sprite: Sprite {
-                            color: Color::hex("#feffa9").unwrap(),
-                            ..default()
-                        },
+            let translation = global_transform.translation();
+            commands.spawn((
+                SpriteBundle {
+                    texture: assets.hit.clone(),
+                    sprite: Sprite {
+                        color: Color::hex("#feffa9").unwrap(),
                         ..default()
                     },
-                    TextureAtlas {
-                        layout: texture_atlas_layout_handle.0.clone(),
-                        index: 0,
-                    },
-                    HitEffect(Vec2::new(transform.translation.x, transform.translation.y)),
-                    AnimationTimer(Timer::new(
-                        Duration::from_millis(500 / 30),
-                        TimerMode::Repeating,
-                    )),
-                ));
+                    ..default()
+                },
+                TextureAtlas {
+                    layout: texture_atlas_layout_handle.0.clone(),
+                    index: 0,
+                },
+                HitEffect(Vec2::new(translation.x, translation.y)),
+                AnimationTimer(Timer::new(
+                    Duration::from_millis(500 / 30),
+                    TimerMode::Repeating,
+                )),
+            ));
 
-                p.spawn((
-                    ParticleEffectBundle {
-                        effect: ParticleEffect::new(effect_asset_handle.0.clone()),
-                        transform: Transform::from_translation(transform.translation),
-                        ..Default::default()
-                    },
-                    HitEffect(Vec2::new(transform.translation.x, transform.translation.y)),
-                ));
-            });
+            commands.spawn((
+                ParticleEffectBundle {
+                    effect: ParticleEffect::new(effect_asset_handle.0.clone()),
+                    transform: Transform::from_translation(global_transform.translation()),
+                    ..Default::default()
+                },
+                HitEffect(Vec2::new(translation.x, translation.y)),
+            ));
 
             commands.entity(entity).insert(PlayedHitEffect(time.0));
         };
