@@ -3,6 +3,7 @@ use crate::project::project_loaded;
 use crate::tab::game::GameViewport;
 use crate::timing::{ChartTime, Paused};
 use bevy::prelude::*;
+use bevy_hanabi::prelude::*;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::note::{Note, NoteKind};
 use std::time::Duration;
@@ -33,13 +34,61 @@ struct HitEffect(Vec2);
 #[derive(Resource, Debug)]
 struct TextureAtlasLayoutHandle(Handle<TextureAtlasLayout>);
 
+#[derive(Resource, Debug)]
+struct EffectAssetHandle(Handle<EffectAsset>);
+
 fn setup_system(
     mut commands: Commands,
+    mut effects: ResMut<Assets<EffectAsset>>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
     let layout = TextureAtlasLayout::from_grid(Vec2::splat(256.0), 1, 30, None, None);
     let texture_atlas_layout = texture_atlas_layouts.add(layout);
     commands.insert_resource(TextureAtlasLayoutHandle(texture_atlas_layout.clone()));
+
+    let mut gradient = Gradient::new();
+    gradient.add_key(0.0, Vec4::new(254.0 / 255.0, 1.0, 169.0 / 255.0, 1.0));
+    gradient.add_key(1.0, Vec4::new(0.0, 0.0, 0.0, 0.0));
+
+    let writer = ExprWriter::new();
+    let init_age = SetAttributeModifier::new(Attribute::AGE, writer.lit(0.).expr());
+    let init_lifetime = SetAttributeModifier::new(Attribute::LIFETIME, writer.lit(0.5).expr());
+    let init_pos = SetPositionSphereModifier {
+        center: writer.lit(Vec3::ZERO).expr(),
+        radius: writer.lit(40).expr(),
+        dimension: ShapeDimension::Volume,
+    };
+    let init_vel = SetVelocitySphereModifier {
+        center: writer.lit(Vec3::ZERO).expr(),
+        speed: writer.lit(100.).expr(),
+    };
+
+    let update_accel = AccelModifier::new(writer.lit(-6.0).expr());
+
+    let effect = effects.add(
+        EffectAsset::new(vec![4], Spawner::once(4.0.into(), true), writer.finish())
+            .with_name("hit")
+            .init(init_pos)
+            .init(init_vel)
+            .init(init_age)
+            .init(init_lifetime)
+            .update(update_accel)
+            .render(SetSizeModifier {
+                size: CpuValue::Uniform((Vec2::new(7.0, 7.0), Vec2::new(10.0, 10.0))),
+            })
+            .render(ColorOverLifetimeModifier { gradient }),
+    );
+
+    commands.insert_resource(EffectAssetHandle(effect));
+
+    // commands.spawn((
+    //     Name::new("emit:once"),
+    //     ParticleEffectBundle {
+    //         effect: ParticleEffect::new(effect2),
+    //         transform: Transform::from_translation(Vec3::new(0., 0., 0.)),
+    //         ..Default::default()
+    //     },
+    // ));
 }
 
 #[derive(Component, Deref, DerefMut)]
@@ -95,6 +144,7 @@ fn spawn_hit_effect_system(
     paused: Res<Paused>,
 
     texture_atlas_layout_handle: Res<TextureAtlasLayoutHandle>,
+    effect_asset_handle: Res<EffectAssetHandle>,
 ) {
     for (note, transform, entity, parent, played) in &query {
         let mut spawn = || {
@@ -117,6 +167,15 @@ fn spawn_hit_effect_system(
                         Duration::from_millis(500 / 30),
                         TimerMode::Repeating,
                     )),
+                ));
+
+                p.spawn((
+                    ParticleEffectBundle {
+                        effect: ParticleEffect::new(effect_asset_handle.0.clone()),
+                        transform: Transform::from_translation(transform.translation),
+                        ..Default::default()
+                    },
+                    HitEffect(Vec2::new(transform.translation.x, transform.translation.y)),
                 ));
             });
 

@@ -23,7 +23,7 @@ pub struct ImageAssets {
     pub flick_highlight: Handle<Image>,
     #[asset(path = "image/line.png")]
     pub line: Handle<Image>,
-    #[asset(path = "image/hit.png")]
+    #[asset(path = "image/clickRaw.png")]
     pub hit: Handle<Image>,
 }
 

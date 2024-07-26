@@ -68,8 +68,12 @@ use crate::ui::UiPlugin;
 use crate::utils::compat::ControlKeyExt;
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
+use bevy::render::render_resource::WgpuFeatures;
+use bevy::render::settings::WgpuSettings;
+use bevy::render::RenderPlugin;
 use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{EguiContext, EguiPlugin};
+use bevy_hanabi::HanabiPlugin;
 use bevy_mod_picking::prelude::*;
 use bevy_persistent::Persistent;
 use egui::Ui;
@@ -82,6 +86,11 @@ use rust_i18n::set_locale;
 i18n!("lang", fallback = "en_us");
 
 fn main() {
+    let mut wgpu_settings = WgpuSettings::default();
+    wgpu_settings
+        .features
+        .set(WgpuFeatures::VERTEX_WRITABLE_STORAGE, true);
+
     App::new()
         .insert_resource(ClearColor(Color::BLACK))
         .insert_resource(UiState::new())
@@ -90,7 +99,11 @@ fn main() {
         .add_plugins(UiPlugin)
         .add_plugins(TranslationPlugin)
         .add_plugins(HomePlugin)
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(RenderPlugin {
+            render_creation: wgpu_settings.into(),
+            synchronous_pipeline_compilation: false,
+        }))
+        .add_plugins(HanabiPlugin)
         .add_plugins(ActionPlugin)
         .add_plugins(HighlightPlugin)
         .add_plugins(HotkeyPlugin)
