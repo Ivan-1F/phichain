@@ -10,6 +10,8 @@ use phichain_chart::note::{Note, NoteKind};
 use std::time::Duration;
 
 const HOLD_PARTICLE_INTERVAL: f32 = 0.15;
+const HIT_EFFECT_DURATION: Duration = Duration::from_millis(500);
+const HIT_EFFECT_FRAMES: u32 = 30;
 
 pub struct HitEffectPlugin;
 
@@ -43,7 +45,13 @@ fn setup_system(
     mut effects: ResMut<Assets<EffectAsset>>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-    let layout = TextureAtlasLayout::from_grid(Vec2::splat(256.0), 1, 30, None, None);
+    let layout = TextureAtlasLayout::from_grid(
+        Vec2::splat(256.0),
+        1,
+        HIT_EFFECT_FRAMES as usize,
+        None,
+        None,
+    );
     let texture_atlas_layout = texture_atlas_layouts.add(layout);
     commands.insert_resource(TextureAtlasLayoutHandle(texture_atlas_layout.clone()));
 
@@ -53,7 +61,10 @@ fn setup_system(
 
     let writer = ExprWriter::new();
     let init_age = SetAttributeModifier::new(Attribute::AGE, writer.lit(0.).expr());
-    let init_lifetime = SetAttributeModifier::new(Attribute::LIFETIME, writer.lit(0.5).expr());
+    let init_lifetime = SetAttributeModifier::new(
+        Attribute::LIFETIME,
+        writer.lit(HIT_EFFECT_DURATION.as_secs_f32()).expr(),
+    );
     let init_pos = SetPositionSphereModifier {
         center: writer.lit(Vec3::ZERO).expr(),
         radius: writer.lit(40).expr(),
@@ -81,15 +92,6 @@ fn setup_system(
     );
 
     commands.insert_resource(EffectAssetHandle(effect));
-
-    // commands.spawn((
-    //     Name::new("emit:once"),
-    //     ParticleEffectBundle {
-    //         effect: ParticleEffect::new(effect2),
-    //         transform: Transform::from_translation(Vec3::new(0., 0., 0.)),
-    //         ..Default::default()
-    //     },
-    // ));
 }
 
 #[derive(Component, Deref, DerefMut)]
@@ -159,7 +161,7 @@ fn spawn_hit_effect_system(
                 },
                 HitEffect(Vec2::new(translation.x, translation.y)),
                 AnimationTimer(Timer::new(
-                    Duration::from_millis(500 / 30),
+                    HIT_EFFECT_DURATION / HIT_EFFECT_FRAMES,
                     TimerMode::Repeating,
                 )),
             ));
