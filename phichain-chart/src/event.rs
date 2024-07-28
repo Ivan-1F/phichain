@@ -35,31 +35,109 @@ impl PartialOrd for LineEvent {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum EventEvaluationResult {
+    /// The event is affecting the line at the given beat
+    Affecting(f32),
+    /// The given beat is later than the end beat of this event
+    ///
+    /// If there's no other events after this event,
+    /// the value is inherited from the end value of this event
+    Inherited(f32),
+    /// The given beat is before the start beat of this event
+    ///
+    /// This event does not have any effect on the line
+    Unaffected,
+}
+
+impl Eq for EventEvaluationResult {}
+
+impl PartialOrd for EventEvaluationResult {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+/// [`Unaffected`] compares as less than any [`Inherited`] or [`Affecting`]
+///
+/// [`Inherited`] compares as less than [`Affecting`]
+///
+/// Two [`Affecting`] or [`Inherited`] compare based on their contained values
+///
+/// In other words:
+///
+/// - [`Unaffected`] < [`Inherited`] < [`Affecting`]
+/// - [`Inherited`] and [`Affecting`] compare based on their contained values
+///
+/// [`Unaffected`]: EventEvaluationResult::Unaffected
+/// [`Inherited`]: EventEvaluationResult::Inherited
+/// [`Affecting`]: EventEvaluationResult::Affecting
+impl Ord for EventEvaluationResult {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match (self, other) {
+            (EventEvaluationResult::Unaffected, EventEvaluationResult::Unaffected) => {
+                Ordering::Equal
+            }
+            (EventEvaluationResult::Unaffected, _) => Ordering::Less,
+            (_, EventEvaluationResult::Unaffected) => Ordering::Greater,
+
+            (EventEvaluationResult::Inherited(a), EventEvaluationResult::Inherited(b)) => {
+                a.total_cmp(b)
+            }
+            (EventEvaluationResult::Affecting(a), EventEvaluationResult::Affecting(b)) => {
+                a.total_cmp(b)
+            }
+
+            (EventEvaluationResult::Inherited(_), EventEvaluationResult::Affecting(_)) => {
+                Ordering::Less
+            }
+            (EventEvaluationResult::Affecting(_), EventEvaluationResult::Inherited(_)) => {
+                Ordering::Greater
+            }
+        }
+    }
+}
+
+impl EventEvaluationResult {
+    /// Returns [`Some`] with the contained value if the variant is [`Affecting`] or [`Inherited`], or [`None`] if [`Unaffected`]
+    ///
+    /// [`Affecting`]: EventEvaluationResult::Affecting
+    /// [`Inherited`]: EventEvaluationResult::Inherited
+    /// [`Unaffected`]: EventEvaluationResult::Unaffected
+    pub fn value(&self) -> Option<f32> {
+        match self {
+            EventEvaluationResult::Affecting(value) => Some(*value),
+            EventEvaluationResult::Inherited(value) => Some(*value),
+            EventEvaluationResult::Unaffected => None,
+        }
+    }
+}
+
 impl LineEvent {
-    pub fn evaluate(&self, beat: f32) -> Option<f32> {
-        let start_beat: f32 = self.start_beat.value();
-        let end_beat: f32 = self.end_beat.value();
+    pub fn evaluate(&self, beat: f32) -> EventEvaluationResult {
+        let start_beat = self.start_beat.value();
+        let end_beat = self.end_beat.value();
         if beat >= start_beat && beat <= end_beat {
             let percent = (beat - start_beat) / (end_beat - start_beat);
-            return Some(self.start.ease_to(self.end, percent, self.easing));
+            EventEvaluationResult::Affecting(self.start.ease_to(self.end, percent, self.easing))
         } else if beat > end_beat {
-            return Some(self.end);
+            EventEvaluationResult::Inherited(self.end)
+        } else {
+            EventEvaluationResult::Unaffected
         }
-
-        None
     }
 
-    pub fn evaluate_start_no_effect(&self, beat: f32) -> Option<f32> {
+    pub fn evaluate_start_no_effect(&self, beat: f32) -> EventEvaluationResult {
         let start_beat = self.start_beat.value();
         let end_beat = self.end_beat.value();
         if beat > start_beat && beat <= end_beat {
             let percent = (beat - start_beat) / (end_beat - start_beat);
-            return Some(self.start.ease_to(self.end, percent, self.easing));
+            EventEvaluationResult::Affecting(self.start.ease_to(self.end, percent, self.easing))
         } else if beat > end_beat {
-            return Some(self.end);
+            EventEvaluationResult::Inherited(self.end)
+        } else {
+            EventEvaluationResult::Unaffected
         }
-
-        None
     }
 }
 

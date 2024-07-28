@@ -210,8 +210,8 @@ impl Format for OfficialChart {
                 if let crate::note::NoteKind::Hold { .. } = note.kind {
                     let mut speed = 0.0;
                     for event in &speed_events {
-                        let value = event.evaluate(note.beat.value());
-                        if let Some(value) = value {
+                        let result = event.evaluate(note.beat.value());
+                        if let Some(value) = result.value() {
                             speed = value;
                         }
                     }
@@ -242,7 +242,7 @@ impl Format for OfficialChart {
             let mut current_beat = event.start_beat;
 
             while current_beat <= event.end_beat {
-                let value = event.evaluate(current_beat.value()).unwrap();
+                let value = event.evaluate(current_beat.value()).value().unwrap();
                 events.push(LineEvent {
                     kind: event.kind,
                     start: value,
@@ -404,12 +404,12 @@ impl Format for OfficialChart {
             fn evaluate(events: &Vec<LineEvent>, beat: Beat, start_has_effect: bool) -> f32 {
                 let mut ret = 0.0;
                 for event in events {
-                    let value = if start_has_effect {
+                    let result = if start_has_effect {
                         event.evaluate(beat.value())
                     } else {
                         event.evaluate_start_no_effect(beat.value())
                     };
-                    if let Some(value) = value {
+                    if let Some(value) = result.value() {
                         ret = value;
                     }
                 }
@@ -475,8 +475,8 @@ impl Format for OfficialChart {
                 let speed = if matches!(note.kind, crate::note::NoteKind::Hold { .. }) {
                     let mut speed = 0.0;
                     for event in &speed_events {
-                        let value = event.evaluate(note.beat.value());
-                        if let Some(value) = value {
+                        let result = event.evaluate(note.beat.value());
+                        if let Some(value) = result.value() {
                             speed = value;
                         }
                     }
