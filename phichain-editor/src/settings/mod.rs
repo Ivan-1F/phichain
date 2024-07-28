@@ -81,6 +81,7 @@ impl Default for GraphicsSettings {
 pub struct GameSettings {
     pub fc_ap_indicator: bool,
     pub hide_hit_effect: bool,
+    pub note_scale: f32,
     pub multi_highlight: bool,
 }
 
@@ -89,6 +90,7 @@ impl Default for GameSettings {
         Self {
             fc_ap_indicator: true,
             hide_hit_effect: false,
+            note_scale: 1.0,
             multi_highlight: true,
         }
     }

@@ -1,6 +1,7 @@
 pub mod core;
 pub mod hit_effect;
 pub mod illustration;
+pub mod scale;
 pub mod ui;
 
 use crate::audio::AudioDuration;
@@ -10,6 +11,7 @@ use phichain_chart::bpm_list::BpmList;
 
 use crate::project::project_loaded;
 use crate::tab::game::hit_effect::HitEffectPlugin;
+use crate::tab::game::scale::ScalePlugin;
 use crate::timing::{ChartTime, SeekToEvent};
 
 use self::{core::CoreGamePlugin, illustration::IllustrationPlugin, ui::GameUiPlugin};
@@ -59,6 +61,7 @@ impl Plugin for GameTabPlugin {
                 PostUpdate,
                 update_game_camera_viewport.run_if(project_loaded()),
             )
+            .add_plugins(ScalePlugin)
             .add_plugins(GameUiPlugin)
             .add_plugins(IllustrationPlugin)
             .add_plugins(CoreGamePlugin)

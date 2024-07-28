@@ -102,6 +102,7 @@ tab:
         title: Game
         fc_ap_indicator: FC/AP Indicator
         hide_hit_effect: Hide Hit Effect
+        note_scale: Note Scale
         multi_highlight: Multi Highlight
 
 project:

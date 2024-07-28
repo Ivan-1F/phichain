@@ -10,6 +10,7 @@ use crate::editing::pending::Pending;
 use crate::highlight::Highlighted;
 use crate::selection::Selected;
 use crate::settings::EditorSettings;
+use crate::tab::game::scale::NoteScale;
 use crate::{
     assets::ImageAssets,
     constants::{CANVAS_HEIGHT, CANVAS_WIDTH},
@@ -72,10 +73,10 @@ fn zoom_scale_system(
 fn update_note_scale_system(
     mut query: Query<&mut Transform, With<Note>>,
     game_viewport: Res<GameViewport>,
+    note_scale: Res<NoteScale>,
 ) {
     for mut transform in &mut query {
-        transform.scale =
-            Vec3::splat(game_viewport.0.width() / 8000.0 / (game_viewport.0.width() * 3.0 / 1920.0))
+        transform.scale = Vec3::splat(note_scale.0 / (game_viewport.0.width() * 3.0 / 1920.0))
     }
 }
 

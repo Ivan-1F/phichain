@@ -2,6 +2,7 @@ use crate::assets::ImageAssets;
 use crate::constants::PERFECT_COLOR;
 use crate::project::project_loaded;
 use crate::settings::EditorSettings;
+use crate::tab::game::scale::NoteScale;
 use crate::tab::game::GameViewport;
 use crate::timing::{ChartTime, Paused};
 use bevy::prelude::*;
@@ -126,10 +127,10 @@ fn update_hit_effect_system(mut query: Query<(&mut Transform, &HitEffect)>) {
 
 fn update_hit_effect_scale_system(
     mut query: Query<&mut Transform, With<HitEffect>>,
-    game_viewport: Res<GameViewport>,
+    note_scale: Res<NoteScale>,
 ) {
     for mut transform in &mut query {
-        transform.scale = Vec3::splat(game_viewport.0.width() / 8000.0 * 6.0)
+        transform.scale = Vec3::splat(note_scale.0 * 6.0)
     }
 }
 

@@ -102,6 +102,7 @@ tab:
         title: 游戏
         fc_ap_indicator: FC/AP 指示器
         hide_hit_effect: 隐藏打击特效
+        note_scale: 音符缩放
         multi_highlight: 多押高亮
 
 project:
