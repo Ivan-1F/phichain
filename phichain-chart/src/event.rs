@@ -43,7 +43,7 @@ pub enum EventEvaluationResult {
     ///
     /// If there's no other events after this event,
     /// the value is inherited from the end value of this event
-    Inherited(f32),
+    Inherited { from: Beat, value: f32 },
     /// The given beat is before the start beat of this event
     ///
     /// This event does not have any effect on the line
@@ -62,12 +62,22 @@ impl PartialOrd for EventEvaluationResult {
 ///
 /// [`Inherited`] compares as less than [`Affecting`]
 ///
-/// Two [`Affecting`] or [`Inherited`] compare based on their contained values
+/// Two [`Affecting`] compare based on their contained values, two [`Inherited`] compare based on their `from` values
 ///
 /// In other words:
 ///
 /// - [`Unaffected`] < [`Inherited`] < [`Affecting`]
-/// - [`Inherited`] and [`Affecting`] compare based on their contained values
+/// - Two [`Affecting`] compare based on their contained values, two [`Inherited`] compare based on their `from` values
+///
+/// ```rust
+/// # use phichain_chart::beat;
+/// use phichain_chart::event::EventEvaluationResult as R;
+/// assert!(R::Unaffected < R::Affecting(10.0));
+/// assert!(R::Unaffected < R::Inherited { from: beat!(0), value: 10.0 });
+/// assert!(R::Inherited { from: beat!(0), value: 200.0 } < R::Affecting(10.0));
+/// assert!(R::Inherited { from: beat!(0), value: 200.0 } < R::Inherited { from: beat!(2), value: 10.0 });
+/// assert!(R::Affecting(5.0) < R::Affecting(10.0));
+/// ```
 ///
 /// [`Unaffected`]: EventEvaluationResult::Unaffected
 /// [`Inherited`]: EventEvaluationResult::Inherited
@@ -81,17 +91,18 @@ impl Ord for EventEvaluationResult {
             (EventEvaluationResult::Unaffected, _) => Ordering::Less,
             (_, EventEvaluationResult::Unaffected) => Ordering::Greater,
 
-            (EventEvaluationResult::Inherited(a), EventEvaluationResult::Inherited(b)) => {
-                a.total_cmp(b)
-            }
+            (
+                EventEvaluationResult::Inherited { from: a, .. },
+                EventEvaluationResult::Inherited { from: b, .. },
+            ) => a.cmp(b),
             (EventEvaluationResult::Affecting(a), EventEvaluationResult::Affecting(b)) => {
                 a.total_cmp(b)
             }
 
-            (EventEvaluationResult::Inherited(_), EventEvaluationResult::Affecting(_)) => {
+            (EventEvaluationResult::Inherited { .. }, EventEvaluationResult::Affecting(_)) => {
                 Ordering::Less
             }
-            (EventEvaluationResult::Affecting(_), EventEvaluationResult::Inherited(_)) => {
+            (EventEvaluationResult::Affecting(_), EventEvaluationResult::Inherited { .. }) => {
                 Ordering::Greater
             }
         }
@@ -107,7 +118,7 @@ impl EventEvaluationResult {
     pub fn value(&self) -> Option<f32> {
         match self {
             EventEvaluationResult::Affecting(value) => Some(*value),
-            EventEvaluationResult::Inherited(value) => Some(*value),
+            EventEvaluationResult::Inherited { value, .. } => Some(*value),
             EventEvaluationResult::Unaffected => None,
         }
     }
@@ -121,7 +132,10 @@ impl LineEvent {
             let percent = (beat - start_beat) / (end_beat - start_beat);
             EventEvaluationResult::Affecting(self.start.ease_to(self.end, percent, self.easing))
         } else if beat > end_beat {
-            EventEvaluationResult::Inherited(self.end)
+            EventEvaluationResult::Inherited {
+                from: self.end_beat,
+                value: self.end,
+            }
         } else {
             EventEvaluationResult::Unaffected
         }
@@ -134,7 +148,10 @@ impl LineEvent {
             let percent = (beat - start_beat) / (end_beat - start_beat);
             EventEvaluationResult::Affecting(self.start.ease_to(self.end, percent, self.easing))
         } else if beat > end_beat {
-            EventEvaluationResult::Inherited(self.end)
+            EventEvaluationResult::Inherited {
+                from: self.end_beat,
+                value: self.end,
+            }
         } else {
             EventEvaluationResult::Unaffected
         }
