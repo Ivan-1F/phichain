@@ -1,5 +1,6 @@
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_persistent::Persistent;
+use rayon::prelude::*;
 use num::{FromPrimitive, Rational32};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{LineEvent, LineEventKind};
@@ -105,14 +106,14 @@ fn update_note_system(
 
 fn compute_line_system(
     keyboard: Res<ButtonInput<KeyCode>>,
-    event_query: Query<(&LineEvent, &Parent)>,
+    event_query: Query<&LineEvent>,
     mut line_query: Query<
         (
             &mut LinePosition,
             &mut LineRotation,
             &mut LineOpacity,
             &mut LineSpeed,
-            Entity,
+            &Children,
         ),
         With<Line>,
     >,
@@ -120,13 +121,11 @@ fn compute_line_system(
     bpm_list: Res<BpmList>,
 ) {
     let beat: f32 = bpm_list.beat_at(time.0).into();
-    for (mut position, mut rotation, mut opacity, mut speed, entity) in &mut line_query {
-        let mut events: Vec<_> = event_query
-            .iter()
-            .filter(|(_, parent)| parent.get() == entity)
-            .collect();
-        events.sort_by_key(|(e, _)| e.start_beat);
-        for (event, _) in events {
+    for (mut position, mut rotation, mut opacity, mut speed, children) in &mut line_query {
+        let mut events: Vec<_> = children.iter().filter_map(|x| event_query.get(*x).ok()).collect();
+
+        events.sort_by_key(|e| e.start_beat);
+        for event in events {
             let value = event.evaluate(beat);
             if let Some(value) = value {
                 match event.kind {
