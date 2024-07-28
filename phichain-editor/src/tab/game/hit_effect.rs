@@ -37,24 +37,8 @@ struct HitEffect(Vec2);
 #[derive(Resource, Debug)]
 struct TextureAtlasLayoutHandle(Handle<TextureAtlasLayout>);
 
-#[derive(Resource, Debug)]
-struct EffectAssetHandle(Handle<EffectAsset>);
-
-fn setup_system(
-    mut commands: Commands,
-    mut effects: ResMut<Assets<EffectAsset>>,
-    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
-) {
-    let layout = TextureAtlasLayout::from_grid(
-        Vec2::splat(256.0),
-        1,
-        HIT_EFFECT_FRAMES as usize,
-        None,
-        None,
-    );
-    let texture_atlas_layout = texture_atlas_layouts.add(layout);
-    commands.insert_resource(TextureAtlasLayoutHandle(texture_atlas_layout.clone()));
-
+fn create_effect(width: f32) -> EffectAsset {
+    let factor = width / 426.0;
     let mut gradient = Gradient::new();
     gradient.add_key(0.0, Vec4::new(254.0 / 255.0, 1.0, 169.0 / 255.0, 1.0));
     gradient.add_key(1.0, Vec4::new(0.0, 0.0, 0.0, 0.0));
@@ -67,31 +51,45 @@ fn setup_system(
     );
     let init_pos = SetPositionSphereModifier {
         center: writer.lit(Vec3::ZERO).expr(),
-        radius: writer.lit(40).expr(),
+        radius: writer.lit(40. * factor).expr(),
         dimension: ShapeDimension::Volume,
     };
     let init_vel = SetVelocitySphereModifier {
         center: writer.lit(Vec3::ZERO).expr(),
-        speed: writer.lit(100.).expr(),
+        speed: writer.lit(100. * factor).expr(),
     };
 
-    let update_accel = AccelModifier::new(writer.lit(-6.0).expr());
+    let update_accel = AccelModifier::new(writer.lit(-6.0 * factor).expr());
 
-    let effect = effects.add(
-        EffectAsset::new(vec![4], Spawner::once(4.0.into(), true), writer.finish())
-            .with_name("hit")
-            .init(init_pos)
-            .init(init_vel)
-            .init(init_age)
-            .init(init_lifetime)
-            .update(update_accel)
-            .render(SetSizeModifier {
-                size: CpuValue::Uniform((Vec2::new(7.0, 7.0), Vec2::new(10.0, 10.0))),
-            })
-            .render(ColorOverLifetimeModifier { gradient }),
+    EffectAsset::new(vec![4], Spawner::once(4.0.into(), true), writer.finish())
+        .with_name("hit")
+        .init(init_pos)
+        .init(init_vel)
+        .init(init_age)
+        .init(init_lifetime)
+        .update(update_accel)
+        .render(SetSizeModifier {
+            size: CpuValue::Uniform((
+                Vec2::new(factor * 7.0, factor * 7.0),
+                Vec2::new(factor * 10.0, factor * 10.0),
+            )),
+        })
+        .render(ColorOverLifetimeModifier { gradient })
+}
+
+fn setup_system(
+    mut commands: Commands,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+) {
+    let layout = TextureAtlasLayout::from_grid(
+        Vec2::splat(256.0),
+        1,
+        HIT_EFFECT_FRAMES as usize,
+        None,
+        None,
     );
-
-    commands.insert_resource(EffectAssetHandle(effect));
+    let texture_atlas_layout = texture_atlas_layouts.add(layout);
+    commands.insert_resource(TextureAtlasLayoutHandle(texture_atlas_layout.clone()));
 }
 
 #[derive(Component, Deref, DerefMut)]
@@ -141,11 +139,16 @@ fn spawn_hit_effect_system(
     paused: Res<Paused>,
 
     texture_atlas_layout_handle: Res<TextureAtlasLayoutHandle>,
-    effect_asset_handle: Res<EffectAssetHandle>,
+
+    mut effects: ResMut<Assets<EffectAsset>>,
+    game_viewport: Res<GameViewport>,
 ) {
     for (note, global_transform, entity, played) in &query {
         let mut spawn = || {
             let translation = global_transform.translation();
+
+            let effect = effects.add(create_effect(game_viewport.0.width()));
+
             commands.spawn((
                 SpriteBundle {
                     texture: assets.hit.clone(),
@@ -166,14 +169,11 @@ fn spawn_hit_effect_system(
                 )),
             ));
 
-            commands.spawn((
-                ParticleEffectBundle {
-                    effect: ParticleEffect::new(effect_asset_handle.0.clone()),
-                    transform: Transform::from_translation(global_transform.translation()),
-                    ..Default::default()
-                },
-                HitEffect(Vec2::new(translation.x, translation.y)),
-            ));
+            commands.spawn((ParticleEffectBundle {
+                effect: ParticleEffect::new(effect),
+                transform: Transform::from_translation(global_transform.translation()),
+                ..Default::default()
+            },));
 
             commands.entity(entity).insert(PlayedHitEffect(time.0));
         };
