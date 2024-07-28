@@ -76,10 +76,29 @@ impl Default for GraphicsSettings {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct GameSettings {
+    pub fc_ap_indicator: bool,
+    pub hide_hit_effect: bool,
+    pub multi_highlight: bool,
+}
+
+impl Default for GameSettings {
+    fn default() -> Self {
+        Self {
+            fc_ap_indicator: true,
+            hide_hit_effect: false,
+            multi_highlight: true,
+        }
+    }
+}
+
 #[derive(Resource, Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct EditorSettings {
     pub general: GeneralSettings,
     pub audio: AudioSettings,
     pub graphics: GraphicsSettings,
+    pub game: GameSettings,
 }

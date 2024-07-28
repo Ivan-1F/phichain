@@ -98,6 +98,11 @@ tab:
         playback_rate: Playback Rate
       graphics:
         title: Graphics
+      game:
+        title: Game
+        fc_ap_indicator: FC/AP Indicator
+        hide_hit_effect: Hide Hit Effect
+        multi_highlight: Multi Highlight
 
 project:
   save:

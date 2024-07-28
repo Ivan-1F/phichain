@@ -98,6 +98,11 @@ tab:
         playback_rate: 播放速率
       graphics:
         title: 图像
+      game:
+        title: 游戏
+        fc_ap_indicator: FC/AP 指示器
+        hide_hit_effect: 隐藏打击特效
+        multi_highlight: 多押高亮
 
 project:
   save:

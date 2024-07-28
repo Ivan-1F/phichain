@@ -1,12 +1,15 @@
 use bevy::{prelude::*, sprite::Anchor};
+use bevy_persistent::Persistent;
 use num::{FromPrimitive, Rational32};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{LineEvent, LineEventKind};
 use phichain_chart::line::{Line, LineOpacity, LinePosition, LineRotation};
 
+use crate::constants::PERFECT_COLOR;
 use crate::editing::pending::Pending;
 use crate::highlight::Highlighted;
 use crate::selection::Selected;
+use crate::settings::EditorSettings;
 use crate::{
     assets::ImageAssets,
     constants::{CANVAS_HEIGHT, CANVAS_WIDTH},
@@ -155,13 +158,21 @@ fn update_line_system(
         With<Line>,
     >,
     game_viewport: Res<GameViewport>,
+
+    settings: Res<Persistent<EditorSettings>>,
 ) {
     for (position, rotation, opacity, mut transform, mut sprite) in &mut line_query {
         transform.scale = Vec3::splat(game_viewport.0.width() * 3.0 / 1920.0);
         transform.translation.x = position.0.x / CANVAS_WIDTH * game_viewport.0.width();
         transform.translation.y = position.0.y / CANVAS_HEIGHT * game_viewport.0.height();
         transform.rotation = Quat::from_rotation_z(rotation.0);
-        sprite.color.set_a(opacity.0);
+
+        sprite.color = if settings.game.fc_ap_indicator {
+            PERFECT_COLOR
+        } else {
+            Color::WHITE
+        }
+        .with_a(opacity.0);
     }
 }
 

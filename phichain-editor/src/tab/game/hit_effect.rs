@@ -1,10 +1,13 @@
 use crate::assets::ImageAssets;
+use crate::constants::PERFECT_COLOR;
 use crate::project::project_loaded;
+use crate::settings::EditorSettings;
 use crate::tab::game::GameViewport;
 use crate::timing::{ChartTime, Paused};
 use bevy::prelude::*;
 use bevy::transform::TransformSystem;
 use bevy_hanabi::prelude::*;
+use bevy_persistent::Persistent;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::note::{Note, NoteKind};
 use std::time::Duration;
@@ -40,7 +43,10 @@ struct TextureAtlasLayoutHandle(Handle<TextureAtlasLayout>);
 fn create_effect(width: f32) -> EffectAsset {
     let factor = width / 426.0;
     let mut gradient = Gradient::new();
-    gradient.add_key(0.0, Vec4::new(254.0 / 255.0, 1.0, 169.0 / 255.0, 1.0));
+    gradient.add_key(
+        0.0,
+        Vec4::new(PERFECT_COLOR.r(), PERFECT_COLOR.g(), PERFECT_COLOR.b(), 1.0),
+    );
     gradient.add_key(1.0, Vec4::new(0.0, 0.0, 0.0, 0.0));
 
     let writer = ExprWriter::new();
@@ -142,7 +148,13 @@ fn spawn_hit_effect_system(
 
     mut effects: ResMut<Assets<EffectAsset>>,
     game_viewport: Res<GameViewport>,
+
+    settings: Res<Persistent<EditorSettings>>,
 ) {
+    if settings.game.hide_hit_effect {
+        return;
+    }
+
     for (note, global_transform, entity, played) in &query {
         let mut spawn = || {
             let translation = global_transform.translation();
@@ -153,7 +165,7 @@ fn spawn_hit_effect_system(
                 SpriteBundle {
                     texture: assets.hit.clone(),
                     sprite: Sprite {
-                        color: Color::hex("#feffa9").unwrap(),
+                        color: PERFECT_COLOR,
                         ..default()
                     },
                     ..default()

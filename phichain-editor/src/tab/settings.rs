@@ -1,9 +1,11 @@
 mod audio;
+mod game;
 mod general;
 
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::settings::EditorSettings;
 use crate::tab::settings::audio::Audio;
+use crate::tab::settings::game::Game;
 use crate::tab::settings::general::General;
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
@@ -23,6 +25,7 @@ enum SettingCategories {
     General,
     Audio,
     Graphics,
+    Game,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
