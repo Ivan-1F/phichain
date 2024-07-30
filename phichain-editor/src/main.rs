@@ -404,7 +404,7 @@ fn ui_system(world: &mut World) {
 
     egui::TopBottomPanel::bottom("phichain.StatusBar").show(ctx, |ui| {
         ui.horizontal(|ui| {
-            ui.label(format!("PhiChain v{}", env!("CARGO_PKG_VERSION")));
+            ui.label(format!("Phichain v{}", env!("CARGO_PKG_VERSION")));
 
             ui.label(format!("FPS: {:.2}", fps));
 
