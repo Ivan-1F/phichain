@@ -121,6 +121,15 @@ pub enum TimelineItem {
     Event(EventTimeline),
 }
 
+impl TimelineItem {
+    pub fn line_entity(&self) -> Option<Entity> {
+        match self {
+            TimelineItem::Note(timeline) => timeline.0,
+            TimelineItem::Event(timeline) => timeline.0,
+        }
+    }
+}
+
 pub mod common {
     use crate::constants::INDICATOR_POSITION;
     use crate::timeline::TimelineContext;

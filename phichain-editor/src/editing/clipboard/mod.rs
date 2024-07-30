@@ -5,9 +5,9 @@ use crate::editing::command::{CommandSequence, EditorCommand};
 use crate::editing::DoCommandEvent;
 use crate::hotkey::HotkeyRegistrationExt;
 use crate::selection::{Selected, SelectedLine};
-use crate::tab::timeline::TimelineViewport;
 use crate::timeline::TimelineContext;
 use crate::utils::compat::ControlKeyExt;
+use crate::utils::convert::BevyEguiConvert;
 use bevy::prelude::*;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::LineEvent;
@@ -64,8 +64,7 @@ fn paste_system(
 
     selected_line: Res<SelectedLine>,
 
-    timeline: TimelineContext,
-    timeline_viewport: Res<TimelineViewport>,
+    ctx: TimelineContext,
     bpm_list: Res<BpmList>,
 
     mut event_writer: EventWriter<DoCommandEvent>,
@@ -75,9 +74,23 @@ fn paste_system(
         return;
     };
 
-    if !timeline_viewport.0.contains(cursor_position) {
+    if !ctx.viewport.0.contains(cursor_position) {
         return;
     }
+
+    let timeline = ctx
+        .settings
+        .container
+        .allocate(ctx.viewport.0.into_egui())
+        .iter()
+        .find(|x| x.viewport.x_range().contains(cursor_position.x))
+        .map(|x| x.timeline);
+
+    let Some(timeline) = timeline else {
+        return;
+    };
+
+    let target_line = timeline.line_entity().unwrap_or(selected_line.0);
 
     let notes = clipboard.notes.to_vec();
     let events = clipboard.events.to_vec();
@@ -88,8 +101,8 @@ fn paste_system(
         .chain(events.iter().map(|event| event.start_beat))
         .min()
     {
-        let time = timeline.y_to_time(cursor_position.y);
-        let beat = timeline.settings.attach(bpm_list.beat_at(time).value());
+        let time = ctx.y_to_time(cursor_position.y);
+        let beat = ctx.settings.attach(bpm_list.beat_at(time).value());
 
         let delta = beat - min_beat;
 
@@ -99,7 +112,7 @@ fn paste_system(
             let mut new_note = note;
             new_note.beat = note.beat + delta;
             sequence.0.push(EditorCommand::CreateNote(CreateNote::new(
-                selected_line.0,
+                target_line,
                 new_note,
             )));
         }
@@ -108,7 +121,7 @@ fn paste_system(
             new_event.start_beat = event.start_beat + delta;
             new_event.end_beat = event.end_beat + delta;
             sequence.0.push(EditorCommand::CreateEvent(CreateEvent::new(
-                selected_line.0,
+                target_line,
                 new_event,
             )));
         }
