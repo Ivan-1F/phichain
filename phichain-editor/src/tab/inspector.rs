@@ -6,17 +6,20 @@ use crate::editing::command::event::EditEvent;
 use crate::editing::command::note::EditNote;
 use crate::editing::command::{CommandSequence, EditorCommand};
 use crate::editing::DoCommandEvent;
-use crate::selection::Selected;
+use crate::selection::{Selected, SelectedLine};
 use crate::ui::latch;
 use crate::ui::widgets::beat_value::BeatExt;
 use crate::ui::widgets::easing_value::EasingValue;
 use phichain_chart::event::{LineEvent, LineEventKind};
+use phichain_chart::line::Line;
 use phichain_chart::note::{Note, NoteKind};
 
 pub fn inspector_ui_system(
     In(ui): In<&mut Ui>,
     mut selected_notes: Query<(&mut Note, Entity), With<Selected>>,
     mut selected_events: Query<(&mut LineEvent, Entity), With<Selected>>,
+    selected_line: Res<SelectedLine>,
+    mut line_query: Query<&mut Line>,
     event_writer: EventWriter<DoCommandEvent>,
 ) {
     let mut selected_notes: Vec<_> = selected_notes.iter_mut().collect();
@@ -31,6 +34,8 @@ pub fn inspector_ui_system(
         multiple_notes_inspector(ui, &selected_notes, event_writer);
     } else if selected_notes.is_empty() && selected_events.len() > 1 {
         multiple_events_inspector(ui, &selected_events, event_writer);
+    } else if let Ok(mut line) = line_query.get_mut(selected_line.0) {
+        line_inspector(ui, &mut line);
     }
 }
 
@@ -284,4 +289,29 @@ fn multiple_events_inspector(
             )));
         }
     });
+}
+
+fn line_inspector(ui: &mut Ui, line: &mut Line) {
+    egui::Grid::new("inspector_grid")
+        .num_columns(2)
+        .spacing([20.0, 2.0])
+        .striped(true)
+        .show(ui, |ui| {
+            let result = latch::latch(ui, "line", line.clone(), |ui| {
+                let mut finished = false;
+
+                ui.label(t!("tab.inspector.line.name"));
+                let response = ui.text_edit_singleline(&mut line.name);
+                finished |= response.lost_focus();
+                ui.end_row();
+
+                finished
+            });
+
+            if let Some(from) = result {
+                if from != line.clone() {
+                    // TODO: write to history to support undo/redo
+                }
+            }
+        });
 }

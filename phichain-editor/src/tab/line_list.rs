@@ -11,17 +11,15 @@ use phichain_chart::note::Note;
 
 pub fn line_list_tab(
     In(ui): In<&mut Ui>,
-    line_query: Query<
-        (
-            &Children,
-            Entity,
-            &LinePosition,
-            &LineRotation,
-            &LineOpacity,
-            &LineSpeed,
-        ),
-        With<Line>,
-    >,
+    line_query: Query<(
+        &Line,
+        &Children,
+        Entity,
+        &LinePosition,
+        &LineRotation,
+        &LineOpacity,
+        &LineSpeed,
+    )>,
     note_query: Query<&Note>,
     event_query: Query<&LineEvent>,
 
@@ -30,7 +28,7 @@ pub fn line_list_tab(
     mut do_command_event: EventWriter<DoCommandEvent>,
 ) {
     let mut lines = line_query.iter().collect::<Vec<_>>();
-    lines.sort_by_key(|x| x.1);
+    lines.sort_by_key(|x| x.2);
     ui.with_layout(Layout::top_down_justified(egui::Align::Center), |ui| {
         if ui.button(t!("tab.line_list.create_line")).clicked() {
             do_command_event.send(DoCommandEvent(EditorCommand::CreateLine(CreateLine::new())));
@@ -38,23 +36,24 @@ pub fn line_list_tab(
     });
     ui.separator();
     egui::ScrollArea::both().show(ui, |ui| {
-        for (index, (line, entity, position, rotation, opacity, speed)) in lines.iter().enumerate()
+        for (index, (line, children, entity, position, rotation, opacity, speed)) in
+            lines.iter().enumerate()
         {
             let selected = selected_line.0 == *entity;
 
-            let notes = line
+            let notes = children
                 .iter()
                 .filter(|child| note_query.get(**child).is_ok())
                 .collect::<Vec<_>>()
                 .len();
-            let events = line
+            let events = children
                 .iter()
                 .filter(|child| event_query.get(**child).is_ok())
                 .collect::<Vec<_>>()
                 .len();
 
             ui.horizontal(|ui| {
-                ui.label(format!("Line #{}", index));
+                ui.label(&line.name);
                 let mut checked = selected;
                 if ui.checkbox(&mut checked, "").clicked() {
                     selected_line.0 = *entity;

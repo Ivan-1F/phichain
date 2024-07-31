@@ -37,6 +37,8 @@ tab:
       into_hold: Into Hold
     multiple_events:
       negate: Negate values (except opacity events)
+    line:
+      name: Name
   timeline_setting:
     title: Timeline Setting
     zoom: Timeline Zoom

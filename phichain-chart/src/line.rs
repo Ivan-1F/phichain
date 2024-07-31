@@ -1,7 +1,17 @@
 use bevy::prelude::*;
 
-#[derive(Component, Debug, Default)]
-pub struct Line;
+#[derive(Component, Debug, Clone, PartialEq, Eq)]
+pub struct Line {
+    pub name: String,
+}
+
+impl Default for Line {
+    fn default() -> Self {
+        Self {
+            name: "Unnamed Line".to_owned(),
+        }
+    }
+}
 
 #[derive(Component, Debug, Default)]
 pub struct LinePosition(pub Vec2);
