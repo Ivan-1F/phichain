@@ -121,15 +121,27 @@ pub fn timeline_setting_tab(
 
         ui.end_row();
 
-        let timelines = &mut timeline_settings.container;
-        let mut deletes = vec![];
+        let container = &mut timeline_settings.container;
+        let mut delete = None;
+        let mut move_up = None;
+        let mut move_down = None;
 
-        for (index, timeline) in timelines.timelines.iter().enumerate() {
+        for (index, timeline) in container.timelines.iter().enumerate() {
             ui.horizontal(|ui| {
                 ui.horizontal(|ui| {
                     if ui.button(" × ").clicked() {
-                        deletes.push(index);
+                        delete.replace(index);
                     }
+                    ui.add_enabled_ui(index > 0, |ui| {
+                        if ui.button(" ↑ ").clicked() {
+                            move_up.replace(index);
+                        }
+                    });
+                    ui.add_enabled_ui(index < container.timelines.len() - 1, |ui| {
+                        if ui.button(" ↓ ").clicked() {
+                            move_down.replace(index);
+                        }
+                    });
                     let label = match &timeline.timeline {
                         TimelineItem::Note(timeline) => match timeline.0 {
                             None => t!("tab.timeline_setting.timelines.note_timeline.binding"),
@@ -151,8 +163,16 @@ pub fn timeline_setting_tab(
             });
         }
 
-        for index in deletes {
-            timelines.remove(index);
+        if let Some(delete) = delete {
+            container.remove(delete);
+        }
+
+        if let Some(move_up) = move_up {
+            container.swap(move_up - 1, move_up);
+        }
+
+        if let Some(move_down) = move_down {
+            container.swap(move_down, move_down + 1);
         }
     }
 }

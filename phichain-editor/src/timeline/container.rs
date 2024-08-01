@@ -67,6 +67,14 @@ impl TimelineContainer {
         }
     }
 
+    /// Swap two timelines in the container as well as their fractions
+    pub fn swap(&mut self, a: usize, b: usize) {
+        self.timelines.swap(a, b);
+        let a_fraction = self.timelines[a].fraction;
+        self.timelines[a].fraction = self.timelines[b].fraction;
+        self.timelines[b].fraction = a_fraction;
+    }
+
     /// Offset the fraction of a timeline at the given index by some delta
     ///
     /// # Panics
