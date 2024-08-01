@@ -123,7 +123,7 @@ impl Plugin for ProjectPlugin {
         app.add_event::<LoadProjectEvent>()
             .add_systems(Update, load_project_system)
             .add_event::<UnloadProjectEvent>()
-            .add_systems(Update, unload_project_system)
+            .add_systems(PreUpdate, unload_project_system)
             .register_action("phichain.project.save", save_project_system)
             .register_action(
                 "phichain.project.unload",
