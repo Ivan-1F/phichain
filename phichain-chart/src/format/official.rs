@@ -187,6 +187,7 @@ impl Format for OfficialChart {
             });
 
             let mut line = LineWrapper::new(
+                Default::default(),
                 line.notes_above
                     .iter()
                     .map(|x| create_note(true, x))

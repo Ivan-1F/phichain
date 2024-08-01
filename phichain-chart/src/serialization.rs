@@ -5,6 +5,7 @@ use crate::bpm_list::BpmList;
 use crate::easing::Easing;
 use crate::event::{LineEvent, LineEventKind};
 use crate::format::Format;
+use crate::line::Line;
 use crate::migration::CURRENT_FORMAT;
 use crate::note::Note;
 use crate::offset::Offset;
@@ -55,13 +56,19 @@ impl Default for PhiChainChart {
 /// A wrapper struct to handle line serialization and deserialization
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LineWrapper {
+    #[serde(flatten)]
+    pub line: Line,
     pub notes: Vec<Note>,
     pub events: Vec<LineEvent>,
 }
 
 impl LineWrapper {
-    pub fn new(notes: Vec<Note>, events: Vec<LineEvent>) -> Self {
-        Self { notes, events }
+    pub fn new(line: Line, notes: Vec<Note>, events: Vec<LineEvent>) -> Self {
+        Self {
+            line,
+            notes,
+            events,
+        }
     }
 }
 
@@ -69,7 +76,8 @@ impl LineWrapper {
 impl Default for LineWrapper {
     fn default() -> Self {
         Self {
-            notes: vec![],
+            line: Default::default(),
+            notes: Default::default(),
             events: vec![
                 LineEvent {
                     kind: LineEventKind::X,
@@ -118,13 +126,15 @@ impl Default for LineWrapper {
 
 #[cfg(feature = "bevy")]
 impl LineWrapper {
+    /// Serialize a line using a entity from a world
     pub fn serialize_line(world: &mut bevy::prelude::World, entity: bevy::prelude::Entity) -> Self {
-        let mut line_query = world
-            .query_filtered::<&bevy::prelude::Children, bevy::prelude::With<crate::line::Line>>();
+        use bevy::prelude::*;
+
+        let mut line_query = world.query::<(&Children, &Line)>();
         let mut note_query = world.query::<&Note>();
         let mut event_query = world.query::<&LineEvent>();
 
-        let children = line_query.get(world, entity).expect("Entity is not a line");
+        let (children, line) = line_query.get(world, entity).expect("Entity is not a line");
 
         let mut notes: Vec<Note> = vec![];
         let mut events: Vec<LineEvent> = vec![];
@@ -136,6 +146,6 @@ impl LineWrapper {
             }
         }
 
-        LineWrapper::new(notes, events)
+        LineWrapper::new(line.clone(), notes, events)
     }
 }

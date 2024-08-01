@@ -20,7 +20,7 @@ impl Edit for CreateLine {
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
         let entity = target
-            .spawn(LineBundle::new())
+            .spawn(LineBundle::default())
             .with_children(|parent| {
                 for event in LineWrapper::default().events {
                     parent.spawn(LineEventBundle::new(event));
@@ -75,7 +75,7 @@ impl Edit for RemoveLine {
             // restore line entity and its children
             target
                 .entity_mut(self.entity)
-                .insert(LineBundle::new())
+                .insert(LineBundle::new(line.line.clone()))
                 .with_children(|parent| {
                     for note in &line.notes {
                         parent.spawn(NoteBundle::new(*note));

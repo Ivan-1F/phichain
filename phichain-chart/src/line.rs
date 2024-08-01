@@ -1,3 +1,4 @@
+use bevy::utils::default;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -44,7 +45,7 @@ pub struct LineBundle {
 
 #[cfg(feature = "bevy")]
 impl LineBundle {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(line: Line) -> Self {
+        Self { line, ..default() }
     }
 }

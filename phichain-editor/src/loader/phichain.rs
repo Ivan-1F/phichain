@@ -26,9 +26,14 @@ impl Loader for PhiChainLoader {
         commands.insert_resource(chart.bpm_list);
 
         let mut first_line_id: Option<Entity> = None;
-        for LineWrapper { notes, events } in chart.lines {
+        for LineWrapper {
+            line,
+            notes,
+            events,
+        } in chart.lines
+        {
             let id = commands
-                .spawn(LineBundle::new())
+                .spawn(LineBundle::new(line))
                 .with_children(|parent| {
                     for note in notes {
                         parent.spawn(NoteBundle::new(note));

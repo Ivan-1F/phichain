@@ -106,7 +106,7 @@ mod tests {
     fn test_remove_note_system(world: &mut World) {
         let mut history = History::new();
 
-        let line = world.spawn(LineBundle::new()).id();
+        let line = world.spawn(LineBundle::default()).id();
         let note = Note::new(NoteKind::Tap, true, Beat::ZERO, 0.0, 1.0);
         let entity = world.spawn(NoteBundle::new(note)).id();
         world.entity_mut(line).add_child(entity);
@@ -129,7 +129,7 @@ mod tests {
 
     fn test_create_note_system(world: &mut World) {
         let mut history = History::new();
-        let line = world.spawn(LineBundle::new()).id();
+        let line = world.spawn(LineBundle::default()).id();
         let note = Note::new(NoteKind::Tap, true, Beat::ZERO, 0.0, 1.0);
         assert!(world.query::<&Note>().get_single(world).is_err());
         history.edit(

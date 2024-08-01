@@ -338,6 +338,7 @@ impl Format for RpeChart {
                 });
 
             phichain.lines.push(LineWrapper::new(
+                Default::default(),
                 line.notes
                     .iter()
                     .map(|note| {
