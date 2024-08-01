@@ -31,6 +31,7 @@ tab:
     multiple_notes:
       flip_by_x: 沿 X 轴中心镜像
       flip_by_selection: 沿选区中心镜像
+      flip_side: 翻转朝向
       into_tap: 转换为 Tap
       into_drag: 转换为 Drag
       into_flick: 转换为 Flick

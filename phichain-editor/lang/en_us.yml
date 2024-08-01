@@ -30,7 +30,8 @@ tab:
       end_value: End Value
     multiple_notes:
       flip_by_x: Flip by X
-      flip_by_selection: Flip by selection
+      flip_by_selection: Flip by Selection
+      flip_side: Flip Sides
       into_tap: Into Tap
       into_drag: Into Drag
       into_flick: Into Flick

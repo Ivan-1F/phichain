@@ -216,6 +216,29 @@ fn multiple_notes_inspector(
             )));
         }
 
+        if ui
+            .button(t!("tab.inspector.multiple_notes.flip_side"))
+            .clicked()
+        {
+            let commands = notes
+                .iter()
+                .map(|(note, entity)| {
+                    EditorCommand::EditNote(EditNote::new(
+                        *entity,
+                        **note,
+                        Note {
+                            above: !note.above,
+                            ..**note
+                        },
+                    ))
+                })
+                .collect::<Vec<_>>();
+
+            event_writer.send(DoCommandEvent(EditorCommand::CommandSequence(
+                CommandSequence(commands),
+            )));
+        }
+
         let mut into_kind = |kind: NoteKind| {
             let commands = notes
                 .iter()
