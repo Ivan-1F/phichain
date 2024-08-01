@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use phichain_chart::serialization::PhiChainChart;
 use std::path::Path;
 use std::{fs::File, path::PathBuf};
+use bevy_kira_audio::{Audio, AudioControl};
 
 use crate::action::ActionRegistrationExt;
 use crate::audio::load_audio;
@@ -223,6 +224,7 @@ fn unload_project_system(
     mut events: EventReader<UnloadProjectEvent>,
     illustration_query: Query<Entity, With<crate::tab::game::illustration::Illustration>>,
     line_query: Query<Entity, With<phichain_chart::line::Line>>,
+    audio: Res<Audio>,
 ) {
     if !events.is_empty() {
         events.clear();
@@ -232,6 +234,7 @@ fn unload_project_system(
 
         commands.remove_resource::<crate::audio::InstanceHandle>();
         commands.remove_resource::<crate::audio::AudioDuration>();
+        audio.stop();
 
         for entity in illustration_query.iter() {
             commands.entity(entity).despawn_recursive();
