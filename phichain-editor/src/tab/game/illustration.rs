@@ -25,6 +25,9 @@ impl Plugin for IllustrationPlugin {
     }
 }
 
+#[derive(Resource)]
+pub struct IllustrationAssetId(pub AssetId<Image>);
+
 #[derive(Component)]
 pub struct Illustration;
 
@@ -46,6 +49,7 @@ pub fn load_illustration(path: PathBuf, commands: &mut Commands) {
                 is_srgb,
                 RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
             ));
+            world.insert_resource(IllustrationAssetId(handle.id()));
             world.spawn((
                 SpriteBundle {
                     texture: handle,

@@ -17,6 +17,9 @@ use crate::{
 #[derive(Resource)]
 pub struct InstanceHandle(Handle<AudioInstance>);
 
+#[derive(Resource)]
+pub struct AudioAssetId(pub AssetId<AudioSource>);
+
 /// The duration of the audio
 #[derive(Resource, Debug)]
 pub struct AudioDuration(pub Duration);
@@ -55,6 +58,7 @@ pub fn load_audio(path: PathBuf, commands: &mut Commands) {
         world.resource_scope(|world, mut audios: Mut<Assets<AudioSource>>| {
             world.resource_scope(|world, audio: Mut<Audio>| {
                 let handle = audios.add(source);
+                world.insert_resource(AudioAssetId(handle.id()));
                 let instance_handle = audio.play(handle).paused().handle();
                 world.insert_resource(InstanceHandle(instance_handle));
             });

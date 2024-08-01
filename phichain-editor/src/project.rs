@@ -2,7 +2,7 @@ use anyhow::{anyhow, bail, Context};
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use bevy_kira_audio::{Audio, AudioControl};
+use bevy_kira_audio::{Audio, AudioControl, AudioSource};
 use phichain_chart::serialization::PhiChainChart;
 use std::path::Path;
 use std::{fs::File, path::PathBuf};
@@ -122,9 +122,9 @@ pub struct ProjectPlugin;
 impl Plugin for ProjectPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<LoadProjectEvent>()
-            .add_systems(Update, load_project_system)
+            .add_systems(Update, load_project_system.run_if(project_not_loaded()))
             .add_event::<UnloadProjectEvent>()
-            .add_systems(PreUpdate, unload_project_system)
+            .add_systems(PreUpdate, unload_project_system.run_if(project_loaded()))
             .register_action("phichain.project.save", save_project_system)
             .register_action(
                 "phichain.project.unload",
@@ -166,8 +166,8 @@ pub struct LoadProjectEvent(pub PathBuf);
 ///
 /// # Resources and entities involved when loading projects
 ///
-/// - [InstanceHandle] and [AudioDuration] will be inserted into the world
-/// - A entity with component [Illustration] will be spawned into the world
+/// - [InstanceHandle], [AudioDuration] and [AudioAssetId] will be inserted into the world
+/// - A entity with component [Illustration] will be spawned into the world, [IllustrationAssetId] will be inserted into the world
 ///
 /// ---
 ///
@@ -224,7 +224,13 @@ fn unload_project_system(
     mut events: EventReader<UnloadProjectEvent>,
     illustration_query: Query<Entity, With<crate::tab::game::illustration::Illustration>>,
     line_query: Query<Entity, With<phichain_chart::line::Line>>,
+
     audio: Res<Audio>,
+    audio_asset_id: Res<crate::audio::AudioAssetId>,
+    mut audios: ResMut<Assets<AudioSource>>,
+
+    illustration_asset_id: Res<crate::tab::game::illustration::IllustrationAssetId>,
+    mut images: ResMut<Assets<Image>>,
 ) {
     if !events.is_empty() {
         events.clear();
@@ -234,11 +240,14 @@ fn unload_project_system(
 
         commands.remove_resource::<crate::audio::InstanceHandle>();
         commands.remove_resource::<crate::audio::AudioDuration>();
+        audios.remove(audio_asset_id.0);
+        commands.remove_resource::<crate::audio::AudioAssetId>();
         audio.stop();
 
         for entity in illustration_query.iter() {
             commands.entity(entity).despawn_recursive();
         }
+        images.remove(illustration_asset_id.0);
 
         commands.remove_resource::<phichain_chart::offset::Offset>();
         commands.remove_resource::<phichain_chart::bpm_list::BpmList>();
