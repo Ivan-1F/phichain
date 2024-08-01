@@ -1,6 +1,7 @@
-use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
 
-#[derive(Component, Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "bevy", derive(bevy::prelude::Component))]
 pub struct Line {
     pub name: String,
 }
@@ -13,22 +14,27 @@ impl Default for Line {
     }
 }
 
-#[derive(Component, Debug, Default)]
-pub struct LinePosition(pub Vec2);
+#[cfg(feature = "bevy")]
+#[derive(bevy::prelude::Component, Debug, Default)]
+pub struct LinePosition(pub bevy::prelude::Vec2);
 
-#[derive(Component, Debug, Default)]
+#[cfg(feature = "bevy")]
+#[derive(bevy::prelude::Component, Debug, Default)]
 pub struct LineRotation(pub f32);
 
-#[derive(Component, Debug, Default)]
+#[cfg(feature = "bevy")]
+#[derive(bevy::prelude::Component, Debug, Default)]
 pub struct LineOpacity(pub f32);
 
 /// This will not affect line entity, it is only used to show realtime speed of lines in [phichain::tab::line_list]
-#[derive(Component, Debug, Default)]
+#[cfg(feature = "bevy")]
+#[derive(bevy::prelude::Component, Debug, Default)]
 pub struct LineSpeed(pub f32);
 
-#[derive(Bundle, Default)]
+#[cfg(feature = "bevy")]
+#[derive(bevy::prelude::Bundle, Default)]
 pub struct LineBundle {
-    sprite: SpriteBundle,
+    sprite: bevy::prelude::SpriteBundle,
     line: Line,
     position: LinePosition,
     rotation: LineRotation,
@@ -36,6 +42,7 @@ pub struct LineBundle {
     speed: LineSpeed,
 }
 
+#[cfg(feature = "bevy")]
 impl LineBundle {
     pub fn new() -> Self {
         Self::default()
