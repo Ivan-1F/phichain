@@ -81,10 +81,9 @@ pub fn timeline_setting_tab(
                         ui.close_menu();
                     }
                     ui.separator();
-                    for (index, (_, entity)) in line_query.iter().enumerate() {
-                        // TODO: use a readable identifier for this (e.g. name)
+                    for (line, entity) in line_query.iter() {
                         // TODO: move timeline selector to dedicated widget
-                        if ui.button(format!("Line #{}", index)).clicked() {
+                        if ui.button(&line.name).clicked() {
                             timeline_settings
                                 .container
                                 .push_right(TimelineItem::Note(NoteTimeline::new(entity)));
@@ -108,9 +107,8 @@ pub fn timeline_setting_tab(
                         ui.close_menu();
                     }
                     ui.separator();
-                    for (index, (_, entity)) in line_query.iter().enumerate() {
-                        // TODO: use a readable identifier for this (e.g. name)
-                        if ui.button(format!("Line #{}", index)).clicked() {
+                    for (line, entity) in line_query.iter() {
+                        if ui.button(&line.name).clicked() {
                             timeline_settings
                                 .container
                                 .push_right(TimelineItem::Event(EventTimeline::new(entity)));
@@ -137,14 +135,14 @@ pub fn timeline_setting_tab(
                             None => t!("tab.timeline_setting.timelines.note_timeline.binding"),
                             Some(entity) => t!(
                                 "tab.timeline_setting.timelines.note_timeline.for_line",
-                                line = format!("{:?}", entity)
+                                line = line_query.get(entity).unwrap().0.name,
                             ),
                         },
                         TimelineItem::Event(timeline) => match timeline.0 {
                             None => t!("tab.timeline_setting.timelines.event_timeline.binding"),
                             Some(entity) => t!(
                                 "tab.timeline_setting.timelines.event_timeline.for_line",
-                                line = format!("{:?}", entity)
+                                line = line_query.get(entity).unwrap().0.name,
                             ),
                         },
                     };
