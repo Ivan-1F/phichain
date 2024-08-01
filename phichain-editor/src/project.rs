@@ -2,10 +2,10 @@ use anyhow::{anyhow, bail, Context};
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use bevy_kira_audio::{Audio, AudioControl};
 use phichain_chart::serialization::PhiChainChart;
 use std::path::Path;
 use std::{fs::File, path::PathBuf};
-use bevy_kira_audio::{Audio, AudioControl};
 
 use crate::action::ActionRegistrationExt;
 use crate::audio::load_audio;
