@@ -82,7 +82,7 @@ fn create_event_system(
                         .iter()
                         .filter(|(e, _)| e.kind == pending_event.kind)
                         .filter(|(_, p)| p.get() == line_entity)
-                        .take_while(|(e, _)| e.start_beat <= pending_event.start_beat)
+                        .take_while(|(e, _)| e.end_beat <= pending_event.start_beat)
                         .map(|x| x.0)
                         .last()
                     {
@@ -93,7 +93,7 @@ fn create_event_system(
                         .iter()
                         .filter(|(e, _)| e.kind == pending_event.kind)
                         .filter(|(_, p)| p.get() == line_entity)
-                        .take_while(|(e, _)| e.end_beat >= pending_event.end_beat)
+                        .take_while(|(e, _)| e.start_beat >= pending_event.end_beat)
                         .map(|x| x.0)
                         .last()
                     {
