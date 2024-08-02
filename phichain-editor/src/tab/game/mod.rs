@@ -4,53 +4,13 @@ pub mod illustration;
 pub mod scale;
 pub mod ui;
 
-use crate::audio::AudioDuration;
 use bevy::{prelude::*, render::camera::Viewport};
-use egui::Ui;
-use phichain_chart::bpm_list::BpmList;
 
 use crate::project::project_loaded;
 use crate::tab::game::hit_effect::HitEffectPlugin;
 use crate::tab::game::scale::ScalePlugin;
-use crate::timing::{ChartTime, SeekToEvent};
 
 use self::{core::CoreGamePlugin, illustration::IllustrationPlugin, ui::GameUiPlugin};
-
-pub fn game_tab(
-    In(ui): In<&mut Ui>,
-    time: Res<ChartTime>,
-    bpm_list: Res<BpmList>,
-    duration: Res<AudioDuration>,
-    mut events: EventWriter<SeekToEvent>,
-) {
-    let seconds = time.0;
-    let mut second_binding = seconds;
-    let beats = bpm_list.beat_at(seconds).value();
-    let mut beat_binding = beats;
-
-    ui.horizontal(|ui| {
-        ui.add(
-            egui::Slider::new(&mut second_binding, 0.0..=duration.0.as_secs_f32())
-                .custom_formatter(|x, _| format!("{:.2}", x))
-                .drag_value_speed(0.05),
-        );
-        let max_beat = bpm_list.beat_at(duration.0.as_secs_f32());
-        ui.add(
-            egui::DragValue::new(&mut beat_binding)
-                .speed(0.05)
-                .custom_formatter(|x, _| format!("{:.2}", x))
-                .clamp_range(0.0..=max_beat.value()),
-        );
-    });
-
-    if second_binding != seconds {
-        events.send(SeekToEvent(second_binding));
-    }
-
-    if beat_binding != beats {
-        events.send(SeekToEvent(bpm_list.time_at(beat_binding.into())));
-    }
-}
 
 pub struct GameTabPlugin;
 
