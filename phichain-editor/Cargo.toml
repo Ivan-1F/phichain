@@ -46,7 +46,7 @@ bevy_kira_audio = { version = "0.19.0", features = [
     "wav",
 ] }
 bevy_egui = "0.27"
-bevy_hanabi = "0.11.0"
+bevy_prototype_lyon = "0.11"
 egui = "0.27"
 egui_dock = "0.12"
 egui_extras = { version = "*", features = ["all_loaders"] }

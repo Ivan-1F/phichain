@@ -7,10 +7,13 @@ use crate::tab::game::GameViewport;
 use crate::timing::{ChartTime, Paused};
 use bevy::prelude::*;
 use bevy::transform::TransformSystem;
-use bevy_hanabi::prelude::*;
 use bevy_persistent::Persistent;
+use bevy_prototype_lyon::prelude::{Fill, GeometryBuilder, ShapeBundle};
+use bevy_prototype_lyon::shapes;
 use phichain_chart::bpm_list::BpmList;
+use phichain_chart::easing::Easing;
 use phichain_chart::note::{Note, NoteKind};
+use rand::Rng;
 use std::time::Duration;
 
 const HOLD_PARTICLE_INTERVAL: f32 = 0.15;
@@ -21,17 +24,30 @@ pub struct HitEffectPlugin;
 
 impl Plugin for HitEffectPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup_system).add_systems(
-            Update,
-            (
-                spawn_hit_effect_system,
-                update_hit_effect_system.after(TransformSystem::TransformPropagate),
-                update_hit_effect_scale_system,
-                animate_hit_effect_system,
+        app.add_systems(Startup, setup_system)
+            .add_systems(
+                Update,
+                (
+                    spawn_hit_effect_system,
+                    update_hit_effect_system.after(TransformSystem::TransformPropagate),
+                    update_hit_effect_scale_system,
+                    animate_hit_effect_system,
+                )
+                    .chain()
+                    .run_if(project_loaded()),
             )
-                .chain()
-                .run_if(project_loaded()),
-        );
+            .add_systems(
+                Update,
+                (
+                    update_lifetime_system,
+                    update_opacity_system,
+                    update_velocity_system,
+                    update_translation_system,
+                    despawn_system,
+                )
+                    .chain()
+                    .run_if(project_loaded()),
+            );
     }
 }
 
@@ -40,49 +56,6 @@ struct HitEffect(Vec2);
 
 #[derive(Resource, Debug)]
 struct TextureAtlasLayoutHandle(Handle<TextureAtlasLayout>);
-
-fn create_effect(width: f32) -> EffectAsset {
-    let factor = width / 426.0;
-    let mut gradient = Gradient::new();
-    gradient.add_key(
-        0.0,
-        Vec4::new(PERFECT_COLOR.r(), PERFECT_COLOR.g(), PERFECT_COLOR.b(), 1.0),
-    );
-    gradient.add_key(1.0, Vec4::new(0.0, 0.0, 0.0, 0.0));
-
-    let writer = ExprWriter::new();
-    let init_age = SetAttributeModifier::new(Attribute::AGE, writer.lit(0.).expr());
-    let init_lifetime = SetAttributeModifier::new(
-        Attribute::LIFETIME,
-        writer.lit(HIT_EFFECT_DURATION.as_secs_f32()).expr(),
-    );
-    let init_pos = SetPositionSphereModifier {
-        center: writer.lit(Vec3::ZERO).expr(),
-        radius: writer.lit(40. * factor).expr(),
-        dimension: ShapeDimension::Volume,
-    };
-    let init_vel = SetVelocitySphereModifier {
-        center: writer.lit(Vec3::ZERO).expr(),
-        speed: writer.lit(100. * factor).expr(),
-    };
-
-    let update_accel = AccelModifier::new(writer.lit(-6.0 * factor).expr());
-
-    EffectAsset::new(vec![4], Spawner::once(4.0.into(), true), writer.finish())
-        .with_name("hit")
-        .init(init_pos)
-        .init(init_vel)
-        .init(init_age)
-        .init(init_lifetime)
-        .update(update_accel)
-        .render(SetSizeModifier {
-            size: CpuValue::Uniform((
-                Vec2::new(factor * 7.0, factor * 7.0),
-                Vec2::new(factor * 10.0, factor * 10.0),
-            )),
-        })
-        .render(ColorOverLifetimeModifier { gradient })
-}
 
 fn setup_system(
     mut commands: Commands,
@@ -147,7 +120,6 @@ fn spawn_hit_effect_system(
 
     texture_atlas_layout_handle: Res<TextureAtlasLayoutHandle>,
 
-    mut effects: ResMut<Assets<EffectAsset>>,
     game_viewport: Res<GameViewport>,
 
     settings: Res<Persistent<EditorSettings>>,
@@ -159,8 +131,6 @@ fn spawn_hit_effect_system(
     for (note, global_transform, entity, played) in &query {
         let mut spawn = || {
             let translation = global_transform.translation();
-
-            let effect = effects.add(create_effect(game_viewport.0.width()));
 
             commands.spawn((
                 SpriteBundle {
@@ -182,11 +152,14 @@ fn spawn_hit_effect_system(
                 )),
             ));
 
-            commands.spawn((ParticleEffectBundle {
-                effect: ParticleEffect::new(effect),
-                transform: Transform::from_translation(global_transform.translation()),
-                ..Default::default()
-            },));
+            let factor = game_viewport.0.width() / 426.0;
+
+            for _ in 0..4 {
+                commands.spawn(HitParticleBundle::new(
+                    global_transform.translation().truncate(),
+                    factor,
+                ));
+            }
 
             commands.entity(entity).insert(PlayedHitEffect(time.0));
         };
@@ -215,6 +188,98 @@ fn spawn_hit_effect_system(
 
         if note_time > time.0 && played.is_some() {
             commands.entity(entity).remove::<PlayedHitEffect>();
+        }
+    }
+}
+
+#[derive(Bundle)]
+pub struct HitParticleBundle {
+    hit_particle: HitParticle,
+    velocity: Velocity,
+    direction: Direction,
+    lifetime: Lifetime,
+    shape: ShapeBundle,
+    fill: Fill,
+}
+
+impl HitParticleBundle {
+    pub fn new(position: Vec2, factor: f32) -> Self {
+        let size = rand::thread_rng().gen_range(7.0..=10.0) * factor;
+        let shape = shapes::Rectangle {
+            extents: Vec2::splat(size),
+            origin: Default::default(),
+        };
+
+        let angle = rand::thread_rng().gen_range(-std::f32::consts::PI..=std::f32::consts::PI);
+        let quat = Quat::from_rotation_z(angle);
+
+        Self {
+            hit_particle: Default::default(),
+            velocity: Default::default(),
+            direction: Direction(quat),
+            lifetime: Default::default(),
+            shape: ShapeBundle {
+                path: GeometryBuilder::build_as(&shape),
+                spatial: SpatialBundle {
+                    transform: Transform {
+                        translation: position.extend(10.0),
+                        ..default()
+                    },
+                    ..default()
+                },
+                ..default()
+            },
+            fill: Fill::color(PERFECT_COLOR),
+        }
+    }
+}
+
+#[derive(Debug, Component, Clone, Default)]
+struct HitParticle;
+#[derive(Debug, Component, Clone, Default)]
+struct Velocity(Vec2);
+#[derive(Debug, Component, Clone, Default)]
+struct Direction(Quat);
+#[derive(Debug, Component, Clone, Default)]
+struct Lifetime(f32);
+
+fn update_lifetime_system(mut query: Query<&mut Lifetime, With<HitParticle>>, time: Res<Time>) {
+    for mut lifetime in &mut query {
+        lifetime.0 += time.delta_seconds();
+    }
+}
+
+fn update_opacity_system(mut query: Query<(&mut Fill, &Lifetime), With<HitParticle>>) {
+    for (mut fill, lifetime) in &mut query {
+        fill.color.set_a((0.5 - lifetime.0) / 0.5);
+    }
+}
+
+fn update_velocity_system(
+    mut query: Query<(&mut Velocity, &Direction, &Lifetime), With<HitParticle>>,
+    game_viewport: Res<GameViewport>,
+) {
+    for (mut velocity, direction, lifetime) in &mut query {
+        velocity.0 = (direction.0 * Vec3::new(1.0, 1.0, 0.0) * 150.0).truncate()
+            * Easing::EaseOutSine.ease((0.5 - lifetime.0) / 0.5)
+            * game_viewport.0.width()
+            / 426.0;
+    }
+}
+
+fn update_translation_system(
+    mut query: Query<(&mut Transform, &Velocity), With<HitParticle>>,
+    time: Res<Time>,
+) {
+    for (mut transform, velocity) in &mut query {
+        transform.translation += velocity.0.extend(0.0) * time.delta_seconds();
+    }
+}
+
+fn despawn_system(mut commands: Commands, query: Query<(Entity, &Lifetime), With<HitParticle>>) {
+    for (entity, lifetime) in &query {
+        if lifetime.0 >= 0.5 {
+            commands.entity(entity).despawn();
         }
     }
 }

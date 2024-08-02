@@ -73,9 +73,9 @@ use bevy::render::settings::WgpuSettings;
 use bevy::render::RenderPlugin;
 use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{EguiContext, EguiPlugin};
-use bevy_hanabi::HanabiPlugin;
 use bevy_mod_picking::prelude::*;
 use bevy_persistent::Persistent;
+use bevy_prototype_lyon::prelude::ShapePlugin;
 use egui::Ui;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use phichain_chart::event::LineEvent;
@@ -103,7 +103,7 @@ fn main() {
             render_creation: wgpu_settings.into(),
             synchronous_pipeline_compilation: false,
         }))
-        .add_plugins(HanabiPlugin)
+        .add_plugins(ShapePlugin)
         .add_plugins(ActionPlugin)
         .add_plugins(HighlightPlugin)
         .add_plugins(HotkeyPlugin)
