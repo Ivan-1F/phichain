@@ -81,7 +81,7 @@ pub fn line_list_tab(
                         ui.end_row();
 
                         ui.label(t!("tab.line_list.rotation"));
-                        ui.label(format!("{:.2}", rotation.0));
+                        ui.label(format!("{:.2}", rotation.0.to_degrees()));
                         ui.end_row();
                     });
                 egui::Grid::new(format!("line-{}-props-grid-right", index))
