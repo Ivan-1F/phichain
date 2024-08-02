@@ -53,10 +53,10 @@ use crate::project::ProjectPlugin;
 use crate::score::ScorePlugin;
 use crate::screenshot::ScreenshotPlugin;
 use crate::selection::Selected;
-use crate::settings::{EditorSettings, EditorSettingsPlugin};
+use crate::settings::{AspectRatio, EditorSettings, EditorSettingsPlugin};
+use crate::tab::game::GameCamera;
 use crate::tab::game::GameTabPlugin;
 use crate::tab::game::GameViewport;
-use crate::tab::game::{AspectRatio, GameCamera};
 use crate::tab::quick_action::quick_action_tab;
 use crate::tab::timeline::TimelineViewport;
 use crate::tab::TabPlugin;
@@ -249,7 +249,11 @@ impl egui_dock::TabViewer for TabViewer<'_> {
         self.registry.tab_ui(ui, self.world, tab);
         match tab {
             EditorTab::Game => {
-                let aspect_ratio = self.world.resource::<AspectRatio>();
+                let aspect_ratio = &self
+                    .world
+                    .resource::<Persistent<EditorSettings>>()
+                    .game
+                    .aspect_ratio;
                 let clip_rect = ui.clip_rect();
                 let viewport = match aspect_ratio {
                     AspectRatio::Free => clip_rect,

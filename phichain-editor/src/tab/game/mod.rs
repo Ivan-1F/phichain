@@ -5,7 +5,6 @@ pub mod scale;
 pub mod ui;
 
 use bevy::{prelude::*, render::camera::Viewport};
-use std::fmt;
 
 use crate::project::project_loaded;
 use crate::tab::game::hit_effect::HitEffectPlugin;
@@ -18,7 +17,6 @@ pub struct GameTabPlugin;
 impl Plugin for GameTabPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(GameViewport(Rect::from_corners(Vec2::ZERO, Vec2::ZERO)))
-            .init_resource::<AspectRatio>()
             .add_systems(
                 PostUpdate,
                 update_game_camera_viewport.run_if(project_loaded()),
@@ -28,27 +26,6 @@ impl Plugin for GameTabPlugin {
             .add_plugins(IllustrationPlugin)
             .add_plugins(CoreGamePlugin)
             .add_plugins(HitEffectPlugin);
-    }
-}
-
-#[derive(Resource, Debug, Default)]
-pub enum AspectRatio {
-    #[default]
-    Free,
-    Fixed {
-        width: f32,
-        height: f32,
-    },
-}
-
-impl fmt::Display for AspectRatio {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            AspectRatio::Free => f.write_str(&t!("game.aspect_ratio.free")),
-            AspectRatio::Fixed { width, height } => {
-                write!(f, "{}:{}", width, height)
-            }
-        }
     }
 }
 

@@ -1,6 +1,6 @@
 use crate::audio::AudioDuration;
-use crate::settings::EditorSettings;
-use crate::tab::game::AspectRatio;
+use crate::notification::{ToastsExt, ToastsStorage};
+use crate::settings::{AspectRatio, EditorSettings};
 use crate::timing::{ChartTime, SeekToEvent};
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
@@ -10,13 +10,12 @@ use phichain_chart::bpm_list::BpmList;
 pub fn quick_action_tab(
     In(ui): In<&mut Ui>,
     mut editor_settings: ResMut<Persistent<EditorSettings>>,
+    mut toasts: ResMut<ToastsStorage>,
 
     time: Res<ChartTime>,
     bpm_list: Res<BpmList>,
     duration: Res<AudioDuration>,
     mut events: EventWriter<SeekToEvent>,
-
-    mut aspect_ratio: ResMut<AspectRatio>,
 ) {
     ui.horizontal(|ui| {
         ui.label(t!("tab.settings.category.audio.playback_rate"));
@@ -36,24 +35,26 @@ pub fn quick_action_tab(
 
         egui::ComboBox::from_label("")
             .width(55.0)
-            .selected_text(format!("{}", *aspect_ratio))
+            .selected_text(format!("{}", editor_settings.game.aspect_ratio))
             .show_ui(ui, |ui| {
+                let mut changed = false;
                 if ui
                     .selectable_label(
-                        matches!(*aspect_ratio, AspectRatio::Free),
+                        matches!(editor_settings.game.aspect_ratio, AspectRatio::Free),
                         t!("game.aspect_ratio.free"),
                     )
                     .clicked()
                 {
-                    *aspect_ratio = AspectRatio::Free;
+                    changed = true;
+                    editor_settings.game.aspect_ratio = AspectRatio::Free;
                 }
 
                 macro_rules! aspect_ratio_button {
-                    ($ui:expr, $aspect_ratio:expr, $width:expr, $height:expr, $label:expr) => {
+                    ($ui:expr, $width:expr, $height:expr, $label:expr) => {
                         if $ui
                             .selectable_label(
                                 matches!(
-                                    *$aspect_ratio,
+                                    editor_settings.game.aspect_ratio,
                                     AspectRatio::Fixed {
                                         width: $width,
                                         height: $height
@@ -63,7 +64,8 @@ pub fn quick_action_tab(
                             )
                             .clicked()
                         {
-                            *$aspect_ratio = AspectRatio::Fixed {
+                            changed = true;
+                            editor_settings.game.aspect_ratio = AspectRatio::Fixed {
                                 width: $width,
                                 height: $height,
                             };
@@ -71,10 +73,19 @@ pub fn quick_action_tab(
                     };
                 }
 
-                aspect_ratio_button!(ui, aspect_ratio, 4.0, 3.0, "4:3");
-                aspect_ratio_button!(ui, aspect_ratio, 16.0, 9.0, "16:9");
-                aspect_ratio_button!(ui, aspect_ratio, 21.0, 9.0, "21:9");
-                aspect_ratio_button!(ui, aspect_ratio, 1.0, 1.0, "1:1");
+                aspect_ratio_button!(ui, 4.0, 3.0, "4:3");
+                aspect_ratio_button!(ui, 16.0, 9.0, "16:9");
+                aspect_ratio_button!(ui, 21.0, 9.0, "21:9");
+                aspect_ratio_button!(ui, 1.0, 1.0, "1:1");
+
+                if changed {
+                    match editor_settings.persist() {
+                        Ok(_) => {}
+                        Err(error) => {
+                            toasts.error(format!("Failed to persist editor settings: {}", error))
+                        }
+                    }
+                }
             });
 
         // -------- Progress Control --------

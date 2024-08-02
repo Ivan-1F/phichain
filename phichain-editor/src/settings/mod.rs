@@ -2,6 +2,7 @@ use crate::misc::WorkingDirectory;
 use bevy::prelude::*;
 use bevy_persistent::{Persistent, StorageFormat};
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 pub struct EditorSettingsPlugin;
 
@@ -76,6 +77,27 @@ impl Default for GraphicsSettings {
     }
 }
 
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub enum AspectRatio {
+    #[default]
+    Free,
+    Fixed {
+        width: f32,
+        height: f32,
+    },
+}
+
+impl fmt::Display for AspectRatio {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            AspectRatio::Free => f.write_str(&t!("game.aspect_ratio.free")),
+            AspectRatio::Fixed { width, height } => {
+                write!(f, "{}:{}", width, height)
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct GameSettings {
@@ -83,6 +105,7 @@ pub struct GameSettings {
     pub hide_hit_effect: bool,
     pub note_scale: f32,
     pub multi_highlight: bool,
+    pub aspect_ratio: AspectRatio,
 }
 
 impl Default for GameSettings {
@@ -92,6 +115,7 @@ impl Default for GameSettings {
             hide_hit_effect: false,
             note_scale: 1.0,
             multi_highlight: true,
+            aspect_ratio: AspectRatio::default(),
         }
     }
 }
