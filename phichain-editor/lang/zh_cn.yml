@@ -147,3 +147,7 @@ home:
 audio_setting:
   save:
     failed: '保存音频配置时发生错误: %{error}'
+
+game:
+  aspect_ratio:
+    free: 自由

@@ -147,3 +147,7 @@ home:
 audio_setting:
   save:
     failed: 'Failed to save audio settings: %{error}'
+
+game:
+  aspect_ratio:
+    free: Free

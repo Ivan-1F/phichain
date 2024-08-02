@@ -54,9 +54,9 @@ use crate::score::ScorePlugin;
 use crate::screenshot::ScreenshotPlugin;
 use crate::selection::Selected;
 use crate::settings::{EditorSettings, EditorSettingsPlugin};
-use crate::tab::game::GameCamera;
 use crate::tab::game::GameTabPlugin;
 use crate::tab::game::GameViewport;
+use crate::tab::game::{AspectRatio, GameCamera};
 use crate::tab::quick_action::quick_action_tab;
 use crate::tab::timeline::TimelineViewport;
 use crate::tab::TabPlugin;
@@ -66,6 +66,7 @@ use crate::timing::TimingPlugin;
 use crate::translation::TranslationPlugin;
 use crate::ui::UiPlugin;
 use crate::utils::compat::ControlKeyExt;
+use crate::utils::convert::BevyEguiConvert;
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy::render::render_resource::WgpuFeatures;
@@ -248,18 +249,17 @@ impl egui_dock::TabViewer for TabViewer<'_> {
         self.registry.tab_ui(ui, self.world, tab);
         match tab {
             EditorTab::Game => {
-                let mut game_viewport = self.world.resource_mut::<GameViewport>();
+                let aspect_ratio = self.world.resource::<AspectRatio>();
                 let clip_rect = ui.clip_rect();
-                game_viewport.0 = Rect::from_corners(
-                    Vec2 {
-                        x: clip_rect.min.x,
-                        y: clip_rect.min.y,
-                    },
-                    Vec2 {
-                        x: clip_rect.max.x,
-                        y: clip_rect.max.y,
-                    },
-                );
+                let viewport = match aspect_ratio {
+                    AspectRatio::Free => clip_rect,
+                    AspectRatio::Fixed { width, height } => {
+                        utils::misc::keep_aspect_ratio(clip_rect, width / height)
+                    }
+                };
+
+                let mut game_viewport = self.world.resource_mut::<GameViewport>();
+                game_viewport.0 = viewport.into_bevy();
             }
             EditorTab::Timeline => {
                 let mut timeline_viewport = self.world.resource_mut::<TimelineViewport>();
