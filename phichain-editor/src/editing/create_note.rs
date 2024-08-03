@@ -110,7 +110,7 @@ fn create_note_system(
 
             if keyboard.just_pressed(KeyCode::KeyR) {
                 if let Ok((pending_note, entity)) = pending_note_query.get_single() {
-                    commands.entity(entity).despawn();
+                    commands.entity(entity).despawn_recursive();
                     event.send(DoCommandEvent(EditorCommand::CreateNote(CreateNote::new(
                         line_entity,
                         *pending_note,
@@ -144,7 +144,7 @@ fn remove_pending_note_on_esc_system(
 ) {
     if keyboard.just_pressed(KeyCode::Escape) {
         for entity in &query {
-            commands.entity(entity).despawn();
+            commands.entity(entity).despawn_recursive();
         }
     }
 }

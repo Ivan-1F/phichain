@@ -19,6 +19,12 @@ pub struct ImageAssets {
     pub drag_highlight: Handle<Image>,
     #[asset(path = "image/hold.highlight.png")]
     pub hold_highlight: Handle<Image>,
+    #[asset(path = "image/hold_head.png")]
+    pub hold_head: Handle<Image>,
+    #[asset(path = "image/hold_head.highlight.png")]
+    pub hold_head_highlight: Handle<Image>,
+    #[asset(path = "image/hold_tail.png")]
+    pub hold_tail: Handle<Image>,
     #[asset(path = "image/flick.highlight.png")]
     pub flick_highlight: Handle<Image>,
     #[asset(path = "image/line.png")]

@@ -11,6 +11,21 @@ pub enum NoteKind {
     Flick,
 }
 
+impl NoteKind {
+    pub fn is_tap(&self) -> bool {
+        matches!(self, NoteKind::Tap)
+    }
+    pub fn is_drag(&self) -> bool {
+        matches!(self, NoteKind::Drag)
+    }
+    pub fn is_hold(&self) -> bool {
+        matches!(self, NoteKind::Hold { .. })
+    }
+    pub fn is_flick(&self) -> bool {
+        matches!(self, NoteKind::Flick)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(bevy::prelude::Component))]
 pub struct Note {

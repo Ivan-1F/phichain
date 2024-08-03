@@ -31,7 +31,7 @@ impl Edit for CreateNote {
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
         if let Some(entity) = self.note_entity {
-            target.despawn(entity);
+            target.entity_mut(entity).despawn_recursive();
         }
     }
 }

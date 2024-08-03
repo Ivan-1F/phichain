@@ -54,6 +54,19 @@ impl Plugin for CoreGamePlugin {
             .add_systems(
                 PostUpdate,
                 calculate_speed_events_system.run_if(project_loaded()),
+            )
+            .add_systems(
+                PostUpdate,
+                (
+                    spawn_hold_component_system,
+                    update_hold_components_scale_system
+                        // otherwise heads & tails will keep twitching
+                        .after(update_note_y_system),
+                    update_hold_component_texture_system,
+                    hide_hold_head_system,
+                    despawn_hold_component_system,
+                )
+                    .run_if(project_loaded()),
             );
     }
 }
@@ -269,6 +282,160 @@ fn update_note_tint_system(
         };
         let alpha = if pending.is_some() { 40.0 / 255.0 } else { 1.0 };
         sprite.color = tint.with_a(alpha);
+    }
+}
+
+#[derive(Debug, Component, Default, Clone)]
+pub struct HoldHead;
+#[derive(Debug, Component, Default, Clone)]
+pub struct HoldTail;
+
+fn spawn_hold_component_system(
+    mut commands: Commands,
+    query: Query<(Option<&Children>, Entity, &Note)>,
+    head_query: Query<(), With<HoldHead>>,
+    tail_query: Query<(), With<HoldTail>>,
+) {
+    for (children, entity, note) in &query {
+        if !note.kind.is_hold() {
+            continue;
+        }
+
+        match children {
+            None => {
+                commands.entity(entity).with_children(|p| {
+                    p.spawn((
+                        SpriteBundle {
+                            sprite: Sprite {
+                                anchor: Anchor::TopCenter,
+                                ..default()
+                            },
+                            ..default()
+                        },
+                        HoldHead,
+                    ));
+                    p.spawn((
+                        SpriteBundle {
+                            sprite: Sprite {
+                                anchor: Anchor::BottomCenter,
+                                ..default()
+                            },
+                            ..default()
+                        },
+                        HoldTail,
+                    ));
+                });
+            }
+            Some(children) => {
+                if children.iter().all(|c| head_query.get(*c).is_err()) {
+                    commands.entity(entity).with_children(|p| {
+                        p.spawn((
+                            SpriteBundle {
+                                sprite: Sprite {
+                                    anchor: Anchor::TopCenter,
+                                    ..default()
+                                },
+                                ..default()
+                            },
+                            HoldHead,
+                        ));
+                    });
+                }
+                if children.iter().all(|c| tail_query.get(*c).is_err()) {
+                    commands.entity(entity).with_children(|p| {
+                        p.spawn((
+                            SpriteBundle {
+                                sprite: Sprite {
+                                    anchor: Anchor::BottomCenter,
+                                    ..default()
+                                },
+                                ..default()
+                            },
+                            HoldTail,
+                        ));
+                    });
+                }
+            }
+        }
+    }
+}
+
+fn update_hold_components_scale_system(
+    mut head_query: Query<&mut Transform, (With<HoldHead>, Without<HoldTail>)>,
+    mut tail_query: Query<&mut Transform, (With<HoldTail>, Without<HoldHead>)>,
+    parent_query: Query<(&Transform, &Children), (Without<HoldHead>, Without<HoldTail>)>,
+) {
+    for (transform, children) in &parent_query {
+        for child in children {
+            if let Ok(mut head) = head_query.get_mut(*child) {
+                head.scale.y = 1.0 / transform.scale.y * transform.scale.x;
+            }
+            if let Ok(mut tail) = tail_query.get_mut(*child) {
+                tail.scale.y = 1.0 / transform.scale.y * transform.scale.x;
+                tail.translation.y = 1900.0;
+            }
+        }
+    }
+}
+
+fn update_hold_component_texture_system(
+    mut head_query: Query<(&mut Handle<Image>, &Parent), (With<HoldHead>, Without<HoldTail>)>,
+    mut tail_query: Query<&mut Handle<Image>, (With<HoldTail>, Without<HoldHead>)>,
+    parent_query: Query<Option<&Highlighted>>,
+    assets: Res<ImageAssets>,
+) {
+    for (mut image, parent) in &mut head_query {
+        if let Ok(highlight) = parent_query.get(parent.get()).map(|x| x.is_some()) {
+            *image = if highlight {
+                assets.hold_head_highlight.clone()
+            } else {
+                assets.hold_head.clone()
+            };
+        }
+    }
+    for mut image in &mut tail_query {
+        *image = assets.hold_tail.clone();
+    }
+}
+
+fn hide_hold_head_system(
+    note_query: Query<(&Note, &Children)>,
+    mut head_query: Query<&mut Visibility, With<HoldHead>>,
+
+    time: Res<ChartTime>,
+    bpm_list: Res<BpmList>,
+) {
+    let beat = bpm_list.beat_at(time.0);
+    for (note, children) in &note_query {
+        for child in children {
+            if let Ok(mut visibility) = head_query.get_mut(*child) {
+                *visibility = if note.beat <= beat {
+                    Visibility::Hidden
+                } else {
+                    Visibility::Inherited
+                };
+            }
+        }
+    }
+}
+
+fn despawn_hold_component_system(
+    mut commands: Commands,
+    query: Query<&Note>,
+    head_query: Query<(&Parent, Entity), (With<HoldHead>, Without<HoldTail>)>,
+    tail_query: Query<(&Parent, Entity), (With<HoldTail>, Without<HoldHead>)>,
+) {
+    for (parent, entity) in &head_query {
+        let note = query.get(parent.get());
+        if note.is_err() || note.is_ok_and(|n| !n.kind.is_hold()) {
+            commands.entity(entity).despawn();
+        }
+    }
+    for (parent, entity) in &tail_query {
+        let note = query.get(parent.get());
+        if note.is_err() || note.is_ok_and(|n| !n.kind.is_hold()) {
+            commands.entity(entity).despawn();
+        }
     }
 }
 
