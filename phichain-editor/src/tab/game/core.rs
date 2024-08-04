@@ -55,6 +55,7 @@ impl Plugin for CoreGamePlugin {
                 PostUpdate,
                 calculate_speed_events_system.run_if(project_loaded()),
             )
+            // hold components
             .add_systems(
                 PostUpdate,
                 (
@@ -62,6 +63,7 @@ impl Plugin for CoreGamePlugin {
                     update_hold_components_scale_system
                         // otherwise heads & tails will keep twitching
                         .after(update_note_y_system),
+                    sync_hold_components_tint_system.after(update_note_tint_system),
                     update_hold_component_texture_system,
                     hide_hold_head_system,
                     despawn_hold_component_system,
@@ -282,6 +284,23 @@ fn update_note_tint_system(
         };
         let alpha = if pending.is_some() { 40.0 / 255.0 } else { 1.0 };
         sprite.color = tint.with_a(alpha);
+    }
+}
+
+fn sync_hold_components_tint_system(
+    mut head_query: Query<(&mut Sprite, &Parent), (With<HoldHead>, Without<HoldTail>)>,
+    mut tail_query: Query<(&mut Sprite, &Parent), (With<HoldTail>, Without<HoldHead>)>,
+    parent_query: Query<&Sprite, (Without<HoldHead>, Without<HoldTail>)>,
+) {
+    for (mut sprite, parent) in &mut head_query {
+        if let Ok(parent_sprite) = parent_query.get(parent.get()) {
+            sprite.color = parent_sprite.color;
+        }
+    }
+    for (mut sprite, parent) in &mut tail_query {
+        if let Ok(parent_sprite) = parent_query.get(parent.get()) {
+            sprite.color = parent_sprite.color;
+        }
     }
 }
 
