@@ -287,6 +287,59 @@ fn update_note_tint_system(
     }
 }
 
+#[derive(Debug, Component, Default, Clone)]
+pub struct HoldHead;
+#[derive(Debug, Component, Default, Clone)]
+pub struct HoldTail;
+#[derive(Debug, Component, Default, Clone)]
+pub struct HoldComponent;
+
+#[derive(Bundle)]
+struct HoldHeadBundle {
+    sprite: SpriteBundle,
+    hold_head: HoldHead,
+    hold_component: HoldComponent,
+}
+
+impl HoldHeadBundle {
+    fn new() -> Self {
+        Self {
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    anchor: Anchor::TopCenter,
+                    ..default()
+                },
+                ..default()
+            },
+            hold_head: Default::default(),
+            hold_component: Default::default(),
+        }
+    }
+}
+
+#[derive(Bundle)]
+struct HoldTailBundle {
+    sprite: SpriteBundle,
+    hold_tail: HoldTail,
+    hold_component: HoldComponent,
+}
+
+impl HoldTailBundle {
+    fn new() -> Self {
+        Self {
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    anchor: Anchor::BottomCenter,
+                    ..default()
+                },
+                ..default()
+            },
+            hold_tail: Default::default(),
+            hold_component: Default::default(),
+        }
+    }
+}
+
 fn sync_hold_components_tint_system(
     mut component_query: Query<(&mut Sprite, &Parent), With<HoldComponent>>,
     parent_query: Query<&Sprite, Without<HoldComponent>>,
@@ -297,13 +350,6 @@ fn sync_hold_components_tint_system(
         }
     }
 }
-
-#[derive(Debug, Component, Default, Clone)]
-pub struct HoldHead;
-#[derive(Debug, Component, Default, Clone)]
-pub struct HoldTail;
-#[derive(Debug, Component, Default, Clone)]
-pub struct HoldComponent;
 
 fn spawn_hold_component_system(
     mut commands: Commands,
@@ -319,59 +365,19 @@ fn spawn_hold_component_system(
         match children {
             None => {
                 commands.entity(entity).with_children(|p| {
-                    p.spawn((
-                        SpriteBundle {
-                            sprite: Sprite {
-                                anchor: Anchor::TopCenter,
-                                ..default()
-                            },
-                            ..default()
-                        },
-                        HoldHead,
-                        HoldComponent,
-                    ));
-                    p.spawn((
-                        SpriteBundle {
-                            sprite: Sprite {
-                                anchor: Anchor::BottomCenter,
-                                ..default()
-                            },
-                            ..default()
-                        },
-                        HoldTail,
-                        HoldComponent,
-                    ));
+                    p.spawn(HoldHeadBundle::new());
+                    p.spawn(HoldTailBundle::new());
                 });
             }
             Some(children) => {
                 if children.iter().all(|c| head_query.get(*c).is_err()) {
                     commands.entity(entity).with_children(|p| {
-                        p.spawn((
-                            SpriteBundle {
-                                sprite: Sprite {
-                                    anchor: Anchor::TopCenter,
-                                    ..default()
-                                },
-                                ..default()
-                            },
-                            HoldHead,
-                            HoldComponent,
-                        ));
+                        p.spawn(HoldHeadBundle::new());
                     });
                 }
                 if children.iter().all(|c| tail_query.get(*c).is_err()) {
                     commands.entity(entity).with_children(|p| {
-                        p.spawn((
-                            SpriteBundle {
-                                sprite: Sprite {
-                                    anchor: Anchor::BottomCenter,
-                                    ..default()
-                                },
-                                ..default()
-                            },
-                            HoldTail,
-                            HoldComponent,
-                        ));
+                        p.spawn(HoldTailBundle::new());
                     });
                 }
             }
