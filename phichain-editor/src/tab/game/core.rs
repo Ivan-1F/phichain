@@ -288,16 +288,10 @@ fn update_note_tint_system(
 }
 
 fn sync_hold_components_tint_system(
-    mut head_query: Query<(&mut Sprite, &Parent), (With<HoldHead>, Without<HoldTail>)>,
-    mut tail_query: Query<(&mut Sprite, &Parent), (With<HoldTail>, Without<HoldHead>)>,
-    parent_query: Query<&Sprite, (Without<HoldHead>, Without<HoldTail>)>,
+    mut component_query: Query<(&mut Sprite, &Parent), With<HoldComponent>>,
+    parent_query: Query<&Sprite, Without<HoldComponent>>,
 ) {
-    for (mut sprite, parent) in &mut head_query {
-        if let Ok(parent_sprite) = parent_query.get(parent.get()) {
-            sprite.color = parent_sprite.color;
-        }
-    }
-    for (mut sprite, parent) in &mut tail_query {
+    for (mut sprite, parent) in &mut component_query {
         if let Ok(parent_sprite) = parent_query.get(parent.get()) {
             sprite.color = parent_sprite.color;
         }
@@ -308,12 +302,14 @@ fn sync_hold_components_tint_system(
 pub struct HoldHead;
 #[derive(Debug, Component, Default, Clone)]
 pub struct HoldTail;
+#[derive(Debug, Component, Default, Clone)]
+pub struct HoldComponent;
 
 fn spawn_hold_component_system(
     mut commands: Commands,
     query: Query<(Option<&Children>, Entity, &Note)>,
-    head_query: Query<(), With<HoldHead>>,
-    tail_query: Query<(), With<HoldTail>>,
+    head_query: Query<&HoldHead>,
+    tail_query: Query<&HoldTail>,
 ) {
     for (children, entity, note) in &query {
         if !note.kind.is_hold() {
@@ -332,6 +328,7 @@ fn spawn_hold_component_system(
                             ..default()
                         },
                         HoldHead,
+                        HoldComponent,
                     ));
                     p.spawn((
                         SpriteBundle {
@@ -342,6 +339,7 @@ fn spawn_hold_component_system(
                             ..default()
                         },
                         HoldTail,
+                        HoldComponent,
                     ));
                 });
             }
@@ -357,6 +355,7 @@ fn spawn_hold_component_system(
                                 ..default()
                             },
                             HoldHead,
+                            HoldComponent,
                         ));
                     });
                 }
@@ -371,6 +370,7 @@ fn spawn_hold_component_system(
                                 ..default()
                             },
                             HoldTail,
+                            HoldComponent,
                         ));
                     });
                 }
@@ -441,16 +441,9 @@ fn hide_hold_head_system(
 fn despawn_hold_component_system(
     mut commands: Commands,
     query: Query<&Note>,
-    head_query: Query<(&Parent, Entity), (With<HoldHead>, Without<HoldTail>)>,
-    tail_query: Query<(&Parent, Entity), (With<HoldTail>, Without<HoldHead>)>,
+    component_query: Query<(&Parent, Entity), With<HoldComponent>>,
 ) {
-    for (parent, entity) in &head_query {
-        let note = query.get(parent.get());
-        if note.is_err() || note.is_ok_and(|n| !n.kind.is_hold()) {
-            commands.entity(entity).despawn();
-        }
-    }
-    for (parent, entity) in &tail_query {
+    for (parent, entity) in &component_query {
         let note = query.get(parent.get());
         if note.is_err() || note.is_ok_and(|n| !n.kind.is_hold()) {
             commands.entity(entity).despawn();
