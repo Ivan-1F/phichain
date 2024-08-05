@@ -84,9 +84,9 @@ impl Hash for Beat {
 
 impl Beat {
     pub fn reduce(&mut self) {
-        let fraction = self.1.reduced();
-        self.0 += fraction.trunc().numer();
-        self.1 = fraction.fract();
+        let value = Rational32::from_integer(self.0) + self.1;
+        self.0 = value.to_integer();
+        self.1 = value.fract();
     }
 
     pub fn reduced(&self) -> Self {
@@ -207,15 +207,13 @@ impl Sub for Beat {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        Self(self.0 - rhs.0, self.1 - rhs.1, self.2 - rhs.2)
+        Self(self.0 - rhs.0, self.1 - rhs.1, self.2 - rhs.2).reduced()
     }
 }
 
 impl SubAssign for Beat {
     fn sub_assign(&mut self, rhs: Self) {
-        self.0 -= rhs.0;
-        self.1 -= rhs.1;
-        self.2 -= rhs.2;
+        *self = *self - rhs;
     }
 }
 
@@ -223,15 +221,13 @@ impl Add for Beat {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        Self(self.0 + rhs.0, self.1 + rhs.1, self.2 + rhs.2)
+        Self(self.0 + rhs.0, self.1 + rhs.1, self.2 + rhs.2).reduced()
     }
 }
 
 impl AddAssign for Beat {
     fn add_assign(&mut self, rhs: Self) {
-        self.0 += rhs.0;
-        self.1 += rhs.1;
-        self.2 += rhs.2;
+        *self = *self + rhs
     }
 }
 
@@ -346,6 +342,7 @@ mod tests {
         let mut beat = beat!(1, 3, 2);
         beat.reduce();
         assert_eq!(beat, beat!(2, 1, 2));
+        // panic!();
     }
 
     #[test]
@@ -353,6 +350,13 @@ mod tests {
         let beat = beat!(1, 3, 2);
         let reduced = beat.reduced();
         assert_eq!(reduced, beat!(2, 1, 2));
+    }
+
+    #[test]
+    fn test_reduced_negative() {
+        let beat = beat!(1, -1, 2);
+        let reduced = beat.reduced();
+        assert_eq!(reduced, beat!(0, 1, 2));
     }
 
     #[test]
