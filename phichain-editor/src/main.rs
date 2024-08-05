@@ -81,7 +81,6 @@ use egui::Ui;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use phichain_chart::event::LineEvent;
 use phichain_chart::note::Note;
-use phichain_chart::serialization::PhichainChart;
 use rfd::FileDialog;
 use rust_i18n::set_locale;
 
@@ -92,11 +91,6 @@ fn main() {
     wgpu_settings
         .features
         .set(WgpuFeatures::VERTEX_WRITABLE_STORAGE, true);
-
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&PhichainChart::default()).unwrap()
-    );
 
     App::new()
         .insert_resource(ClearColor(Color::BLACK))
