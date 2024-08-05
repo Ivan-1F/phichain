@@ -9,17 +9,17 @@ use serde_json::Value;
 
 use crate::selection::SelectedLine;
 use phichain_chart::migration::migrate;
-use phichain_chart::serialization::{LineWrapper, PhiChainChart};
+use phichain_chart::serialization::{LineWrapper, PhichainChart};
 
 use super::Loader;
 
-pub struct PhiChainLoader;
+pub struct PhichainLoader;
 
-impl Loader for PhiChainLoader {
+impl Loader for PhichainLoader {
     fn load(file: File, commands: &mut Commands) -> anyhow::Result<()> {
         let chart: Value = serde_json::from_reader(file).context("Failed to load chart")?;
         let migrated = migrate(&chart).context("Migration failed")?;
-        let chart: PhiChainChart =
+        let chart: PhichainChart =
             serde_json::from_value(migrated).context("Failed to deserialize chart")?;
 
         commands.insert_resource(chart.offset);

@@ -3,18 +3,18 @@ use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use bevy_kira_audio::{Audio, AudioControl, AudioSource};
-use phichain_chart::serialization::PhiChainChart;
+use phichain_chart::serialization::PhichainChart;
 use std::path::Path;
 use std::{fs::File, path::PathBuf};
 
 use crate::action::ActionRegistrationExt;
 use crate::audio::load_audio;
 use crate::editing::history::EditorHistory;
-use crate::exporter::phichain::PhiChainExporter;
+use crate::exporter::phichain::PhichainExporter;
 use crate::exporter::Exporter;
 use crate::tab::game::illustration::load_illustration;
 use crate::{
-    loader::{phichain::PhiChainLoader, Loader},
+    loader::{phichain::PhichainLoader, Loader},
     notification::{ToastsExt, ToastsStorage},
 };
 
@@ -137,7 +137,7 @@ impl Plugin for ProjectPlugin {
 
 fn save_project_system(world: &mut World) {
     world.resource_scope(|world, mut history: Mut<EditorHistory>| {
-        if let Ok(chart) = PhiChainExporter::export(world) {
+        if let Ok(chart) = PhichainExporter::export(world) {
             let project = world.resource::<Project>();
             let chart_result = std::fs::write(project.path.chart_path(), chart);
             let meta_result = std::fs::write(
@@ -193,7 +193,7 @@ fn load_project_system(
         match Project::load(event.0.clone()) {
             Ok(project) => {
                 let file = File::open(project.path.chart_path()).unwrap();
-                if let Err(error) = PhiChainLoader::load(file, &mut commands) {
+                if let Err(error) = PhichainLoader::load(file, &mut commands) {
                     toasts.error(format!("Failed to load chart: {:?}", error));
                 } else {
                     // unwrap: if Project::load is ok, illustration_path() must return Some
@@ -287,7 +287,7 @@ pub fn create_project(
     let meta_string = serde_json::to_string_pretty(&project_meta).unwrap();
     std::fs::write(project_path.meta_path(), meta_string).context("Failed to write meta")?;
 
-    let chart_string = serde_json::to_string_pretty(&PhiChainChart::default()).unwrap();
+    let chart_string = serde_json::to_string_pretty(&PhichainChart::default()).unwrap();
     std::fs::write(project_path.chart_path(), chart_string).context("Failed to write chart")?;
 
     Ok(())

@@ -3,7 +3,7 @@
 use crate::easing::Easing;
 use crate::event::{LineEvent, LineEventKind};
 use crate::format::Format;
-use crate::serialization::{LineWrapper, PhiChainChart};
+use crate::serialization::{LineWrapper, PhichainChart};
 #[cfg(feature = "bevy")]
 use bevy::log::warn;
 use num::Rational32;
@@ -258,7 +258,7 @@ struct YControl {
 }
 
 impl Format for RpeChart {
-    fn into_phichain(self) -> anyhow::Result<PhiChainChart> {
+    fn into_phichain(self) -> anyhow::Result<PhichainChart> {
         let mut bpm_list = crate::bpm_list::BpmList::new(
             self.bpm_list
                 .iter()
@@ -266,7 +266,7 @@ impl Format for RpeChart {
                 .collect(),
         );
         bpm_list.compute();
-        let mut phichain = PhiChainChart::new(self.meta.offset as f32, bpm_list, vec![]);
+        let mut phichain = PhichainChart::new(self.meta.offset as f32, bpm_list, vec![]);
 
         let easing = |id: i32| {
             Easing::iter().nth((id - 1) as usize).unwrap_or_else(|| {
@@ -374,7 +374,7 @@ impl Format for RpeChart {
         Ok(phichain)
     }
 
-    fn from_phichain(_phichain: PhiChainChart) -> anyhow::Result<Self>
+    fn from_phichain(_phichain: PhichainChart) -> anyhow::Result<Self>
     where
         Self: Sized,
     {

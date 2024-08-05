@@ -6,7 +6,7 @@ use bevy::app::App;
 use bevy::prelude::*;
 use phichain_chart::format::official::OfficialChart;
 use phichain_chart::format::Format;
-use phichain_chart::serialization::PhiChainChart;
+use phichain_chart::serialization::PhichainChart;
 use std::fs;
 use std::io::{Read, Write};
 use std::path::Path;
@@ -32,7 +32,7 @@ fn export_official(path: &Path, project: &Project) -> anyhow::Result<()> {
 
     zip.start_file("chart.json", SimpleFileOptions::default())?;
     let chart_file = fs::File::open(project.path.chart_path())?;
-    let chart: PhiChainChart = serde_json::from_reader(chart_file)?;
+    let chart: PhichainChart = serde_json::from_reader(chart_file)?;
     let official = OfficialChart::from_phichain(chart)?;
     zip.write_all(serde_json::to_string(&official)?.as_bytes())?;
 

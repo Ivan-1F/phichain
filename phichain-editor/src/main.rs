@@ -37,7 +37,7 @@ use crate::cli::{Args, CliPlugin};
 use crate::editing::history::EditorHistory;
 use crate::editing::EditingPlugin;
 use crate::export::ExportPlugin;
-use crate::exporter::phichain::PhiChainExporter;
+use crate::exporter::phichain::PhichainExporter;
 use crate::exporter::Exporter;
 use crate::file::{pick_folder, FilePickingPlugin, PickingKind};
 use crate::highlight::HighlightPlugin;
@@ -146,7 +146,7 @@ fn main() {
 fn debug_save_system(world: &mut World) {
     let event = world.resource::<ButtonInput<KeyCode>>();
     if event.just_pressed(KeyCode::KeyE) {
-        if let Ok(chart) = PhiChainExporter::export(world) {
+        if let Ok(chart) = PhichainExporter::export(world) {
             let _ = std::fs::write("Chart.json", chart);
         }
     }

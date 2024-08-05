@@ -11,19 +11,19 @@ use crate::note::Note;
 use crate::offset::Offset;
 
 #[derive(Serialize, Deserialize)]
-pub struct PhiChainChart {
+pub struct PhichainChart {
     pub format: u64,
     pub offset: Offset,
     pub bpm_list: BpmList,
     pub lines: Vec<LineWrapper>,
 }
 
-impl Format for PhiChainChart {
-    fn into_phichain(self) -> anyhow::Result<PhiChainChart> {
+impl Format for PhichainChart {
+    fn into_phichain(self) -> anyhow::Result<PhichainChart> {
         Ok(self)
     }
 
-    fn from_phichain(phichain: PhiChainChart) -> anyhow::Result<Self>
+    fn from_phichain(phichain: PhichainChart) -> anyhow::Result<Self>
     where
         Self: Sized,
     {
@@ -31,7 +31,7 @@ impl Format for PhiChainChart {
     }
 }
 
-impl PhiChainChart {
+impl PhichainChart {
     pub fn new(offset: f32, bpm_list: BpmList, lines: Vec<LineWrapper>) -> Self {
         Self {
             format: CURRENT_FORMAT,
@@ -42,7 +42,7 @@ impl PhiChainChart {
     }
 }
 
-impl Default for PhiChainChart {
+impl Default for PhichainChart {
     fn default() -> Self {
         Self {
             format: CURRENT_FORMAT,

@@ -7,7 +7,7 @@ use crate::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use crate::easing::Easing;
 use crate::event::{LineEvent, LineEventKind};
 use crate::format::Format;
-use crate::serialization::{LineWrapper, PhiChainChart};
+use crate::serialization::{LineWrapper, PhichainChart};
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -103,12 +103,12 @@ pub struct OfficialChart {
 }
 
 impl Format for OfficialChart {
-    fn into_phichain(self) -> anyhow::Result<PhiChainChart> {
+    fn into_phichain(self) -> anyhow::Result<PhichainChart> {
         if self.lines.is_empty() {
             bail!("Expect at least one line");
         }
 
-        let mut phichain = PhiChainChart::new(
+        let mut phichain = PhichainChart::new(
             self.offset * 1000.0,
             BpmList::new(vec![BpmPoint::new(Beat::ZERO, self.lines[0].bpm)]),
             vec![],
@@ -227,7 +227,7 @@ impl Format for OfficialChart {
         Ok(phichain)
     }
 
-    fn from_phichain(phichain: PhiChainChart) -> anyhow::Result<Self>
+    fn from_phichain(phichain: PhichainChart) -> anyhow::Result<Self>
     where
         Self: Sized,
     {

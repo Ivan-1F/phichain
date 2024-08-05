@@ -4,17 +4,17 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::line::Line;
 use phichain_chart::offset::Offset;
 
-use phichain_chart::serialization::{LineWrapper, PhiChainChart};
+use phichain_chart::serialization::{LineWrapper, PhichainChart};
 
 use super::Exporter;
 
-pub struct PhiChainExporter;
+pub struct PhichainExporter;
 
-impl Exporter for PhiChainExporter {
+impl Exporter for PhichainExporter {
     fn export(world: &mut World) -> anyhow::Result<String> {
         let bpm_list = world.resource::<BpmList>().clone();
         let offset = world.resource::<Offset>().0;
-        let mut chart = PhiChainChart::new(offset, bpm_list, vec![]);
+        let mut chart = PhichainChart::new(offset, bpm_list, vec![]);
 
         let mut line_query = world.query_filtered::<Entity, With<Line>>();
 

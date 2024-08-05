@@ -2,7 +2,7 @@ use clap::{Parser, ValueEnum};
 use phichain_chart::format::official::OfficialChart;
 use phichain_chart::format::rpe::RpeChart;
 use phichain_chart::format::Format;
-use phichain_chart::serialization::PhiChainChart;
+use phichain_chart::serialization::PhichainChart;
 use std::io::Write;
 use std::path::PathBuf;
 
@@ -35,7 +35,7 @@ fn convert(args: Args) -> anyhow::Result<()> {
             chart.into_phichain()?
         }
         Formats::Phichain => {
-            let chart: PhiChainChart = serde_json::from_reader(file)?;
+            let chart: PhichainChart = serde_json::from_reader(file)?;
             chart.into_phichain()?
         }
         Formats::Rpe => {
@@ -46,7 +46,7 @@ fn convert(args: Args) -> anyhow::Result<()> {
 
     let output = match args.output {
         Formats::Official => serde_json::to_string(&OfficialChart::from_phichain(chart)?)?,
-        Formats::Phichain => serde_json::to_string(&PhiChainChart::from_phichain(chart)?)?,
+        Formats::Phichain => serde_json::to_string(&PhichainChart::from_phichain(chart)?)?,
         Formats::Rpe => serde_json::to_string(&RpeChart::from_phichain(chart)?)?,
     };
 
