@@ -1,16 +1,18 @@
 use crate::migration::migration_0_1::Migration0To1;
 use crate::migration::migration_1_2::Migration1To2;
+use crate::migration::migration_2_3::Migration2To3;
 use anyhow::{bail, Context};
 use serde_json::{json, Value};
 
 mod migration_0_1;
 mod migration_1_2;
+mod migration_2_3;
 
 pub trait Migration {
     fn migrate(old: &Value) -> anyhow::Result<Value>;
 }
 
-pub const CURRENT_FORMAT: u64 = 2;
+pub const CURRENT_FORMAT: u64 = 3;
 
 fn get_format(chart: &Value) -> anyhow::Result<u64> {
     let version = chart
@@ -33,6 +35,7 @@ pub fn migrate(chart: &Value) -> anyhow::Result<Value> {
     let new_chart = match format {
         0 => Migration0To1::migrate(chart)?,
         1 => Migration1To2::migrate(chart)?,
+        2 => Migration2To3::migrate(chart)?,
         _ => bail!("Unsupported chart format {}", format),
     };
 
