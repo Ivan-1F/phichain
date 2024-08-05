@@ -254,11 +254,14 @@ impl Format for OfficialChart {
             let mut current_beat = event.start_beat;
 
             while current_beat <= event.end_beat {
-                let value = event.evaluate(current_beat.value()).value().unwrap();
+                let start_value = event.evaluate(current_beat.value()).value().unwrap();
+                let end_value = event
+                    .evaluate(current_beat.value() + minimum.value())
+                    .value()
+                    .unwrap();
                 events.push(LineEvent {
                     kind: event.kind,
-                    // TODO: this should not be constant, evaluate start and end
-                    value: LineEventValue::constant(value),
+                    value: LineEventValue::transition(start_value, end_value, Easing::Linear),
                     start_beat: current_beat,
                     end_beat: current_beat + minimum,
                 });
