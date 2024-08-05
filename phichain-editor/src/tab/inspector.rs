@@ -63,6 +63,37 @@ fn single_event_inspector(
                 finished |= response.drag_stopped() || response.lost_focus();
                 ui.end_row();
 
+                ui.label(t!("tab.inspector.single_event.value_type"));
+                ui.columns(2, |columns| {
+                    if columns[0]
+                        .selectable_label(
+                            event.value.is_transition(),
+                            t!("tab.inspector.single_event.transition"),
+                        )
+                        .clicked()
+                    {
+                        let mut new_event = *event;
+                        new_event.value = new_event.value.into_transition();
+                        event_writer.send(DoCommandEvent(EditorCommand::EditEvent(
+                            EditEvent::new(entity, *event, new_event),
+                        )));
+                    }
+                    if columns[1]
+                        .selectable_label(
+                            event.value.is_constant(),
+                            t!("tab.inspector.single_event.constant"),
+                        )
+                        .clicked()
+                    {
+                        let mut new_event = *event;
+                        new_event.value = new_event.value.into_constant();
+                        event_writer.send(DoCommandEvent(EditorCommand::EditEvent(
+                            EditEvent::new(entity, *event, new_event),
+                        )));
+                    }
+                });
+                ui.end_row();
+
                 match event.value {
                     LineEventValue::Transition {
                         ref mut start,
@@ -91,12 +122,25 @@ fn single_event_inspector(
                         finished |= response.drag_stopped() || response.lost_focus();
                         ui.end_row();
 
-                        ui.label(t!("tab.inspector.single_event.end_value"));
+                        ui.label(t!("tab.inspector.single_event.easing"));
                         let response = ui.add(EasingValue::new(easing));
                         finished |= response.drag_stopped() || response.lost_focus();
                         ui.end_row();
                     }
-                    LineEventValue::Constant(_) => {}
+                    LineEventValue::Constant(ref mut value) => {
+                        ui.label(t!("tab.inspector.single_event.value"));
+                        let range = match event.kind {
+                            LineEventKind::Opacity => 0.0..=255.0,
+                            _ => f32::MIN..=f32::MAX,
+                        };
+                        let response = ui.add(
+                            egui::DragValue::new(value)
+                                .clamp_range(range.clone())
+                                .speed(1.0),
+                        );
+                        finished |= response.drag_stopped() || response.lost_focus();
+                        ui.end_row();
+                    }
                 }
 
                 finished

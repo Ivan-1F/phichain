@@ -26,8 +26,13 @@ tab:
     single_event:
       start_beat: 开始时间
       end_beat: 结束时间
+      value_type: 值类型
+      transition: 过渡
+      constant: 常量
       start_value: 开始值
       end_value: 结束值
+      easing: 缓动
+      value: 值
     multiple_notes:
       flip_by_x: 沿 X 轴中心镜像
       flip_by_selection: 沿选区中心镜像

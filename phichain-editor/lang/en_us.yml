@@ -26,8 +26,13 @@ tab:
     single_event:
       start_beat: Start Beat
       end_beat: End Beat
+      value_type: Value Type
+      transition: Transition
+      constant: Constant
       start_value: Start Value
       end_value: End Value
+      easing: Easing
+      value: Value
     multiple_notes:
       flip_by_x: Flip by X
       flip_by_selection: Flip by Selection

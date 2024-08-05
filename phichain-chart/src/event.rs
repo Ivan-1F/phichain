@@ -48,6 +48,14 @@ impl LineEventValue {
         }
     }
 
+    pub fn is_transition(&self) -> bool {
+        matches!(self, LineEventValue::Transition { .. })
+    }
+
+    pub fn is_constant(&self) -> bool {
+        matches!(self, LineEventValue::Constant(_))
+    }
+
     pub fn start(&self) -> f32 {
         match self {
             LineEventValue::Transition { start, .. } => *start,
@@ -59,6 +67,20 @@ impl LineEventValue {
         match self {
             LineEventValue::Transition { end, .. } => *end,
             LineEventValue::Constant(value) => *value,
+        }
+    }
+
+    pub fn into_constant(self) -> Self {
+        match self {
+            LineEventValue::Transition { start, .. } => Self::constant(start),
+            LineEventValue::Constant(_) => self,
+        }
+    }
+
+    pub fn into_transition(self) -> Self {
+        match self {
+            LineEventValue::Transition { .. } => self,
+            LineEventValue::Constant(value) => Self::transition(value, value, Easing::Linear),
         }
     }
 }
