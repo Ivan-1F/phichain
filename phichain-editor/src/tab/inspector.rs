@@ -10,7 +10,7 @@ use crate::selection::{Selected, SelectedLine};
 use crate::ui::latch;
 use crate::ui::widgets::beat_value::BeatExt;
 use crate::ui::widgets::easing_value::EasingValue;
-use phichain_chart::event::{LineEvent, LineEventKind};
+use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use phichain_chart::line::Line;
 use phichain_chart::note::{Note, NoteKind};
 
@@ -63,32 +63,41 @@ fn single_event_inspector(
                 finished |= response.drag_stopped() || response.lost_focus();
                 ui.end_row();
 
-                ui.label(t!("tab.inspector.single_event.start_value"));
-                let range = match event.kind {
-                    LineEventKind::Opacity => 0.0..=255.0,
-                    _ => f32::MIN..=f32::MAX,
-                };
-                let response = ui.add(
-                    egui::DragValue::new(&mut event.start)
-                        .clamp_range(range.clone())
-                        .speed(1.0),
-                );
-                finished |= response.drag_stopped() || response.lost_focus();
-                ui.end_row();
+                match event.value {
+                    LineEventValue::Transition {
+                        ref mut start,
+                        ref mut end,
+                        ref mut easing,
+                    } => {
+                        ui.label(t!("tab.inspector.single_event.start_value"));
+                        let range = match event.kind {
+                            LineEventKind::Opacity => 0.0..=255.0,
+                            _ => f32::MIN..=f32::MAX,
+                        };
+                        let response = ui.add(
+                            egui::DragValue::new(start)
+                                .clamp_range(range.clone())
+                                .speed(1.0),
+                        );
+                        finished |= response.drag_stopped() || response.lost_focus();
+                        ui.end_row();
 
-                ui.label(t!("tab.inspector.single_event.end_value"));
-                let response = ui.add(
-                    egui::DragValue::new(&mut event.end)
-                        .clamp_range(range.clone())
-                        .speed(1.0),
-                );
-                finished |= response.drag_stopped() || response.lost_focus();
-                ui.end_row();
+                        ui.label(t!("tab.inspector.single_event.end_value"));
+                        let response = ui.add(
+                            egui::DragValue::new(end)
+                                .clamp_range(range.clone())
+                                .speed(1.0),
+                        );
+                        finished |= response.drag_stopped() || response.lost_focus();
+                        ui.end_row();
 
-                ui.label(t!("tab.inspector.single_event.end_value"));
-                let response = ui.add(EasingValue::new(&mut event.easing));
-                finished |= response.drag_stopped() || response.lost_focus();
-                ui.end_row();
+                        ui.label(t!("tab.inspector.single_event.end_value"));
+                        let response = ui.add(EasingValue::new(easing));
+                        finished |= response.drag_stopped() || response.lost_focus();
+                        ui.end_row();
+                    }
+                    LineEventValue::Constant(_) => {}
+                }
 
                 finished
             });
@@ -299,8 +308,7 @@ fn multiple_events_inspector(
                         *entity,
                         **event,
                         LineEvent {
-                            start: -event.start,
-                            end: -event.end,
+                            value: event.value.negated(),
                             ..**event
                         },
                     ))

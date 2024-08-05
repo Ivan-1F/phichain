@@ -2,8 +2,7 @@ use crate::beat::Beat;
 use serde::{Deserialize, Serialize};
 
 use crate::bpm_list::BpmList;
-use crate::easing::Easing;
-use crate::event::{LineEvent, LineEventKind};
+use crate::event::{LineEvent, LineEventKind, LineEventValue};
 use crate::format::Format;
 use crate::line::Line;
 use crate::migration::CURRENT_FORMAT;
@@ -81,43 +80,33 @@ impl Default for LineWrapper {
             events: vec![
                 LineEvent {
                     kind: LineEventKind::X,
-                    start: 0.0,
-                    end: 0.0,
+                    value: LineEventValue::constant(0.0),
                     start_beat: Beat::ZERO,
                     end_beat: Beat::ONE,
-                    easing: Easing::Linear,
                 },
                 LineEvent {
                     kind: LineEventKind::Y,
-                    start: 0.0,
-                    end: 0.0,
+                    value: LineEventValue::constant(0.0),
                     start_beat: Beat::ZERO,
                     end_beat: Beat::ONE,
-                    easing: Easing::Linear,
                 },
                 LineEvent {
                     kind: LineEventKind::Rotation,
-                    start: 0.0,
-                    end: 0.0,
+                    value: LineEventValue::constant(0.0),
                     start_beat: Beat::ZERO,
                     end_beat: Beat::ONE,
-                    easing: Easing::Linear,
                 },
                 LineEvent {
                     kind: LineEventKind::Opacity,
-                    start: 0.0,
-                    end: 0.0,
+                    value: LineEventValue::constant(0.0),
                     start_beat: Beat::ZERO,
                     end_beat: Beat::ONE,
-                    easing: Easing::Linear,
                 },
                 LineEvent {
                     kind: LineEventKind::Speed,
-                    start: 10.0,
-                    end: 10.0,
+                    value: LineEventValue::constant(10.0),
                     start_beat: Beat::ZERO,
                     end_beat: Beat::ONE,
-                    easing: Easing::Linear,
                 },
             ],
         }

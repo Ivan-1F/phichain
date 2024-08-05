@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use phichain_chart::bpm_list::BpmList;
+use phichain_chart::easing::Easing;
 
 use crate::editing::command::event::CreateEvent;
 use crate::editing::command::EditorCommand;
@@ -9,7 +10,7 @@ use crate::project::project_loaded;
 use crate::selection::SelectedLine;
 use crate::timeline::{TimelineContext, TimelineItem};
 use crate::utils::convert::BevyEguiConvert;
-use phichain_chart::event::{LineEvent, LineEventBundle, LineEventKind};
+use phichain_chart::event::{LineEvent, LineEventBundle, LineEventKind, LineEventValue};
 
 pub struct CreateEventPlugin;
 
@@ -74,6 +75,7 @@ fn create_event_system(
 
             if keyboard.just_pressed(KeyCode::KeyR) {
                 if let Ok((pending_event, entity)) = pending_event_query.get_single() {
+                    // TODO: compat constant events
                     // inherit event's start & end value from neighbor events
                     let mut new_event = *pending_event;
                     let mut events = event_query.iter().collect::<Vec<_>>();
@@ -86,7 +88,14 @@ fn create_event_system(
                         .map(|x| x.0)
                         .last()
                     {
-                        new_event.start = last_event.end;
+                        match new_event.value {
+                            LineEventValue::Transition { ref mut start, .. } => {
+                                *start = last_event.value.end();
+                            }
+                            LineEventValue::Constant(ref mut value) => {
+                                *value = last_event.value.end();
+                            }
+                        }
                     }
                     events.reverse();
                     if let Some(next_event) = events
@@ -97,7 +106,14 @@ fn create_event_system(
                         .map(|x| x.0)
                         .last()
                     {
-                        new_event.end = next_event.start;
+                        match new_event.value {
+                            LineEventValue::Transition { ref mut end, .. } => {
+                                *end = next_event.value.start();
+                            }
+                            LineEventValue::Constant(ref mut value) => {
+                                *value = next_event.value.start();
+                            }
+                        }
                     }
                     commands.entity(entity).despawn();
                     event.send(DoCommandEvent(EditorCommand::CreateEvent(
@@ -110,11 +126,9 @@ fn create_event_system(
                         parent.spawn((
                             LineEventBundle::new(LineEvent {
                                 kind,
-                                start: 0.0,
-                                end: 0.0,
+                                value: LineEventValue::transition(0.0, 0.0, Easing::Linear),
                                 start_beat: beat,
                                 end_beat: beat + ctx.settings.minimum_beat(),
-                                easing: Default::default(),
                             }),
                             Pending,
                         ));

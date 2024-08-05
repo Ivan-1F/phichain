@@ -151,14 +151,14 @@ impl Timeline for EventTimeline {
                 ui.painter().text(
                     rect.center_top(),
                     Align2::CENTER_TOP,
-                    event.end,
+                    event.value.end(),
                     FontId::default(),
                     Color32::DARK_GREEN,
                 );
                 ui.painter().text(
                     rect.center_bottom(),
                     Align2::CENTER_BOTTOM,
-                    event.start,
+                    event.value.start(),
                     FontId::default(),
                     Color32::DARK_GREEN,
                 );

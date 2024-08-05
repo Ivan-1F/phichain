@@ -495,8 +495,8 @@ fn calculate_speed_events_system(
             commands.entity(entity).insert(SpeedEvent::new(
                 bpm_list.time_at(event.start_beat),
                 bpm_list.time_at(event.end_beat),
-                event.start,
-                event.end,
+                event.value.start(),
+                event.value.end(),
             ));
         }
     }

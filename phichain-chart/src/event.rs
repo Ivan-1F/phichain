@@ -18,15 +18,58 @@ pub enum LineEventKind {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum LineEventValue {
+    Transition {
+        start: f32,
+        end: f32,
+        easing: Easing,
+    },
+    Constant(f32),
+}
+
+impl LineEventValue {
+    pub fn transition(start: f32, end: f32, easing: Easing) -> Self {
+        Self::Transition { start, end, easing }
+    }
+
+    pub fn constant(value: f32) -> Self {
+        Self::Constant(value)
+    }
+
+    pub fn negated(&self) -> Self {
+        match *self {
+            LineEventValue::Transition { start, end, easing } => LineEventValue::Transition {
+                start: -start,
+                end: -end,
+                easing,
+            },
+            LineEventValue::Constant(value) => LineEventValue::Constant(-value),
+        }
+    }
+
+    pub fn start(&self) -> f32 {
+        match self {
+            LineEventValue::Transition { start, .. } => *start,
+            LineEventValue::Constant(value) => *value,
+        }
+    }
+
+    pub fn end(&self) -> f32 {
+        match self {
+            LineEventValue::Transition { end, .. } => *end,
+            LineEventValue::Constant(value) => *value,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(bevy::prelude::Component))]
 pub struct LineEvent {
     pub kind: LineEventKind,
-    pub start: f32,
-    pub end: f32,
     pub start_beat: Beat,
     pub end_beat: Beat,
-
-    pub easing: Easing,
+    pub value: LineEventValue,
 }
 
 impl PartialOrd for LineEvent {
@@ -128,32 +171,64 @@ impl LineEvent {
     pub fn evaluate(&self, beat: f32) -> EventEvaluationResult {
         let start_beat = self.start_beat.value();
         let end_beat = self.end_beat.value();
-        if beat >= start_beat && beat <= end_beat {
-            let percent = (beat - start_beat) / (end_beat - start_beat);
-            EventEvaluationResult::Affecting(self.start.ease_to(self.end, percent, self.easing))
-        } else if beat > end_beat {
-            EventEvaluationResult::Inherited {
-                from: self.end_beat,
-                value: self.end,
+        match self.value {
+            LineEventValue::Transition { start, end, easing } => {
+                if beat >= start_beat && beat <= end_beat {
+                    let percent = (beat - start_beat) / (end_beat - start_beat);
+                    EventEvaluationResult::Affecting(start.ease_to(end, percent, easing))
+                } else if beat > end_beat {
+                    EventEvaluationResult::Inherited {
+                        from: self.end_beat,
+                        value: end,
+                    }
+                } else {
+                    EventEvaluationResult::Unaffected
+                }
             }
-        } else {
-            EventEvaluationResult::Unaffected
+            LineEventValue::Constant(value) => {
+                if beat >= start_beat && beat <= end_beat {
+                    EventEvaluationResult::Affecting(value)
+                } else if beat > end_beat {
+                    EventEvaluationResult::Inherited {
+                        from: self.end_beat,
+                        value,
+                    }
+                } else {
+                    EventEvaluationResult::Unaffected
+                }
+            }
         }
     }
 
     pub fn evaluate_start_no_effect(&self, beat: f32) -> EventEvaluationResult {
         let start_beat = self.start_beat.value();
         let end_beat = self.end_beat.value();
-        if beat > start_beat && beat <= end_beat {
-            let percent = (beat - start_beat) / (end_beat - start_beat);
-            EventEvaluationResult::Affecting(self.start.ease_to(self.end, percent, self.easing))
-        } else if beat > end_beat {
-            EventEvaluationResult::Inherited {
-                from: self.end_beat,
-                value: self.end,
+        match self.value {
+            LineEventValue::Transition { start, end, easing } => {
+                if beat > start_beat && beat <= end_beat {
+                    let percent = (beat - start_beat) / (end_beat - start_beat);
+                    EventEvaluationResult::Affecting(start.ease_to(end, percent, easing))
+                } else if beat > end_beat {
+                    EventEvaluationResult::Inherited {
+                        from: self.end_beat,
+                        value: end,
+                    }
+                } else {
+                    EventEvaluationResult::Unaffected
+                }
             }
-        } else {
-            EventEvaluationResult::Unaffected
+            LineEventValue::Constant(value) => {
+                if beat > start_beat && beat <= end_beat {
+                    EventEvaluationResult::Affecting(value)
+                } else if beat > end_beat {
+                    EventEvaluationResult::Inherited {
+                        from: self.end_beat,
+                        value,
+                    }
+                } else {
+                    EventEvaluationResult::Unaffected
+                }
+            }
         }
     }
 }

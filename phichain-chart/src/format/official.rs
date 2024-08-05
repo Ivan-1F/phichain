@@ -5,7 +5,7 @@ use crate::beat::Beat;
 use crate::bpm_list::{BpmList, BpmPoint};
 use crate::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use crate::easing::Easing;
-use crate::event::{LineEvent, LineEventKind};
+use crate::event::{LineEvent, LineEventKind, LineEventValue};
 use crate::format::Format;
 use crate::serialization::{LineWrapper, PhichainChart};
 use anyhow::bail;
@@ -142,48 +142,50 @@ impl Format for OfficialChart {
                 vec![
                     LineEvent {
                         kind: LineEventKind::X,
-                        start: x(event.start_x),
-                        end: x(event.end_x),
+                        value: LineEventValue::transition(
+                            x(event.start_x),
+                            y(event.end_x),
+                            Easing::Linear,
+                        ),
                         start_beat: t(event.start_time),
                         end_beat: t(event.end_time),
-                        easing: Easing::Linear,
                     },
                     LineEvent {
                         kind: LineEventKind::Y,
-                        start: y(event.start_y),
-                        end: y(event.end_y),
+                        value: LineEventValue::transition(
+                            y(event.start_y),
+                            y(event.end_y),
+                            Easing::Linear,
+                        ),
                         start_beat: t(event.start_time),
                         end_beat: t(event.end_time),
-                        easing: Easing::Linear,
                     },
                 ]
             });
 
             let rotate_event_iter = line.rotate_events.iter().map(|event| LineEvent {
                 kind: LineEventKind::Rotation,
-                start: event.start,
-                end: event.end,
+                value: LineEventValue::transition(event.start, event.end, Easing::Linear),
                 start_beat: t(event.start_time),
                 end_beat: t(event.end_time),
-                easing: Easing::Linear,
             });
 
             let opacity_event_iter = line.opacity_events.iter().map(|event| LineEvent {
                 kind: LineEventKind::Opacity,
-                start: event.start * 255.0,
-                end: event.end * 255.0,
+                value: LineEventValue::transition(
+                    event.start * 255.0,
+                    event.end * 255.0,
+                    Easing::Linear,
+                ),
                 start_beat: t(event.start_time),
                 end_beat: t(event.end_time),
-                easing: Easing::Linear,
             });
 
             let speed_event_iter = line.speed_events.iter().map(|event| LineEvent {
                 kind: LineEventKind::Speed,
-                start: event.value / 2.0 * 9.0,
-                end: event.value / 2.0 * 9.0,
+                value: LineEventValue::constant(event.value / 2.0 * 9.0),
                 start_beat: t(event.start_time),
                 end_beat: t(event.end_time),
-                easing: Easing::Linear,
             });
 
             let mut line = LineWrapper::new(
@@ -232,8 +234,17 @@ impl Format for OfficialChart {
         Self: Sized,
     {
         fn cut_event(event: LineEvent) -> Vec<LineEvent> {
-            if event.easing == Easing::Linear {
-                return vec![event];
+            match event.value {
+                LineEventValue::Transition {
+                    easing: Easing::Linear,
+                    ..
+                } => {
+                    return vec![event];
+                }
+                LineEventValue::Constant(_) => {
+                    return vec![event];
+                }
+                _ => {}
             }
 
             let mut events = vec![];
@@ -246,11 +257,10 @@ impl Format for OfficialChart {
                 let value = event.evaluate(current_beat.value()).value().unwrap();
                 events.push(LineEvent {
                     kind: event.kind,
-                    start: value,
-                    end: value,
+                    // TODO: this should not be constant, evaluate start and end
+                    value: LineEventValue::constant(value),
                     start_beat: current_beat,
                     end_beat: current_beat + minimum,
-                    easing: Easing::Linear,
                 });
                 current_beat += minimum;
             }
@@ -309,11 +319,9 @@ impl Format for OfficialChart {
 
                     connected_events.push(LineEvent {
                         kind: LineEventKind::X, // does not matter
-                        start,
-                        end,
+                        value: LineEventValue::transition(start, end, Easing::Linear),
                         start_beat,
                         end_beat,
-                        easing: Easing::Linear,
                     })
                 }
 
@@ -351,8 +359,8 @@ impl Format for OfficialChart {
                 |e| NumbericLineEvent {
                     start_time: time(e.start_beat),
                     end_time: time(e.end_beat),
-                    start: e.start,
-                    end: e.end,
+                    start: e.value.start(),
+                    end: e.value.end(),
                 },
                 &mut official_line.rotate_events,
             );
@@ -363,8 +371,8 @@ impl Format for OfficialChart {
                 |e| NumbericLineEvent {
                     start_time: time(e.start_beat),
                     end_time: time(e.end_beat),
-                    start: e.start / 255.0,
-                    end: e.end / 255.0,
+                    start: e.value.start() / 255.0,
+                    end: e.value.end() / 255.0,
                 },
                 &mut official_line.opacity_events,
             );
@@ -375,7 +383,7 @@ impl Format for OfficialChart {
                 |e| SpeedEvent {
                     start_time: time(e.start_beat),
                     end_time: time(e.end_beat),
-                    value: e.start / 9.0 * 2.0,
+                    value: e.value.start() / 9.0 * 2.0,
                     floor_position: 0.0, // this will be calculated later
                 },
                 &mut official_line.speed_events,
