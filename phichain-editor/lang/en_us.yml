@@ -104,8 +104,6 @@ tab:
         music_volume: Music Volume
         hit_sound_volume: Hit Sound Volume
         playback_rate: Playback Rate
-      graphics:
-        title: Graphics
       game:
         title: Game
         fc_ap_indicator: FC/AP Indicator

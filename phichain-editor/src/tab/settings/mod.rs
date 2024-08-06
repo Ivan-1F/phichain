@@ -24,21 +24,7 @@ pub trait SettingCategory {
 enum SettingCategories {
     General,
     Audio,
-    Graphics,
     Game,
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
-struct Graphics;
-impl SettingCategory for Graphics {
-    fn name(&self) -> &str {
-        "tab.settings.category.graphics.title"
-    }
-
-    fn ui(&self, ui: &mut Ui, _settings: &mut EditorSettings, _world: &mut World) -> bool {
-        ui.label("This is the graphics settings tab");
-        false
-    }
 }
 
 pub fn settings_tab(In(ui): In<&mut Ui>, world: &mut World) {

@@ -61,22 +61,6 @@ impl Default for AudioSettings {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(default)]
-pub struct GraphicsSettings {
-    pub fullscreen: bool,
-    pub vsync: bool,
-}
-
-impl Default for GraphicsSettings {
-    fn default() -> Self {
-        Self {
-            fullscreen: false,
-            vsync: true,
-        }
-    }
-}
-
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub enum AspectRatio {
     #[default]
@@ -125,6 +109,5 @@ impl Default for GameSettings {
 pub struct EditorSettings {
     pub general: GeneralSettings,
     pub audio: AudioSettings,
-    pub graphics: GraphicsSettings,
     pub game: GameSettings,
 }

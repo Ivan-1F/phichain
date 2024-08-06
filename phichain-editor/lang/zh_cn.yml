@@ -104,8 +104,6 @@ tab:
         music_volume: 音乐音量
         hit_sound_volume: 打击音效音量
         playback_rate: 播放速率
-      graphics:
-        title: 图像
       game:
         title: 游戏
         fc_ap_indicator: FC/AP 指示器
