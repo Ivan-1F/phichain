@@ -2,6 +2,7 @@ use anyhow::{anyhow, bail, Context};
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use bevy::ecs::system::SystemState;
 use bevy_kira_audio::{Audio, AudioControl, AudioSource};
 use phichain_chart::serialization::PhichainChart;
 use std::path::Path;
@@ -218,44 +219,54 @@ fn load_project_system(
 #[derive(Event, Debug)]
 pub struct UnloadProjectEvent;
 
-/// Unload a project into the editor
+/// Unload a project from the editor
 fn unload_project_system(
-    mut commands: Commands,
-    mut events: EventReader<UnloadProjectEvent>,
-    illustration_query: Query<Entity, With<crate::tab::game::illustration::Illustration>>,
-    line_query: Query<Entity, With<phichain_chart::line::Line>>,
-
-    audio: Res<Audio>,
-    audio_asset_id: Res<crate::audio::AudioAssetId>,
-    mut audios: ResMut<Assets<AudioSource>>,
-
-    illustration_asset_id: Res<crate::tab::game::illustration::IllustrationAssetId>,
-    mut images: ResMut<Assets<Image>>,
+    world: &mut World,
+    params: &mut SystemState<EventReader<UnloadProjectEvent>>,
 ) {
+    let mut events = params.get_mut(world);
     if !events.is_empty() {
         events.clear();
 
         // remove the project first to stop all systems
-        commands.remove_resource::<Project>();
+        world.remove_resource::<Project>();
 
-        commands.remove_resource::<crate::audio::InstanceHandle>();
-        commands.remove_resource::<crate::audio::AudioDuration>();
-        audios.remove(audio_asset_id.0);
-        commands.remove_resource::<crate::audio::AudioAssetId>();
+        // unload audio
+        use crate::audio::{AudioAssetId, AudioDuration, InstanceHandle};
+        world.remove_resource::<InstanceHandle>();
+        world.remove_resource::<AudioDuration>();
+        let audio_asset_id = world.resource::<AudioAssetId>().0;
+        let mut audios = world.resource_mut::<Assets<AudioSource>>();
+        audios.remove(audio_asset_id);
+        world.remove_resource::<AudioAssetId>();
+        let audio = world.resource::<Audio>();
         audio.stop();
 
-        for entity in illustration_query.iter() {
-            commands.entity(entity).despawn_recursive();
+        // unload illustration
+        use crate::tab::game::illustration::{Illustration, IllustrationAssetId};
+        let mut illustration_query = world.query_filtered::<Entity, With<Illustration>>();
+        let entities = illustration_query.iter(world).collect::<Vec<_>>();
+        for entity in entities {
+            world.entity_mut(entity).despawn_recursive();
         }
-        images.remove(illustration_asset_id.0);
+        let illustration_asset_id = world.resource::<IllustrationAssetId>().0;
+        let mut images = world.resource_mut::<Assets<Image>>();
+        images.remove(illustration_asset_id);
 
-        commands.remove_resource::<phichain_chart::offset::Offset>();
-        commands.remove_resource::<phichain_chart::bpm_list::BpmList>();
-        commands.remove_resource::<crate::selection::SelectedLine>();
+        // unload chart basic components
+        use crate::selection::SelectedLine;
+        use phichain_chart::{bpm_list::BpmList, offset::Offset};
+        world.remove_resource::<Offset>();
+        world.remove_resource::<BpmList>();
+        world.remove_resource::<SelectedLine>();
 
-        for entity in line_query.iter() {
+        // unload lines, notes and events
+        use phichain_chart::line::Line;
+        let mut line_query = world.query_filtered::<Entity, With<Line>>();
+        let entities = line_query.iter(world).collect::<Vec<_>>();
+        for entity in entities {
             // notes and events will be despawned as children
-            commands.entity(entity).despawn_recursive();
+            world.entity_mut(entity).despawn_recursive();
         }
     }
 }
