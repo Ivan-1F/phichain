@@ -90,13 +90,6 @@ impl ProjectPath {
         {
             bail!("music.wav is missing");
         }
-        if !self
-            .illustration_path()
-            .ok_or(anyhow!("Could not find illustration file in project"))?
-            .is_file()
-        {
-            bail!("illustration.png is missing");
-        }
         if !self.meta_path().is_file() {
             bail!("meta.json is missing");
         }
@@ -197,9 +190,9 @@ fn load_project_system(
                 if let Err(error) = PhichainLoader::load(file, &mut commands) {
                     toasts.error(format!("Failed to load chart: {:?}", error));
                 } else {
-                    // unwrap: if Project::load is ok, illustration_path() must return Some
-                    let illustration_path = project.path.illustration_path().unwrap();
-                    load_illustration(illustration_path, &mut commands);
+                    if let Some(illustration_path) = project.path.illustration_path() {
+                        load_illustration(illustration_path, &mut commands);
+                    }
 
                     // unwrap: if Project::load is ok, music_path() must return Some
                     let audio_path = project.path.music_path().unwrap();
