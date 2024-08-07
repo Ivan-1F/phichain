@@ -126,11 +126,6 @@ fn ui_system(world: &mut World) {
                 toasts.error(t!("home.create_project.music_unselected"));
                 return;
             };
-            if form.illustration.is_none() {
-                let mut toasts = world.resource_mut::<ToastsStorage>();
-                toasts.error(t!("home.create_project.illustration_unselected"));
-                return;
-            };
 
             pick_folder(world, PickingKind::CreateProject, FileDialog::new());
         }
@@ -195,14 +190,10 @@ fn handle_create_project_system(
             return;
         };
 
-        let Some(ref illustration_path) = form.illustration else {
-            return;
-        };
-
         match create_project(
             root_path.clone(),
             music_path.clone(),
-            illustration_path.clone(),
+            form.illustration.clone(),
             form.meta.clone(),
         ) {
             Ok(_) => {

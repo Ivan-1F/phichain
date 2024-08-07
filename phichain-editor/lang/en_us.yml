@@ -133,7 +133,7 @@ home:
   create_project:
     label: Or create a new empty project
     select_music: Select Music
-    select_illustration: Select Illustration
+    select_illustration: Select Illustration (Optional)
     unselected: Unselected
 
     name: Name
@@ -145,7 +145,6 @@ home:
     create: Create Project
 
     music_unselected: Music is not selected
-    illustration_unselected: Illustration is not selected
 
 audio_setting:
   save:

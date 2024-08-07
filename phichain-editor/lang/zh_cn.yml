@@ -133,7 +133,7 @@ home:
   create_project:
     label: 或创建一个新的空项目
     select_music: 选择音乐
-    select_illustration: 选择曲绘
+    select_illustration: 选择曲绘 (可选)
     unselected: 未选择
 
     name: 名称
@@ -145,7 +145,6 @@ home:
     create: 创建项目
 
     music_unselected: 未选择音乐
-    illustration_unselected: 未选择曲绘
 
 audio_setting:
   save:

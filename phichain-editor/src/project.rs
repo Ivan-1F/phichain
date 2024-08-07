@@ -268,7 +268,7 @@ fn unload_project_system(
 pub fn create_project(
     root_path: PathBuf,
     music_path: PathBuf,
-    illustration_path: PathBuf,
+    illustration_path: Option<PathBuf>,
     project_meta: ProjectMeta,
 ) -> anyhow::Result<()> {
     let project_path = ProjectPath(root_path);
@@ -280,13 +280,15 @@ pub fn create_project(
 
     std::fs::copy(music_path, target_music_path).context("Failed to copy music file")?;
 
-    let mut target_illustration_path = project_path.sub_path("illustration");
-    if let Some(ext) = illustration_path.extension() {
-        target_illustration_path.set_extension(ext);
-    }
+    if let Some(illustration_path) = illustration_path {
+        let mut target_illustration_path = project_path.sub_path("illustration");
+        if let Some(ext) = illustration_path.extension() {
+            target_illustration_path.set_extension(ext);
+        }
 
-    std::fs::copy(illustration_path, target_illustration_path)
-        .context("Failed to copy illustration file")?;
+        std::fs::copy(illustration_path, target_illustration_path)
+            .context("Failed to copy illustration file")?;
+    }
 
     let meta_string = serde_json::to_string_pretty(&project_meta).unwrap();
     std::fs::write(project_path.meta_path(), meta_string).context("Failed to write meta")?;
