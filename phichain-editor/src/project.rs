@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use bevy::ecs::system::SystemState;
 use bevy_kira_audio::{Audio, AudioControl, AudioSource};
+use bevy_persistent::Persistent;
 use phichain_chart::serialization::PhichainChart;
 use std::path::Path;
 use std::{fs::File, path::PathBuf};
@@ -13,6 +14,7 @@ use crate::audio::load_audio;
 use crate::editing::history::EditorHistory;
 use crate::exporter::phichain::PhichainExporter;
 use crate::exporter::Exporter;
+use crate::recent_projects::{PersistentRecentProjectsExt, RecentProject, RecentProjects};
 use crate::tab::game::illustration::load_illustration;
 use crate::{
     loader::{phichain::PhichainLoader, Loader},
@@ -40,7 +42,7 @@ impl Project {
     }
 }
 
-pub struct ProjectPath(PathBuf);
+pub struct ProjectPath(pub PathBuf);
 
 impl ProjectPath {
     pub fn chart_path(&self) -> PathBuf {
@@ -178,6 +180,8 @@ fn load_project_system(
     mut commands: Commands,
     mut events: EventReader<LoadProjectEvent>,
     mut toasts: ResMut<ToastsStorage>,
+
+    mut recent_projects: ResMut<Persistent<RecentProjects>>,
 ) {
     if events.len() > 1 {
         warn!("Multiple projects are requested, ignoring previous ones");
@@ -190,6 +194,11 @@ fn load_project_system(
                 if let Err(error) = PhichainLoader::load(file, &mut commands) {
                     toasts.error(format!("Failed to load chart: {:?}", error));
                 } else {
+                    recent_projects.push(RecentProject::new(
+                        project.meta.name.clone(),
+                        project.path.0.clone(),
+                    ));
+
                     if let Some(illustration_path) = project.path.illustration_path() {
                         load_illustration(illustration_path, &mut commands);
                     }

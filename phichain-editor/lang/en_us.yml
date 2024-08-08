@@ -127,6 +127,8 @@ illustration:
     failed: 'Failed to load illustration: %{error}'
 
 home:
+  recent_projects:
+    last_opened: 'Last Opened: %{time}'
   open_project:
     label: Open an existing project
     load: Load Project

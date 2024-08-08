@@ -19,6 +19,7 @@ mod loader;
 mod misc;
 mod notification;
 mod project;
+mod recent_projects;
 mod score;
 mod screenshot;
 mod selection;
@@ -50,6 +51,7 @@ use crate::notification::NotificationPlugin;
 use crate::project::project_loaded;
 use crate::project::LoadProjectEvent;
 use crate::project::ProjectPlugin;
+use crate::recent_projects::RecentProjectsPlugin;
 use crate::score::ScorePlugin;
 use crate::screenshot::ScreenshotPlugin;
 use crate::selection::Selected;
@@ -99,6 +101,7 @@ fn main() {
         .add_plugins(MiscPlugin)
         .add_plugins(UiPlugin)
         .add_plugins(TranslationPlugin)
+        .add_plugins(RecentProjectsPlugin)
         .add_plugins(HomePlugin)
         .add_plugins(DefaultPlugins.set(RenderPlugin {
             render_creation: wgpu_settings.into(),

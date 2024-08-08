@@ -127,6 +127,8 @@ illustration:
     failed: '加载曲绘时发生错误: %{error}'
 
 home:
+  recent_projects:
+    last_opened: '上一次打开: %{time}'
   open_project:
     label: 打开一个现有项目
     load: 加载项目
