@@ -251,9 +251,12 @@ fn unload_project_system(
         for entity in entities {
             world.entity_mut(entity).despawn_recursive();
         }
-        let illustration_asset_id = world.resource::<IllustrationAssetId>().0;
-        let mut images = world.resource_mut::<Assets<Image>>();
-        images.remove(illustration_asset_id);
+        if let Some(illustration_asset_id) =
+            world.get_resource::<IllustrationAssetId>().map(|x| x.0)
+        {
+            let mut images = world.resource_mut::<Assets<Image>>();
+            images.remove(illustration_asset_id);
+        }
 
         // unload chart basic components
         use crate::selection::SelectedLine;
