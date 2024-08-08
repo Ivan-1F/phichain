@@ -130,13 +130,13 @@ home:
   recent_projects:
     last_opened: 'Last Opened: %{time}'
   open_project:
-    label: Open an existing project
     load: Load Project
   create_project:
-    label: Or create a new empty project
+    label: Create a new empty project
     select_music: Select Music
     select_illustration: Select Illustration (Optional)
     unselected: Unselected
+    back: Back
 
     name: Name
     level: Level

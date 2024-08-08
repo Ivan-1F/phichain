@@ -130,13 +130,13 @@ home:
   recent_projects:
     last_opened: '上一次打开: %{time}'
   open_project:
-    label: 打开一个现有项目
     load: 加载项目
   create_project:
-    label: 或创建一个新的空项目
+    label: 创建一个新的空项目
     select_music: 选择音乐
     select_illustration: 选择曲绘 (可选)
     unselected: 未选择
+    back: 返回
 
     name: 名称
     level: 难度

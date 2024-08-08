@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use bevy::prelude::*;
 use bevy_egui::EguiContext;
 use bevy_persistent::Persistent;
-use egui::{RichText, Sense};
+use egui::{Align2, RichText, Sense};
 use rfd::FileDialog;
 
 use crate::recent_projects::{PersistentRecentProjectsExt, RecentProjects};
@@ -20,6 +20,12 @@ pub struct CreateProjectForm {
     illustration: Option<PathBuf>,
 }
 
+/// Marker resource to control the visibility of the create project dialog
+///
+/// This should always be removed after sending [`LoadProjectEvent`]
+#[derive(Resource, Debug, Default)]
+pub struct CreatingProject;
+
 pub struct HomePlugin;
 
 impl Plugin for HomePlugin {
@@ -34,7 +40,7 @@ impl Plugin for HomePlugin {
                     handle_select_music_system,
                     handle_create_project_system,
                 )
-                    .run_if(project_not_loaded()),
+                    .run_if(project_not_loaded().and_then(resource_exists::<CreateProjectForm>)),
             );
     }
 }
@@ -51,87 +57,102 @@ fn ui_system(world: &mut World) {
 
         ui.separator();
 
-        ui.label(t!("home.open_project.label"));
+        let mut open = world.contains_resource::<CreatingProject>();
+        egui::Window::new(t!("home.create_project.label"))
+            .collapsible(false)
+            .resizable([true, false])
+            .anchor(Align2::CENTER_CENTER, egui::Vec2::ZERO)
+            .open(&mut open)
+            .show(ctx, |ui| {
+                egui::Grid::new("create_project_grid")
+                    .num_columns(2)
+                    .spacing([20.0, 2.0])
+                    .striped(true)
+                    .show(ui, |ui| {
+                        if ui.button(t!("home.create_project.select_music")).clicked() {
+                            pick_file(
+                                world,
+                                PickingKind::SelectMusic,
+                                FileDialog::new()
+                                    .add_filter("Music", &["wav", "mp3", "ogg", "flac"]),
+                            );
+                        }
+                        let form = world.resource::<CreateProjectForm>();
+                        let music_path = match &form.music {
+                            None => t!("home.create_project.unselected").to_string(),
+                            Some(path) => path.display().to_string(),
+                        };
+                        ui.label(music_path);
+                        ui.end_row();
 
-        if ui.button(t!("home.open_project.load")).clicked() {
-            pick_folder(world, PickingKind::OpenProject, FileDialog::new());
-        }
+                        if ui
+                            .button(t!("home.create_project.select_illustration"))
+                            .clicked()
+                        {
+                            pick_file(
+                                world,
+                                PickingKind::SelectIllustration,
+                                FileDialog::new()
+                                    .add_filter("Illustration", &["png", "jpg", "jpeg"]),
+                            );
+                        }
+                        let form = world.resource::<CreateProjectForm>();
+                        let illustration_text = match &form.illustration {
+                            None => t!("home.create_project.unselected").to_string(),
+                            Some(path) => path.display().to_string(),
+                        };
+                        ui.label(illustration_text);
+                        ui.end_row();
 
-        ui.separator();
+                        let mut form = world.resource_mut::<CreateProjectForm>();
 
-        ui.label(t!("home.create_project.label"));
+                        ui.label(t!("home.create_project.name"));
+                        ui.text_edit_singleline(&mut form.meta.name);
+                        ui.end_row();
 
-        egui::Grid::new("create_project_grid")
-            .num_columns(2)
-            .spacing([20.0, 2.0])
-            .striped(true)
-            .show(ui, |ui| {
-                if ui.button(t!("home.create_project.select_music")).clicked() {
-                    pick_file(
-                        world,
-                        PickingKind::SelectMusic,
-                        FileDialog::new().add_filter("Music", &["wav", "mp3", "ogg", "flac"]),
-                    );
+                        ui.label(t!("home.create_project.level"));
+                        ui.text_edit_singleline(&mut form.meta.level);
+                        ui.end_row();
+
+                        ui.label(t!("home.create_project.composer"));
+                        ui.text_edit_singleline(&mut form.meta.composer);
+                        ui.end_row();
+
+                        ui.label(t!("home.create_project.charter"));
+                        ui.text_edit_singleline(&mut form.meta.charter);
+                        ui.end_row();
+
+                        ui.label(t!("home.create_project.illustrator"));
+                        ui.text_edit_singleline(&mut form.meta.illustrator);
+                        ui.end_row();
+                    });
+
+                let form = world.resource_mut::<CreateProjectForm>();
+                if ui.button(t!("home.create_project.create")).clicked() {
+                    if form.music.is_none() {
+                        let mut toasts = world.resource_mut::<ToastsStorage>();
+                        toasts.error(t!("home.create_project.music_unselected"));
+                        return;
+                    };
+
+                    pick_folder(world, PickingKind::CreateProject, FileDialog::new());
                 }
-                let form = world.resource::<CreateProjectForm>();
-                let music_path = match &form.music {
-                    None => t!("home.create_project.unselected").to_string(),
-                    Some(path) => path.display().to_string(),
-                };
-                ui.label(music_path);
-                ui.end_row();
-
-                if ui
-                    .button(t!("home.create_project.select_illustration"))
-                    .clicked()
-                {
-                    pick_file(
-                        world,
-                        PickingKind::SelectIllustration,
-                        FileDialog::new().add_filter("Illustration", &["png", "jpg", "jpeg"]),
-                    );
-                }
-                let form = world.resource::<CreateProjectForm>();
-                let illustration_text = match &form.illustration {
-                    None => t!("home.create_project.unselected").to_string(),
-                    Some(path) => path.display().to_string(),
-                };
-                ui.label(illustration_text);
-                ui.end_row();
-
-                let mut form = world.resource_mut::<CreateProjectForm>();
-
-                ui.label(t!("home.create_project.name"));
-                ui.text_edit_singleline(&mut form.meta.name);
-                ui.end_row();
-
-                ui.label(t!("home.create_project.level"));
-                ui.text_edit_singleline(&mut form.meta.level);
-                ui.end_row();
-
-                ui.label(t!("home.create_project.composer"));
-                ui.text_edit_singleline(&mut form.meta.composer);
-                ui.end_row();
-
-                ui.label(t!("home.create_project.charter"));
-                ui.text_edit_singleline(&mut form.meta.charter);
-                ui.end_row();
-
-                ui.label(t!("home.create_project.illustrator"));
-                ui.text_edit_singleline(&mut form.meta.illustrator);
-                ui.end_row();
             });
 
-        let form = world.resource_mut::<CreateProjectForm>();
-        if ui.button(t!("home.create_project.create")).clicked() {
-            if form.music.is_none() {
-                let mut toasts = world.resource_mut::<ToastsStorage>();
-                toasts.error(t!("home.create_project.music_unselected"));
-                return;
-            };
-
-            pick_folder(world, PickingKind::CreateProject, FileDialog::new());
+        if !open {
+            world.remove_resource::<CreatingProject>();
         }
+
+        ui.horizontal(|ui| {
+            if ui.button(t!("home.open_project.load")).clicked() {
+                pick_folder(world, PickingKind::OpenProject, FileDialog::new());
+            }
+            if ui.button(t!("home.create_project.create")).clicked() {
+                world.insert_resource(CreatingProject);
+            }
+        });
+
+        ui.separator();
 
         ui.style_mut().interaction.selectable_labels = false;
 
@@ -177,11 +198,13 @@ fn ui_system(world: &mut World) {
 
         if let Some(open) = open {
             world.send_event(LoadProjectEvent(open));
+            world.remove_resource::<CreatingProject>();
         }
     });
 }
 
 fn load_project_system(
+    mut commands: Commands,
     mut picking_events: EventReader<PickingEvent>,
     mut events: EventWriter<LoadProjectEvent>,
 ) {
@@ -191,6 +214,7 @@ fn load_project_system(
         }
         if let Some(root_dir) = path {
             events.send(LoadProjectEvent(root_dir.to_path_buf()));
+            commands.remove_resource::<CreatingProject>();
         }
     }
 }
@@ -220,6 +244,7 @@ fn handle_select_music_system(
 }
 
 fn handle_create_project_system(
+    mut commands: Commands,
     mut events: EventReader<PickingEvent>,
     form: Res<CreateProjectForm>,
     mut load_project_events: EventWriter<LoadProjectEvent>,
@@ -247,6 +272,7 @@ fn handle_create_project_system(
         ) {
             Ok(_) => {
                 load_project_events.send(LoadProjectEvent(root_path.clone()));
+                commands.remove_resource::<CreatingProject>();
             }
             Err(error) => toasts.error(format!("{:?}", error)),
         }
