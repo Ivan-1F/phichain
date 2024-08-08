@@ -307,8 +307,9 @@ impl egui_dock::TabViewer for TabViewer<'_> {
 }
 
 fn ui_system(world: &mut World) {
-    // FIXME
-    let egui_context = world.query::<&mut EguiContext>().single_mut(world);
+    let Ok(egui_context) = world.query::<&mut EguiContext>().get_single_mut(world) else {
+        return;
+    };
     let mut egui_context = egui_context.clone();
     let ctx = egui_context.get_mut();
 
