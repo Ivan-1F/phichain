@@ -86,6 +86,7 @@ tab:
     rotation: 旋转
     opacity: 透明度
     speed: 速度
+    remove: 移除
   bpm_list:
     title: BPM 列表
     new: 新增 BPM 点

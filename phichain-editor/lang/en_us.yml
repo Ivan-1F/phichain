@@ -86,6 +86,7 @@ tab:
     rotation: Rotation
     opacity: Opacity
     speed: Speed
+    remove: Remove
   bpm_list:
     title: BPM List
     new: New BPM Point
