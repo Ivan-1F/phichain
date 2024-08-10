@@ -15,7 +15,7 @@ use phichain_chart::line::Line;
 use phichain_chart::note::{Note, NoteKind};
 
 pub fn inspector_ui_system(
-    In(ui): In<&mut Ui>,
+    In(mut ui): In<Ui>,
     mut selected_notes: Query<(&mut Note, Entity), With<Selected>>,
     mut selected_events: Query<(&mut LineEvent, Entity), With<Selected>>,
     selected_line: Res<SelectedLine>,
@@ -26,16 +26,16 @@ pub fn inspector_ui_system(
     let mut selected_events: Vec<_> = selected_events.iter_mut().collect();
     if selected_notes.len() == 1 && selected_events.is_empty() {
         let (selected_note, entity) = selected_notes.get_mut(0).unwrap();
-        single_note_inspector(ui, *entity, selected_note, event_writer);
+        single_note_inspector(&mut ui, *entity, selected_note, event_writer);
     } else if selected_notes.is_empty() && selected_events.len() == 1 {
         let (selected_event, entity) = selected_events.get_mut(0).unwrap();
-        single_event_inspector(ui, *entity, selected_event, event_writer);
+        single_event_inspector(&mut ui, *entity, selected_event, event_writer);
     } else if selected_notes.len() > 1 && selected_events.is_empty() {
-        multiple_notes_inspector(ui, &selected_notes, event_writer);
+        multiple_notes_inspector(&mut ui, &selected_notes, event_writer);
     } else if selected_notes.is_empty() && selected_events.len() > 1 {
-        multiple_events_inspector(ui, &selected_events, event_writer);
+        multiple_events_inspector(&mut ui, &selected_events, event_writer);
     } else if let Ok(mut line) = line_query.get_mut(selected_line.0) {
-        line_inspector(ui, &mut line);
+        line_inspector(&mut ui, &mut line);
     }
 }
 

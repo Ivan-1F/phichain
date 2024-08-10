@@ -18,18 +18,17 @@ use crate::tab::timeline_setting::timeline_setting_tab;
 use bevy::{prelude::*, utils::HashMap};
 use egui::Ui;
 
-pub fn empty_tab(In(_ui): In<&mut Ui>) {}
+pub fn empty_tab(In(_): In<Ui>) {}
 
 pub struct RegisteredTab {
-    system: Box<dyn System<In = &'static mut Ui, Out = ()>>,
+    system: Box<dyn System<In = Ui, Out = ()>>,
     tab_title: &'static str,
 }
 
 impl RegisteredTab {
     pub fn run(&mut self, world: &mut World, ui: &mut Ui) {
-        unsafe {
-            self.system.run(&mut *(ui as *mut Ui), world);
-        }
+        let child = ui.child_ui(ui.max_rect(), *ui.layout());
+        self.system.run(child, world);
     }
 
     pub fn title(&self) -> &'static str {
@@ -95,7 +94,7 @@ pub trait TabRegistrationExt {
         &mut self,
         id: impl Into<EditorTab>,
         name: &'static str,
-        system: impl IntoSystem<&'static mut Ui, (), M1>,
+        system: impl IntoSystem<Ui, (), M1>,
     ) -> &mut Self;
 }
 
@@ -104,7 +103,7 @@ impl TabRegistrationExt for App {
         &mut self,
         id: impl Into<EditorTab>,
         name: &'static str,
-        system: impl IntoSystem<&'static mut Ui, (), M1>,
+        system: impl IntoSystem<Ui, (), M1>,
     ) -> &mut Self {
         self.world
             .resource_scope(|world, mut registry: Mut<TabRegistry>| {

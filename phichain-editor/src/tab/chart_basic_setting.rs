@@ -8,7 +8,7 @@ use egui::Ui;
 use phichain_chart::offset::Offset;
 
 pub fn chart_basic_setting_tab(
-    In(ui): In<&mut Ui>,
+    In(mut ui): In<Ui>,
     mut offset: ResMut<Offset>,
     mut project: ResMut<Project>,
 
@@ -18,7 +18,7 @@ pub fn chart_basic_setting_tab(
         .num_columns(2)
         .spacing([20.0, 2.0])
         .striped(true)
-        .show(ui, |ui| {
+        .show(&mut ui, |ui| {
             let result = latch::latch(
                 ui,
                 "chart-basic-settings",

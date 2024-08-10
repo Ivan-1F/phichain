@@ -7,19 +7,19 @@ use crate::timeline::Timeline;
 use crate::utils::convert::BevyEguiConvert;
 use phichain_chart::note::Note;
 
-pub fn timeline_tab(In(ui): In<&mut Ui>, world: &mut World) {
-    timeline::drag_selection::timeline_drag_selection(ui, world);
+pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
+    timeline::drag_selection::timeline_drag_selection(&mut ui, world);
     let viewport = world.resource::<TimelineViewport>();
     let timeline_settings = world.resource::<TimelineSettings>();
 
     let timelines = timeline_settings.container.clone();
 
     for item in &timelines.allocate(viewport.0.into_egui()) {
-        item.timeline.ui(ui, world, item.viewport);
+        item.timeline.ui(&mut ui, world, item.viewport);
     }
-    timeline::common::beat_line_ui(ui, world);
-    timeline::common::indicator_ui(ui, world);
-    timeline::common::separator_ui(ui, world);
+    timeline::common::beat_line_ui(&mut ui, world);
+    timeline::common::indicator_ui(&mut ui, world);
+    timeline::common::separator_ui(&mut ui, world);
 }
 
 #[derive(Resource, Debug)]

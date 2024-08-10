@@ -9,7 +9,7 @@ use phichain_chart::line::Line;
 use super::timeline::NoteSideFilter;
 
 pub fn timeline_setting_tab(
-    In(ui): In<&mut Ui>,
+    In(mut ui): In<Ui>,
     mut timeline_settings: ResMut<TimelineSettings>,
     line_query: Query<(&Line, Entity)>,
 ) {
@@ -17,7 +17,7 @@ pub fn timeline_setting_tab(
         .num_columns(2)
         .spacing([20.0, 2.0])
         .striped(true)
-        .show(ui, |ui| {
+        .show(&mut ui, |ui| {
             ui.label(t!("tab.timeline_setting.zoom"));
             ui.add(
                 egui::DragValue::new(&mut timeline_settings.zoom)

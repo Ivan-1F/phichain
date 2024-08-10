@@ -8,7 +8,7 @@ use egui::{vec2, Ui};
 use phichain_chart::bpm_list::BpmList;
 
 pub fn quick_action_tab(
-    In(ui): In<&mut Ui>,
+    In(mut ui): In<Ui>,
     mut editor_settings: ResMut<Persistent<EditorSettings>>,
     mut toasts: ResMut<ToastsStorage>,
 

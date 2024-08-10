@@ -10,7 +10,7 @@ use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::{BpmList, BpmPoint};
 
 pub fn bpm_list_tab(
-    In(ui): In<&mut Ui>,
+    In(mut ui): In<Ui>,
     mut bpm_list: ResMut<BpmList>,
     mut event_writer: EventWriter<DoCommandEvent>,
 ) {

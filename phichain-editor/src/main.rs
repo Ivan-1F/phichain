@@ -79,7 +79,6 @@ use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
 use bevy_persistent::Persistent;
 use bevy_prototype_lyon::prelude::ShapePlugin;
-use egui::Ui;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use phichain_chart::event::LineEvent;
 use phichain_chart::note::Note;
@@ -386,11 +385,10 @@ fn ui_system(world: &mut World) {
                 .grow(20.0),
         );
 
-        unsafe {
-            let mut system = IntoSystem::into_system(quick_action_tab);
-            system.initialize(world);
-            system.run(&mut *(ui as *mut Ui), world)
-        };
+        let child = ui.child_ui(ui.max_rect(), *ui.layout());
+        let mut system = IntoSystem::into_system(quick_action_tab);
+        system.initialize(world);
+        system.run(child, world);
 
         ui.add_space(1.0);
     });

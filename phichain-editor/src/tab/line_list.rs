@@ -16,7 +16,7 @@ macro_rules! trunc_label {
 }
 
 pub fn line_list_tab(
-    In(ui): In<&mut Ui>,
+    In(mut ui): In<Ui>,
     line_query: Query<(
         &Line,
         &Children,
@@ -53,7 +53,7 @@ pub fn line_list_tab(
 
     ui.separator();
 
-    egui::ScrollArea::vertical().show(ui, |ui| {
+    egui::ScrollArea::vertical().show(&mut ui, |ui| {
         ui.columns(5, |ui| {
             ui[0].vertical_centered(|ui| {
                 ui.add(trunc_label!("X"));
