@@ -2,21 +2,25 @@ use crate::audio::AudioDuration;
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::settings::{AspectRatio, EditorSettings};
 use crate::timing::{ChartTime, SeekToEvent};
+use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
 use egui::{vec2, Ui};
 use phichain_chart::bpm_list::BpmList;
 
-pub fn quick_action_tab(
-    In(mut ui): In<Ui>,
-    mut editor_settings: ResMut<Persistent<EditorSettings>>,
-    mut toasts: ResMut<ToastsStorage>,
+pub fn quick_action(ui: &mut Ui, world: &mut World) {
+    let mut state: SystemState<(
+        ResMut<Persistent<EditorSettings>>,
+        ResMut<ToastsStorage>,
+        Res<ChartTime>,
+        Res<BpmList>,
+        Res<AudioDuration>,
+        EventWriter<SeekToEvent>,
+    )> = SystemState::new(world);
 
-    time: Res<ChartTime>,
-    bpm_list: Res<BpmList>,
-    duration: Res<AudioDuration>,
-    mut events: EventWriter<SeekToEvent>,
-) {
+    let (mut editor_settings, mut toasts, time, bpm_list, duration, mut events) =
+        state.get_mut(world);
+
     ui.horizontal(|ui| {
         ui.label(t!("tab.settings.category.audio.playback_rate"));
         ui.add(

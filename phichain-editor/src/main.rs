@@ -59,7 +59,7 @@ use crate::settings::{AspectRatio, EditorSettings, EditorSettingsPlugin};
 use crate::tab::game::GameCamera;
 use crate::tab::game::GameTabPlugin;
 use crate::tab::game::GameViewport;
-use crate::tab::quick_action::quick_action_tab;
+use crate::tab::quick_action::quick_action;
 use crate::tab::timeline::TimelineViewport;
 use crate::tab::TabPlugin;
 use crate::tab::{EditorTab, TabRegistry};
@@ -385,10 +385,7 @@ fn ui_system(world: &mut World) {
                 .grow(20.0),
         );
 
-        let child = ui.child_ui(ui.max_rect(), *ui.layout());
-        let mut system = IntoSystem::into_system(quick_action_tab);
-        system.initialize(world);
-        system.run(child, world);
+        quick_action(ui, world);
 
         ui.add_space(1.0);
     });
