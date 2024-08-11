@@ -80,4 +80,5 @@ zip = "2.1.0"
 
 phichain-chart = { path = "../phichain-chart", features = ["bevy"] }
 phichain-assets = { path = "../phichain-assets", features = ["egui"] }
+phichain-game = { path = "../phichain-game" }
 rand = "0.8.5"

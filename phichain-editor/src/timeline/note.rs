@@ -2,7 +2,6 @@ use crate::editing::command::note::EditNote;
 use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
-use crate::highlight::Highlighted;
 use crate::selection::{SelectEvent, Selected, SelectedLine};
 use crate::tab::timeline::TimelineFilter;
 use crate::timeline::{Timeline, TimelineContext};
@@ -14,6 +13,7 @@ use phichain_assets::ImageAssets;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::CANVAS_WIDTH;
 use phichain_chart::note::{Note, NoteKind};
+use phichain_game::highlight::Highlighted;
 
 #[derive(Debug, Clone)]
 pub struct NoteTimeline(pub Option<Entity>);

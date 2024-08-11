@@ -3,8 +3,13 @@ name = "phichain-game"
 version = "0.3.0"
 edition = "2021"
 
+[lints.clippy]
+type_complexity = "allow"
+too_many_arguments = "allow"
+
 [dependencies]
 phichain-chart = { path = "../phichain-chart", features = ["bevy"] }
+phichain-assets = { path = "../phichain-assets" }
 bevy = { version = "0.13.2", default-features = false, features = [
     "animation",
     "bevy_asset",

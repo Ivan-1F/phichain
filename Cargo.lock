@@ -4384,6 +4384,7 @@ dependencies = [
  "num_enum",
  "phichain-assets",
  "phichain-chart",
+ "phichain-game",
  "rand",
  "rfd",
  "rust-i18n",
@@ -4440,6 +4441,7 @@ version = "0.3.0"
 dependencies = [
  "bevy",
  "num",
+ "phichain-assets",
  "phichain-chart",
 ]
 

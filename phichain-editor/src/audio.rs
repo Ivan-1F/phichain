@@ -144,10 +144,13 @@ fn update_time_system(
     handle: Res<InstanceHandle>,
     mut audio_instances: ResMut<Assets<AudioInstance>>,
     mut time: ResMut<ChartTime>,
+    mut game_time: ResMut<phichain_game::ChartTime>,
     offset: Res<Offset>,
 ) {
     if let Some(instance) = audio_instances.get_mut(&handle.0) {
-        time.0 = instance.state().position().unwrap_or_default() as f32 + offset.0 / 1000.0;
+        let value = instance.state().position().unwrap_or_default() as f32 + offset.0 / 1000.0;
+        time.0 = value;
+        game_time.0 = value;
     }
 }
 

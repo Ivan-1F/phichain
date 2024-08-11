@@ -1,7 +1,6 @@
 use crate::constants::PERFECT_COLOR;
 use crate::project::project_loaded;
 use crate::settings::EditorSettings;
-use crate::tab::game::scale::NoteScale;
 use crate::tab::game::GameViewport;
 use crate::timing::{ChartTime, Paused};
 use bevy::prelude::*;
@@ -13,6 +12,7 @@ use phichain_assets::ImageAssets;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::easing::Easing;
 use phichain_chart::note::{Note, NoteKind};
+use phichain_game::scale::NoteScale;
 use rand::Rng;
 use std::time::Duration;
 

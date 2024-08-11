@@ -9,7 +9,6 @@ mod editing;
 mod export;
 mod exporter;
 mod file;
-mod highlight;
 mod hit_sound;
 mod home;
 mod hotkey;
@@ -39,7 +38,6 @@ use crate::export::ExportPlugin;
 use crate::exporter::phichain::PhichainExporter;
 use crate::exporter::Exporter;
 use crate::file::{pick_folder, FilePickingPlugin, PickingKind};
-use crate::highlight::HighlightPlugin;
 use crate::hit_sound::HitSoundPlugin;
 use crate::home::HomePlugin;
 use crate::hotkey::{HotkeyPlugin, HotkeyRegistrationExt};
@@ -80,6 +78,7 @@ use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use phichain_assets::AssetsPlugin;
 use phichain_chart::event::LineEvent;
 use phichain_chart::note::Note;
+use phichain_game::{GamePlugin, GameSet};
 use rfd::FileDialog;
 use rust_i18n::set_locale;
 use std::env;
@@ -101,6 +100,7 @@ fn main() {
     }
 
     App::new()
+        .configure_sets(PostUpdate, GameSet.run_if(project_loaded()))
         .insert_resource(ClearColor(Color::BLACK))
         .insert_resource(UiState::new())
         .add_plugins(CliPlugin)
@@ -114,8 +114,8 @@ fn main() {
             synchronous_pipeline_compilation: false,
         }))
         .add_plugins(ShapePlugin)
+        .add_plugins(GamePlugin)
         .add_plugins(ActionPlugin)
-        .add_plugins(HighlightPlugin)
         .add_plugins(HotkeyPlugin)
         .add_plugins(ScreenshotPlugin)
         .add_plugins(TimingPlugin)
@@ -268,6 +268,9 @@ impl egui_dock::TabViewer for TabViewer<'_> {
                 };
 
                 let mut game_viewport = self.world.resource_mut::<GameViewport>();
+                game_viewport.0 = viewport.into_bevy();
+
+                let mut game_viewport = self.world.resource_mut::<phichain_game::GameViewport>();
                 game_viewport.0 = viewport.into_bevy();
             }
             EditorTab::Timeline => {
