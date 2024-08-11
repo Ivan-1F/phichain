@@ -1,11 +1,10 @@
 pub mod core;
-pub mod illustration;
 
 use bevy::{prelude::*, render::camera::Viewport};
 
 use crate::project::project_loaded;
 
-use self::{core::CoreGamePlugin, illustration::IllustrationPlugin};
+use self::core::CoreGamePlugin;
 
 pub struct GameTabPlugin;
 
@@ -16,7 +15,6 @@ impl Plugin for GameTabPlugin {
                 PostUpdate,
                 update_game_camera_viewport.run_if(project_loaded()),
             )
-            .add_plugins(IllustrationPlugin)
             .add_plugins(CoreGamePlugin);
     }
 }

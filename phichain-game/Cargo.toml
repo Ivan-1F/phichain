@@ -36,3 +36,4 @@ bevy = { version = "0.13.2", default-features = false, features = [
 bevy_prototype_lyon = "0.11"
 num = "0.4.3"
 rand = "0.8.5"
+image = { version = "0.24", features = ["jpeg", "png"] }

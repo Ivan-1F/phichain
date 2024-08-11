@@ -2,6 +2,7 @@ pub mod constants;
 pub mod core;
 pub mod highlight;
 mod hit_effect;
+pub mod illustration;
 pub mod scale;
 mod score;
 mod ui;
@@ -9,6 +10,7 @@ mod ui;
 use crate::core::CoreGamePlugin;
 use crate::highlight::HighlightPlugin;
 use crate::hit_effect::HitEffectPlugin;
+use crate::illustration::IllustrationPlugin;
 use crate::scale::ScalePlugin;
 use crate::score::ScorePlugin;
 use crate::ui::GameUiPlugin;
@@ -81,6 +83,7 @@ impl Plugin for GamePlugin {
             .add_plugins(ShapePlugin)
             .add_plugins(HitEffectPlugin)
             .add_plugins(ScorePlugin)
-            .add_plugins(GameUiPlugin);
+            .add_plugins(GameUiPlugin)
+            .add_plugins(IllustrationPlugin);
     }
 }

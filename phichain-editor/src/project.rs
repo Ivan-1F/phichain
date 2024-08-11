@@ -2,24 +2,23 @@ use anyhow::{anyhow, bail, Context};
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use bevy::ecs::system::SystemState;
-use bevy_kira_audio::{Audio, AudioControl, AudioSource};
-use bevy_persistent::Persistent;
-use phichain_chart::serialization::PhichainChart;
-use std::path::Path;
-use std::{fs::File, path::PathBuf};
-
 use crate::action::ActionRegistrationExt;
 use crate::audio::load_audio;
 use crate::editing::history::EditorHistory;
 use crate::exporter::phichain::PhichainExporter;
 use crate::exporter::Exporter;
 use crate::recent_projects::{PersistentRecentProjectsExt, RecentProject, RecentProjects};
-use crate::tab::game::illustration::load_illustration;
 use crate::{
     loader::{phichain::PhichainLoader, Loader},
     notification::{ToastsExt, ToastsStorage},
 };
+use bevy::ecs::system::SystemState;
+use bevy_kira_audio::{Audio, AudioControl, AudioSource};
+use bevy_persistent::Persistent;
+use phichain_chart::serialization::PhichainChart;
+use phichain_game::illustration::load_illustration;
+use std::path::Path;
+use std::{fs::File, path::PathBuf};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct ProjectMeta {
@@ -245,7 +244,7 @@ fn unload_project_system(
         audio.stop();
 
         // unload illustration
-        use crate::tab::game::illustration::{Illustration, IllustrationAssetId};
+        use phichain_game::illustration::{Illustration, IllustrationAssetId};
         let mut illustration_query = world.query_filtered::<Entity, With<Illustration>>();
         let entities = illustration_query.iter(world).collect::<Vec<_>>();
         for entity in entities {

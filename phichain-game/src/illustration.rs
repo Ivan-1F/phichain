@@ -4,7 +4,7 @@ use bevy::{prelude::*, render::render_asset::RenderAssetUsages};
 
 use crate::{
     constants::{ILLUSTRATION_ALPHA, ILLUSTRATION_BLUR},
-    project::project_loaded,
+    GameSet,
 };
 
 use super::GameViewport;
@@ -20,7 +20,8 @@ impl Plugin for IllustrationPlugin {
                 update_alpha_system,
                 place_everything_above_illustration_system,
             )
-                .run_if(project_loaded().and_then(any_with_component::<Illustration>)),
+                .in_set(GameSet)
+                .run_if(any_with_component::<Illustration>),
         );
     }
 }
