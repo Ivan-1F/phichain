@@ -1,0 +1,31 @@
+[package]
+name = "phichain-game"
+version = "0.3.0"
+edition = "2021"
+
+[dependencies]
+phichain-chart = { path = "../phichain-chart", features = ["bevy"] }
+bevy = { version = "0.13.2", default-features = false, features = [
+    "animation",
+    "bevy_asset",
+    "bevy_gilrs",
+    "bevy_scene",
+    "bevy_winit",
+    "bevy_core_pipeline",
+    "bevy_pbr",
+    "bevy_gltf",
+    "bevy_render",
+    "bevy_sprite",
+    "bevy_text",
+    "bevy_ui",
+    "multi-threaded",
+    "png",
+    "hdr",
+    "x11",
+    "bevy_gizmos",
+    "tonemapping_luts",
+    "default_font",
+    "webgl2",
+    "bevy_debug_stepping",
+], optional = true }
+num = "0.4.3"
