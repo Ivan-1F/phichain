@@ -1,6 +1,7 @@
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_persistent::Persistent;
 use num::{FromPrimitive, Rational32};
+use phichain_assets::ImageAssets;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{EventEvaluationResult, LineEvent, LineEventKind};
 use phichain_chart::line::{Line, LineOpacity, LinePosition, LineRotation};
@@ -12,7 +13,6 @@ use crate::selection::Selected;
 use crate::settings::EditorSettings;
 use crate::tab::game::scale::NoteScale;
 use crate::{
-    assets::ImageAssets,
     constants::{CANVAS_HEIGHT, CANVAS_WIDTH},
     project::project_loaded,
     timing::ChartTime,

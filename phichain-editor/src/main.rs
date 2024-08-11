@@ -2,7 +2,6 @@
 extern crate rust_i18n;
 
 mod action;
-mod assets;
 mod audio;
 mod cli;
 mod constants;
@@ -32,7 +31,6 @@ mod ui;
 mod utils;
 
 use crate::action::{ActionPlugin, ActionRegistry};
-use crate::assets::AssetsPlugin;
 use crate::audio::AudioPlugin;
 use crate::cli::{Args, CliPlugin};
 use crate::editing::history::EditorHistory;
@@ -79,6 +77,7 @@ use bevy_mod_picking::prelude::*;
 use bevy_persistent::Persistent;
 use bevy_prototype_lyon::prelude::ShapePlugin;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
+use phichain_assets::AssetsPlugin;
 use phichain_chart::event::LineEvent;
 use phichain_chart::note::Note;
 use rfd::FileDialog;

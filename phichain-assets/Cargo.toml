@@ -1,0 +1,40 @@
+[package]
+name = "phichain-assets"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = { version = "0.13.2", default-features = false, features = [
+    "animation",
+    "bevy_asset",
+    "bevy_gilrs",
+    "bevy_scene",
+    "bevy_winit",
+    "bevy_core_pipeline",
+    "bevy_pbr",
+    "bevy_gltf",
+    "bevy_render",
+    "bevy_sprite",
+    "bevy_text",
+    "bevy_ui",
+    "multi-threaded",
+    "png",
+    "hdr",
+    "x11",
+    "bevy_gizmos",
+    "tonemapping_luts",
+    "default_font",
+    "webgl2",
+    "bevy_debug_stepping",
+] }
+bevy_kira_audio = { version = "0.19.0", features = [
+    "mp3",
+    "ogg",
+    "flac",
+    "wav",
+] }
+bevy_asset_loader = "0.20.2"
+bevy_egui = { version = "0.27", optional = true }
+
+[features]
+egui = ["dep:bevy_egui"]

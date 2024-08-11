@@ -1,4 +1,3 @@
-use crate::assets::ImageAssets;
 use crate::constants::PERFECT_COLOR;
 use crate::project::project_loaded;
 use crate::settings::EditorSettings;
@@ -10,6 +9,7 @@ use bevy::transform::TransformSystem;
 use bevy_persistent::Persistent;
 use bevy_prototype_lyon::prelude::{Fill, GeometryBuilder, ShapeBundle};
 use bevy_prototype_lyon::shapes;
+use phichain_assets::ImageAssets;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::easing::Easing;
 use phichain_chart::note::{Note, NoteKind};

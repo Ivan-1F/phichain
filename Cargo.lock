@@ -4382,6 +4382,7 @@ dependencies = [
  "log",
  "num",
  "num_enum",
+ "phichain-assets",
  "phichain-chart",
  "rand",
  "rfd",
@@ -4395,6 +4396,16 @@ dependencies = [
  "undo",
  "url",
  "zip",
+]
+
+[[package]]
+name = "phichain-assets"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_asset_loader",
+ "bevy_egui",
+ "bevy_kira_audio",
 ]
 
 [[package]]

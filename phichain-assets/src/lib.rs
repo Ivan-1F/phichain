@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
-use bevy_egui::EguiContexts;
 use bevy_kira_audio::AudioSource;
 
 #[derive(AssetCollection, Resource)]
@@ -48,12 +47,15 @@ pub struct AssetsPlugin;
 impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
         app.init_collection::<ImageAssets>()
-            .init_collection::<AudioAssets>()
-            .add_systems(Startup, load_assets);
+            .init_collection::<AudioAssets>();
+
+        #[cfg(feature = "egui")]
+        app.add_systems(Startup, load_assets);
     }
 }
 
-fn load_assets(mut egui_context: EguiContexts, image_assets: Res<ImageAssets>) {
+#[cfg(feature = "egui")]
+fn load_assets(mut egui_context: bevy_egui::EguiContexts, image_assets: Res<ImageAssets>) {
     egui_context.add_image(image_assets.tap.clone());
     egui_context.add_image(image_assets.drag.clone());
     egui_context.add_image(image_assets.hold.clone());
