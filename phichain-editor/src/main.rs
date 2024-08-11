@@ -18,7 +18,6 @@ mod misc;
 mod notification;
 mod project;
 mod recent_projects;
-mod score;
 mod screenshot;
 mod selection;
 mod settings;
@@ -47,7 +46,6 @@ use crate::project::project_loaded;
 use crate::project::LoadProjectEvent;
 use crate::project::ProjectPlugin;
 use crate::recent_projects::RecentProjectsPlugin;
-use crate::score::ScorePlugin;
 use crate::screenshot::ScreenshotPlugin;
 use crate::selection::Selected;
 use crate::settings::{AspectRatio, EditorSettings, EditorSettingsPlugin};
@@ -121,7 +119,6 @@ fn main() {
         .add_plugins(EditorSettingsPlugin)
         .add_plugins(HitSoundPlugin)
         .add_plugins(GameTabPlugin)
-        .add_plugins(ScorePlugin)
         .add_plugins(TimelinePlugin)
         .add_plugins(DefaultPickingPlugins)
         .add_plugins(EguiPlugin)

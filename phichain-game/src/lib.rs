@@ -3,11 +3,15 @@ pub mod core;
 pub mod highlight;
 mod hit_effect;
 pub mod scale;
+mod score;
+mod ui;
 
 use crate::core::CoreGamePlugin;
 use crate::highlight::HighlightPlugin;
 use crate::hit_effect::HitEffectPlugin;
 use crate::scale::ScalePlugin;
+use crate::score::ScorePlugin;
+use crate::ui::GameUiPlugin;
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::ShapePlugin;
 
@@ -29,6 +33,9 @@ pub struct GameConfig {
     fc_ap_indicator: bool,
     multi_highlight: bool,
     hide_hit_effect: bool,
+
+    name: String,
+    level: String,
 }
 
 impl Default for GameConfig {
@@ -38,6 +45,9 @@ impl Default for GameConfig {
             fc_ap_indicator: true,
             multi_highlight: true,
             hide_hit_effect: false,
+
+            name: Default::default(),
+            level: Default::default(),
         }
     }
 }
@@ -69,6 +79,8 @@ impl Plugin for GamePlugin {
             .add_plugins(ScalePlugin)
             .add_plugins(CoreGamePlugin)
             .add_plugins(ShapePlugin)
-            .add_plugins(HitEffectPlugin);
+            .add_plugins(HitEffectPlugin)
+            .add_plugins(ScorePlugin)
+            .add_plugins(GameUiPlugin);
     }
 }
