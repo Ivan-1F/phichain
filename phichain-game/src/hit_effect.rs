@@ -1,18 +1,14 @@
 use crate::constants::PERFECT_COLOR;
-use crate::project::project_loaded;
-use crate::settings::EditorSettings;
-use crate::tab::game::GameViewport;
-use crate::timing::{ChartTime, Paused};
+use crate::scale::NoteScale;
+use crate::{ChartTime, GameConfig, GameSet, GameViewport, Paused};
 use bevy::prelude::*;
 use bevy::transform::TransformSystem;
-use bevy_persistent::Persistent;
 use bevy_prototype_lyon::prelude::{Fill, GeometryBuilder, ShapeBundle};
 use bevy_prototype_lyon::shapes;
 use phichain_assets::ImageAssets;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::easing::Easing;
 use phichain_chart::note::{Note, NoteKind};
-use phichain_game::scale::NoteScale;
 use rand::Rng;
 use std::time::Duration;
 
@@ -26,7 +22,7 @@ impl Plugin for HitEffectPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_system)
             .add_systems(
-                Update,
+                PostUpdate,
                 (
                     spawn_hit_effect_system,
                     update_hit_effect_system.after(TransformSystem::TransformPropagate),
@@ -34,10 +30,10 @@ impl Plugin for HitEffectPlugin {
                     animate_hit_effect_system,
                 )
                     .chain()
-                    .run_if(project_loaded()),
+                    .in_set(GameSet),
             )
             .add_systems(
-                Update,
+                PostUpdate,
                 (
                     update_lifetime_system,
                     update_opacity_system,
@@ -46,7 +42,7 @@ impl Plugin for HitEffectPlugin {
                     despawn_system,
                 )
                     .chain()
-                    .run_if(project_loaded()),
+                    .in_set(GameSet),
             );
     }
 }
@@ -122,9 +118,9 @@ fn spawn_hit_effect_system(
 
     game_viewport: Res<GameViewport>,
 
-    settings: Res<Persistent<EditorSettings>>,
+    config: Res<GameConfig>,
 ) {
-    if settings.game.hide_hit_effect {
+    if config.hide_hit_effect {
         return;
     }
 

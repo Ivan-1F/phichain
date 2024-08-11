@@ -1,12 +1,10 @@
 pub mod core;
-pub mod hit_effect;
 pub mod illustration;
 pub mod ui;
 
 use bevy::{prelude::*, render::camera::Viewport};
 
 use crate::project::project_loaded;
-use crate::tab::game::hit_effect::HitEffectPlugin;
 
 use self::{core::CoreGamePlugin, illustration::IllustrationPlugin, ui::GameUiPlugin};
 
@@ -21,8 +19,7 @@ impl Plugin for GameTabPlugin {
             )
             .add_plugins(GameUiPlugin)
             .add_plugins(IllustrationPlugin)
-            .add_plugins(CoreGamePlugin)
-            .add_plugins(HitEffectPlugin);
+            .add_plugins(CoreGamePlugin);
     }
 }
 

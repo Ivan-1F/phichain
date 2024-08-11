@@ -33,4 +33,6 @@ bevy = { version = "0.13.2", default-features = false, features = [
     "webgl2",
     "bevy_debug_stepping",
 ] }
+bevy_prototype_lyon = "0.11"
 num = "0.4.3"
+rand = "0.8.5"

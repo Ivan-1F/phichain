@@ -4368,7 +4368,6 @@ dependencies = [
  "bevy_egui",
  "bevy_kira_audio",
  "bevy_mod_picking",
- "bevy_prototype_lyon",
  "chrono",
  "clap",
  "egui",
@@ -4440,9 +4439,11 @@ name = "phichain-game"
 version = "0.3.0"
 dependencies = [
  "bevy",
+ "bevy_prototype_lyon",
  "num",
  "phichain-assets",
  "phichain-chart",
+ "rand",
 ]
 
 [[package]]

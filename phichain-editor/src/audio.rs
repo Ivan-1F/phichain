@@ -70,6 +70,7 @@ pub fn load_audio(path: PathBuf, commands: &mut Commands) {
 fn handle_pause_system(
     handle: Res<InstanceHandle>,
     mut paused: ResMut<Paused>,
+    mut game_paused: ResMut<phichain_game::Paused>,
     mut audio_instances: ResMut<Assets<AudioInstance>>,
     mut events: EventReader<PauseEvent>,
 ) {
@@ -77,6 +78,7 @@ fn handle_pause_system(
         for _ in events.read() {
             instance.pause(AudioTween::default());
             paused.0 = true;
+            game_paused.0 = true;
         }
     }
 }
@@ -85,6 +87,7 @@ fn handle_pause_system(
 fn handle_resume_system(
     handle: Res<InstanceHandle>,
     mut paused: ResMut<Paused>,
+    mut game_paused: ResMut<phichain_game::Paused>,
     mut audio_instances: ResMut<Assets<AudioInstance>>,
     mut events: EventReader<ResumeEvent>,
 ) {
@@ -92,6 +95,7 @@ fn handle_resume_system(
         for _ in events.read() {
             instance.resume(AudioTween::default());
             paused.0 = false;
+            game_paused.0 = false;
         }
     }
 }
