@@ -27,5 +27,5 @@ bevy = { version = "0.13.2", default-features = false, features = [
     "default_font",
     "webgl2",
     "bevy_debug_stepping",
-], optional = true }
+] }
 num = "0.4.3"

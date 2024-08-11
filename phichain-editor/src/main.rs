@@ -46,7 +46,6 @@ use crate::hit_sound::HitSoundPlugin;
 use crate::home::HomePlugin;
 use crate::hotkey::{HotkeyPlugin, HotkeyRegistrationExt};
 use crate::misc::MiscPlugin;
-use crate::misc::WorkingDirectory;
 use crate::notification::NotificationPlugin;
 use crate::project::project_loaded;
 use crate::project::LoadProjectEvent;
@@ -84,6 +83,8 @@ use phichain_chart::event::LineEvent;
 use phichain_chart::note::Note;
 use rfd::FileDialog;
 use rust_i18n::set_locale;
+use std::env;
+use std::path::PathBuf;
 
 i18n!("lang", fallback = "en_us");
 
@@ -92,6 +93,13 @@ fn main() {
     wgpu_settings
         .features
         .set(WgpuFeatures::VERTEX_WRITABLE_STORAGE, true);
+
+    #[cfg(debug_assertions)]
+    {
+        let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let root = manifest.parent().expect("Failed to get root path");
+        env::set_var("BEVY_ASSET_ROOT", root);
+    }
 
     App::new()
         .insert_resource(ClearColor(Color::BLACK))
@@ -170,14 +178,10 @@ fn setup_egui_image_loader_system(mut contexts: bevy_egui::EguiContexts) {
     egui_extras::install_image_loaders(contexts.ctx_mut());
 }
 
-fn setup_egui_font_system(
-    mut contexts: bevy_egui::EguiContexts,
-    working_directory: Res<WorkingDirectory>,
-) {
+fn setup_egui_font_system(mut contexts: bevy_egui::EguiContexts) {
     let ctx = contexts.ctx_mut();
 
-    let font_file = working_directory
-        .0
+    let font_file = utils::assets::get_base_path()
         .join("assets/font/MiSans-Regular.ttf")
         .to_str()
         .unwrap()

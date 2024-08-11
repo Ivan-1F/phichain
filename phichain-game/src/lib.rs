@@ -6,6 +6,7 @@ pub struct GameViewport(pub Rect);
 #[derive(Debug, Clone, Resource)]
 pub struct ChartTime(pub f32);
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Resource)]
 pub struct GameConfig {
     note_scale: f32,
