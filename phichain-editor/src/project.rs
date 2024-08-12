@@ -7,14 +7,12 @@ use crate::audio::load_audio;
 use crate::editing::history::EditorHistory;
 use crate::exporter::phichain::PhichainExporter;
 use crate::exporter::Exporter;
+use crate::notification::{ToastsExt, ToastsStorage};
 use crate::recent_projects::{PersistentRecentProjectsExt, RecentProject, RecentProjects};
-use crate::{
-    loader::{phichain::PhichainLoader, Loader},
-    notification::{ToastsExt, ToastsStorage},
-};
 use bevy::ecs::system::SystemState;
 use bevy_kira_audio::{Audio, AudioControl, AudioSource};
 use bevy_persistent::Persistent;
+use phichain_chart::line::Line;
 use phichain_chart::serialization::PhichainChart;
 use phichain_game::illustration::load_illustration;
 use std::path::Path;
@@ -190,13 +188,20 @@ fn load_project_system(
         match Project::load(event.0.clone()) {
             Ok(project) => {
                 let file = File::open(project.path.chart_path()).unwrap();
-                if let Err(error) = PhichainLoader::load(file, &mut commands) {
+                if let Err(error) = phichain_game::load(file, &mut commands) {
                     toasts.error(format!("Failed to load chart: {:?}", error));
                 } else {
                     recent_projects.push(RecentProject::new(
                         project.meta.name.clone(),
                         project.path.0.clone(),
                     ));
+
+                    commands.add(|world: &mut World| {
+                        let mut query = world.query_filtered::<Entity, With<Line>>();
+                        if let Some(first) = query.iter(world).next() {
+                            world.insert_resource(crate::selection::SelectedLine(first));
+                        }
+                    });
 
                     if let Some(illustration_path) = project.path.illustration_path() {
                         load_illustration(illustration_path, &mut commands);

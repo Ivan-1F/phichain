@@ -13,7 +13,6 @@ mod hit_sound;
 mod home;
 mod hotkey;
 mod identifier;
-mod loader;
 mod misc;
 mod notification;
 mod project;

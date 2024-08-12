@@ -3,9 +3,12 @@ pub mod core;
 pub mod highlight;
 mod hit_effect;
 pub mod illustration;
+mod loader;
 pub mod scale;
 mod score;
 mod ui;
+
+pub use crate::loader::load;
 
 use crate::core::CoreGamePlugin;
 use crate::highlight::HighlightPlugin;
