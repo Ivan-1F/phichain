@@ -1,6 +1,5 @@
-use anyhow::{anyhow, bail, Context};
+use anyhow::Context;
 use bevy::prelude::*;
-use serde::{Deserialize, Serialize};
 
 use crate::action::ActionRegistrationExt;
 use crate::audio::load_audio;
@@ -13,92 +12,10 @@ use bevy::ecs::system::SystemState;
 use bevy_kira_audio::{Audio, AudioControl, AudioSource};
 use bevy_persistent::Persistent;
 use phichain_chart::line::Line;
+pub use phichain_chart::project::{Project, ProjectMeta, ProjectPath};
 use phichain_chart::serialization::PhichainChart;
 use phichain_game::illustration::load_illustration;
-use std::path::Path;
 use std::{fs::File, path::PathBuf};
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
-pub struct ProjectMeta {
-    pub composer: String,
-    pub charter: String,
-    pub illustrator: String,
-    pub name: String,
-    pub level: String,
-}
-
-#[derive(Resource)]
-pub struct Project {
-    pub path: ProjectPath,
-    pub meta: ProjectMeta,
-}
-
-impl Project {
-    pub fn load(root_dir: PathBuf) -> anyhow::Result<Self> {
-        ProjectPath(root_dir).into_project()
-    }
-}
-
-pub struct ProjectPath(pub PathBuf);
-
-impl ProjectPath {
-    pub fn chart_path(&self) -> PathBuf {
-        self.0.join("chart.json")
-    }
-
-    pub fn sub_path(&self, path: impl AsRef<Path>) -> PathBuf {
-        self.0.join(path)
-    }
-
-    fn find_file(&self, name: &str, allowed_extensions: &[impl ToString]) -> Option<PathBuf> {
-        std::fs::read_dir(&self.0)
-            .ok()?
-            .filter_map(Result::ok)
-            .map(|x| x.path())
-            .find(|path| {
-                path.is_file()
-                    && path.file_stem() == Some(name.as_ref())
-                    && path.extension().map_or(false, |ext| {
-                        allowed_extensions
-                            .iter()
-                            .any(|allowed| *allowed.to_string() == *ext)
-                    })
-            })
-    }
-
-    pub fn music_path(&self) -> Option<PathBuf> {
-        self.find_file("music", &["wav", "mp3", "ogg", "flac"])
-    }
-
-    pub fn illustration_path(&self) -> Option<PathBuf> {
-        self.find_file("illustration", &["png", "jpg", "jpeg"])
-    }
-
-    pub fn meta_path(&self) -> PathBuf {
-        self.0.join("meta.json")
-    }
-
-    pub fn into_project(self) -> anyhow::Result<Project> {
-        if !self.chart_path().is_file() {
-            bail!("chart.json is missing");
-        }
-        if !self
-            .music_path()
-            .ok_or(anyhow!("Could not find music file in project"))?
-            .is_file()
-        {
-            bail!("music.wav is missing");
-        }
-        if !self.meta_path().is_file() {
-            bail!("meta.json is missing");
-        }
-
-        let meta_file = File::open(self.meta_path()).context("Failed to open meta file")?;
-        let meta: ProjectMeta = serde_json::from_reader(meta_file).context("Invalid meta file")?;
-
-        Ok(Project { path: self, meta })
-    }
-}
 
 /// A [Condition] represents the project is loaded
 pub fn project_loaded() -> impl Condition<()> {

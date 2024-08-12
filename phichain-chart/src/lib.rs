@@ -8,4 +8,5 @@ pub mod line;
 pub mod migration;
 pub mod note;
 pub mod offset;
+pub mod project;
 pub mod serialization;
