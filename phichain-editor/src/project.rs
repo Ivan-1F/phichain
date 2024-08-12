@@ -73,20 +73,12 @@ pub struct LoadProjectEvent(pub PathBuf);
 
 /// Load a project into the editor
 ///
-/// # Resources and entities involved when loading projects
+/// This function will use [`phichain_game::load_project`] to load core game components and resources to the world
 ///
-/// - [InstanceHandle], [AudioDuration] and [AudioAssetId] will be inserted into the world
-/// - A entity with component [Illustration] will be spawned into the world, [IllustrationAssetId] will be inserted into the world
+/// After [`phichain_game::load_project`] is executed successfully, this function will load editor-specific resources:
 ///
-/// ---
-///
-/// - [crate::audio::Offset] will be inserted into the world
-/// - [crate::timing::BpmList] will be inserted into the world
 /// - [crate::selection::SelectedLine] will be inserted into the world
-/// - Entities with components [phichain_chart::line::LineBundle] and [phichain_chart::note::NoteBundle] will be spawned into the world, with parent-child relationship
-///
-/// ---
-///
+/// - Currently, audio is handle in the editor instead of [`phichain_game`], so [InstanceHandle], [AudioDuration] and [AudioAssetId] will be inserted into the world (TODO)
 /// - After all resources and entities above are added, [Project] will be inserted into the world,
 ///   indicating the editor is now in editing mode: all systems with run condition [`project_loaded`] will start working
 fn load_project_system(
@@ -118,6 +110,7 @@ fn load_project_system(
                         }
                     });
 
+                    // TODO: move audio to phichain-game
                     // unwrap: if Project::load is ok, music_path() must return Some
                     let audio_path = project.path.music_path().unwrap();
                     load_audio(audio_path, &mut commands);

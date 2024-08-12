@@ -11,6 +11,16 @@ use serde_json::Value;
 use std::fs::File;
 
 /// Load a project to the world using a [`Commands`]
+///
+/// # Resources and entities involved when loading projects
+///
+/// - A entity with component [Illustration] will be spawned into the world, [IllustrationAssetId] will be inserted into the world
+///
+/// ---
+///
+/// - [phichain_chart::offset::Offset] will be inserted into the world
+/// - [phichain_chart::bpm_list::BpmList] will be inserted into the world
+/// - Entities with components [`LineBundle`] and [`NoteBundle`] will be spawned into the world, with parent-child relationship
 pub fn load_project(project: &Project, commands: &mut Commands) -> anyhow::Result<()> {
     let file = File::open(project.path.chart_path())?;
     load(file, commands)?;
