@@ -14,8 +14,7 @@ use bevy_persistent::Persistent;
 use phichain_chart::line::Line;
 pub use phichain_chart::project::{Project, ProjectMeta, ProjectPath};
 use phichain_chart::serialization::PhichainChart;
-use phichain_game::illustration::load_illustration;
-use std::{fs::File, path::PathBuf};
+use std::path::PathBuf;
 
 /// A [Condition] represents the project is loaded
 pub fn project_loaded() -> impl Condition<()> {
@@ -104,8 +103,7 @@ fn load_project_system(
     if let Some(event) = events.read().last() {
         match Project::load(event.0.clone()) {
             Ok(project) => {
-                let file = File::open(project.path.chart_path()).unwrap();
-                if let Err(error) = phichain_game::load(file, &mut commands) {
+                if let Err(error) = phichain_game::load_project(&project, &mut commands) {
                     toasts.error(format!("Failed to load chart: {:?}", error));
                 } else {
                     recent_projects.push(RecentProject::new(
@@ -119,10 +117,6 @@ fn load_project_system(
                             world.insert_resource(crate::selection::SelectedLine(first));
                         }
                     });
-
-                    if let Some(illustration_path) = project.path.illustration_path() {
-                        load_illustration(illustration_path, &mut commands);
-                    }
 
                     // unwrap: if Project::load is ok, music_path() must return Some
                     let audio_path = project.path.music_path().unwrap();

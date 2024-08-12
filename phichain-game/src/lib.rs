@@ -8,7 +8,7 @@ pub mod scale;
 mod score;
 mod ui;
 
-pub use crate::loader::load;
+pub use crate::loader::load_project;
 
 use crate::core::CoreGamePlugin;
 use crate::highlight::HighlightPlugin;
