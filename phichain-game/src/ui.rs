@@ -1,9 +1,6 @@
+use super::{GameConfig, GameSet, GameViewport};
+use crate::score::GameScore;
 use bevy::prelude::*;
-
-use crate::project::Project;
-use crate::{project::project_loaded, score::GameScore};
-
-use super::GameViewport;
 
 const UI_TEXT_MARGIN: f32 = 10.0;
 
@@ -13,24 +10,24 @@ impl Plugin for GameUiPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(BaseTextScale(1.0))
             .add_systems(
-                Update,
+                PostUpdate,
                 (update_base_text_scale_system, update_text_scale_system)
                     .chain()
-                    .run_if(project_loaded()),
+                    .in_set(GameSet),
             )
             // combo
             .add_systems(Startup, setup_combo_ui_system)
-            .add_systems(Update, update_combo_system.run_if(project_loaded()))
-            .add_systems(Update, hide_combo_below_3_system.run_if(project_loaded()))
+            .add_systems(PostUpdate, update_combo_system.in_set(GameSet))
+            .add_systems(PostUpdate, hide_combo_below_3_system.in_set(GameSet))
             // score
             .add_systems(Startup, spawn_score_ui_system)
-            .add_systems(Update, update_score_system.run_if(project_loaded()))
+            .add_systems(PostUpdate, update_score_system.in_set(GameSet))
             // name
             .add_systems(Startup, spawn_name_ui_system)
-            .add_systems(Update, update_name_system.run_if(project_loaded()))
+            .add_systems(PostUpdate, update_name_system.in_set(GameSet))
             // level
             .add_systems(Startup, spawn_level_ui_system)
-            .add_systems(Update, update_level_system.run_if(project_loaded()));
+            .add_systems(PostUpdate, update_level_system.in_set(GameSet));
     }
 }
 
@@ -262,16 +259,16 @@ fn update_score_system(
 
 fn update_name_system(
     mut name_text_query: Query<&mut Text, With<NameText>>,
-    project: Res<Project>,
+    config: Res<GameConfig>,
 ) {
     let mut name_text = name_text_query.single_mut();
-    name_text.sections[0].value = project.meta.name.replace(' ', "\u{00A0}");
+    name_text.sections[0].value = config.name.replace(' ', "\u{00A0}");
 }
 
 fn update_level_system(
     mut name_text_query: Query<&mut Text, With<LevelText>>,
-    project: Res<Project>,
+    config: Res<GameConfig>,
 ) {
     let mut name_text = name_text_query.single_mut();
-    name_text.sections[0].value = project.meta.level.replace(' ', "\u{00A0}");
+    name_text.sections[0].value = config.level.replace(' ', "\u{00A0}");
 }

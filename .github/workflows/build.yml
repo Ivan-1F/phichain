@@ -117,7 +117,7 @@ jobs:
             cp ./target/${{ matrix.target }}/release/phichain "./build/phichain"
           fi
 
-          mv LICENSE README.md phichain-editor/assets phichain-editor/lang ./build
+          mv LICENSE README.md README_en.md assets phichain-editor/lang ./build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

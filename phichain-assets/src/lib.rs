@@ -1,7 +1,8 @@
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
-use bevy_egui::EguiContexts;
 use bevy_kira_audio::AudioSource;
+use std::env;
+use std::path::PathBuf;
 
 #[derive(AssetCollection, Resource)]
 pub struct ImageAssets {
@@ -43,17 +44,45 @@ pub struct AudioAssets {
     pub flick: Handle<AudioSource>,
 }
 
+/// Setup bevy asset root environment variable
+///
+/// In debug environment, it will be the parent of `CARGO_MANIFEST_DIR`, aka phichain project root
+///
+/// In production environment, it will be `CARGO_MANIFEST_DIR`
+///
+/// This value can be overwritten using the `PHICHAIN_ASSET_ROOT` environment variable
+pub fn setup_assets() {
+    let asset_root = match env::var("PHICHAIN_ASSET_ROOT") {
+        Ok(phichain_asset_root) => PathBuf::from(phichain_asset_root),
+        Err(_) => {
+            #[cfg(debug_assertions)]
+            {
+                let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+                manifest.parent().expect("Failed to get root path").into()
+            }
+
+            #[cfg(not(debug_assertions))]
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        }
+    };
+
+    env::set_var("BEVY_ASSET_ROOT", asset_root);
+}
+
 pub struct AssetsPlugin;
 
 impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
         app.init_collection::<ImageAssets>()
-            .init_collection::<AudioAssets>()
-            .add_systems(Startup, load_assets);
+            .init_collection::<AudioAssets>();
+
+        #[cfg(feature = "egui")]
+        app.add_systems(Startup, load_assets);
     }
 }
 
-fn load_assets(mut egui_context: EguiContexts, image_assets: Res<ImageAssets>) {
+#[cfg(feature = "egui")]
+fn load_assets(mut egui_context: bevy_egui::EguiContexts, image_assets: Res<ImageAssets>) {
     egui_context.add_image(image_assets.tap.clone());
     egui_context.add_image(image_assets.drag.clone());
     egui_context.add_image(image_assets.hold.clone());

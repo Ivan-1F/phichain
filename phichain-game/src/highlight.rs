@@ -1,7 +1,6 @@
-use crate::settings::EditorSettings;
+use crate::GameConfig;
 use bevy::prelude::*;
 use bevy::utils::HashMap;
-use bevy_persistent::Persistent;
 use phichain_chart::beat::Beat;
 use phichain_chart::note::Note;
 
@@ -38,12 +37,12 @@ fn mark_highlight_system(
     query: Query<(Entity, &Note)>,
     highlighted_beat: ResMut<HighlightedBeat>,
 
-    settings: Res<Persistent<EditorSettings>>,
+    settings: Res<GameConfig>,
 ) {
     for (entity, note) in &query {
         if highlighted_beat.0.contains_key(&note.beat.reduced())
             && highlighted_beat.0[&note.beat.reduced()] > 1
-            && settings.game.multi_highlight
+            && settings.multi_highlight
         {
             commands.entity(entity).insert(Highlighted);
         } else {

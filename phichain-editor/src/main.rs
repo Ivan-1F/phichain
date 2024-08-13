@@ -2,7 +2,6 @@
 extern crate rust_i18n;
 
 mod action;
-mod assets;
 mod audio;
 mod cli;
 mod constants;
@@ -10,17 +9,14 @@ mod editing;
 mod export;
 mod exporter;
 mod file;
-mod highlight;
 mod hit_sound;
 mod home;
 mod hotkey;
 mod identifier;
-mod loader;
 mod misc;
 mod notification;
 mod project;
 mod recent_projects;
-mod score;
 mod screenshot;
 mod selection;
 mod settings;
@@ -32,7 +28,6 @@ mod ui;
 mod utils;
 
 use crate::action::{ActionPlugin, ActionRegistry};
-use crate::assets::AssetsPlugin;
 use crate::audio::AudioPlugin;
 use crate::cli::{Args, CliPlugin};
 use crate::editing::history::EditorHistory;
@@ -41,18 +36,15 @@ use crate::export::ExportPlugin;
 use crate::exporter::phichain::PhichainExporter;
 use crate::exporter::Exporter;
 use crate::file::{pick_folder, FilePickingPlugin, PickingKind};
-use crate::highlight::HighlightPlugin;
 use crate::hit_sound::HitSoundPlugin;
 use crate::home::HomePlugin;
 use crate::hotkey::{HotkeyPlugin, HotkeyRegistrationExt};
 use crate::misc::MiscPlugin;
-use crate::misc::WorkingDirectory;
 use crate::notification::NotificationPlugin;
 use crate::project::project_loaded;
 use crate::project::LoadProjectEvent;
 use crate::project::ProjectPlugin;
 use crate::recent_projects::RecentProjectsPlugin;
-use crate::score::ScorePlugin;
 use crate::screenshot::ScreenshotPlugin;
 use crate::selection::Selected;
 use crate::settings::{AspectRatio, EditorSettings, EditorSettingsPlugin};
@@ -78,12 +70,14 @@ use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_picking::prelude::*;
 use bevy_persistent::Persistent;
-use bevy_prototype_lyon::prelude::ShapePlugin;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
+use phichain_assets::AssetsPlugin;
 use phichain_chart::event::LineEvent;
 use phichain_chart::note::Note;
+use phichain_game::{GamePlugin, GameSet};
 use rfd::FileDialog;
 use rust_i18n::set_locale;
+use std::env;
 
 i18n!("lang", fallback = "en_us");
 
@@ -93,7 +87,10 @@ fn main() {
         .features
         .set(WgpuFeatures::VERTEX_WRITABLE_STORAGE, true);
 
+    phichain_assets::setup_assets();
+
     App::new()
+        .configure_sets(PostUpdate, GameSet.run_if(project_loaded()))
         .insert_resource(ClearColor(Color::BLACK))
         .insert_resource(UiState::new())
         .add_plugins(CliPlugin)
@@ -106,9 +103,8 @@ fn main() {
             render_creation: wgpu_settings.into(),
             synchronous_pipeline_compilation: false,
         }))
-        .add_plugins(ShapePlugin)
+        .add_plugins(GamePlugin)
         .add_plugins(ActionPlugin)
-        .add_plugins(HighlightPlugin)
         .add_plugins(HotkeyPlugin)
         .add_plugins(ScreenshotPlugin)
         .add_plugins(TimingPlugin)
@@ -116,7 +112,6 @@ fn main() {
         .add_plugins(EditorSettingsPlugin)
         .add_plugins(HitSoundPlugin)
         .add_plugins(GameTabPlugin)
-        .add_plugins(ScorePlugin)
         .add_plugins(TimelinePlugin)
         .add_plugins(DefaultPickingPlugins)
         .add_plugins(EguiPlugin)
@@ -170,14 +165,10 @@ fn setup_egui_image_loader_system(mut contexts: bevy_egui::EguiContexts) {
     egui_extras::install_image_loaders(contexts.ctx_mut());
 }
 
-fn setup_egui_font_system(
-    mut contexts: bevy_egui::EguiContexts,
-    working_directory: Res<WorkingDirectory>,
-) {
+fn setup_egui_font_system(mut contexts: bevy_egui::EguiContexts) {
     let ctx = contexts.ctx_mut();
 
-    let font_file = working_directory
-        .0
+    let font_file = utils::assets::get_base_path()
         .join("assets/font/MiSans-Regular.ttf")
         .to_str()
         .unwrap()
@@ -265,6 +256,9 @@ impl egui_dock::TabViewer for TabViewer<'_> {
                 };
 
                 let mut game_viewport = self.world.resource_mut::<GameViewport>();
+                game_viewport.0 = viewport.into_bevy();
+
+                let mut game_viewport = self.world.resource_mut::<phichain_game::GameViewport>();
                 game_viewport.0 = viewport.into_bevy();
             }
             EditorTab::Timeline => {

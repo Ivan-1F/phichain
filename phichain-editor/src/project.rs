@@ -1,107 +1,20 @@
-use anyhow::{anyhow, bail, Context};
+use anyhow::Context;
 use bevy::prelude::*;
-use serde::{Deserialize, Serialize};
-
-use bevy::ecs::system::SystemState;
-use bevy_kira_audio::{Audio, AudioControl, AudioSource};
-use bevy_persistent::Persistent;
-use phichain_chart::serialization::PhichainChart;
-use std::path::Path;
-use std::{fs::File, path::PathBuf};
 
 use crate::action::ActionRegistrationExt;
 use crate::audio::load_audio;
 use crate::editing::history::EditorHistory;
 use crate::exporter::phichain::PhichainExporter;
 use crate::exporter::Exporter;
+use crate::notification::{ToastsExt, ToastsStorage};
 use crate::recent_projects::{PersistentRecentProjectsExt, RecentProject, RecentProjects};
-use crate::tab::game::illustration::load_illustration;
-use crate::{
-    loader::{phichain::PhichainLoader, Loader},
-    notification::{ToastsExt, ToastsStorage},
-};
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
-pub struct ProjectMeta {
-    pub composer: String,
-    pub charter: String,
-    pub illustrator: String,
-    pub name: String,
-    pub level: String,
-}
-
-#[derive(Resource)]
-pub struct Project {
-    pub path: ProjectPath,
-    pub meta: ProjectMeta,
-}
-
-impl Project {
-    pub fn load(root_dir: PathBuf) -> anyhow::Result<Self> {
-        ProjectPath(root_dir).into_project()
-    }
-}
-
-pub struct ProjectPath(pub PathBuf);
-
-impl ProjectPath {
-    pub fn chart_path(&self) -> PathBuf {
-        self.0.join("chart.json")
-    }
-
-    pub fn sub_path(&self, path: impl AsRef<Path>) -> PathBuf {
-        self.0.join(path)
-    }
-
-    fn find_file(&self, name: &str, allowed_extensions: &[impl ToString]) -> Option<PathBuf> {
-        std::fs::read_dir(&self.0)
-            .ok()?
-            .filter_map(Result::ok)
-            .map(|x| x.path())
-            .find(|path| {
-                path.is_file()
-                    && path.file_stem() == Some(name.as_ref())
-                    && path.extension().map_or(false, |ext| {
-                        allowed_extensions
-                            .iter()
-                            .any(|allowed| *allowed.to_string() == *ext)
-                    })
-            })
-    }
-
-    pub fn music_path(&self) -> Option<PathBuf> {
-        self.find_file("music", &["wav", "mp3", "ogg", "flac"])
-    }
-
-    pub fn illustration_path(&self) -> Option<PathBuf> {
-        self.find_file("illustration", &["png", "jpg", "jpeg"])
-    }
-
-    pub fn meta_path(&self) -> PathBuf {
-        self.0.join("meta.json")
-    }
-
-    pub fn into_project(self) -> anyhow::Result<Project> {
-        if !self.chart_path().is_file() {
-            bail!("chart.json is missing");
-        }
-        if !self
-            .music_path()
-            .ok_or(anyhow!("Could not find music file in project"))?
-            .is_file()
-        {
-            bail!("music.wav is missing");
-        }
-        if !self.meta_path().is_file() {
-            bail!("meta.json is missing");
-        }
-
-        let meta_file = File::open(self.meta_path()).context("Failed to open meta file")?;
-        let meta: ProjectMeta = serde_json::from_reader(meta_file).context("Invalid meta file")?;
-
-        Ok(Project { path: self, meta })
-    }
-}
+use bevy::ecs::system::SystemState;
+use bevy_kira_audio::{Audio, AudioControl, AudioSource};
+use bevy_persistent::Persistent;
+use phichain_chart::line::Line;
+pub use phichain_chart::project::{Project, ProjectMeta, ProjectPath};
+use phichain_chart::serialization::PhichainChart;
+use std::path::PathBuf;
 
 /// A [Condition] represents the project is loaded
 pub fn project_loaded() -> impl Condition<()> {
@@ -160,20 +73,12 @@ pub struct LoadProjectEvent(pub PathBuf);
 
 /// Load a project into the editor
 ///
-/// # Resources and entities involved when loading projects
+/// This function will use [`phichain_game::load_project`] to load core game components and resources to the world
 ///
-/// - [InstanceHandle], [AudioDuration] and [AudioAssetId] will be inserted into the world
-/// - A entity with component [Illustration] will be spawned into the world, [IllustrationAssetId] will be inserted into the world
+/// After [`phichain_game::load_project`] is executed successfully, this function will load editor-specific resources:
 ///
-/// ---
-///
-/// - [crate::audio::Offset] will be inserted into the world
-/// - [crate::timing::BpmList] will be inserted into the world
 /// - [crate::selection::SelectedLine] will be inserted into the world
-/// - Entities with components [phichain_chart::line::LineBundle] and [phichain_chart::note::NoteBundle] will be spawned into the world, with parent-child relationship
-///
-/// ---
-///
+/// - Currently, audio is handle in the editor instead of [`phichain_game`], so [InstanceHandle], [AudioDuration] and [AudioAssetId] will be inserted into the world (TODO)
 /// - After all resources and entities above are added, [Project] will be inserted into the world,
 ///   indicating the editor is now in editing mode: all systems with run condition [`project_loaded`] will start working
 fn load_project_system(
@@ -190,8 +95,7 @@ fn load_project_system(
     if let Some(event) = events.read().last() {
         match Project::load(event.0.clone()) {
             Ok(project) => {
-                let file = File::open(project.path.chart_path()).unwrap();
-                if let Err(error) = PhichainLoader::load(file, &mut commands) {
+                if let Err(error) = phichain_game::load_project(&project, &mut commands) {
                     toasts.error(format!("Failed to load chart: {:?}", error));
                 } else {
                     recent_projects.push(RecentProject::new(
@@ -199,10 +103,14 @@ fn load_project_system(
                         project.path.0.clone(),
                     ));
 
-                    if let Some(illustration_path) = project.path.illustration_path() {
-                        load_illustration(illustration_path, &mut commands);
-                    }
+                    commands.add(|world: &mut World| {
+                        let mut query = world.query_filtered::<Entity, With<Line>>();
+                        if let Some(first) = query.iter(world).next() {
+                            world.insert_resource(crate::selection::SelectedLine(first));
+                        }
+                    });
 
+                    // TODO: move audio to phichain-game
                     // unwrap: if Project::load is ok, music_path() must return Some
                     let audio_path = project.path.music_path().unwrap();
                     load_audio(audio_path, &mut commands);
@@ -245,7 +153,7 @@ fn unload_project_system(
         audio.stop();
 
         // unload illustration
-        use crate::tab::game::illustration::{Illustration, IllustrationAssetId};
+        use phichain_game::illustration::{Illustration, IllustrationAssetId};
         let mut illustration_query = world.query_filtered::<Entity, With<Illustration>>();
         let entities = illustration_query.iter(world).collect::<Vec<_>>();
         for entity in entities {

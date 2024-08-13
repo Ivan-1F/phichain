@@ -1,15 +1,14 @@
+use crate::{ChartTime, GameSet};
 use bevy::prelude::*;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::note::Note;
-
-use crate::{project::project_loaded, timing::ChartTime};
 
 pub struct ScorePlugin;
 
 impl Plugin for ScorePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(GameScore::default())
-            .add_systems(Update, update_score_system.run_if(project_loaded()));
+            .add_systems(PostUpdate, update_score_system.in_set(GameSet));
     }
 }
 
