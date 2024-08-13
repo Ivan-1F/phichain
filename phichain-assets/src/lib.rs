@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 use bevy_kira_audio::AudioSource;
+use std::env;
+use std::path::PathBuf;
 
 #[derive(AssetCollection, Resource)]
 pub struct ImageAssets {
@@ -40,6 +42,31 @@ pub struct AudioAssets {
     pub drag: Handle<AudioSource>,
     #[asset(path = "audio/flick.ogg")]
     pub flick: Handle<AudioSource>,
+}
+
+/// Setup bevy asset root environment variable
+///
+/// In debug environment, it will be the parent of `CARGO_MANIFEST_DIR`, aka phichain project root
+///
+/// In production environment, it will be `CARGO_MANIFEST_DIR`
+///
+/// This value can be overwritten using the `PHICHAIN_ASSET_ROOT` environment variable
+pub fn setup_assets() {
+    let asset_root = match env::var("PHICHAIN_ASSET_ROOT") {
+        Ok(phichain_asset_root) => PathBuf::from(phichain_asset_root),
+        Err(_) => {
+            #[cfg(debug_assertions)]
+            {
+                let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+                manifest.parent().expect("Failed to get root path").into()
+            }
+
+            #[cfg(not(debug_assertions))]
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        }
+    };
+
+    env::set_var("BEVY_ASSET_ROOT", asset_root);
 }
 
 pub struct AssetsPlugin;

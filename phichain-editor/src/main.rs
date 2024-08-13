@@ -78,7 +78,6 @@ use phichain_game::{GamePlugin, GameSet};
 use rfd::FileDialog;
 use rust_i18n::set_locale;
 use std::env;
-use std::path::PathBuf;
 
 i18n!("lang", fallback = "en_us");
 
@@ -88,12 +87,7 @@ fn main() {
         .features
         .set(WgpuFeatures::VERTEX_WRITABLE_STORAGE, true);
 
-    #[cfg(debug_assertions)]
-    {
-        let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        let root = manifest.parent().expect("Failed to get root path");
-        env::set_var("BEVY_ASSET_ROOT", root);
-    }
+    phichain_assets::setup_assets();
 
     App::new()
         .configure_sets(PostUpdate, GameSet.run_if(project_loaded()))
