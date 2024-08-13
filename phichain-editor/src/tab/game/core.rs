@@ -2,15 +2,20 @@ use super::GameCamera;
 use crate::editing::pending::Pending;
 use crate::project::project_loaded;
 use crate::selection::Selected;
+use crate::settings::EditorSettings;
 use bevy::prelude::*;
+use bevy_persistent::Persistent;
 use phichain_chart::note::Note;
+use phichain_chart::project::Project;
 use phichain_game::core::HoldComponent;
+use phichain_game::GameConfig;
 
 pub struct CoreGamePlugin;
 
 impl Plugin for CoreGamePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, zoom_scale_system.run_if(project_loaded()))
+            .add_systems(Update, sync_game_config_system.run_if(project_loaded()))
             .add_systems(PostUpdate, update_note_tint_system.run_if(project_loaded()))
             .add_systems(
                 PostUpdate,
@@ -56,4 +61,17 @@ fn sync_hold_components_tint_system(
             sprite.color = parent_sprite.color;
         }
     }
+}
+
+fn sync_game_config_system(
+    editor_settings: Res<Persistent<EditorSettings>>,
+    project: Res<Project>,
+    mut game_config: ResMut<GameConfig>,
+) {
+    game_config.note_scale = editor_settings.game.note_scale;
+    game_config.fc_ap_indicator = editor_settings.game.fc_ap_indicator;
+    game_config.multi_highlight = editor_settings.game.multi_highlight;
+    game_config.hide_hit_effect = editor_settings.game.hide_hit_effect;
+    game_config.name = project.meta.name.clone();
+    game_config.level = project.meta.level.clone();
 }

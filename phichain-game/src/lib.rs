@@ -34,13 +34,13 @@ pub struct ChartTime(pub f32);
 
 #[derive(Debug, Clone, Resource)]
 pub struct GameConfig {
-    note_scale: f32,
-    fc_ap_indicator: bool,
-    multi_highlight: bool,
-    hide_hit_effect: bool,
+    pub note_scale: f32,
+    pub fc_ap_indicator: bool,
+    pub multi_highlight: bool,
+    pub hide_hit_effect: bool,
 
-    name: String,
-    level: String,
+    pub name: String,
+    pub level: String,
 }
 
 impl Default for GameConfig {
