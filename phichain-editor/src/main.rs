@@ -34,8 +34,6 @@ use crate::cli::{Args, CliPlugin};
 use crate::editing::history::EditorHistory;
 use crate::editing::EditingPlugin;
 use crate::export::ExportPlugin;
-use crate::exporter::phichain::PhichainExporter;
-use crate::exporter::Exporter;
 use crate::file::{pick_folder, FilePickingPlugin, PickingKind};
 use crate::hit_sound::HitSoundPlugin;
 use crate::home::HomePlugin;
@@ -137,7 +135,6 @@ fn main() {
         .add_systems(Startup, setup_egui_font_system)
         .add_systems(Startup, setup_plugin)
         .add_systems(Update, ui_system.run_if(project_loaded()))
-        .add_systems(Update, debug_save_system.run_if(project_loaded()))
         .add_systems(
             Startup,
             (apply_args_config_system, apply_editor_settings_system),
@@ -147,15 +144,6 @@ fn main() {
             vec![KeyCode::control(), KeyCode::KeyS],
         )
         .run();
-}
-
-fn debug_save_system(world: &mut World) {
-    let event = world.resource::<ButtonInput<KeyCode>>();
-    if event.just_pressed(KeyCode::KeyE) {
-        if let Ok(chart) = PhichainExporter::export(world) {
-            let _ = std::fs::write("Chart.json", chart);
-        }
-    }
 }
 
 fn apply_editor_settings_system(settings: Res<Persistent<EditorSettings>>) {
