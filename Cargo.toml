@@ -1,5 +1,6 @@
 [workspace]
-members = [ "phichain-assets",
+members = [
+    "phichain-assets",
     "phichain-chart",
     "phichain-converter",
     "phichain-editor",
