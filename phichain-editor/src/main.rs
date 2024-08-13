@@ -17,6 +17,7 @@ mod misc;
 mod notification;
 mod project;
 mod recent_projects;
+mod schedule;
 mod screenshot;
 mod selection;
 mod settings;
@@ -45,6 +46,7 @@ use crate::project::project_loaded;
 use crate::project::LoadProjectEvent;
 use crate::project::ProjectPlugin;
 use crate::recent_projects::RecentProjectsPlugin;
+use crate::schedule::EditorSet;
 use crate::screenshot::ScreenshotPlugin;
 use crate::selection::Selected;
 use crate::settings::{AspectRatio, EditorSettings, EditorSettingsPlugin};
@@ -90,7 +92,14 @@ fn main() {
     phichain_assets::setup_assets();
 
     App::new()
-        .configure_sets(PostUpdate, GameSet.run_if(project_loaded()))
+        .configure_sets(Update, GameSet.run_if(project_loaded()))
+        .configure_sets(
+            Update,
+            (EditorSet::Edit, EditorSet::Update)
+                .chain()
+                .before(GameSet)
+                .run_if(project_loaded()),
+        )
         .insert_resource(ClearColor(Color::BLACK))
         .insert_resource(UiState::new())
         .add_plugins(CliPlugin)

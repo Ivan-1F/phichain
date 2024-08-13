@@ -7,7 +7,7 @@ use crate::editing::command::note::CreateNote;
 use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
-use crate::project::project_loaded;
+use crate::schedule::EditorSet;
 use crate::timeline::{TimelineContext, TimelineItem};
 use crate::utils::convert::BevyEguiConvert;
 use crate::{constants::CANVAS_WIDTH, selection::SelectedLine};
@@ -19,7 +19,7 @@ impl Plugin for CreateNoteSystem {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (create_note_system, remove_pending_note_on_esc_system).run_if(project_loaded()),
+            (create_note_system, remove_pending_note_on_esc_system).in_set(EditorSet::Edit),
         );
     }
 }

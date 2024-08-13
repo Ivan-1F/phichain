@@ -11,7 +11,7 @@ use crate::hotkey::HotkeyRegistrationExt;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 
-use crate::project::project_loaded;
+use crate::schedule::EditorSet;
 use crate::utils::compat::ControlKeyExt;
 
 mod clipboard;
@@ -36,7 +36,7 @@ impl Plugin for EditingPlugin {
             .add_plugins(MoveNotePlugin)
             .add_plugins(MoveEventPlugin)
             .add_plugins(ClipboardPlugin)
-            .add_systems(Update, handle_edit_command.run_if(project_loaded()))
+            .add_systems(Update, handle_edit_command.in_set(EditorSet::Edit))
             .register_action("phichain.undo", undo_system)
             .register_hotkey("phichain.undo", vec![KeyCode::control(), KeyCode::KeyZ])
             .register_action("phichain.redo", redo_system)

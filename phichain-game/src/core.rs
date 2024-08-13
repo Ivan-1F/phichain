@@ -19,7 +19,7 @@ impl Plugin for CoreGamePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             // note placement runs on Update, we need to edit them after they are being spawned into the world
-            PostUpdate,
+            Update,
             (
                 update_note_scale_system,
                 update_note_system,
@@ -30,19 +30,19 @@ impl Plugin for CoreGamePlugin {
                 .in_set(GameSet),
         )
         .add_systems(
-            PostUpdate,
+            Update,
             (compute_line_system, update_line_system)
                 .chain()
                 .in_set(GameSet),
         )
         .add_systems(
-            PostUpdate,
+            Update,
             (update_line_texture_system, update_note_texture_system).in_set(GameSet),
         )
-        .add_systems(PostUpdate, calculate_speed_events_system.in_set(GameSet))
+        .add_systems(Update, calculate_speed_events_system.in_set(GameSet))
         // hold components
         .add_systems(
-            PostUpdate,
+            Update,
             (
                 spawn_hold_component_system,
                 update_hold_components_scale_system

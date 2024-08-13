@@ -1,6 +1,7 @@
 use crate::editing::command::event::EditEvent;
 use crate::editing::command::{CommandSequence, EditorCommand};
 use crate::editing::DoCommandEvent;
+use crate::schedule::EditorSet;
 use crate::selection::Selected;
 use crate::timeline::settings::TimelineSettings;
 use bevy::prelude::*;
@@ -10,7 +11,7 @@ pub struct MoveEventPlugin;
 
 impl Plugin for MoveEventPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, move_event_system);
+        app.add_systems(Update, move_event_system.in_set(EditorSet::Edit));
     }
 }
 

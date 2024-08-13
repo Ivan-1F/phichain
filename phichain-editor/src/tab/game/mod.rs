@@ -11,10 +11,7 @@ pub struct GameTabPlugin;
 impl Plugin for GameTabPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(GameViewport(Rect::from_corners(Vec2::ZERO, Vec2::ZERO)))
-            .add_systems(
-                PostUpdate,
-                update_game_camera_viewport.run_if(project_loaded()),
-            )
+            .add_systems(Update, update_game_camera_viewport.run_if(project_loaded()))
             .add_plugins(CoreGamePlugin);
     }
 }

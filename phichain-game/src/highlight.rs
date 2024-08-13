@@ -1,4 +1,4 @@
-use crate::GameConfig;
+use crate::{GameConfig, GameSet};
 use bevy::prelude::*;
 use bevy::utils::HashMap;
 use phichain_chart::beat::Beat;
@@ -9,8 +9,10 @@ pub struct HighlightPlugin;
 impl Plugin for HighlightPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<HighlightedBeat>().add_systems(
-            PostUpdate,
-            (calc_highlighted_beat_system, mark_highlight_system).chain(),
+            Update,
+            (calc_highlighted_beat_system, mark_highlight_system)
+                .chain()
+                .in_set(GameSet),
         );
     }
 }

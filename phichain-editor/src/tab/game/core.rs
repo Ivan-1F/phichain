@@ -16,9 +16,9 @@ impl Plugin for CoreGamePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, zoom_scale_system.run_if(project_loaded()))
             .add_systems(Update, sync_game_config_system.run_if(project_loaded()))
-            .add_systems(PostUpdate, update_note_tint_system.run_if(project_loaded()))
+            .add_systems(Update, update_note_tint_system.run_if(project_loaded()))
             .add_systems(
-                PostUpdate,
+                Update,
                 sync_hold_components_tint_system
                     .after(update_note_tint_system)
                     .run_if(project_loaded()),

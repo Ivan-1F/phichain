@@ -6,7 +6,7 @@ use crate::editing::command::event::CreateEvent;
 use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
-use crate::project::project_loaded;
+use crate::schedule::EditorSet;
 use crate::selection::SelectedLine;
 use crate::timeline::{TimelineContext, TimelineItem};
 use crate::utils::convert::BevyEguiConvert;
@@ -18,7 +18,7 @@ impl Plugin for CreateEventPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (create_event_system, remove_pending_event_on_esc_system).run_if(project_loaded()),
+            (create_event_system, remove_pending_event_on_esc_system).in_set(EditorSet::Edit),
         );
     }
 }

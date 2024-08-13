@@ -12,7 +12,7 @@ use crate::timeline::event::EventTimeline;
 use crate::timeline::note::NoteTimeline;
 use crate::timeline::settings::TimelineSettings;
 use crate::timing::ChartTime;
-use bevy::app::{App, Plugin, PostUpdate};
+use bevy::app::{App, Plugin, Update};
 use bevy::ecs::system::SystemParam;
 use bevy::math::Vec2;
 use bevy::prelude::*;
@@ -33,7 +33,7 @@ impl Plugin for TimelinePlugin {
                 Vec2::ZERO,
             )))
             .insert_resource(TimelineSettings::default())
-            .add_systems(PostUpdate, clean_dangle_timelines_system);
+            .add_systems(Update, clean_dangle_timelines_system);
     }
 }
 

@@ -1,6 +1,7 @@
 use crate::editing::command::note::EditNote;
 use crate::editing::command::{CommandSequence, EditorCommand};
 use crate::editing::DoCommandEvent;
+use crate::schedule::EditorSet;
 use crate::selection::Selected;
 use crate::timeline::settings::TimelineSettings;
 use bevy::prelude::*;
@@ -11,7 +12,7 @@ pub struct MoveNotePlugin;
 
 impl Plugin for MoveNotePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, move_note_system);
+        app.add_systems(Update, move_note_system.in_set(EditorSet::Edit));
     }
 }
 

@@ -22,7 +22,7 @@ impl Plugin for HitEffectPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_system)
             .add_systems(
-                PostUpdate,
+                Update,
                 (
                     spawn_hit_effect_system,
                     update_hit_effect_system.after(TransformSystem::TransformPropagate),
@@ -33,7 +33,7 @@ impl Plugin for HitEffectPlugin {
                     .in_set(GameSet),
             )
             .add_systems(
-                PostUpdate,
+                Update,
                 (
                     update_lifetime_system,
                     update_opacity_system,

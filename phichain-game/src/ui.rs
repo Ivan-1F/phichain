@@ -10,24 +10,24 @@ impl Plugin for GameUiPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(BaseTextScale(1.0))
             .add_systems(
-                PostUpdate,
+                Update,
                 (update_base_text_scale_system, update_text_scale_system)
                     .chain()
                     .in_set(GameSet),
             )
             // combo
             .add_systems(Startup, setup_combo_ui_system)
-            .add_systems(PostUpdate, update_combo_system.in_set(GameSet))
-            .add_systems(PostUpdate, hide_combo_below_3_system.in_set(GameSet))
+            .add_systems(Update, update_combo_system.in_set(GameSet))
+            .add_systems(Update, hide_combo_below_3_system.in_set(GameSet))
             // score
             .add_systems(Startup, spawn_score_ui_system)
-            .add_systems(PostUpdate, update_score_system.in_set(GameSet))
+            .add_systems(Update, update_score_system.in_set(GameSet))
             // name
             .add_systems(Startup, spawn_name_ui_system)
-            .add_systems(PostUpdate, update_name_system.in_set(GameSet))
+            .add_systems(Update, update_name_system.in_set(GameSet))
             // level
             .add_systems(Startup, spawn_level_ui_system)
-            .add_systems(PostUpdate, update_level_system.in_set(GameSet));
+            .add_systems(Update, update_level_system.in_set(GameSet));
     }
 }
 

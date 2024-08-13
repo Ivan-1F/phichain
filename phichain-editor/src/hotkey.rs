@@ -1,5 +1,6 @@
 use crate::action::ActionRegistry;
 use crate::identifier::Identifier;
+use crate::schedule::EditorSet;
 use crate::utils::compat::ControlKeyExt;
 use bevy::ecs::system::SystemState;
 use bevy::input::keyboard::KeyboardInput;
@@ -18,7 +19,9 @@ impl Plugin for HotkeyPlugin {
             .init_resource::<HotkeyRegistry>()
             .add_systems(
                 Update,
-                (listen_to_key_events_system, handle_hotkey_system).chain(),
+                (listen_to_key_events_system, handle_hotkey_system)
+                    .chain()
+                    .in_set(EditorSet::Edit),
             )
             .register_hotkey("phichain.debug", vec![KeyCode::control(), KeyCode::KeyD]);
     }

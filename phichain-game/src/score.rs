@@ -8,7 +8,7 @@ pub struct ScorePlugin;
 impl Plugin for ScorePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(GameScore::default())
-            .add_systems(PostUpdate, update_score_system.in_set(GameSet));
+            .add_systems(Update, update_score_system.in_set(GameSet));
     }
 }
 
