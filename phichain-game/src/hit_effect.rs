@@ -1,4 +1,5 @@
 use crate::constants::PERFECT_COLOR;
+use crate::layer::HIT_EFFECT_LAYER;
 use crate::scale::NoteScale;
 use crate::{ChartTime, GameConfig, GameSet, GameViewport, Paused};
 use bevy::prelude::*;
@@ -90,7 +91,7 @@ fn animate_hit_effect_system(
 
 fn update_hit_effect_system(mut query: Query<(&mut Transform, &HitEffect)>) {
     for (mut transform, effect) in &mut query {
-        transform.translation = Vec3::new(effect.0.x, effect.0.y, 10.0);
+        transform.translation = Vec3::new(effect.0.x, effect.0.y, HIT_EFFECT_LAYER);
     }
 }
 
@@ -218,7 +219,7 @@ impl HitParticleBundle {
                 path: GeometryBuilder::build_as(&shape),
                 spatial: SpatialBundle {
                     transform: Transform {
-                        translation: position.extend(10.0),
+                        translation: position.extend(HIT_EFFECT_LAYER),
                         ..default()
                     },
                     ..default()

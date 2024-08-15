@@ -8,6 +8,7 @@ use phichain_chart::line::{Line, LineOpacity, LinePosition, LineRotation};
 
 use crate::constants::PERFECT_COLOR;
 use crate::highlight::Highlighted;
+use crate::layer::{HOLD_LAYER, NOTE_LAYER};
 use crate::scale::NoteScale;
 use crate::{ChartTime, GameConfig, GameSet, GameViewport};
 use phichain_chart::line::LineSpeed;
@@ -77,6 +78,11 @@ fn update_note_system(
     for (mut transform, mut visibility, note) in &mut query {
         transform.translation.x = (note.x / CANVAS_WIDTH) * game_viewport.0.width()
             / (game_viewport.0.width() * 3.0 / 1920.0);
+
+        transform.translation.z = match note.kind {
+            NoteKind::Hold { .. } => HOLD_LAYER,
+            _ => NOTE_LAYER,
+        };
 
         let hold_beat = match note.kind {
             NoteKind::Hold { hold_beat } => hold_beat.value(),

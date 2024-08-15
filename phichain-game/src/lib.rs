@@ -3,6 +3,7 @@ pub mod core;
 pub mod highlight;
 mod hit_effect;
 pub mod illustration;
+mod layer;
 mod loader;
 pub mod scale;
 mod score;

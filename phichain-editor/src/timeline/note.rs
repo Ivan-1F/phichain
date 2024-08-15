@@ -14,6 +14,7 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::CANVAS_WIDTH;
 use phichain_chart::note::{Note, NoteKind};
 use phichain_game::highlight::Highlighted;
+use std::cmp::Ordering;
 
 #[derive(Debug, Clone)]
 pub struct NoteTimeline(pub Option<Entity>);
@@ -69,7 +70,21 @@ impl Timeline for NoteTimeline {
             mut event_writer,
         ) = state.get_mut(world);
 
-        for (mut note, parent, entity, highlighted, selected, pending) in &mut note_query {
+        // TODO: optimize
+        let mut notes: Vec<_> = note_query.iter_mut().collect();
+        notes.sort_by(|a, b| {
+            let a_is_hold = a.0.kind.is_hold();
+            let b_is_hold = b.0.kind.is_hold();
+            if a_is_hold && b_is_hold {
+                Ordering::Equal
+            } else if a_is_hold && !b_is_hold {
+                Ordering::Less
+            } else {
+                Ordering::Greater
+            }
+        });
+
+        for (mut note, parent, entity, highlighted, selected, pending) in notes {
             if !ctx.settings.note_side_filter.filter(*note) {
                 continue;
             }
