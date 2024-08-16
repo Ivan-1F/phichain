@@ -4432,6 +4432,7 @@ dependencies = [
  "clap",
  "phichain-chart",
  "serde_json",
+ "strum",
 ]
 
 [[package]]
