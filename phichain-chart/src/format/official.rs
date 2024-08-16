@@ -590,10 +590,11 @@ impl PrimitiveCompatibleFormat for OfficialChart {
             bail!("Expect at least one line");
         }
 
-        let mut primitive = PrimitiveChart::default();
-
-        primitive.offset = self.offset * 1000.0;
-        primitive.bpm_list = BpmList::single(self.lines[0].bpm);
+        let mut primitive = PrimitiveChart {
+            offset: self.offset * 1000.0,
+            bpm_list: BpmList::single(self.lines[0].bpm),
+            ..Default::default()
+        };
 
         for line in self.lines {
             let t: fn(f32) -> Beat = |x| Beat::from(x * 1.875 / 60.0);

@@ -34,34 +34,37 @@ impl Format for PhichainChart {
 
 impl PrimitiveCompatibleFormat for PhichainChart {
     fn into_primitive(self) -> anyhow::Result<PrimitiveChart> {
-        let mut primitive = PrimitiveChart::default();
-
-        primitive.offset = self.offset.0;
-
-        primitive.bpm_list = self.bpm_list;
-
-        for LineWrapper { notes, events, .. } in self.lines {
-            primitive.lines.push(primitive::line::Line { notes, events })
-        }
-
-        Ok(primitive)
+        Ok(PrimitiveChart {
+            offset: self.offset.0,
+            bpm_list: self.bpm_list.clone(),
+            lines: self
+                .lines
+                .iter()
+                .map(|line| primitive::line::Line {
+                    notes: line.notes.clone(),
+                    events: line.events.clone(),
+                })
+                .collect(),
+            ..Default::default()
+        })
     }
 
     fn from_primitive(primitive: PrimitiveChart) -> anyhow::Result<Self>
     where
         Self: Sized,
     {
-        let mut phichain = Self::default();
-
-        phichain.offset = Offset(primitive.offset);
-
-        phichain.lines = primitive
-            .lines
-            .iter()
-            .map(|line| LineWrapper::new(Line::default(), line.notes.clone(), line.events.clone()))
-            .collect();
-
-        Ok(phichain)
+        Ok(Self {
+            offset: Offset(primitive.offset),
+            bpm_list: primitive.bpm_list,
+            lines: primitive
+                .lines
+                .iter()
+                .map(|line| {
+                    LineWrapper::new(Line::default(), line.notes.clone(), line.events.clone())
+                })
+                .collect(),
+            ..Default::default()
+        })
     }
 }
 
