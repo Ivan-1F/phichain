@@ -1,5 +1,6 @@
 use clap::{Parser, ValueEnum};
 use phichain_chart::format::official::OfficialChart;
+use phichain_chart::format::rpe::RpeChart;
 use phichain_chart::primitive::{PrimitiveChart, PrimitiveCompatibleFormat};
 use phichain_chart::serialization::PhichainChart;
 use std::io::Write;
@@ -12,6 +13,7 @@ use strum::Display;
 enum Formats {
     Official,
     Phichain,
+    Rpe,
     Primitive,
 }
 
@@ -42,6 +44,10 @@ fn convert(args: Args) -> anyhow::Result<()> {
             let chart: PhichainChart = serde_json::from_reader(file)?;
             chart.into_primitive()?
         }
+        Formats::Rpe => {
+            let chart: RpeChart = serde_json::from_reader(file)?;
+            chart.into_primitive()?
+        }
         Formats::Primitive => {
             let chart: PrimitiveChart = serde_json::from_reader(file)?;
             chart.into_primitive()?
@@ -57,6 +63,10 @@ fn convert(args: Args) -> anyhow::Result<()> {
         }
         Formats::Phichain => {
             let chart = PhichainChart::from_primitive(primitive)?;
+            serde_json::to_string(&chart)?
+        }
+        Formats::Rpe => {
+            let chart = RpeChart::from_primitive(primitive)?;
             serde_json::to_string(&chart)?
         }
         Formats::Primitive => {
