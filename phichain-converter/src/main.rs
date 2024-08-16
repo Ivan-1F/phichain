@@ -21,11 +21,14 @@ enum Formats {
 #[command(name = "phichain-converter")]
 #[command(about = "Converts Phigros charts between different formats")]
 struct Args {
+    /// The input chart format
     #[arg(short, long, required = true)]
     input: Formats,
+    /// The output chart format
     #[arg(short, long, required = true)]
     output: Formats,
 
+    /// The path of the input chart
     #[arg(required = true)]
     path: PathBuf,
 }
