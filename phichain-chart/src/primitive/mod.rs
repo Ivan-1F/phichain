@@ -1,12 +1,9 @@
-use crate::primitive::bpm_list::BpmList;
+use crate::bpm_list::BpmList;
 use crate::primitive::line::Line;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
-pub mod bpm_list;
-pub mod event;
 pub mod line;
-pub mod note;
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct PrimitiveChart {
@@ -39,4 +36,3 @@ impl PrimitiveCompatibleFormat for PrimitiveChart {
         Ok(phichain)
     }
 }
-
