@@ -8,6 +8,7 @@ use std::fmt::{Debug, Display, Formatter};
 use strum::EnumIter;
 
 #[derive(Debug, Default, Copy, Clone, PartialEq, Serialize, Deserialize, EnumIter)]
+#[serde(rename_all = "snake_case")]
 #[repr(u8)]
 pub enum Easing {
     #[default]

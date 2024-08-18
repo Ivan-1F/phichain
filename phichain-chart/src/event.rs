@@ -9,6 +9,7 @@ use crate::primitive;
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, IntoPrimitive, TryFromPrimitive,
 )]
+#[serde(rename_all = "snake_case")]
 #[repr(u8)]
 pub enum LineEventKind {
     X = 1,

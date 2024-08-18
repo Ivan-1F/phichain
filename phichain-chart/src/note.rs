@@ -4,6 +4,7 @@ use std::cmp::Ordering;
 use crate::beat::Beat;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum NoteKind {
     Tap,
     Drag,

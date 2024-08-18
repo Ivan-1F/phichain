@@ -1,5 +1,6 @@
 use crate::migration::Migration;
-use anyhow::Context;
+use anyhow::{bail, Context};
+use convert_case::{Case, Casing};
 use serde_json::{json, Value};
 
 /// Migration from format `2` to `3`
@@ -7,10 +8,12 @@ use serde_json::{json, Value};
 /// # Changes
 ///
 /// - Introduced event value type: transition / constants
+/// - Renamed all enum variants using snake_case, affected: `LineEventKind`, `NoteKind` and `Easing`
 ///
 /// # Modifications
 ///
 /// - Converted all events into transition event, removed `start`, `end` and `easing` and added `value` for all events
+/// - Renamed all PascalCase enum variants to snake_case
 pub struct Migration2To3;
 
 impl Migration for Migration2To3 {
@@ -26,17 +29,67 @@ impl Migration for Migration2To3 {
                 .as_array_mut()
                 .context("`line.events` is not an array")?
             {
+                event["kind"] = json!(event["kind"]
+                    .as_str()
+                    .context("event kind is not string")?
+                    .from_case(Case::Pascal)
+                    .to_case(Case::Snake));
+
+                let new_easing = match event["easing"] {
+                    Value::String(ref s) => {
+                        json!(s.from_case(Case::Pascal).to_case(Case::Snake))
+                    }
+                    Value::Object(_) => {
+                        let bezier = &event["easing"]["Custom"];
+
+                        json!({
+                            "custom": bezier,
+                        })
+                    }
+                    ref other => {
+                        bail!("expected an object or a string as easing, got: {:?}", other)
+                    }
+                };
+
                 event["value"] = json!({
                     "transition": {
                         "start": event["start"],
                         "end": event["end"],
-                        "easing": event["easing"]
+                        "easing": new_easing,
                     }
                 });
                 let event = event.as_object_mut().context("event is not an object")?;
                 event.remove("start");
                 event.remove("end");
                 event.remove("easing");
+            }
+
+            for note in line["notes"]
+                .as_array_mut()
+                .context("`line.notes` is not an array")?
+            {
+                let new_kind = match note["kind"] {
+                    Value::String(ref s) => {
+                        json!(s.from_case(Case::Pascal).to_case(Case::Snake))
+                    }
+                    Value::Object(_) => {
+                        let hold_beat = &note["kind"]["Hold"]["hold_beat"];
+
+                        json!({
+                            "hold": {
+                                "hold_beat": hold_beat,
+                            },
+                        })
+                    }
+                    ref other => {
+                        bail!(
+                            "expected an object or a string as note kind, got: {:?}",
+                            other
+                        )
+                    }
+                };
+
+                note["kind"] = new_kind;
             }
         }
 
@@ -69,6 +122,17 @@ mod tests {
               "notes": [
                 {
                   "kind": "Tap",
+                  "above": true,
+                  "beat": [0, 1, 1],
+                  "x": 0.0,
+                  "speed": 3.0
+                },
+                {
+                  "kind": {
+                    "Hold": {
+                      "hold_beat": [1, 0, 1],
+                    },
+                  },
                   "above": true,
                   "beat": [0, 1, 1],
                   "x": 0.0,
@@ -126,14 +190,25 @@ mod tests {
               "name": "Unnamed Line",
               "notes": [
                 {
-                  "kind": "Tap",
+                  "kind": "tap",
                   "above": true,
                   "beat": [0, 1, 1],
                   "x": 0.0,
                   "speed": 3.0
                 },
                 {
-                  "kind": "Tap",
+                  "kind": {
+                    "hold": {
+                      "hold_beat": [1, 0, 1],
+                    },
+                  },
+                  "above": true,
+                  "beat": [0, 1, 1],
+                  "x": 0.0,
+                  "speed": 3.0
+                },
+                {
+                  "kind": "tap",
                   "above": true,
                   "beat": [1, 0, 1],
                   "x": 337.5,
@@ -142,20 +217,19 @@ mod tests {
               ],
               "events": [
                 {
-                  "kind": "X",
-
+                  "kind": "x",
                   "start_beat": [0, 0, 1],
                   "end_beat": [1, 0, 1],
                   "value": {
                     "transition": {
                       "start": 0.0,
                       "end": 0.0,
-                      "easing": "Linear",
+                      "easing": "linear",
                     },
                   },
                 },
                 {
-                  "kind": "Y",
+                  "kind": "y",
                   "start_beat": [0, 0, 1],
                   "end_beat": [1, 0, 1],
                   "value": {
@@ -163,7 +237,7 @@ mod tests {
                       "start": -300.0,
                       "end": -300.0,
                       "easing": {
-                        "Custom": [
+                        "custom": [
                           0.5,
                           0.0,
                           0.5,
