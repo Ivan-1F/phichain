@@ -8,7 +8,7 @@ use crate::migration::CURRENT_FORMAT;
 use crate::note::Note;
 use crate::offset::Offset;
 use crate::primitive;
-use crate::primitive::{PrimitiveChart, PrimitiveCompatibleFormat};
+use crate::primitive::{Format, PrimitiveChart};
 
 #[derive(Serialize, Deserialize)]
 pub struct PhichainChart {
@@ -18,7 +18,7 @@ pub struct PhichainChart {
     pub lines: Vec<LineWrapper>,
 }
 
-impl PrimitiveCompatibleFormat for PhichainChart {
+impl Format for PhichainChart {
     fn into_primitive(self) -> anyhow::Result<PrimitiveChart> {
         Ok(PrimitiveChart {
             offset: self.offset.0,

@@ -1,7 +1,7 @@
 use clap::{Parser, ValueEnum};
 use phichain_chart::format::official::OfficialChart;
 use phichain_chart::format::rpe::RpeChart;
-use phichain_chart::primitive::{PrimitiveChart, PrimitiveCompatibleFormat};
+use phichain_chart::primitive::{Format, PrimitiveChart};
 use phichain_chart::serialization::PhichainChart;
 use std::io::Write;
 use std::path::PathBuf;

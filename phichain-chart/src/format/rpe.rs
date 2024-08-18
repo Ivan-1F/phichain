@@ -3,7 +3,7 @@
 use crate::bpm_list::BpmList;
 use crate::easing::Easing;
 use crate::primitive;
-use crate::primitive::{PrimitiveChart, PrimitiveCompatibleFormat};
+use crate::primitive::{Format, PrimitiveChart};
 use num::{Num, Rational32};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -160,7 +160,7 @@ static RPE_EASING: [Easing; 30] = [
     Easing::EaseInOutElastic,
 ];
 
-impl PrimitiveCompatibleFormat for RpeChart {
+impl Format for RpeChart {
     fn into_primitive(self) -> anyhow::Result<PrimitiveChart> {
         let mut primitive = PrimitiveChart {
             offset: self.meta.offset as f32,

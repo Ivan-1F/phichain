@@ -5,7 +5,7 @@ use anyhow::{bail, Context};
 use bevy::app::App;
 use bevy::prelude::*;
 use phichain_chart::format::official::OfficialChart;
-use phichain_chart::primitive::PrimitiveCompatibleFormat;
+use phichain_chart::primitive::Format;
 use phichain_chart::serialization::PhichainChart;
 use std::fs;
 use std::io::{Read, Write};

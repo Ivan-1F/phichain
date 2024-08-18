@@ -5,7 +5,7 @@ use crate::bpm_list::BpmList;
 use crate::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use crate::easing::Easing;
 use crate::event::{LineEvent, LineEventKind, LineEventValue};
-use crate::primitive::{PrimitiveChart, PrimitiveCompatibleFormat};
+use crate::primitive::{Format, PrimitiveChart};
 use crate::{beat, primitive};
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
@@ -101,7 +101,7 @@ pub struct OfficialChart {
     lines: Vec<Line>,
 }
 
-impl PrimitiveCompatibleFormat for OfficialChart {
+impl Format for OfficialChart {
     fn into_primitive(self) -> anyhow::Result<PrimitiveChart> {
         if self.lines.is_empty() {
             bail!("Expect at least one line");

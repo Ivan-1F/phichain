@@ -24,17 +24,15 @@ impl Default for PrimitiveChart {
     }
 }
 
-pub trait PrimitiveCompatibleFormat: Serialize + DeserializeOwned {
-    #[allow(dead_code)]
+pub trait Format: Serialize + DeserializeOwned {
     fn into_primitive(self) -> anyhow::Result<PrimitiveChart>;
 
-    #[allow(dead_code)]
     fn from_primitive(phichain: PrimitiveChart) -> anyhow::Result<Self>
     where
         Self: Sized;
 }
 
-impl PrimitiveCompatibleFormat for PrimitiveChart {
+impl Format for PrimitiveChart {
     fn into_primitive(self) -> anyhow::Result<PrimitiveChart> {
         Ok(self)
     }
