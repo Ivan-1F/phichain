@@ -28,7 +28,7 @@ impl Format for PhichainChart {
                 .iter()
                 .map(|line| primitive::line::Line {
                     notes: line.notes.clone(),
-                    events: line.events.clone(),
+                    events: line.events.iter().map(|x| (*x).into()).collect(),
                 })
                 .collect(),
             ..Default::default()
@@ -46,7 +46,11 @@ impl Format for PhichainChart {
                 .lines
                 .iter()
                 .map(|line| {
-                    LineWrapper::new(Line::default(), line.notes.clone(), line.events.clone())
+                    LineWrapper::new(
+                        Line::default(),
+                        line.notes.clone(),
+                        line.events.iter().map(|x| (*x).into()).collect(),
+                    )
                 })
                 .collect(),
             ..Default::default()

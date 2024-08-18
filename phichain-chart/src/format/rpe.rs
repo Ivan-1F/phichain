@@ -186,72 +186,62 @@ impl Format for RpeChart {
                 .event_layers
                 .iter()
                 .flat_map(|layer| layer.move_xevents.clone())
-                .map(|event| crate::event::LineEvent {
+                .map(|event| primitive::event::LineEvent {
                     kind: crate::event::LineEventKind::X,
                     start_beat: event.start_time.into(),
                     end_beat: event.end_time.into(),
-                    value: crate::event::LineEventValue::transition(
-                        event.start,
-                        event.end,
-                        e(event.easing_type),
-                    ),
+                    start: event.start,
+                    end: event.end,
+                    easing: e(event.easing_type),
                 });
             let y_event_iter = line
                 .event_layers
                 .iter()
                 .flat_map(|layer| layer.move_yevents.clone())
-                .map(|event| crate::event::LineEvent {
+                .map(|event| primitive::event::LineEvent {
                     kind: crate::event::LineEventKind::Y,
                     start_beat: event.start_time.into(),
                     end_beat: event.end_time.into(),
-                    value: crate::event::LineEventValue::transition(
-                        event.start,
-                        event.end,
-                        e(event.easing_type),
-                    ),
+                    start: event.start,
+                    end: event.end,
+                    easing: e(event.easing_type),
                 });
             let rotate_event_iter = line
                 .event_layers
                 .iter()
                 .flat_map(|layer| layer.rotate_events.clone())
-                .map(|event| crate::event::LineEvent {
+                .map(|event| primitive::event::LineEvent {
                     kind: crate::event::LineEventKind::Rotation,
                     start_beat: event.start_time.into(),
                     end_beat: event.end_time.into(),
                     // negate value for rotation
-                    value: crate::event::LineEventValue::transition(
-                        -event.start,
-                        -event.end,
-                        e(event.easing_type),
-                    ),
+                    start: -event.start,
+                    end: -event.end,
+                    easing: e(event.easing_type),
                 });
             let alpha_event_iter = line
                 .event_layers
                 .iter()
                 .flat_map(|layer| layer.alpha_events.clone())
-                .map(|event| crate::event::LineEvent {
+                .map(|event| primitive::event::LineEvent {
                     kind: crate::event::LineEventKind::Opacity,
                     start_beat: event.start_time.into(),
                     end_beat: event.end_time.into(),
-                    value: crate::event::LineEventValue::transition(
-                        event.start as f32,
-                        event.end as f32,
-                        e(event.easing_type),
-                    ),
+                    start: event.start as f32,
+                    end: event.end as f32,
+                    easing: e(event.easing_type),
                 });
             let speed_event_iter = line
                 .event_layers
                 .iter()
                 .flat_map(|layer| layer.speed_events.clone())
-                .map(|event| crate::event::LineEvent {
+                .map(|event| primitive::event::LineEvent {
                     kind: crate::event::LineEventKind::Speed,
                     start_beat: event.start_time.into(),
                     end_beat: event.end_time.into(),
-                    value: crate::event::LineEventValue::transition(
-                        event.start,
-                        event.end,
-                        Easing::Linear, // speed events' easing are fixed to be Linear
-                    ),
+                    start: event.start,
+                    end: event.end,
+                    easing: Easing::Linear, // speed events' easing are fixed to be Linear
                 });
 
             primitive.lines.push(primitive::line::Line {
@@ -348,29 +338,22 @@ impl Format for RpeChart {
             }
             let mut event_layer = EventLayer::default();
             for event in events {
-                let (start, end, easing) = match event.value {
-                    crate::event::LineEventValue::Transition { start, end, easing } => {
-                        (start, end, easing)
-                    }
-                    crate::event::LineEventValue::Constant(value) => (value, value, Easing::Linear),
-                };
-
                 let mut rpe_event = CommonEvent {
                     bezier: 0,
                     bezier_points: [0.0, 0.0, 0.0, 0.0],
                     easing_type: 0,
-                    end,
+                    end: event.end,
                     end_time: event.end_beat.into(),
-                    start,
+                    start: event.start,
                     start_time: event.start_beat.into(),
                 };
 
-                if let Easing::Custom(a, b, c, d) = easing {
+                if let Easing::Custom(a, b, c, d) = event.easing {
                     rpe_event.bezier_points = [a, b, c, d];
                     rpe_event.bezier = 1;
                     rpe_event.easing_type = 1;
                 } else {
-                    rpe_event.easing_type = e(easing) as i32;
+                    rpe_event.easing_type = e(event.easing) as i32;
                 }
 
                 match event.kind {
@@ -405,8 +388,8 @@ impl Format for RpeChart {
                     }
                     crate::event::LineEventKind::Speed => {
                         event_layer.speed_events.push(SpeedEvent {
-                            start,
-                            end,
+                            start: event.start,
+                            end: event.end,
                             end_time: event.end_beat.into(),
                             start_time: event.start_beat.into(),
                         })

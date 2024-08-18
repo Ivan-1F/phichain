@@ -4,7 +4,7 @@ use crate::beat::Beat;
 use crate::bpm_list::BpmList;
 use crate::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use crate::easing::Easing;
-use crate::event::{LineEvent, LineEventKind, LineEventValue};
+use crate::event::LineEventKind;
 use crate::primitive::{Format, PrimitiveChart};
 use crate::{beat, primitive};
 use anyhow::bail;
@@ -139,53 +139,60 @@ impl Format for OfficialChart {
 
             let move_event_iter = line.move_events.iter().flat_map(|event| {
                 vec![
-                    LineEvent {
+                    primitive::event::LineEvent {
                         kind: LineEventKind::X,
-                        value: LineEventValue::transition(
-                            x(event.start_x),
-                            y(event.end_x),
-                            Easing::Linear,
-                        ),
+                        start: x(event.start_x),
+                        end: y(event.end_x),
+                        easing: Easing::Linear,
                         start_beat: t(event.start_time),
                         end_beat: t(event.end_time),
                     },
-                    LineEvent {
+                    primitive::event::LineEvent {
                         kind: LineEventKind::Y,
-                        value: LineEventValue::transition(
-                            y(event.start_y),
-                            y(event.end_y),
-                            Easing::Linear,
-                        ),
+                        start: y(event.start_y),
+                        end: y(event.end_y),
+                        easing: Easing::Linear,
                         start_beat: t(event.start_time),
                         end_beat: t(event.end_time),
                     },
                 ]
             });
 
-            let rotate_event_iter = line.rotate_events.iter().map(|event| LineEvent {
-                kind: LineEventKind::Rotation,
-                value: LineEventValue::transition(event.start, event.end, Easing::Linear),
-                start_beat: t(event.start_time),
-                end_beat: t(event.end_time),
-            });
+            let rotate_event_iter =
+                line.rotate_events
+                    .iter()
+                    .map(|event| primitive::event::LineEvent {
+                        kind: LineEventKind::Rotation,
+                        start: event.start,
+                        end: event.end,
+                        easing: Easing::Linear,
+                        start_beat: t(event.start_time),
+                        end_beat: t(event.end_time),
+                    });
 
-            let opacity_event_iter = line.opacity_events.iter().map(|event| LineEvent {
-                kind: LineEventKind::Opacity,
-                value: LineEventValue::transition(
-                    event.start * 255.0,
-                    event.end * 255.0,
-                    Easing::Linear,
-                ),
-                start_beat: t(event.start_time),
-                end_beat: t(event.end_time),
-            });
+            let opacity_event_iter =
+                line.opacity_events
+                    .iter()
+                    .map(|event| primitive::event::LineEvent {
+                        kind: LineEventKind::Opacity,
+                        start: event.start * 255.0,
+                        end: event.end * 255.0,
+                        easing: Easing::Linear,
+                        start_beat: t(event.start_time),
+                        end_beat: t(event.end_time),
+                    });
 
-            let speed_event_iter = line.speed_events.iter().map(|event| LineEvent {
-                kind: LineEventKind::Speed,
-                value: LineEventValue::constant(event.value / 2.0 * 9.0),
-                start_beat: t(event.start_time),
-                end_beat: t(event.end_time),
-            });
+            let speed_event_iter =
+                line.speed_events
+                    .iter()
+                    .map(|event| primitive::event::LineEvent {
+                        kind: LineEventKind::Speed,
+                        start: event.value / 2.0 * 9.0,
+                        end: event.value / 2.0 * 9.0,
+                        easing: Easing::Linear,
+                        start_beat: t(event.start_time),
+                        end_beat: t(event.end_time),
+                    });
 
             let mut line = primitive::line::Line {
                 notes: line
@@ -212,7 +219,8 @@ impl Format for OfficialChart {
                 if let crate::note::NoteKind::Hold { .. } = note.kind {
                     let mut speed = 0.0;
                     for event in &speed_events {
-                        let result = event.evaluate(note.beat.value());
+                        let result =
+                            crate::event::LineEvent::from(**event).evaluate(note.beat.value());
                         if let Some(value) = result.value() {
                             speed = value;
                         }
@@ -232,18 +240,9 @@ impl Format for OfficialChart {
     where
         Self: Sized,
     {
-        fn cut_event(event: LineEvent) -> Vec<LineEvent> {
-            match event.value {
-                LineEventValue::Transition {
-                    easing: Easing::Linear,
-                    ..
-                } => {
-                    return vec![event];
-                }
-                LineEventValue::Constant(_) => {
-                    return vec![event];
-                }
-                _ => {}
+        fn cut_event(event: primitive::event::LineEvent) -> Vec<primitive::event::LineEvent> {
+            if matches!(event.easing, Easing::Linear) {
+                return vec![event];
             }
 
             let mut events = vec![];
@@ -253,14 +252,19 @@ impl Format for OfficialChart {
             let mut current_beat = event.start_beat;
 
             while current_beat <= event.end_beat {
-                let start_value = event.evaluate(current_beat.value()).value().unwrap();
-                let end_value = event
+                let start_value = crate::event::LineEvent::from(event)
+                    .evaluate(current_beat.value())
+                    .value()
+                    .unwrap();
+                let end_value = crate::event::LineEvent::from(event)
                     .evaluate(current_beat.value() + minimum.value())
                     .value()
                     .unwrap();
-                events.push(LineEvent {
+                events.push(primitive::event::LineEvent {
                     kind: event.kind,
-                    value: LineEventValue::transition(start_value, end_value, Easing::Linear),
+                    start: start_value,
+                    end: end_value,
+                    easing: Easing::Linear,
                     start_beat: current_beat,
                     end_beat: current_beat + minimum,
                 });
@@ -294,7 +298,9 @@ impl Format for OfficialChart {
 
             // -------- Events --------
 
-            fn connect_events(events: &[LineEvent]) -> Vec<LineEvent> {
+            fn connect_events(
+                events: &[primitive::event::LineEvent],
+            ) -> Vec<primitive::event::LineEvent> {
                 let mut events = events.to_owned();
                 events.sort_by_key(|e| e.start_beat);
 
@@ -319,9 +325,11 @@ impl Format for OfficialChart {
                     let start = evaluate(&events, start_beat, true);
                     let end = evaluate(&events, end_beat, false);
 
-                    connected_events.push(LineEvent {
+                    connected_events.push(primitive::event::LineEvent {
                         kind: LineEventKind::X, // does not matter
-                        value: LineEventValue::transition(start, end, Easing::Linear),
+                        start,
+                        end,
+                        easing: Easing::Linear,
                         start_beat,
                         end_beat,
                     })
@@ -336,7 +344,7 @@ impl Format for OfficialChart {
                 mut transform: F,
                 target: &mut Vec<T>,
             ) where
-                F: FnMut(&LineEvent) -> T,
+                F: FnMut(&primitive::event::LineEvent) -> T,
             {
                 let events = connect_events(
                     &line
@@ -361,8 +369,8 @@ impl Format for OfficialChart {
                 |e| NumbericLineEvent {
                     start_time: time(e.start_beat),
                     end_time: time(e.end_beat),
-                    start: e.value.start(),
-                    end: e.value.end(),
+                    start: e.start,
+                    end: e.end,
                 },
                 &mut official_line.rotate_events,
             );
@@ -373,8 +381,8 @@ impl Format for OfficialChart {
                 |e| NumbericLineEvent {
                     start_time: time(e.start_beat),
                     end_time: time(e.end_beat),
-                    start: e.value.start() / 255.0,
-                    end: e.value.end() / 255.0,
+                    start: e.start / 255.0,
+                    end: e.end / 255.0,
                 },
                 &mut official_line.opacity_events,
             );
@@ -385,7 +393,7 @@ impl Format for OfficialChart {
                 |e| SpeedEvent {
                     start_time: time(e.start_beat),
                     end_time: time(e.end_beat),
-                    value: e.value.start() / 9.0 * 2.0,
+                    value: e.start / 9.0 * 2.0,
                     floor_position: 0.0, // this will be calculated later
                 },
                 &mut official_line.speed_events,
@@ -413,13 +421,17 @@ impl Format for OfficialChart {
             x_events.sort_by_key(|e| e.start_beat);
             y_events.sort_by_key(|e| e.start_beat);
 
-            fn evaluate(events: &Vec<LineEvent>, beat: Beat, start_has_effect: bool) -> f32 {
+            fn evaluate(
+                events: &Vec<primitive::event::LineEvent>,
+                beat: Beat,
+                start_has_effect: bool,
+            ) -> f32 {
                 let mut ret = 0.0;
                 for event in events {
                     let result = if start_has_effect {
-                        event.evaluate(beat.value())
+                        crate::event::LineEvent::from(*event).evaluate(beat.value())
                     } else {
-                        event.evaluate_start_no_effect(beat.value())
+                        crate::event::LineEvent::from(*event).evaluate_start_no_effect(beat.value())
                     };
                     if let Some(value) = result.value() {
                         ret = value;
@@ -488,7 +500,8 @@ impl Format for OfficialChart {
                 let speed = if matches!(note.kind, crate::note::NoteKind::Hold { .. }) {
                     let mut speed = 0.0;
                     for event in &speed_events {
-                        let result = event.evaluate(note.beat.value());
+                        let result =
+                            crate::event::LineEvent::from(**event).evaluate(note.beat.value());
                         if let Some(value) = result.value() {
                             speed = value;
                         }

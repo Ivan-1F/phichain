@@ -3,6 +3,7 @@ use crate::primitive::line::Line;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
+pub mod event;
 pub mod line;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

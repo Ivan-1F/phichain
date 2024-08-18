@@ -1,5 +1,5 @@
-use crate::event::LineEvent;
 use crate::note::Note;
+use crate::primitive::event::LineEvent;
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
