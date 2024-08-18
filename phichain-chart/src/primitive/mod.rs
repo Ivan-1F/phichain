@@ -24,7 +24,6 @@ impl Default for PrimitiveChart {
     }
 }
 
-// TODO: replace `Format` trait with this
 pub trait PrimitiveCompatibleFormat: Serialize + DeserializeOwned {
     #[allow(dead_code)]
     fn into_primitive(self) -> anyhow::Result<PrimitiveChart>;

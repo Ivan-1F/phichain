@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::bpm_list::BpmList;
 use crate::event::{LineEvent, LineEventKind, LineEventValue};
-use crate::format::Format;
 use crate::line::Line;
 use crate::migration::CURRENT_FORMAT;
 use crate::note::Note;
@@ -17,19 +16,6 @@ pub struct PhichainChart {
     pub offset: Offset,
     pub bpm_list: BpmList,
     pub lines: Vec<LineWrapper>,
-}
-
-impl Format for PhichainChart {
-    fn into_phichain(self) -> anyhow::Result<PhichainChart> {
-        Ok(self)
-    }
-
-    fn from_phichain(phichain: PhichainChart) -> anyhow::Result<Self>
-    where
-        Self: Sized,
-    {
-        Ok(phichain)
-    }
 }
 
 impl PrimitiveCompatibleFormat for PhichainChart {

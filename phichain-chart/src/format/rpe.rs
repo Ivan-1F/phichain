@@ -2,10 +2,8 @@
 
 use crate::bpm_list::BpmList;
 use crate::easing::Easing;
-use crate::format::Format;
 use crate::primitive;
 use crate::primitive::{PrimitiveChart, PrimitiveCompatibleFormat};
-use crate::serialization::PhichainChart;
 use num::{Num, Rational32};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -421,132 +419,5 @@ impl PrimitiveCompatibleFormat for RpeChart {
         }
 
         Ok(rpe)
-    }
-}
-
-impl Format for RpeChart {
-    fn into_phichain(self) -> anyhow::Result<PhichainChart> {
-        // let mut bpm_list = crate::bpm_list::BpmList::new(
-        //     self.bpm_list
-        //         .iter()
-        //         .map(|x| crate::bpm_list::BpmPoint::new(x.start_time.clone().into(), x.bpm))
-        //         .collect(),
-        // );
-        // bpm_list.compute();
-        // let mut phichain = PhichainChart::new(self.meta.offset as f32, bpm_list, vec![]);
-        //
-        // let easing = |id: i32| {
-        //     Easing::iter().nth((id - 1) as usize).unwrap_or_else(|| {
-        //         warn!("Unknown easing type: {}", id);
-        //         Easing::Linear
-        //     })
-        // };
-        //
-        // for line in self.judge_line_list {
-        //     let x_event_iter = line
-        //         .event_layers
-        //         .iter()
-        //         .flat_map(|layer| layer.move_xevents.clone())
-        //         .map(|event| LineEvent {
-        //             kind: LineEventKind::X,
-        //             start: event.start,
-        //             end: event.end,
-        //             start_beat: event.start_time.into(),
-        //             end_beat: event.end_time.into(),
-        //             easing: easing(event.easing_type),
-        //         });
-        //     let y_event_iter = line
-        //         .event_layers
-        //         .iter()
-        //         .flat_map(|layer| layer.move_yevents.clone())
-        //         .map(|event| LineEvent {
-        //             kind: LineEventKind::Y,
-        //             start: event.start,
-        //             end: event.end,
-        //             start_beat: event.start_time.into(),
-        //             end_beat: event.end_time.into(),
-        //             easing: easing(event.easing_type),
-        //         });
-        //     let rotate_event_iter = line
-        //         .event_layers
-        //         .iter()
-        //         .flat_map(|layer| layer.rotate_events.clone())
-        //         .map(|event| LineEvent {
-        //             kind: LineEventKind::Rotation,
-        //             start: event.start,
-        //             end: event.end,
-        //             start_beat: event.start_time.into(),
-        //             end_beat: event.end_time.into(),
-        //             easing: easing(event.easing_type),
-        //         });
-        //     let alpha_event_iter = line
-        //         .event_layers
-        //         .iter()
-        //         .flat_map(|layer| layer.alpha_events.clone())
-        //         .map(|event| LineEvent {
-        //             kind: LineEventKind::Opacity,
-        //             start: event.start as f32,
-        //             end: event.end as f32,
-        //             start_beat: event.start_time.into(),
-        //             end_beat: event.end_time.into(),
-        //             easing: easing(event.easing_type),
-        //         });
-        //     let speed_event_iter = line
-        //         .event_layers
-        //         .iter()
-        //         .flat_map(|layer| layer.speed_events.clone())
-        //         .map(|event| LineEvent {
-        //             kind: LineEventKind::Speed,
-        //             start: event.start,
-        //             end: event.end,
-        //             start_beat: event.start_time.into(),
-        //             end_beat: event.end_time.into(),
-        //             easing: Easing::Linear, // speed events' easing are fixed to be Linear
-        //         });
-        //
-        //     phichain.lines.push(LineWrapper::new(
-        //         Default::default(),
-        //         line.notes
-        //             .iter()
-        //             .map(|note| {
-        //                 let start_beat = crate::beat::Beat::from(note.start_time.clone());
-        //                 let end_beat = crate::beat::Beat::from(note.end_time.clone());
-        //                 let kind: crate::note::NoteKind = match note.kind {
-        //                     NoteKind::Tap => crate::note::NoteKind::Tap,
-        //                     NoteKind::Drag => crate::note::NoteKind::Drag,
-        //                     NoteKind::Hold => crate::note::NoteKind::Hold {
-        //                         hold_beat: end_beat - start_beat,
-        //                     },
-        //                     NoteKind::Flick => crate::note::NoteKind::Flick,
-        //                 };
-        //
-        //                 crate::note::Note::new(
-        //                     kind,
-        //                     note.above == 1,
-        //                     start_beat,
-        //                     note.position_x,
-        //                     note.speed,
-        //                 )
-        //             })
-        //             .collect(),
-        //         x_event_iter
-        //             .chain(y_event_iter)
-        //             .chain(rotate_event_iter)
-        //             .chain(alpha_event_iter)
-        //             .chain(speed_event_iter)
-        //             .collect(),
-        //     ));
-        // }
-        //
-        // Ok(phichain)
-
-        unimplemented!("");
-    }
-
-    fn from_phichain(_phichain: PhichainChart) -> anyhow::Result<Self>
-    where
-        Self: Sized,
-    {
-        unimplemented!("");
     }
 }
