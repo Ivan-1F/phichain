@@ -3,11 +3,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::bpm_list::BpmList;
 use crate::event::{LineEvent, LineEventKind, LineEventValue};
-use crate::format::Format;
 use crate::line::Line;
 use crate::migration::CURRENT_FORMAT;
 use crate::note::Note;
 use crate::offset::Offset;
+use crate::primitive;
+use crate::primitive::{Format, PrimitiveChart};
 
 #[derive(Serialize, Deserialize)]
 pub struct PhichainChart {
@@ -18,15 +19,42 @@ pub struct PhichainChart {
 }
 
 impl Format for PhichainChart {
-    fn into_phichain(self) -> anyhow::Result<PhichainChart> {
-        Ok(self)
+    fn into_primitive(self) -> anyhow::Result<PrimitiveChart> {
+        Ok(PrimitiveChart {
+            offset: self.offset.0,
+            bpm_list: self.bpm_list.clone(),
+            lines: self
+                .lines
+                .iter()
+                .map(|line| primitive::line::Line {
+                    notes: line.notes.clone(),
+                    events: line.events.iter().map(|x| (*x).into()).collect(),
+                })
+                .collect(),
+            ..Default::default()
+        })
     }
 
-    fn from_phichain(phichain: PhichainChart) -> anyhow::Result<Self>
+    fn from_primitive(primitive: PrimitiveChart) -> anyhow::Result<Self>
     where
         Self: Sized,
     {
-        Ok(phichain)
+        Ok(Self {
+            offset: Offset(primitive.offset),
+            bpm_list: primitive.bpm_list,
+            lines: primitive
+                .lines
+                .iter()
+                .map(|line| {
+                    LineWrapper::new(
+                        Line::default(),
+                        line.notes.clone(),
+                        line.events.iter().map(|x| (*x).into()).collect(),
+                    )
+                })
+                .collect(),
+            ..Default::default()
+        })
     }
 }
 

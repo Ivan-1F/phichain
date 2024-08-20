@@ -57,6 +57,10 @@ impl BpmList {
         list
     }
 
+    pub fn single(bpm: f32) -> Self {
+        Self::new(vec![BpmPoint::new(Beat::ZERO, bpm)])
+    }
+
     pub fn compute(&mut self) {
         let mut time = 0.0;
         let mut last_beat = 0.0;

@@ -4,10 +4,12 @@ use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 
 use crate::beat::Beat;
+use crate::primitive;
 
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, IntoPrimitive, TryFromPrimitive,
 )]
+#[serde(rename_all = "snake_case")]
 #[repr(u8)]
 pub enum LineEventKind {
     X = 1,
@@ -251,6 +253,40 @@ impl LineEvent {
                     EventEvaluationResult::Unaffected
                 }
             }
+        }
+    }
+}
+
+impl From<LineEvent> for primitive::event::LineEvent {
+    fn from(event: LineEvent) -> Self {
+        match event.value {
+            LineEventValue::Transition { start, end, easing } => Self {
+                kind: event.kind,
+                start_beat: event.start_beat,
+                end_beat: event.end_beat,
+                start,
+                end,
+                easing,
+            },
+            LineEventValue::Constant(value) => Self {
+                kind: event.kind,
+                start_beat: event.start_beat,
+                end_beat: event.end_beat,
+                start: value,
+                end: value,
+                easing: Easing::Linear,
+            },
+        }
+    }
+}
+
+impl From<primitive::event::LineEvent> for LineEvent {
+    fn from(event: primitive::event::LineEvent) -> Self {
+        Self {
+            kind: event.kind,
+            start_beat: event.start_beat,
+            end_beat: event.end_beat,
+            value: LineEventValue::transition(event.start, event.end, event.easing),
         }
     }
 }
