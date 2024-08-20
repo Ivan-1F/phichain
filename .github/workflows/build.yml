@@ -113,8 +113,10 @@ jobs:
           mkdir build
           if [ "${{ matrix.platform }}" == "windows" ]; then
             cp ./target/${{ matrix.target }}/release/phichain.exe "./build/phichain.exe"
+            cp ./target/${{ matrix.target }}/release/phichain-converter.exe "./build/phichain-converter.exe"
           else
             cp ./target/${{ matrix.target }}/release/phichain "./build/phichain"
+            cp ./target/${{ matrix.target }}/release/phichain-converter "./build/phichain-converter"
           fi
 
           mv LICENSE README.md README_en.md assets phichain-editor/lang ./build
