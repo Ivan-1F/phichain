@@ -2,7 +2,7 @@ use super::{GameConfig, GameSet, GameViewport};
 use crate::score::GameScore;
 use bevy::prelude::*;
 
-const UI_TEXT_MARGIN: f32 = 10.0;
+const UI_TEXT_MARGIN: f32 = 0.0;
 
 pub struct GameUiPlugin;
 
@@ -15,6 +15,7 @@ impl Plugin for GameUiPlugin {
                     .chain()
                     .in_set(GameSet),
             )
+            .add_systems(Update, update_ui_text_margin_system)
             // combo
             .add_systems(Startup, setup_combo_ui_system)
             .add_systems(Update, update_combo_system.in_set(GameSet))
@@ -62,6 +63,57 @@ struct ComboIndicator;
 #[derive(Component, Debug)]
 struct Combo;
 
+#[derive(Component, Debug)]
+struct ApplyMargin {
+    left: bool,
+    right: bool,
+    top: bool,
+    bottom: bool,
+}
+
+impl ApplyMargin {
+    fn all() -> Self {
+        Self {
+            left: true,
+            right: true,
+            top: true,
+            bottom: true,
+        }
+    }
+
+    fn none() -> Self {
+        Self {
+            left: false,
+            right: false,
+            top: false,
+            bottom: false,
+        }
+    }
+}
+
+fn update_ui_text_margin_system(
+    mut query: Query<(&mut Style, &ApplyMargin)>,
+    scale: Res<BaseTextScale>,
+) {
+    for (mut style, sides) in &mut query {
+        let value = Val::Px(scale.0 * 0.5);
+        let mut rect = UiRect::ZERO;
+        if sides.left {
+            rect.left = value;
+        }
+        if sides.right {
+            rect.right = value;
+        }
+        if sides.top {
+            rect.top = value;
+        }
+        if sides.bottom {
+            rect.bottom = value;
+        }
+        style.margin = rect;
+    }
+}
+
 fn setup_combo_ui_system(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
         .spawn(NodeBundle {
@@ -103,6 +155,12 @@ fn setup_combo_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
                         },
                         ComboText,
                         TextScale(1.0),
+                        ApplyMargin {
+                            left: false,
+                            right: false,
+                            top: true,
+                            bottom: false,
+                        },
                     ));
 
                     parent.spawn((
@@ -119,6 +177,7 @@ fn setup_combo_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
                         },
                         ComboIndicator,
                         TextScale(0.4),
+                        ApplyMargin::none(),
                     ));
                 });
         });
@@ -154,6 +213,7 @@ fn spawn_score_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
                 },
                 ScoreText,
                 TextScale(0.8),
+                ApplyMargin::all(),
             ));
         });
 }
@@ -188,6 +248,7 @@ fn spawn_name_ui_system(mut commands: Commands, asset_server: Res<AssetServer>) 
                 },
                 NameText,
                 TextScale(0.5),
+                ApplyMargin::all(),
             ));
         });
 }
@@ -222,6 +283,7 @@ fn spawn_level_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
                 },
                 LevelText,
                 TextScale(0.5),
+                ApplyMargin::all(),
             ));
         });
 }
