@@ -45,7 +45,6 @@ pub fn line_list_tab(
         }
     });
     ui.columns(2, |columns| {
-        // TODO: fixed not truncated
         columns[0].vertical_centered(|ui| {
             if ui
                 .checkbox(
