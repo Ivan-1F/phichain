@@ -3,7 +3,9 @@ use crate::editing::command::line::{CreateLine, RemoveLine};
 use crate::editing::command::EditorCommand;
 use crate::editing::DoCommandEvent;
 use crate::selection::SelectedLine;
+use crate::settings::EditorSettings;
 use bevy::prelude::*;
+use bevy_persistent::Persistent;
 use egui::{Color32, Layout, Sense, Stroke, Ui};
 use phichain_chart::event::LineEvent;
 use phichain_chart::line::{Line, LineOpacity, LinePosition, LineRotation, LineSpeed};
@@ -32,11 +34,9 @@ pub fn line_list_tab(
     mut selected_line: ResMut<SelectedLine>,
 
     mut do_command_event: EventWriter<DoCommandEvent>,
-) {
-    // TODO: persist in EditorSettings
-    let mut show_states = true;
-    let mut show_previews = true;
 
+    mut editor_settings: ResMut<Persistent<EditorSettings>>,
+) {
     let mut lines = line_query.iter().collect::<Vec<_>>();
     lines.sort_by_key(|x| x.2);
     ui.with_layout(Layout::top_down_justified(egui::Align::Center), |ui| {
@@ -46,10 +46,29 @@ pub fn line_list_tab(
     });
     ui.columns(2, |columns| {
         // TODO: fixed not truncated
-        columns[0]
-            .vertical_centered(|ui| ui.checkbox(&mut show_states, t!("tab.line_list.show_states")));
+        columns[0].vertical_centered(|ui| {
+            if ui
+                .checkbox(
+                    &mut editor_settings.ui.line_list.show_states,
+                    t!("tab.line_list.show_states"),
+                )
+                .changed()
+            {
+                // TODO: handle error (global)
+                let _ = editor_settings.persist();
+            }
+        });
         columns[1].vertical_centered(|ui| {
-            ui.checkbox(&mut show_previews, t!("tab.line_list.show_previews"))
+            if ui
+                .checkbox(
+                    &mut editor_settings.ui.line_list.show_previews,
+                    t!("tab.line_list.show_previews"),
+                )
+                .changed()
+            {
+                // TODO: handle error (global)
+                let _ = editor_settings.persist();
+            }
         });
     });
 
@@ -134,7 +153,7 @@ pub fn line_list_tab(
                 });
             });
 
-            if show_states {
+            if editor_settings.ui.line_list.show_states {
                 ui.columns(5, |ui| {
                     ui[0].vertical_centered(|ui| {
                         ui.add(trunc_label!(format!("{:.2}", position.0.x)));
@@ -154,7 +173,7 @@ pub fn line_list_tab(
                 });
             }
 
-            if show_previews {
+            if editor_settings.ui.line_list.show_previews {
                 ui.columns(4, |columns| {
                     let x = position.0.x / CANVAS_WIDTH + 0.5;
                     let y = 1.0 - (position.0.y / CANVAS_HEIGHT + 0.5);
