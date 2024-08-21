@@ -45,10 +45,12 @@ pub fn line_list_tab(
         }
     });
     ui.columns(2, |columns| {
-        // TODO: translate
         // TODO: fixed not truncated
-        columns[0].vertical_centered(|ui| ui.checkbox(&mut show_states, "Show States"));
-        columns[1].vertical_centered(|ui| ui.checkbox(&mut show_previews, "Show Previews"));
+        columns[0]
+            .vertical_centered(|ui| ui.checkbox(&mut show_states, t!("tab.line_list.show_states")));
+        columns[1].vertical_centered(|ui| {
+            ui.checkbox(&mut show_previews, t!("tab.line_list.show_previews"))
+        });
     });
 
     ui.separator();

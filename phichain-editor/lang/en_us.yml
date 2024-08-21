@@ -87,6 +87,8 @@ tab:
     opacity: Opacity
     speed: Speed
     remove: Remove
+    show_states: Show States
+    show_previews: Show Previews
   bpm_list:
     title: BPM List
     new: New BPM Point

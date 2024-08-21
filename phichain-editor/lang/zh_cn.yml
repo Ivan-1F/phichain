@@ -87,6 +87,8 @@ tab:
     opacity: 透明度
     speed: 速度
     remove: 移除
+    show_states: 显示状态
+    show_previews: 显示预览
   bpm_list:
     title: BPM 列表
     new: 新增 BPM 点
