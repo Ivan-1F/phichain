@@ -62,7 +62,13 @@ pub fn setup_assets() {
             }
 
             #[cfg(not(debug_assertions))]
-            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            {
+                env::current_exe()
+                    .expect("Failed to get path to the current exe")
+                    .parent()
+                    .map(ToOwned::to_owned)
+                    .expect("Failed to get parent path of the current exe")
+            }
         }
     };
 
