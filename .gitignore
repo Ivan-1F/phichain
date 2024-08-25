@@ -1,8 +1,13 @@
 /target
 
-Chart*.json
-
 .DS_Store
 
 # IDE
 .idea
+
+# charts
+Chart*.json
+
+# medias
+*.mp4
+*.mov
