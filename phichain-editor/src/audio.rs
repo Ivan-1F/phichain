@@ -152,7 +152,7 @@ fn update_time_system(
     offset: Res<Offset>,
 ) {
     if let Some(instance) = audio_instances.get_mut(&handle.0) {
-        let value = instance.state().position().unwrap_or_default() as f32 + offset.0 / 1000.0;
+        let value = instance.state().position().unwrap_or_default() as f32 - offset.0 / 1000.0;
         time.0 = value;
         game_time.0 = value;
     }
