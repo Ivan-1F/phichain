@@ -48,7 +48,7 @@ fn main() {
 
     App::new()
         .configure_sets(Update, GameSet)
-        .insert_resource(SceneController::new(args.width, args.height))
+        .insert_resource(SceneController::new(args.video.width, args.video.height))
         .insert_resource(args)
         .insert_resource(ClearColor(Color::rgb_u8(0, 0, 0)))
         .add_plugins(
@@ -142,13 +142,13 @@ fn setup_system(
     let ffmpeg = Command::new("ffmpeg")
         .arg("-y")
         .arg("-framerate")
-        .arg(args.fps.to_string())
+        .arg(args.video.fps.to_string())
         .arg("-f")
         .arg("rawvideo")
         .arg("-pix_fmt")
         .arg("rgba")
         .arg("-s")
-        .arg(format!("{}x{}", args.width, args.height))
+        .arg(format!("{}x{}", args.video.width, args.video.height))
         // don't expect any audio in the stream
         .arg("-an")
         // get the data from stdin
@@ -184,8 +184,8 @@ fn setup_system(
     let name = project.meta.name.clone();
     let level = project.meta.level.clone();
 
-    let width = args.width;
-    let height = args.height;
+    let width = args.video.width;
+    let height = args.video.height;
 
     let args = args.clone();
     commands.add(move |world: &mut World| {
@@ -195,12 +195,7 @@ fn setup_system(
         paused.0 = false;
         let mut config = world.resource_mut::<GameConfig>();
 
-        config.note_scale = args.note_scale;
-        config.fc_ap_indicator = args.fc_ap_indicator;
-        config.multi_highlight = args.multi_highlight;
-        config.hide_hit_effect = args.hide_hit_effect;
-        config.name = args.name.unwrap_or(name);
-        config.level = args.level.unwrap_or(level);
+        *config = args.game.into_game_config(name, level);
     });
 
     commands.spawn((
@@ -299,7 +294,6 @@ fn setup_render_target(
 pub struct CaptureFramePlugin;
 impl Plugin for CaptureFramePlugin {
     fn build(&self, app: &mut App) {
-        info!("Adding CaptureFramePlugin");
         app.add_systems(PostUpdate, update_system);
     }
 }
@@ -513,8 +507,8 @@ fn update_system(
 ) {
     let from = args.from.unwrap_or(0.0);
     let to = args.to.unwrap_or(state.duration);
-    chart_time.0 = from + *frame as f32 / args.fps as f32;
-    let total_frames = (args.fps as f32 * (to - from)) as u32;
+    chart_time.0 = from + *frame as f32 / args.video.fps as f32;
+    let total_frames = (args.video.fps as f32 * (to - from)) as u32;
     let current_fps = *frame as f32 / state.start_time.elapsed().as_secs_f32();
     if *frame % 100 == 0 && *frame != 0 {
         info!(
@@ -523,7 +517,7 @@ fn update_system(
             total_frames,
             *frame as f32 / total_frames as f32 * 100.0,
             current_fps,
-            current_fps / args.fps as f32,
+            current_fps / args.video.fps as f32,
         );
     }
     if let SceneState::Render(n) = scene_controller.state {
