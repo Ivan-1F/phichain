@@ -24,6 +24,7 @@ use crossbeam_channel::{Receiver, Sender};
 use phichain_assets::AssetsPlugin;
 use phichain_chart::project::Project;
 use phichain_game::{ChartTime, GameConfig, GamePlugin, GameSet, GameViewport, Paused};
+use std::collections::VecDeque;
 use std::io::Write;
 use std::ops::DerefMut;
 use std::process::{Child, Command, Stdio};
@@ -503,21 +504,27 @@ fn update_system(
     mut ffmpeg: ResMut<FFmpeg>,
     args: Res<Args>,
 
+    // fps calculation, reference: https://github.com/TeamFlos/phira-render/blob/main/src-tauri/src/task.rs#L118
+    mut frame_times: Local<VecDeque<f32>>,
+    mut last_update_fps_sec: Local<u32>,
+    mut last_fps: Local<usize>,
+
     state: Res<AppState>,
 ) {
     let from = args.from.unwrap_or(0.0);
     let to = args.to.unwrap_or(state.duration);
     chart_time.0 = from + *frame as f32 / args.video.fps as f32;
     let total_frames = (args.video.fps as f32 * (to - from)) as u32;
-    let current_fps = *frame as f32 / state.start_time.elapsed().as_secs_f32();
+    let estimate = total_frames.saturating_sub(*frame).max(1) as f32 / *last_fps as f32;
     if *frame % 100 == 0 && *frame != 0 {
         info!(
-            "{} / {} ({:.2}%), {:.2}fps ({:.2}x)",
+            "{} / {} ({:.2}%), {}fps ({:.2}x), estimate to end {:.2}s",
             *frame,
             total_frames,
             *frame as f32 / total_frames as f32 * 100.0,
-            current_fps,
-            current_fps / args.video.fps as f32,
+            *last_fps,
+            *last_fps as f32 / args.video.fps as f32,
+            estimate,
         );
     }
     if let SceneState::Render(n) = scene_controller.state {
@@ -568,6 +575,17 @@ fn update_system(
                         .expect("Failed to get ffmpeg stdin")
                         .write_all(img.into_raw().as_ref())
                         .expect("Failed to write to ffmpeg stdin");
+
+                    let current = state.start_time.elapsed().as_secs_f32();
+                    let second = current as u32;
+                    frame_times.push_back(current);
+                    while frame_times.front().is_some_and(|x| current - *x > 1.) {
+                        frame_times.pop_front();
+                    }
+                    if *last_update_fps_sec != second {
+                        *last_fps = frame_times.len();
+                        *last_update_fps_sec = second;
+                    }
                 }
                 if chart_time.0 >= to {
                     app_exit_writer.send(AppExit);
