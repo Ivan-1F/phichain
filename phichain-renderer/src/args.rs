@@ -74,6 +74,8 @@ impl GameArgs {
             hide_hit_effect: self.hide_hit_effect,
             name: self.name.unwrap_or(name),
             level: self.level.unwrap_or(level),
+
+            hit_effect_follow_game_time: true,
         }
     }
 }

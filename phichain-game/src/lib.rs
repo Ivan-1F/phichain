@@ -42,6 +42,11 @@ pub struct GameConfig {
 
     pub name: String,
     pub level: String,
+
+    /// If enabled, hit effects will use [`ChartTime`] instead of [`Time`] for calculation
+    ///
+    /// This is useful in the renderer
+    pub hit_effect_follow_game_time: bool,
 }
 
 impl Default for GameConfig {
@@ -54,6 +59,8 @@ impl Default for GameConfig {
 
             name: Default::default(),
             level: Default::default(),
+
+            hit_effect_follow_game_time: false,
         }
     }
 }
