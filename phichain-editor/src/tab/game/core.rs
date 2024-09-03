@@ -72,6 +72,7 @@ fn sync_game_config_system(
     game_config.fc_ap_indicator = editor_settings.game.fc_ap_indicator;
     game_config.multi_highlight = editor_settings.game.multi_highlight;
     game_config.hide_hit_effect = editor_settings.game.hide_hit_effect;
+    game_config.hit_effect_follow_game_time = editor_settings.game.hit_effect_follow_game_time;
     game_config.name = project.meta.name.clone();
     game_config.level = project.meta.level.clone();
 }

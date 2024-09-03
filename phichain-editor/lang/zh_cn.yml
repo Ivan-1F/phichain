@@ -113,6 +113,7 @@ tab:
         hide_hit_effect: 隐藏打击特效
         note_scale: 音符缩放
         multi_highlight: 多押高亮
+        hit_effect_follow_game_time: 打击特效使用游戏时间
 
 project:
   save:
