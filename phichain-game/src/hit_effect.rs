@@ -59,8 +59,8 @@ impl Plugin for HitEffectPlugin {
             .add_systems(
                 Update,
                 (
-                    spawn_hit_effect_system,
-                    update_hit_effect_system.after(TransformSystem::TransformPropagate),
+                    spawn_hit_effect_system.after(TransformSystem::TransformPropagate),
+                    update_hit_effect_system,
                     update_hit_effect_scale_system,
                     animate_hit_effect_system,
                 )
