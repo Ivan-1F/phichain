@@ -1,0 +1,47 @@
+[package]
+name = "phichain-renderer"
+version = "0.1.0"
+edition = "2021"
+
+[lints.clippy]
+type_complexity = "allow"
+too_many_arguments = "allow"
+
+[dependencies]
+phichain-chart = { path = "../phichain-chart", features = ["bevy"] }
+phichain-game = { path = "../phichain-game" }
+phichain-assets = { path = "../phichain-assets" }
+
+bevy = { version = "0.13.2", default-features = false, features = [
+    "animation",
+    "bevy_asset",
+    "bevy_gilrs",
+    "bevy_scene",
+    "bevy_winit",
+    "bevy_core_pipeline",
+    "bevy_pbr",
+    "bevy_gltf",
+    "bevy_render",
+    "bevy_sprite",
+    "bevy_text",
+    "bevy_ui",
+    "multi-threaded",
+    "png",
+    "hdr",
+    "x11",
+    "bevy_gizmos",
+    "tonemapping_luts",
+    "default_font",
+    "webgl2",
+    "bevy_debug_stepping",
+] }
+bevy_kira_audio = { version = "0.19.0", features = [
+    "mp3",
+    "ogg",
+    "flac",
+    "wav",
+] }
+clap = { version = "4.5.15", features = ["derive"] }
+crossbeam-channel = "0.5.12"
+image = "0.25.2"
+anyhow = "1.0.86"

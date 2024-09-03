@@ -117,9 +117,11 @@ jobs:
           if [ "${{ matrix.platform }}" == "windows" ]; then
             cp ./target/${{ matrix.target }}/release/phichain.exe "./build/phichain.exe"
             cp ./target/${{ matrix.target }}/release/phichain-converter.exe "./build/phichain-converter.exe"
+            cp ./target/${{ matrix.target }}/release/phichain-renderer.exe "./build/phichain-renderer.exe"
           else
             cp ./target/${{ matrix.target }}/release/phichain "./build/phichain"
             cp ./target/${{ matrix.target }}/release/phichain-converter "./build/phichain-converter"
+            cp ./target/${{ matrix.target }}/release/phichain-renderer "./build/phichain-renderer"
           fi
 
           mv LICENSE README.md README_en.md assets phichain-editor/lang ./build

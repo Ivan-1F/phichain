@@ -90,6 +90,8 @@ pub struct GameSettings {
     pub note_scale: f32,
     pub multi_highlight: bool,
     pub aspect_ratio: AspectRatio,
+
+    pub hit_effect_follow_game_time: bool,
 }
 
 impl Default for GameSettings {
@@ -100,6 +102,8 @@ impl Default for GameSettings {
             note_scale: 1.0,
             multi_highlight: true,
             aspect_ratio: AspectRatio::default(),
+
+            hit_effect_follow_game_time: false,
         }
     }
 }

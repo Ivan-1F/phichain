@@ -5,6 +5,7 @@ members = [
     "phichain-converter",
     "phichain-editor",
     "phichain-game",
+    "phichain-renderer",
 ]
 resolver = "2"
 

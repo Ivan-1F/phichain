@@ -44,6 +44,11 @@ impl SettingCategory for Game {
                     finished |= response.changed();
                     ui.end_row();
 
+                    ui.label(t!("tab.settings.category.game.hit_effect_follow_game_time"));
+                    let response = ui.checkbox(&mut settings.game.hit_effect_follow_game_time, "");
+                    finished |= response.changed();
+                    ui.end_row();
+
                     finished
                 })
                 .is_some()

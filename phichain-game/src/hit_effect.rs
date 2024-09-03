@@ -19,20 +19,55 @@ const HIT_EFFECT_FRAMES: u32 = 30;
 
 pub struct HitEffectPlugin;
 
+/// A simple timer for hit effects, compat layer for [`GameConfig::hit_effect_follow_game_time`]
+#[derive(Debug, Clone, Default, Resource)]
+pub struct HitEffectTime {
+    current: f32,
+    delta: f32,
+}
+
+impl HitEffectTime {
+    pub fn delta_seconds(&self) -> f32 {
+        self.delta
+    }
+
+    pub fn delta(&self) -> Duration {
+        Duration::from_secs_f32(self.delta_seconds())
+    }
+}
+
+fn update_hit_effect_time_system(
+    mut het: ResMut<HitEffectTime>,
+    game_config: Res<GameConfig>,
+    chart_time: Res<ChartTime>,
+    time: Res<Time>,
+) {
+    if game_config.hit_effect_follow_game_time {
+        // based on game time
+        het.delta = chart_time.0 - het.current;
+        het.current = chart_time.0;
+    } else {
+        // based on bevy's built in timer
+        het.delta = time.delta_seconds();
+    }
+}
+
 impl Plugin for HitEffectPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup_system)
+        app.init_resource::<HitEffectTime>()
+            .add_systems(Startup, setup_system)
             .add_systems(
                 Update,
                 (
-                    spawn_hit_effect_system,
-                    update_hit_effect_system.after(TransformSystem::TransformPropagate),
+                    spawn_hit_effect_system.after(TransformSystem::TransformPropagate),
+                    update_hit_effect_system,
                     update_hit_effect_scale_system,
                     animate_hit_effect_system,
                 )
                     .chain()
                     .in_set(GameSet),
             )
+            .add_systems(PreUpdate, update_hit_effect_time_system)
             .add_systems(
                 Update,
                 (
@@ -74,7 +109,7 @@ struct AnimationTimer(Timer);
 
 fn animate_hit_effect_system(
     mut commands: Commands,
-    time: Res<Time>,
+    time: Res<HitEffectTime>,
     mut query: Query<(Entity, &mut AnimationTimer, &mut TextureAtlas), With<HitEffect>>,
 ) {
     for (entity, mut timer, mut atlas) in &mut query {
@@ -240,7 +275,10 @@ struct Direction(Quat);
 #[derive(Debug, Component, Clone, Default)]
 struct Lifetime(f32);
 
-fn update_lifetime_system(mut query: Query<&mut Lifetime, With<HitParticle>>, time: Res<Time>) {
+fn update_lifetime_system(
+    mut query: Query<&mut Lifetime, With<HitParticle>>,
+    time: Res<HitEffectTime>,
+) {
     for mut lifetime in &mut query {
         lifetime.0 += time.delta_seconds();
     }
@@ -266,7 +304,7 @@ fn update_velocity_system(
 
 fn update_translation_system(
     mut query: Query<(&mut Transform, &Velocity), With<HitParticle>>,
-    time: Res<Time>,
+    time: Res<HitEffectTime>,
 ) {
     for (mut transform, velocity) in &mut query {
         transform.translation += velocity.0.extend(0.0) * time.delta_seconds();
