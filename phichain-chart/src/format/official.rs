@@ -142,7 +142,7 @@ impl Format for OfficialChart {
                     primitive::event::LineEvent {
                         kind: LineEventKind::X,
                         start: x(event.start_x),
-                        end: y(event.end_x),
+                        end: x(event.end_x),
                         easing: Easing::Linear,
                         start_beat: t(event.start_time),
                         end_beat: t(event.end_time),
