@@ -110,6 +110,7 @@ jobs:
         # https://github.com/rust-lang/cargo/issues/4463
         run: |
           cargo build -p phichain --release --target ${{ matrix.target }}
+          cargo build -p phichain-converter --release --target ${{ matrix.target }}
           cargo build -p phichain-renderer --release --target ${{ matrix.target }}
         env:
           RUST_BACKTRACE: 1
