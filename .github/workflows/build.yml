@@ -105,8 +105,12 @@ jobs:
         run: cargo test
 
       - name: Build with cargo
+        # build all binary crates separately, see:
+        # https://github.com/rust-lang/cargo/issues/10636
+        # https://github.com/rust-lang/cargo/issues/4463
         run: |
-          cargo build --release --target ${{ matrix.target }}
+          cargo build -p phichain --release --target ${{ matrix.target }}
+          cargo build -p phichain-renderer --release --target ${{ matrix.target }}
         env:
           RUST_BACKTRACE: 1
 
