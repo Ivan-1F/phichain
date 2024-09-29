@@ -133,6 +133,7 @@ illustration:
 home:
   recent_projects:
     last_opened: 'Last Opened: %{time}'
+    empty: 'No Recent Projects'
   open_project:
     load: Load Project
   create_project:

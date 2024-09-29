@@ -133,6 +133,7 @@ illustration:
 home:
   recent_projects:
     last_opened: '上一次打开: %{time}'
+    empty: '没有最近的项目'
   open_project:
     load: 加载项目
   create_project:

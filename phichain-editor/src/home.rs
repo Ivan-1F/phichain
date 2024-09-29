@@ -160,6 +160,9 @@ fn ui_system(world: &mut World) {
         let mut open = None;
 
         let mut recent_projects = world.resource_mut::<Persistent<RecentProjects>>();
+        if recent_projects.0.is_empty() {
+            ui.label(t!("home.recent_projects.empty"));
+        }
         for (index, recent_project) in recent_projects.0.iter().rev().enumerate() {
             ui.group(|ui| {
                 ui.horizontal(|ui| {
