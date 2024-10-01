@@ -113,7 +113,7 @@ tab:
         hide_hit_effect: Hide Hit Effect
         note_scale: Note Scale
         multi_highlight: Multi Highlight
-        hit_effect_follow_game_time: Hit Effect Follow Game Time
+        hit_effect_follow_game_time: Hit Effect Follow Game Time (DEBUG)
 
 project:
   save:
