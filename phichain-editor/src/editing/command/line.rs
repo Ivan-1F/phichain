@@ -87,3 +87,37 @@ impl Edit for RemoveLine {
         }
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct MoveLineAsChild {
+    entity: Entity,
+    prev_parent: Option<Entity>,
+    target: Entity,
+}
+
+impl MoveLineAsChild {
+    pub fn new(entity: Entity, target: Entity) -> Self {
+        Self {
+            entity,
+            prev_parent: None,
+            target,
+        }
+    }
+}
+
+impl Edit for MoveLineAsChild {
+    type Target = World;
+    type Output = ();
+
+    fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
+        target.entity_mut(self.entity).set_parent(self.target);
+        self.prev_parent = target.entity(self.entity).get::<Parent>().map(|x| x.get());
+    }
+
+    fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
+        target.entity_mut(self.entity).remove_parent();
+        if let Some(prev_parent) = self.prev_parent {
+            target.entity_mut(self.entity).set_parent(prev_parent);
+        }
+    }
+}

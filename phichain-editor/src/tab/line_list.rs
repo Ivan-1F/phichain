@@ -1,5 +1,5 @@
 use crate::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
-use crate::editing::command::line::{CreateLine, RemoveLine};
+use crate::editing::command::line::{CreateLine, MoveLineAsChild, RemoveLine};
 use crate::editing::command::EditorCommand;
 use crate::editing::DoCommandEvent;
 use crate::selection::SelectedLine;
@@ -132,6 +132,15 @@ pub fn line_list_tab(
                                 do_command_event.send(DoCommandEvent(EditorCommand::RemoveLine(
                                     RemoveLine::new(*entity),
                                 )));
+                                ui.close_menu();
+                            }
+                            if ui.button("As child of current line").clicked() {
+                                do_command_event.send(DoCommandEvent(
+                                    EditorCommand::MoveLineAsChild(MoveLineAsChild::new(
+                                        *entity,
+                                        selected_line.0,
+                                    )),
+                                ));
                                 ui.close_menu();
                             }
                         });
