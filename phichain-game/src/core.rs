@@ -168,14 +168,12 @@ fn update_line_system(
     config: Res<GameConfig>,
 ) {
     for (position, rotation, opacity, mut transform, mut sprite, parent) in &mut line_query {
-        let factor = if parent.is_some() {
-            1.0
-        } else {
-            game_viewport.0.width() * 3.0 / 1920.0
-        };
-        transform.scale = Vec3::splat(factor);
-        transform.translation.x = position.0.x / CANVAS_WIDTH * game_viewport.0.width();
-        transform.translation.y = position.0.y / CANVAS_HEIGHT * game_viewport.0.height();
+        let scale = game_viewport.0.width() * 3.0 / 1920.0;
+        transform.scale = Vec3::splat(if parent.is_some() { 1.0 } else { scale });
+        transform.translation.x = position.0.x / CANVAS_WIDTH * game_viewport.0.width()
+            / if parent.is_some() { scale } else { 1.0 };
+        transform.translation.y = position.0.y / CANVAS_HEIGHT * game_viewport.0.height()
+            / if parent.is_some() { scale } else { 1.0 };
         transform.rotation = Quat::from_rotation_z(rotation.0);
 
         sprite.color = if config.fc_ap_indicator {
