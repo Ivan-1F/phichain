@@ -88,15 +88,17 @@ impl Edit for RemoveLine {
     }
 }
 
+/// Move a line as child of another line
 #[derive(Debug, Clone)]
 pub struct MoveLineAsChild {
     entity: Entity,
     prev_parent: Option<Entity>,
-    target: Entity,
+    /// Some = move as child of this line, None = move to root
+    target: Option<Entity>,
 }
 
 impl MoveLineAsChild {
-    pub fn new(entity: Entity, target: Entity) -> Self {
+    pub fn new(entity: Entity, target: Option<Entity>) -> Self {
         Self {
             entity,
             prev_parent: None,
@@ -109,9 +111,16 @@ impl Edit for MoveLineAsChild {
     type Target = World;
     type Output = ();
 
-    fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
-        target.entity_mut(self.entity).set_parent(self.target);
-        self.prev_parent = target.entity(self.entity).get::<Parent>().map(|x| x.get());
+    fn edit(&mut self, world: &mut Self::Target) -> Self::Output {
+        self.prev_parent = world.entity(self.entity).get::<Parent>().map(|x| x.get());
+        match self.target {
+            None => {
+                world.entity_mut(self.entity).remove_parent();
+            }
+            Some(target) => {
+                world.entity_mut(self.entity).set_parent(target);
+            }
+        }
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {

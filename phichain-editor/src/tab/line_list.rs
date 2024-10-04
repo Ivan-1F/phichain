@@ -38,7 +38,7 @@ impl LineList<'_> {
         let mut state: SystemState<(
             Query<&Note>,
             Query<&LineEvent>,
-            Query<(&Line, &Children)>,
+            Query<(&Line, &Children, Option<&Parent>)>,
             ResMut<SelectedLine>,
             EventWriter<DoCommandEvent>,
         )> = SystemState::new(self.world);
@@ -46,7 +46,7 @@ impl LineList<'_> {
         let (note_query, event_query, query, mut selected_line, mut do_command_event) =
             state.get_mut(self.world);
 
-        if let Ok((line, children)) = query.get(entity) {
+        if let Ok((line, children, parent)) = query.get(entity) {
             let selected = selected_line.0 == entity;
 
             ui.horizontal(|ui| {
@@ -64,10 +64,22 @@ impl LineList<'_> {
                     ui.add_enabled_ui(!selected, |ui| {
                         if ui.button("As child of current line").clicked() {
                             do_command_event.send(DoCommandEvent(EditorCommand::MoveLineAsChild(
-                                MoveLineAsChild::new(entity, selected_line.0),
+                                MoveLineAsChild::new(entity, Some(selected_line.0)),
                             )));
                             ui.close_menu();
                         }
+                        #[allow(clippy::collapsible_if)]
+                        if parent.is_some() {
+                            if ui.button("Move to root").clicked() {
+                                do_command_event.send(DoCommandEvent(
+                                    EditorCommand::MoveLineAsChild(MoveLineAsChild::new(
+                                        entity, None,
+                                    )),
+                                ));
+                                ui.close_menu();
+                            }
+                        }
+                        ui.separator();
                         if ui.button(t!("tab.line_list.remove")).clicked() {
                             do_command_event.send(DoCommandEvent(EditorCommand::RemoveLine(
                                 RemoveLine::new(entity),
