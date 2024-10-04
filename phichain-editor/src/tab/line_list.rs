@@ -62,7 +62,10 @@ impl LineList<'_> {
 
                 response.context_menu(|ui| {
                     ui.add_enabled_ui(!selected, |ui| {
-                        if ui.button("As child of current line").clicked() {
+                        if ui
+                            .button(t!("tab.line_list.hierarchy.as_child_of_current_line"))
+                            .clicked()
+                        {
                             do_command_event.send(DoCommandEvent(EditorCommand::MoveLineAsChild(
                                 MoveLineAsChild::new(entity, Some(selected_line.0)),
                             )));
@@ -70,7 +73,10 @@ impl LineList<'_> {
                         }
                         #[allow(clippy::collapsible_if)]
                         if parent.is_some() {
-                            if ui.button("Move to root").clicked() {
+                            if ui
+                                .button(t!("tab.line_list.hierarchy.move_to_root"))
+                                .clicked()
+                            {
                                 do_command_event.send(DoCommandEvent(
                                     EditorCommand::MoveLineAsChild(MoveLineAsChild::new(
                                         entity, None,
