@@ -36,7 +36,7 @@ struct Note {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct NumbericLineEvent {
+struct NumericLineEvent {
     #[serde(rename = "startTime")]
     start_time: f32,
     #[serde(rename = "endTime")]
@@ -82,9 +82,9 @@ struct Line {
     #[serde(rename = "judgeLineMoveEvents")]
     move_events: Vec<PositionLineEvent>,
     #[serde(rename = "judgeLineRotateEvents")]
-    rotate_events: Vec<NumbericLineEvent>,
+    rotate_events: Vec<NumericLineEvent>,
     #[serde(rename = "judgeLineDisappearEvents")]
-    opacity_events: Vec<NumbericLineEvent>,
+    opacity_events: Vec<NumericLineEvent>,
     #[serde(rename = "speedEvents")]
     speed_events: Vec<SpeedEvent>,
 
@@ -401,7 +401,7 @@ impl Format for OfficialChart {
             process_events(
                 &line,
                 LineEventKind::Rotation,
-                |e| NumbericLineEvent {
+                |e| NumericLineEvent {
                     start_time: time(e.start_beat),
                     end_time: time(e.end_beat),
                     start: e.start,
@@ -413,7 +413,7 @@ impl Format for OfficialChart {
             process_events(
                 &line,
                 LineEventKind::Opacity,
-                |e| NumbericLineEvent {
+                |e| NumericLineEvent {
                     start_time: time(e.start_beat),
                     end_time: time(e.end_beat),
                     start: e.start / 255.0,
