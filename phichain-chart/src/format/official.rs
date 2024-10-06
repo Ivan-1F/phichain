@@ -53,11 +53,13 @@ struct PositionLineEvent {
     end_time: f32,
     #[serde(rename = "start")]
     start_x: f32,
-    #[serde(rename = "start2")]
+    // formatVersion 1 does not have start2
+    #[serde(rename = "start2", default)]
     start_y: f32,
     #[serde(rename = "end")]
     end_x: f32,
-    #[serde(rename = "end2")]
+    // formatVersion 1 does not have end2
+    #[serde(rename = "end2", default)]
     end_y: f32,
 }
 
@@ -107,6 +109,13 @@ impl Format for OfficialChart {
             bail!("Expect at least one line");
         }
 
+        if !matches!(self.format_version, 1 | 3) {
+            bail!(
+                "Unsupported formatVersion, expected 1 or 3, got: {}",
+                self.format_version
+            );
+        }
+
         let mut primitive = PrimitiveChart {
             offset: self.offset * 1000.0,
             bpm_list: BpmList::single(self.lines[0].bpm),
@@ -138,24 +147,50 @@ impl Format for OfficialChart {
             };
 
             let move_event_iter = line.move_events.iter().flat_map(|event| {
-                vec![
-                    primitive::event::LineEvent {
-                        kind: LineEventKind::X,
-                        start: x(event.start_x),
-                        end: x(event.end_x),
-                        easing: Easing::Linear,
-                        start_beat: t(event.start_time),
-                        end_beat: t(event.end_time),
-                    },
-                    primitive::event::LineEvent {
-                        kind: LineEventKind::Y,
-                        start: y(event.start_y),
-                        end: y(event.end_y),
-                        easing: Easing::Linear,
-                        start_beat: t(event.start_time),
-                        end_beat: t(event.end_time),
-                    },
-                ]
+                // reference: https://github.com/MisaLiu/phi-chart-render/blob/master/src/chart/convert/official.js#L203
+                match self.format_version {
+                    1 => {
+                        vec![
+                            primitive::event::LineEvent {
+                                kind: LineEventKind::X,
+                                start: x((event.start_x / 1e3).round() / 880.0),
+                                end: x((event.end_x / 1e3).round() / 880.0),
+                                easing: Easing::Linear,
+                                start_beat: t(event.start_time),
+                                end_beat: t(event.end_time),
+                            },
+                            primitive::event::LineEvent {
+                                kind: LineEventKind::Y,
+                                start: y(event.start_x % 1e3 / 530.0),
+                                end: y(event.end_x % 1e3 / 530.0),
+                                easing: Easing::Linear,
+                                start_beat: t(event.start_time),
+                                end_beat: t(event.end_time),
+                            },
+                        ]
+                    }
+                    3 => {
+                        vec![
+                            primitive::event::LineEvent {
+                                kind: LineEventKind::X,
+                                start: x(event.start_x),
+                                end: x(event.end_x),
+                                easing: Easing::Linear,
+                                start_beat: t(event.start_time),
+                                end_beat: t(event.end_time),
+                            },
+                            primitive::event::LineEvent {
+                                kind: LineEventKind::Y,
+                                start: y(event.start_y),
+                                end: y(event.end_y),
+                                easing: Easing::Linear,
+                                start_beat: t(event.start_time),
+                                end_beat: t(event.end_time),
+                            },
+                        ]
+                    }
+                    _ => unreachable!(),
+                }
             });
 
             let rotate_event_iter =
