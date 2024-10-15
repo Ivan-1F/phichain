@@ -32,6 +32,30 @@ pub fn load_project(project: &Project, commands: &mut Commands) -> anyhow::Resul
     Ok(())
 }
 
+fn load_line(line: LineWrapper, commands: &mut Commands, parent: Option<Entity>) -> Entity {
+    let id = commands
+        .spawn(LineBundle::new(line.line))
+        .with_children(|parent| {
+            for note in line.notes {
+                parent.spawn(NoteBundle::new(note));
+            }
+            for event in line.events {
+                parent.spawn(LineEventBundle::new(event));
+            }
+        })
+        .id();
+
+    if let Some(parent) = parent {
+        commands.entity(id).set_parent(parent);
+    }
+
+    for child in line.children {
+        load_line(child, commands, Some(id));
+    }
+
+    id
+}
+
 /// Load a chart to the world using a [`Commands`]
 fn load(file: File, commands: &mut Commands) -> anyhow::Result<()> {
     let chart: Value = serde_json::from_reader(file).context("Failed to load chart")?;
@@ -43,24 +67,8 @@ fn load(file: File, commands: &mut Commands) -> anyhow::Result<()> {
     commands.insert_resource(chart.bpm_list);
 
     let mut first_line_id: Option<Entity> = None;
-    for LineWrapper {
-        line,
-        notes,
-        events,
-    } in chart.lines
-    {
-        let id = commands
-            .spawn(LineBundle::new(line))
-            .with_children(|parent| {
-                for note in notes {
-                    parent.spawn(NoteBundle::new(note));
-                }
-                for event in events {
-                    parent.spawn(LineEventBundle::new(event));
-                }
-            })
-            .id();
-
+    for line in chart.lines {
+        let id = load_line(line, commands, None);
         if first_line_id.is_none() {
             first_line_id = Some(id)
         }
