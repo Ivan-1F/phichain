@@ -1,0 +1,9 @@
+[package]
+name = "phichain-compiler"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+phichain-chart = { path = "../phichain-chart" }
+num = "0.4.3"
+anyhow = "1.0.89"
