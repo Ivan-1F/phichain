@@ -1,21 +1,9 @@
 use crate::utils::EventSequence;
-use nalgebra::{Isometry, Isometry2, Rotation2, UnitComplex, Vector2};
+use nalgebra::{Isometry2, Rotation2, Vector2};
 use phichain_chart::beat;
 use phichain_chart::easing::Easing;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use phichain_chart::serialization::{LineWrapper, PhichainChart};
-
-fn transform(
-    parent_position: Vector2<f32>,
-    child_position: Vector2<f32>,
-    parent_rotation: Rotation2<f32>,
-    child_rotation: Rotation2<f32>,
-) -> Isometry<f32, UnitComplex<f32>, 2> {
-    let parent_isometry = Isometry2::new(parent_position, parent_rotation.angle());
-    let child_isometry = Isometry2::new(child_position, child_rotation.angle());
-
-    parent_isometry * child_isometry
-}
 
 fn merge(parent: LineWrapper) -> Vec<LineWrapper> {
     if parent.children.is_empty() {
@@ -75,26 +63,30 @@ fn merge(parent: LineWrapper) -> Vec<LineWrapper> {
                         };
                     }
 
-                    let (parent_x_start, parent_x_end) = evaluate!(parent, x);
-                    let (parent_y_start, parent_y_end) = evaluate!(parent, y);
-                    let (parent_rotation_start, parent_rotation_end) = evaluate!(parent, rotation);
+                    macro_rules! evaluate_line {
+                        ($target:ident) => {{
+                            let (start_x, end_x) = evaluate!($target, x);
+                            let (start_y, end_y) = evaluate!($target, y);
+                            let (start_rotation, end_rotation) = evaluate!($target, rotation);
 
-                    let (child_x_start, child_x_end) = evaluate!(child, x);
-                    let (child_y_start, child_y_end) = evaluate!(child, y);
-                    let (child_rotation_start, child_rotation_end) = evaluate!(child, rotation);
+                            let start = Isometry2::new(
+                                Vector2::new(start_x, start_y),
+                                Rotation2::new(start_rotation.to_radians()).angle(),
+                            );
+                            let end = Isometry2::new(
+                                Vector2::new(end_x, end_y),
+                                Rotation2::new(end_rotation.to_radians()).angle(),
+                            );
 
-                    let start = transform(
-                        Vector2::new(parent_x_start, parent_y_start),
-                        Vector2::new(child_x_start, child_y_start),
-                        Rotation2::new(parent_rotation_start.to_radians()),
-                        Rotation2::new(child_rotation_start.to_radians()),
-                    );
-                    let end = transform(
-                        Vector2::new(parent_x_end, parent_y_end),
-                        Vector2::new(child_x_end, child_y_end),
-                        Rotation2::new(parent_rotation_end.to_radians()),
-                        Rotation2::new(child_rotation_end.to_radians()),
-                    );
+                            (start, end)
+                        }};
+                    }
+
+                    let (parent_start, parent_end) = evaluate_line!(parent);
+                    let (child_start, child_end) = evaluate_line!(child);
+
+                    let start = parent_start * child_start;
+                    let end = parent_end * child_end;
 
                     merged_move_events.push(LineEvent {
                         kind: LineEventKind::X,
