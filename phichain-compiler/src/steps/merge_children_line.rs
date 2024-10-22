@@ -1,8 +1,21 @@
 use crate::utils::EventSequence;
+use nalgebra::{Isometry, Isometry2, Rotation2, UnitComplex, Vector2};
 use phichain_chart::beat;
 use phichain_chart::easing::Easing;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use phichain_chart::serialization::{LineWrapper, PhichainChart};
+
+fn transform(
+    parent_position: Vector2<f32>,
+    child_position: Vector2<f32>,
+    parent_rotation: Rotation2<f32>,
+    child_rotation: Rotation2<f32>,
+) -> Isometry<f32, UnitComplex<f32>, 2> {
+    let parent_isometry = Isometry2::new(parent_position, parent_rotation.angle());
+    let child_isometry = Isometry2::new(child_position, child_rotation.angle());
+
+    parent_isometry * child_isometry
+}
 
 fn merge(parent: LineWrapper) -> Vec<LineWrapper> {
     if parent.children.is_empty() {
@@ -18,6 +31,7 @@ fn merge(parent: LineWrapper) -> Vec<LineWrapper> {
 
         for child in children {
             let mut merged_move_events = vec![];
+            let mut merged_rotate_events = vec![];
 
             let mut splits = vec![];
 
@@ -32,7 +46,7 @@ fn merge(parent: LineWrapper) -> Vec<LineWrapper> {
             for event in child
                 .events
                 .iter()
-                .filter(|x| x.kind.is_x() || x.kind.is_y())
+                .filter(|x| x.kind.is_x() || x.kind.is_y() || x.kind.is_rotation())
             {
                 splits.push(event.start_beat);
                 splits.push(event.end_beat);
@@ -49,115 +63,83 @@ fn merge(parent: LineWrapper) -> Vec<LineWrapper> {
                     let start_beat = current;
                     let end_beat = current + minimum;
 
-                    let parent_x_start = parent
-                        .events
-                        .iter()
-                        .filter(|x| x.kind.is_x())
-                        .collect::<Vec<_>>()
-                        .evaluate_start_no_effect(start_beat);
-                    let parent_y_start = parent
-                        .events
-                        .iter()
-                        .filter(|x| x.kind.is_y())
-                        .collect::<Vec<_>>()
-                        .evaluate_start_no_effect(start_beat);
-                    let parent_x_end = parent
-                        .events
-                        .iter()
-                        .filter(|x| x.kind.is_x())
-                        .collect::<Vec<_>>()
-                        .evaluate(end_beat);
-                    let parent_y_end = parent
-                        .events
-                        .iter()
-                        .filter(|x| x.kind.is_y())
-                        .collect::<Vec<_>>()
-                        .evaluate(end_beat);
+                    macro_rules! evaluate {
+                        ($target:ident, $filter:ident) => {
+                            (
+                                $target
+                                    .events
+                                    .$filter()
+                                    .evaluate_start_no_effect(start_beat),
+                                $target.events.$filter().evaluate(end_beat),
+                            )
+                        };
+                    }
 
-                    let parent_rotation_start = parent
-                        .events
-                        .iter()
-                        .filter(|x| x.kind.is_rotation())
-                        .collect::<Vec<_>>()
-                        .evaluate_start_no_effect(start_beat)
-                        .to_radians();
+                    let (parent_x_start, parent_x_end) = evaluate!(parent, x);
+                    let (parent_y_start, parent_y_end) = evaluate!(parent, y);
+                    let (parent_rotation_start, parent_rotation_end) = evaluate!(parent, rotation);
 
-                    let parent_rotation_end = parent
-                        .events
-                        .iter()
-                        .filter(|x| x.kind.is_rotation())
-                        .collect::<Vec<_>>()
-                        .evaluate(start_beat)
-                        .to_radians();
+                    let (child_x_start, child_x_end) = evaluate!(child, x);
+                    let (child_y_start, child_y_end) = evaluate!(child, y);
+                    let (child_rotation_start, child_rotation_end) = evaluate!(child, rotation);
 
-                    let child_x_start = child
-                        .events
-                        .iter()
-                        .filter(|x| x.kind.is_x())
-                        .collect::<Vec<_>>()
-                        .evaluate_start_no_effect(start_beat);
-                    let child_y_start = child
-                        .events
-                        .iter()
-                        .filter(|x| x.kind.is_y())
-                        .collect::<Vec<_>>()
-                        .evaluate_start_no_effect(start_beat);
-                    let child_x_end = child
-                        .events
-                        .iter()
-                        .filter(|x| x.kind.is_x())
-                        .collect::<Vec<_>>()
-                        .evaluate(end_beat);
-                    let child_y_end = child
-                        .events
-                        .iter()
-                        .filter(|x| x.kind.is_y())
-                        .collect::<Vec<_>>()
-                        .evaluate(end_beat);
-
-                    // const start = fatherX + childX * Math.cos(fatherR) - childY * Math.sin(fatherR);
-                    // const end = fatherX2 + childX2 * Math.cos(fatherR2) - childY2 * Math.sin(fatherR2);
-                    // const start2 = fatherY + childX * Math.sin(fatherR) + childY * Math.cos(fatherR);
-                    // const end2 = fatherY2 + childX2 * Math.sin(fatherR2) + childY2 * Math.cos(fatherR2);
-                    // moveEvents.push({ startTime, endTime, start, end, start2, end2 });
-
-                    let start_x = parent_x_start + child_x_start * parent_rotation_start.cos()
-                        - child_y_start * parent_rotation_start.sin();
-                    let end_x = parent_x_end + child_x_end * parent_rotation_end.cos()
-                        - child_y_end * parent_rotation_end.sin();
-                    let start_y = parent_y_start + child_x_start * parent_rotation_start.cos()
-                        - child_y_start * parent_rotation_start.sin();
-                    let end_y = parent_y_end + child_x_end * parent_rotation_end.cos()
-                        - child_y_end * parent_rotation_end.sin();
+                    let start = transform(
+                        Vector2::new(parent_x_start, parent_y_start),
+                        Vector2::new(child_x_start, child_y_start),
+                        Rotation2::new(parent_rotation_start.to_radians()),
+                        Rotation2::new(child_rotation_start.to_radians()),
+                    );
+                    let end = transform(
+                        Vector2::new(parent_x_end, parent_y_end),
+                        Vector2::new(child_x_end, child_y_end),
+                        Rotation2::new(parent_rotation_end.to_radians()),
+                        Rotation2::new(child_rotation_end.to_radians()),
+                    );
 
                     merged_move_events.push(LineEvent {
                         kind: LineEventKind::X,
                         start_beat,
                         end_beat,
-                        value: LineEventValue::transition(start_x, end_x, Easing::Linear),
+                        value: LineEventValue::transition(
+                            start.translation.x,
+                            end.translation.x,
+                            Easing::Linear,
+                        ),
                     });
                     merged_move_events.push(LineEvent {
                         kind: LineEventKind::Y,
                         start_beat,
                         end_beat,
-                        value: LineEventValue::transition(start_y, end_y, Easing::Linear),
+                        value: LineEventValue::transition(
+                            start.translation.y,
+                            end.translation.y,
+                            Easing::Linear,
+                        ),
+                    });
+                    merged_rotate_events.push(LineEvent {
+                        kind: LineEventKind::Rotation,
+                        start_beat,
+                        end_beat,
+                        value: LineEventValue::transition(
+                            start.rotation.angle().to_degrees(),
+                            end.rotation.angle().to_degrees(),
+                            Easing::Linear,
+                        ),
                     });
 
                     current += minimum;
                 }
             }
 
-            // let events = merged_move_events
-
             let other_events = child
                 .events
                 .iter()
-                .filter(|x| !x.kind.is_x() && !x.kind.is_y())
+                .filter(|x| !x.kind.is_x() && !x.kind.is_y() && !x.kind.is_rotation())
                 .cloned()
                 .collect::<Vec<_>>();
 
             let merged = LineWrapper {
-                events: [other_events, merged_move_events].concat(),
+                events: [other_events, merged_move_events, merged_rotate_events].concat(),
                 children: vec![],
                 ..child
             };
