@@ -53,10 +53,10 @@ impl LineList<'_> {
             });
 
             ui[5].vertical_centered(|ui| {
-                ui.add(trunc_label!("音符"));
+                ui.add(trunc_label!(t!("tab.line_list.note")));
             });
             ui[6].vertical_centered(|ui| {
-                ui.add(trunc_label!("事件"));
+                ui.add(trunc_label!(t!("tab.line_list.event")));
             });
         });
 
