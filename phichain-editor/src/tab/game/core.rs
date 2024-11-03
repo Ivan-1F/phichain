@@ -5,6 +5,7 @@ use crate::selection::{Selected, SelectedLine};
 use crate::settings::EditorSettings;
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
+use bevy_prototype_lyon::prelude::*;
 use phichain_chart::line::Line;
 use phichain_chart::note::Note;
 use phichain_chart::project::Project;
@@ -29,7 +30,8 @@ impl Plugin for CoreGamePlugin {
                 update_line_tint_system
                     .after(phichain_game::core::update_line_system)
                     .run_if(project_loaded()),
-            );
+            )
+            .add_systems(Update, create_anchor_marker_system.run_if(project_loaded()));
     }
 }
 
@@ -92,5 +94,25 @@ fn update_line_tint_system(
         if entity == selected_line.0 {
             sprite.color = Color::LIME_GREEN.with_a(sprite.color.a());
         }
+    }
+}
+
+fn create_anchor_marker_system(mut commands: Commands, query: Query<Entity, Added<Line>>) {
+    let shape = shapes::Circle {
+        radius: 4.0,
+        ..default()
+    };
+
+    for line in &query {
+        commands.entity(line).with_children(|parent| {
+            parent.spawn((
+                ShapeBundle {
+                    path: GeometryBuilder::build_as(&shape),
+                    ..default()
+                },
+                Fill::color(Color::WHITE),
+                Stroke::color(Color::LIME_GREEN),
+            ));
+        });
     }
 }
