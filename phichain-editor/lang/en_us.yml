@@ -89,6 +89,9 @@ tab:
     remove: Remove
     show_states: States
     show_previews: Previews
+    hierarchy:
+      as_child_of_current_line: As child of current line
+      move_to_root: Move to root
   bpm_list:
     title: BPM List
     new: New BPM Point

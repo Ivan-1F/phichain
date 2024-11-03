@@ -19,6 +19,28 @@ pub enum LineEventKind {
     Speed,
 }
 
+impl LineEventKind {
+    pub fn is_x(&self) -> bool {
+        matches!(self, LineEventKind::X)
+    }
+
+    pub fn is_y(&self) -> bool {
+        matches!(self, LineEventKind::Y)
+    }
+
+    pub fn is_rotation(&self) -> bool {
+        matches!(self, LineEventKind::Rotation)
+    }
+
+    pub fn is_opacity(&self) -> bool {
+        matches!(self, LineEventKind::Opacity)
+    }
+
+    pub fn is_speed(&self) -> bool {
+        matches!(self, LineEventKind::Speed)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum LineEventValue {

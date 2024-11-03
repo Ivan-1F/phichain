@@ -50,6 +50,7 @@ impl Format for PhichainChart {
                         Line::default(),
                         line.notes.clone(),
                         line.events.iter().map(|x| (*x).into()).collect(),
+                        vec![],
                     )
                 })
                 .collect(),
@@ -87,14 +88,21 @@ pub struct LineWrapper {
     pub line: Line,
     pub notes: Vec<Note>,
     pub events: Vec<LineEvent>,
+    pub children: Vec<LineWrapper>,
 }
 
 impl LineWrapper {
-    pub fn new(line: Line, notes: Vec<Note>, events: Vec<LineEvent>) -> Self {
+    pub fn new(
+        line: Line,
+        notes: Vec<Note>,
+        events: Vec<LineEvent>,
+        children: Vec<LineWrapper>,
+    ) -> Self {
         Self {
             line,
             notes,
             events,
+            children,
         }
     }
 }
@@ -137,32 +145,41 @@ impl Default for LineWrapper {
                     end_beat: Beat::ONE,
                 },
             ],
+            children: vec![],
         }
     }
 }
 
 #[cfg(feature = "bevy")]
 impl LineWrapper {
-    /// Serialize a line using a entity from a world
-    pub fn serialize_line(world: &mut bevy::prelude::World, entity: bevy::prelude::Entity) -> Self {
+    /// Serialize a line as well as its child lines using a entity from a world
+    pub fn serialize_line(world: &bevy::prelude::World, entity: bevy::prelude::Entity) -> Self {
         use bevy::prelude::*;
 
-        let mut line_query = world.query::<(&Children, &Line)>();
-        let mut note_query = world.query::<&Note>();
-        let mut event_query = world.query::<&LineEvent>();
-
-        let (children, line) = line_query.get(world, entity).expect("Entity is not a line");
+        let children = world
+            .get::<Children>(entity)
+            .expect("Entity does not have children");
+        let line = world.get::<Line>(entity).expect("Entity is not a line");
 
         let mut notes: Vec<Note> = vec![];
         let mut events: Vec<LineEvent> = vec![];
         for child in children.iter() {
-            if let Ok(note) = note_query.get(world, *child) {
+            if let Some(note) = world.get::<Note>(*child) {
                 notes.push(*note);
-            } else if let Ok(event) = event_query.get(world, *child) {
+            }
+            if let Some(event) = world.get::<LineEvent>(*child) {
                 events.push(*event);
             }
         }
 
-        LineWrapper::new(line.clone(), notes, events)
+        let mut child_lines = vec![];
+
+        for child in children.iter() {
+            if world.get::<Line>(*child).is_some() {
+                child_lines.push(LineWrapper::serialize_line(world, *child));
+            }
+        }
+
+        LineWrapper::new(line.clone(), notes, events, child_lines)
     }
 }

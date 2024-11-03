@@ -6,7 +6,7 @@ pub mod note;
 
 use crate::editing::command::bpm_list::{CreateBpmPoint, EditBpmPoint, RemoveBpmPoint};
 use crate::editing::command::event::{CreateEvent, EditEvent, RemoveEvent};
-use crate::editing::command::line::{CreateLine, RemoveLine};
+use crate::editing::command::line::{CreateLine, MoveLineAsChild, RemoveLine};
 use crate::editing::command::meta::{EditMeta, EditOffset};
 use crate::editing::command::note::{CreateNote, EditNote, RemoveNote};
 use bevy::prelude::*;
@@ -24,6 +24,7 @@ pub enum EditorCommand {
 
     CreateLine(CreateLine),
     RemoveLine(RemoveLine),
+    MoveLineAsChild(MoveLineAsChild),
 
     CreateBpmPoint(CreateBpmPoint),
     RemoveBpmPoint(RemoveBpmPoint),
@@ -89,6 +90,7 @@ impl_edit_for_command!(
     EditEvent,
     CreateLine,
     RemoveLine,
+    MoveLineAsChild,
     CreateBpmPoint,
     RemoveBpmPoint,
     EditBpmPoint,

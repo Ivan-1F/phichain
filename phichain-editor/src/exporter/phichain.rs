@@ -16,7 +16,7 @@ impl Exporter for PhichainExporter {
         let offset = world.resource::<Offset>().0;
         let mut chart = PhichainChart::new(offset, bpm_list, vec![]);
 
-        let mut line_query = world.query_filtered::<Entity, With<Line>>();
+        let mut line_query = world.query_filtered::<Entity, (With<Line>, Without<Parent>)>();
 
         let mut lines = line_query.iter(world).collect::<Vec<_>>();
         lines.sort();
