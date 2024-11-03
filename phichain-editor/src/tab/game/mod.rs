@@ -25,7 +25,7 @@ pub struct GameViewport(pub Rect);
 #[derive(Component)]
 pub struct GameCamera;
 
-fn update_game_camera_viewport_system(
+pub fn update_game_camera_viewport_system(
     mut query: Query<&mut Camera, With<GameCamera>>,
     window_query: Query<&Window>,
     egui_settings: Res<bevy_egui::EguiSettings>,

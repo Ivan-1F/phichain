@@ -58,7 +58,7 @@ impl Plugin for CoreGamePlugin {
     }
 }
 
-fn update_note_scale_system(
+pub fn update_note_scale_system(
     mut query: Query<&mut Transform, With<Note>>,
     game_viewport: Res<GameViewport>,
     note_scale: Res<NoteScale>,
@@ -68,7 +68,7 @@ fn update_note_scale_system(
     }
 }
 
-fn update_note_system(
+pub fn update_note_system(
     mut query: Query<(&mut Transform, &mut Visibility, &Note)>,
     game_viewport: Res<GameViewport>,
     time: Res<ChartTime>,
@@ -96,7 +96,7 @@ fn update_note_system(
     }
 }
 
-fn compute_line_system(
+pub fn compute_line_system(
     keyboard: Res<ButtonInput<KeyCode>>,
     event_query: Query<&LineEvent>,
     mut line_query: Query<
@@ -151,7 +151,7 @@ fn compute_line_system(
     }
 }
 
-fn update_line_system(
+pub fn update_line_system(
     mut line_query: Query<
         (
             &LinePosition,
@@ -185,7 +185,7 @@ fn update_line_system(
     }
 }
 
-fn update_note_y_system(
+pub fn update_note_y_system(
     query: Query<(&Children, Entity), With<Line>>,
     game_viewport: Res<GameViewport>,
     speed_event_query: Query<(&SpeedEvent, &LineEvent, &Parent)>,
@@ -237,7 +237,7 @@ fn update_note_y_system(
     }
 }
 
-fn update_note_texture_system(
+pub fn update_note_texture_system(
     mut query: Query<(&mut Handle<Image>, &Note, Option<&Highlighted>)>,
     assets: Res<ImageAssets>,
 ) {
@@ -308,7 +308,7 @@ impl HoldTailBundle {
     }
 }
 
-fn spawn_hold_component_system(
+pub fn spawn_hold_component_system(
     mut commands: Commands,
     query: Query<(Option<&Children>, Entity, &Note)>,
     head_query: Query<&HoldHead>,
@@ -342,7 +342,7 @@ fn spawn_hold_component_system(
     }
 }
 
-fn update_hold_components_scale_system(
+pub fn update_hold_components_scale_system(
     mut head_query: Query<&mut Transform, (With<HoldHead>, Without<HoldTail>)>,
     mut tail_query: Query<&mut Transform, (With<HoldTail>, Without<HoldHead>)>,
     parent_query: Query<(&Transform, &Children), (Without<HoldHead>, Without<HoldTail>)>,
@@ -360,7 +360,7 @@ fn update_hold_components_scale_system(
     }
 }
 
-fn update_hold_component_texture_system(
+pub fn update_hold_component_texture_system(
     mut head_query: Query<(&mut Handle<Image>, &Parent), (With<HoldHead>, Without<HoldTail>)>,
     mut tail_query: Query<&mut Handle<Image>, (With<HoldTail>, Without<HoldHead>)>,
     parent_query: Query<Option<&Highlighted>>,
@@ -401,7 +401,7 @@ fn hide_hold_head_system(
     }
 }
 
-fn despawn_hold_component_system(
+pub fn despawn_hold_component_system(
     mut commands: Commands,
     query: Query<&Note>,
     component_query: Query<(&Parent, Entity), With<HoldComponent>>,
@@ -414,7 +414,7 @@ fn despawn_hold_component_system(
     }
 }
 
-fn update_line_texture_system(
+pub fn update_line_texture_system(
     mut query: Query<&mut Handle<Image>, With<Line>>,
     assets: Res<ImageAssets>,
 ) {
@@ -424,7 +424,7 @@ fn update_line_texture_system(
 }
 
 #[derive(Component, Debug)]
-struct SpeedEvent {
+pub struct SpeedEvent {
     start_time: f32,
     end_time: f32,
     start_value: f32,
@@ -442,7 +442,7 @@ impl SpeedEvent {
     }
 }
 
-fn calculate_speed_events_system(
+pub fn calculate_speed_events_system(
     mut commands: Commands,
     query: Query<(&LineEvent, Entity)>,
     bpm_list: Res<BpmList>,
