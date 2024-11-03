@@ -2,9 +2,12 @@ use crate::editing::command::line::{CreateLine, MoveLineAsChild, RemoveLine};
 use crate::editing::command::EditorCommand;
 use crate::editing::DoCommandEvent;
 use crate::selection::SelectedLine;
+use crate::settings::EditorSettings;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
-use egui::{Color32, Layout, Sense, Ui};
+use bevy_persistent::Persistent;
+use egui::{Color32, Layout, Sense, Stroke, Ui};
+use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::event::LineEvent;
 use phichain_chart::line::{Line, LineOpacity, LinePosition, LineRotation, LineSpeed};
 use phichain_chart::note::Note;
@@ -24,8 +27,9 @@ impl LineList<'_> {
         let mut state: SystemState<(
             Query<Entity, (Without<Parent>, With<Line>)>,
             EventWriter<DoCommandEvent>,
+            ResMut<Persistent<EditorSettings>>,
         )> = SystemState::new(self.world);
-        let (root_query, mut do_command_event) = state.get_mut(self.world);
+        let (root_query, mut do_command_event, mut editor_settings) = state.get_mut(self.world);
         let mut entities = root_query.iter().collect::<Vec<_>>();
         entities.sort();
 
@@ -35,30 +39,59 @@ impl LineList<'_> {
             }
         });
 
-        ui.columns(7, |ui| {
-            ui[0].vertical_centered(|ui| {
-                ui.add(trunc_label!("X"));
+        ui.columns(2, |columns| {
+            columns[0].vertical_centered(|ui| {
+                if ui
+                    .checkbox(
+                        &mut editor_settings.ui.line_list.show_states,
+                        t!("tab.line_list.show_states"),
+                    )
+                    .changed()
+                {
+                    // TODO: handle error (global)
+                    let _ = editor_settings.persist();
+                }
             });
-            ui[1].vertical_centered(|ui| {
-                ui.add(trunc_label!("Y"));
-            });
-            ui[2].vertical_centered(|ui| {
-                ui.add(trunc_label!(t!("tab.line_list.rotation")));
-            });
-            ui[3].vertical_centered(|ui| {
-                ui.add(trunc_label!(t!("tab.line_list.opacity")));
-            });
-            ui[4].vertical_centered(|ui| {
-                ui.add(trunc_label!(t!("tab.line_list.speed")));
-            });
-
-            ui[5].vertical_centered(|ui| {
-                ui.add(trunc_label!(t!("tab.line_list.note")));
-            });
-            ui[6].vertical_centered(|ui| {
-                ui.add(trunc_label!(t!("tab.line_list.event")));
+            columns[1].vertical_centered(|ui| {
+                if ui
+                    .checkbox(
+                        &mut editor_settings.ui.line_list.show_previews,
+                        t!("tab.line_list.show_previews"),
+                    )
+                    .changed()
+                {
+                    // TODO: handle error (global)
+                    let _ = editor_settings.persist();
+                }
             });
         });
+
+        if editor_settings.ui.line_list.show_states {
+            ui.columns(7, |ui| {
+                ui[0].vertical_centered(|ui| {
+                    ui.add(trunc_label!("X"));
+                });
+                ui[1].vertical_centered(|ui| {
+                    ui.add(trunc_label!("Y"));
+                });
+                ui[2].vertical_centered(|ui| {
+                    ui.add(trunc_label!(t!("tab.line_list.rotation")));
+                });
+                ui[3].vertical_centered(|ui| {
+                    ui.add(trunc_label!(t!("tab.line_list.opacity")));
+                });
+                ui[4].vertical_centered(|ui| {
+                    ui.add(trunc_label!(t!("tab.line_list.speed")));
+                });
+
+                ui[5].vertical_centered(|ui| {
+                    ui.add(trunc_label!(t!("tab.line_list.note")));
+                });
+                ui[6].vertical_centered(|ui| {
+                    ui.add(trunc_label!(t!("tab.line_list.event")));
+                });
+            });
+        }
 
         ui.separator();
 
@@ -82,10 +115,17 @@ impl LineList<'_> {
             )>,
             ResMut<SelectedLine>,
             EventWriter<DoCommandEvent>,
+            Res<Persistent<EditorSettings>>,
         )> = SystemState::new(self.world);
 
-        let (note_query, event_query, query, mut selected_line, mut do_command_event) =
-            state.get_mut(self.world);
+        let (
+            note_query,
+            event_query,
+            query,
+            mut selected_line,
+            mut do_command_event,
+            editor_settings,
+        ) = state.get_mut(self.world);
 
         if let Ok((line, children, parent, position, rotation, opacity, speed)) = query.get(entity)
         {
@@ -153,29 +193,136 @@ impl LineList<'_> {
                 .collect::<Vec<_>>()
                 .len();
 
-            ui.columns(7, |ui| {
-                ui[0].vertical_centered(|ui| {
-                    ui.add(trunc_label!(format!("{:.2}", position.0.x)));
+            if editor_settings.ui.line_list.show_states {
+                ui.columns(7, |ui| {
+                    ui[0].vertical_centered(|ui| {
+                        ui.add(trunc_label!(format!("{:.2}", position.0.x)));
+                    });
+                    ui[1].vertical_centered(|ui| {
+                        ui.add(trunc_label!(format!("{:.2}", position.0.y)));
+                    });
+                    ui[2].vertical_centered(|ui| {
+                        ui.add(trunc_label!(format!("{:.2}", rotation.0.to_degrees())));
+                    });
+                    ui[3].vertical_centered(|ui| {
+                        ui.add(trunc_label!(format!("{:.2}", opacity.0)));
+                    });
+                    ui[4].vertical_centered(|ui| {
+                        ui.add(trunc_label!(format!("{:.2}", speed.0)));
+                    });
+                    ui[5].vertical_centered(|ui| {
+                        ui.add(trunc_label!(format!("{:.2}", notes)));
+                    });
+                    ui[6].vertical_centered(|ui| {
+                        ui.add(trunc_label!(format!("{:.2}", events)));
+                    });
                 });
-                ui[1].vertical_centered(|ui| {
-                    ui.add(trunc_label!(format!("{:.2}", position.0.y)));
+            }
+
+            if editor_settings.ui.line_list.show_previews {
+                ui.columns(4, |columns| {
+                    let x = position.0.x / CANVAS_WIDTH + 0.5;
+                    let y = 1.0 - (position.0.y / CANVAS_HEIGHT + 0.5);
+
+                    let width = 40.0;
+                    let height = 40.0 / 3.0 * 2.0;
+
+                    let pos = |pos: egui::Pos2, rect: egui::Rect| {
+                        egui::Pos2::new(pos.x * rect.width(), pos.y * rect.height())
+                            + rect.min.to_vec2()
+                    };
+
+                    columns[0].vertical_centered(|ui| {
+                        // Preview
+                        let (response, painter) =
+                            ui.allocate_painter(egui::Vec2::new(width, height), Sense::hover());
+                        painter.rect_stroke(response.rect, 0.0, Stroke::new(1.0, Color32::WHITE));
+
+                        let half = 1.5;
+
+                        let x1 = rotation.0.cos() * half;
+                        let y1 = rotation.0.sin() * half;
+
+                        let x2 = -x1;
+                        let y2 = -y1;
+
+                        let p1 = pos(egui::Pos2::new(-x1 + x, y1 + y), response.rect);
+                        let p2 = pos(egui::Pos2::new(-x2 + x, y2 + y), response.rect);
+                        painter.line_segment(
+                            [p1, p2],
+                            Stroke::new(
+                                1.0,
+                                Color32::from_rgba_unmultiplied(
+                                    255,
+                                    255,
+                                    255,
+                                    (opacity.0 * 255.0).round() as u8,
+                                ),
+                            ),
+                        );
+                    });
+
+                    columns[1].vertical_centered(|ui| {
+                        // Position
+                        let (response, painter) =
+                            ui.allocate_painter(egui::Vec2::new(width, height), Sense::hover());
+                        painter.rect_stroke(response.rect, 0.0, Stroke::new(1.0, Color32::WHITE));
+
+                        painter.circle_filled(
+                            pos(egui::Pos2::new(x, y), response.rect),
+                            2.0,
+                            Color32::WHITE,
+                        );
+                    });
+
+                    columns[2].vertical_centered(|ui| {
+                        // Opacity
+                        let (response, painter) =
+                            ui.allocate_painter(egui::Vec2::new(width, height), Sense::hover());
+                        painter.rect_stroke(response.rect, 0.0, Stroke::new(1.0, Color32::WHITE));
+                        painter.rect_filled(
+                            egui::Rect::from_min_max(
+                                response.rect.left_top(),
+                                response.rect.center_bottom(),
+                            ),
+                            0.0,
+                            Color32::from_rgba_unmultiplied(
+                                255,
+                                255,
+                                255,
+                                (opacity.0 * 255.0).round() as u8,
+                            ),
+                        );
+                        painter.rect_filled(
+                            egui::Rect::from_min_max(
+                                response.rect.center_top(),
+                                response.rect.right_bottom(),
+                            ),
+                            0.0,
+                            Color32::WHITE,
+                        );
+                    });
+
+                    columns[3].vertical_centered(|ui| {
+                        // Rotation
+                        let (response, painter) =
+                            ui.allocate_painter(egui::Vec2::new(width, height), Sense::hover());
+                        painter.rect_stroke(response.rect, 0.0, Stroke::new(1.0, Color32::WHITE));
+
+                        let half = 1.5;
+
+                        let x1 = rotation.0.cos() * half;
+                        let y1 = rotation.0.sin() * half;
+
+                        let x2 = -x1;
+                        let y2 = -y1;
+
+                        let p1 = pos(egui::Pos2::new(0.5 - x1, y1 + 0.5), response.rect);
+                        let p2 = pos(egui::Pos2::new(0.5 - x2, y2 + 0.5), response.rect);
+                        painter.line_segment([p1, p2], Stroke::new(1.0, Color32::WHITE));
+                    });
                 });
-                ui[2].vertical_centered(|ui| {
-                    ui.add(trunc_label!(format!("{:.2}", rotation.0.to_degrees())));
-                });
-                ui[3].vertical_centered(|ui| {
-                    ui.add(trunc_label!(format!("{:.2}", opacity.0)));
-                });
-                ui[4].vertical_centered(|ui| {
-                    ui.add(trunc_label!(format!("{:.2}", speed.0)));
-                });
-                ui[5].vertical_centered(|ui| {
-                    ui.add(trunc_label!(format!("{:.2}", notes)));
-                });
-                ui[6].vertical_centered(|ui| {
-                    ui.add(trunc_label!(format!("{:.2}", events)));
-                });
-            });
+            }
 
             ui.separator();
 
