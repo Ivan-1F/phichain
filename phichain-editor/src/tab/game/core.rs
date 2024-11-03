@@ -2,7 +2,7 @@ use super::GameCamera;
 use crate::editing::pending::Pending;
 use crate::project::project_loaded;
 use crate::selection::{Selected, SelectedLine};
-use crate::settings::EditorSettings;
+use crate::settings::{EditorSettings, ShowLineAnchorOption};
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
 use bevy_prototype_lyon::prelude::*;
@@ -31,7 +31,10 @@ impl Plugin for CoreGamePlugin {
                     .after(phichain_game::core::update_line_system)
                     .run_if(project_loaded()),
             )
-            .add_systems(Update, create_anchor_marker_system.run_if(project_loaded()));
+            .add_systems(
+                Update,
+                (create_anchor_marker_system, update_anchor_marker_system).run_if(project_loaded()),
+            );
     }
 }
 
@@ -89,13 +92,20 @@ fn sync_game_config_system(
 fn update_line_tint_system(
     mut query: Query<(&mut Sprite, Entity), With<Line>>,
     selected_line: Res<SelectedLine>,
+    editor_settings: Res<Persistent<EditorSettings>>,
 ) {
+    if !editor_settings.general.highlight_selected_line {
+        return;
+    }
     for (mut sprite, entity) in &mut query {
         if entity == selected_line.0 {
             sprite.color = Color::LIME_GREEN.with_a(sprite.color.a());
         }
     }
 }
+
+#[derive(Debug, Component)]
+struct AnchorMarker;
 
 fn create_anchor_marker_system(mut commands: Commands, query: Query<Entity, Added<Line>>) {
     let shape = shapes::Circle {
@@ -106,6 +116,7 @@ fn create_anchor_marker_system(mut commands: Commands, query: Query<Entity, Adde
     for line in &query {
         commands.entity(line).with_children(|parent| {
             parent.spawn((
+                AnchorMarker,
                 ShapeBundle {
                     path: GeometryBuilder::build_as(&shape),
                     ..default()
@@ -114,5 +125,27 @@ fn create_anchor_marker_system(mut commands: Commands, query: Query<Entity, Adde
                 Stroke::color(Color::LIME_GREEN),
             ));
         });
+    }
+}
+
+fn update_anchor_marker_system(
+    mut query: Query<(&mut Visibility, &Parent), With<AnchorMarker>>,
+    line_query: Query<&Sprite>,
+    editor_settings: Res<Persistent<EditorSettings>>,
+) {
+    for (mut visibility, parent) in &mut query {
+        if let Ok(sprite) = line_query.get(parent.get()) {
+            *visibility = match editor_settings.general.show_line_anchor {
+                ShowLineAnchorOption::Never => Visibility::Hidden,
+                ShowLineAnchorOption::Always => Visibility::Inherited,
+                ShowLineAnchorOption::Visible => {
+                    if sprite.color.a() > 0.0 {
+                        Visibility::Visible
+                    } else {
+                        Visibility::Hidden
+                    }
+                }
+            };
+        }
     }
 }

@@ -105,6 +105,12 @@ tab:
       general:
         title: General
         timeline_scroll_sensitivity: Timeline Scroll Sensitivity
+        highlight_selected_line: Highlight Selected Line
+        show_line_anchor:
+          label: Show Line Anchor
+          never: Never
+          always: Always
+          visible: Visible Lines Only
       audio:
         title: Audio
         music_volume: Music Volume

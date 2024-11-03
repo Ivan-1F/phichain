@@ -1,4 +1,4 @@
-use crate::settings::EditorSettings;
+use crate::settings::{EditorSettings, ShowLineAnchorOption};
 use crate::tab::settings::SettingCategory;
 use crate::translation::Languages;
 use crate::ui::latch;
@@ -57,6 +57,40 @@ impl SettingCategory for General {
                             .clamp_range(0.01..=f32::MAX),
                     );
                     finished |= response.drag_stopped() || response.lost_focus();
+                    ui.end_row();
+
+                    ui.label(t!("tab.settings.category.general.highlight_selected_line"));
+                    let response = ui.checkbox(&mut settings.general.highlight_selected_line, "");
+                    finished |= response.changed();
+                    ui.end_row();
+
+                    ui.label(t!("tab.settings.category.general.show_line_anchor.label"));
+                    let changed = ui
+                        .horizontal(|ui| {
+                            ui.selectable_value(
+                                &mut settings.general.show_line_anchor,
+                                ShowLineAnchorOption::Never,
+                                t!("tab.settings.category.general.show_line_anchor.never"),
+                            )
+                            .clicked()
+                                || ui
+                                    .selectable_value(
+                                        &mut settings.general.show_line_anchor,
+                                        ShowLineAnchorOption::Always,
+                                        t!("tab.settings.category.general.show_line_anchor.always"),
+                                    )
+                                    .clicked()
+                                || ui
+                                    .selectable_value(
+                                        &mut settings.general.show_line_anchor,
+                                        ShowLineAnchorOption::Visible,
+                                        t!("tab.settings.category.general.show_line_anchor.visible"),
+                                    )
+                                    .clicked()
+                        })
+                        .inner;
+
+                    finished |= changed;
                     ui.end_row();
 
                     finished

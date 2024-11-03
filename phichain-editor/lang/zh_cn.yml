@@ -105,6 +105,12 @@ tab:
       general:
         title: 常规
         timeline_scroll_sensitivity: 时间线滚动灵敏度
+        highlight_selected_line: 高亮选中判定线
+        show_line_anchor:
+          label: 显示判定线锚点
+          never: 从不
+          always: 总是
+          visible: 仅可见判定线
       audio:
         title: 音频
         music_volume: 音乐音量

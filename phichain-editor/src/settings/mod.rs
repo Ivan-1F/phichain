@@ -26,11 +26,21 @@ impl Plugin for EditorSettingsPlugin {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ShowLineAnchorOption {
+    Never,
+    Always,
+    Visible,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct GeneralSettings {
     pub language: String,
     pub timeline_scroll_sensitivity: f32,
+    pub highlight_selected_line: bool,
+    pub show_line_anchor: ShowLineAnchorOption,
 }
 
 impl Default for GeneralSettings {
@@ -38,6 +48,8 @@ impl Default for GeneralSettings {
         Self {
             language: "en_us".to_owned(),
             timeline_scroll_sensitivity: 10.0,
+            highlight_selected_line: true,
+            show_line_anchor: ShowLineAnchorOption::Always,
         }
     }
 }
