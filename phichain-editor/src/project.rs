@@ -175,7 +175,7 @@ fn unload_project_system(
 
         // unload lines, notes and events
         use phichain_chart::line::Line;
-        let mut line_query = world.query_filtered::<Entity, With<Line>>();
+        let mut line_query = world.query_filtered::<Entity, (With<Line>, Without<Parent>)>();
         let entities = line_query.iter(world).collect::<Vec<_>>();
         for entity in entities {
             // notes and events will be despawned as children
