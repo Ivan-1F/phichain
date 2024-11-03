@@ -113,6 +113,7 @@ impl LineList<'_> {
                 &LineOpacity,
                 &LineSpeed,
             )>,
+            Query<&Parent>,
             ResMut<SelectedLine>,
             EventWriter<DoCommandEvent>,
             Res<Persistent<EditorSettings>>,
@@ -122,6 +123,7 @@ impl LineList<'_> {
             note_query,
             event_query,
             query,
+            parent_query,
             mut selected_line,
             mut do_command_event,
             editor_settings,
@@ -130,6 +132,10 @@ impl LineList<'_> {
         if let Ok((line, children, parent, position, rotation, opacity, speed)) = query.get(entity)
         {
             let selected = selected_line.0 == entity;
+
+            let under_selected_node = parent_query
+                .iter_ancestors(entity)
+                .any(|ancestor| ancestor == selected_line.0);
 
             ui.horizontal(|ui| {
                 ui.add_space(level as f32 * 10.0);
@@ -153,21 +159,21 @@ impl LineList<'_> {
                             )));
                             ui.close_menu();
                         }
-                        #[allow(clippy::collapsible_if)]
-                        if parent.is_some() {
-                            if ui
-                                .button(t!("tab.line_list.hierarchy.move_to_root"))
-                                .clicked()
-                            {
-                                do_command_event.send(DoCommandEvent(
-                                    EditorCommand::MoveLineAsChild(MoveLineAsChild::new(
-                                        entity, None,
-                                    )),
-                                ));
-                                ui.close_menu();
-                            }
+                    });
+                    #[allow(clippy::collapsible_if)]
+                    if parent.is_some() {
+                        if ui
+                            .button(t!("tab.line_list.hierarchy.move_to_root"))
+                            .clicked()
+                        {
+                            do_command_event.send(DoCommandEvent(EditorCommand::MoveLineAsChild(
+                                MoveLineAsChild::new(entity, None),
+                            )));
+                            ui.close_menu();
                         }
-                        ui.separator();
+                    }
+                    ui.separator();
+                    ui.add_enabled_ui(!under_selected_node && !selected, |ui| {
                         if ui.button(t!("tab.line_list.remove")).clicked() {
                             do_command_event.send(DoCommandEvent(EditorCommand::RemoveLine(
                                 RemoveLine::new(entity),
