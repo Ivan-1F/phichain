@@ -12,14 +12,14 @@ impl Plugin for LineEventPlugin {
     }
 }
 
-/// Despawn a line from the world
+/// Despawn a line and its child lines from the world
 #[derive(Debug, Clone, Event)]
 pub struct DespawnLineEvent(pub Entity);
 
-/// Despawn a line from the world
+/// Despawn a line and its child lines from the world
 ///
 /// If the target is the only root line in the world, do nothing
-/// If the target is the current selected line, update the selected line to the first root line
+/// If the target is the selected line or ancestors of the selected line (despawning target causing dangling selected line), update the selected line to the first root line
 fn handle_despawn_line_event_system(
     mut commands: Commands,
     mut events: EventReader<DespawnLineEvent>,
@@ -41,10 +41,14 @@ fn handle_despawn_line_event_system(
                 entity
             );
             continue;
-        }
+        };
 
-        // despawning the selected line -> changing the selected line to the first root line
-        if selected_line.0 == *entity {
+        // despawning target causing dangling selected line -> changing the selected line to the first root line
+        if selected_line.0 == *entity
+            || parent_query
+                .iter_ancestors(selected_line.0)
+                .any(|x| x == *entity)
+        {
             // unwrap: other_root_lines.len() != 0
             selected_line.0 = *other_root_lines.first().unwrap();
         }
