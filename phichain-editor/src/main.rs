@@ -6,6 +6,7 @@ mod audio;
 mod cli;
 mod constants;
 mod editing;
+mod events;
 mod export;
 mod exporter;
 mod file;
@@ -33,6 +34,7 @@ use crate::audio::AudioPlugin;
 use crate::cli::{Args, CliPlugin};
 use crate::editing::history::EditorHistory;
 use crate::editing::EditingPlugin;
+use crate::events::EventPlugin;
 use crate::export::ExportPlugin;
 use crate::file::{pick_folder, FilePickingPlugin, PickingKind};
 use crate::hit_sound::HitSoundPlugin;
@@ -131,6 +133,7 @@ fn main() {
         .add_plugins(AssetsPlugin)
         .add_plugins(NotificationPlugin)
         .add_plugins(FilePickingPlugin)
+        .add_plugins(EventPlugin)
         .add_systems(Startup, setup_egui_image_loader_system)
         .add_systems(Startup, setup_egui_font_system)
         .add_systems(Startup, setup_plugin)

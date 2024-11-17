@@ -1,3 +1,4 @@
+use crate::events::line::DespawnLineEvent;
 use bevy::prelude::*;
 use phichain_chart::event::LineEventBundle;
 use phichain_chart::line::LineBundle;
@@ -32,7 +33,7 @@ impl Edit for CreateLine {
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
         if let Some(entity) = self.0 {
-            target.entity_mut(entity).despawn_recursive();
+            target.send_event(DespawnLineEvent(entity));
         }
     }
 }
