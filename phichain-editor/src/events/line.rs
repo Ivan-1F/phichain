@@ -1,6 +1,7 @@
 use crate::events::{EditorEvent, EditorEventAppExt};
 use crate::selection::SelectedLine;
 use bevy::prelude::*;
+use bon::Builder;
 use phichain_chart::event::LineEventBundle;
 use phichain_chart::line::{Line, LineBundle};
 use phichain_chart::note::NoteBundle;
@@ -63,14 +64,14 @@ fn handle_despawn_line_event_system(
     }
 }
 
-#[derive(Debug, Clone, Event)]
+#[derive(Debug, Clone, Event, Builder)]
 pub struct SpawnLineEvent {
     /// The line data
-    pub line: LineWrapper,
+    line: LineWrapper,
     /// The entity of the parent line
-    pub parent: Option<Entity>,
+    parent: Option<Entity>,
     /// The target entity to spawn the line. If given, components will be inserted to this entity instead of a new entity
-    pub target: Option<Entity>,
+    target: Option<Entity>,
 }
 
 impl EditorEvent for SpawnLineEvent {
@@ -100,12 +101,11 @@ impl EditorEvent for SpawnLineEvent {
         }
 
         for child in self.line.children {
-            SpawnLineEvent {
-                line: child,
-                parent: Some(id),
-                target: None,
-            }
-            .run(world);
+            SpawnLineEvent::builder()
+                .line(child)
+                .parent(id)
+                .build()
+                .run(world);
         }
 
         id

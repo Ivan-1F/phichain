@@ -19,12 +19,10 @@ impl Edit for CreateLine {
     type Output = ();
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
-        let entity = SpawnLineEvent {
-            line: LineWrapper::default(),
-            parent: None,
-            target: None,
-        }
-        .run(target);
+        let entity = SpawnLineEvent::builder()
+            .line(LineWrapper::default())
+            .build()
+            .run(target);
         self.0 = Some(entity);
     }
 
@@ -63,12 +61,12 @@ impl Edit for RemoveLine {
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
         if let Some(ref line) = self.line {
             // restore line entity and its children
-            SpawnLineEvent {
-                line: line.0.clone(),
-                parent: line.1,
-                target: Some(self.entity),
-            }
-            .run(target);
+            SpawnLineEvent::builder()
+                .line(line.0.clone())
+                .maybe_parent(line.1)
+                .target(self.entity)
+                .build()
+                .run(target);
         }
     }
 }
