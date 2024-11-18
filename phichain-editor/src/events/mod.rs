@@ -1,8 +1,10 @@
 use crate::events::line::LineEventPlugin;
 use bevy::app::{App, Plugin};
 use bevy::ecs::system::SystemState;
+use bevy::log::debug;
 use bevy::prelude::{Event, EventReader, IntoSystemConfigs, Update, World};
 use phichain_game::GameSet;
+use std::fmt::Debug;
 
 pub mod line;
 
@@ -15,7 +17,7 @@ impl Plugin for EventPlugin {
 }
 
 /// A event that can be run directly on a world
-pub trait EditorEvent: Event + Clone {
+pub trait EditorEvent: Event + Clone + Debug {
     /// The output of the event, only available when directly running
     type Output;
 
@@ -28,9 +30,15 @@ where
 {
     let mut state = SystemState::<EventReader<T>>::new(world);
     let mut event_reader = state.get_mut(world);
-    let mut events = vec![];
-    for event in event_reader.read().cloned() {
-        events.push(event);
+    let events = event_reader.read().cloned().collect::<Vec<_>>();
+    event_reader.clear();
+    for event in events {
+        debug!(
+            "[handle_editor_event_system<{}>] running editor event through global handler: {:?}",
+            std::any::type_name::<T>(),
+            event
+        );
+        event.run(world);
     }
 }
 

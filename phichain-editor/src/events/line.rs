@@ -1,66 +1,67 @@
 use crate::events::{EditorEvent, EditorEventAppExt};
 use crate::selection::SelectedLine;
+use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use bon::Builder;
 use phichain_chart::event::LineEventBundle;
 use phichain_chart::line::{Line, LineBundle};
 use phichain_chart::note::NoteBundle;
 use phichain_chart::serialization::LineWrapper;
-use phichain_game::GameSet;
 
 pub struct LineEventPlugin;
 
 impl Plugin for LineEventPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<DespawnLineEvent>()
-            .add_systems(Update, handle_despawn_line_event_system.in_set(GameSet))
-            .add_editor_event::<SpawnLineEvent>();
+        app.add_editor_event::<SpawnLineEvent>()
+            .add_editor_event::<DespawnLineEvent>();
     }
 }
-
-/// Despawn a line and its child lines from the world
-#[derive(Debug, Clone, Event)]
-pub struct DespawnLineEvent(pub Entity);
 
 /// Despawn a line and its child lines from the world
 ///
 /// If the target is the only root line in the world, do nothing
 /// If the target is the selected line or ancestors of the selected line (despawning target causing dangling selected line), update the selected line to the first root line
-fn handle_despawn_line_event_system(
-    mut commands: Commands,
-    mut events: EventReader<DespawnLineEvent>,
-    parent_query: Query<&Parent>,
-    root_line_query: Query<Entity, (With<Line>, Without<Parent>)>,
-    mut selected_line: ResMut<SelectedLine>,
-) {
-    for DespawnLineEvent(entity) in events.read() {
-        debug!("attempt to despawn line {:?}", entity);
-        let is_root = parent_query.get(*entity).is_err();
+#[derive(Debug, Clone, Event)]
+pub struct DespawnLineEvent(pub Entity);
+
+impl EditorEvent for DespawnLineEvent {
+    type Output = ();
+
+    fn run(self, world: &mut World) -> Self::Output {
+        let mut state = SystemState::<(
+            Query<&Parent>,
+            Query<Entity, (With<Line>, Without<Parent>)>,
+            ResMut<SelectedLine>,
+        )>::new(world);
+        let (parent_query, root_line_query, mut selected_line) = state.get_mut(world);
+
+        debug!("attempt to despawn line {:?}", self.0);
+        let is_root = parent_query.get(self.0).is_err();
         let other_root_lines = root_line_query
             .iter()
-            .filter(|x| x != entity)
+            .filter(|x| x != &self.0)
             .collect::<Vec<_>>();
         if is_root && other_root_lines.is_empty() {
             // attempt to remove the only root line -> do nothing
             debug!(
                 "attempt to despawn the only root line {:?}, skipping",
-                entity
+                self.0
             );
-            continue;
+            return;
         };
 
         // despawning target causing dangling selected line -> changing the selected line to the first root line
-        if selected_line.0 == *entity
+        if selected_line.0 == self.0
             || parent_query
                 .iter_ancestors(selected_line.0)
-                .any(|x| x == *entity)
+                .any(|x| x == self.0)
         {
             // unwrap: other_root_lines.len() != 0
             selected_line.0 = *other_root_lines.first().unwrap();
         }
 
-        debug!("despawned line {:?}", entity);
-        commands.entity(*entity).despawn_recursive();
+        debug!("despawned line {:?}", self.0);
+        world.entity_mut(self.0).despawn_recursive();
     }
 }
 

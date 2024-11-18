@@ -23,12 +23,15 @@ impl Edit for CreateLine {
             .line(LineWrapper::default())
             .build()
             .run(target);
+        target.send_event(SpawnLineEvent::builder()
+            .line(LineWrapper::default())
+            .build());
         self.0 = Some(entity);
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
         if let Some(entity) = self.0 {
-            target.send_event(DespawnLineEvent(entity));
+            DespawnLineEvent(entity).run(target);
         }
     }
 }
