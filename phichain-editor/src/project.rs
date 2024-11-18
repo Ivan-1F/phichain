@@ -181,6 +181,9 @@ fn unload_project_system(
             // notes and events will be despawned as children
             world.entity_mut(entity).despawn_recursive();
         }
+        
+        // clear editor history
+        world.resource_mut::<EditorHistory>().0.clear();
     }
 }
 
