@@ -1,5 +1,6 @@
 use crate::events::{EditorEvent, EditorEventAppExt};
 use crate::selection::SelectedLine;
+use crate::utils::entity::replace_with_empty;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use bon::Builder;
@@ -21,8 +22,12 @@ impl Plugin for LineEventPlugin {
 ///
 /// If the target is the only root line in the world, do nothing
 /// If the target is the selected line or ancestors of the selected line (despawning target causing dangling selected line), update the selected line to the first root line
-#[derive(Debug, Clone, Event)]
-pub struct DespawnLineEvent(pub Entity);
+#[derive(Debug, Clone, Event, Builder)]
+pub struct DespawnLineEvent {
+    target: Entity,
+    #[builder(default)] // false
+    keep_entity: bool,
+}
 
 impl EditorEvent for DespawnLineEvent {
     type Output = ();
@@ -35,33 +40,41 @@ impl EditorEvent for DespawnLineEvent {
         )>::new(world);
         let (parent_query, root_line_query, mut selected_line) = state.get_mut(world);
 
-        debug!("attempt to despawn line {:?}", self.0);
-        let is_root = parent_query.get(self.0).is_err();
+        debug!("attempt to despawn line {:?}", self.target);
+        let is_root = parent_query.get(self.target).is_err();
         let other_root_lines = root_line_query
             .iter()
-            .filter(|x| x != &self.0)
+            .filter(|x| x != &self.target)
             .collect::<Vec<_>>();
         if is_root && other_root_lines.is_empty() {
             // attempt to remove the only root line -> do nothing
             debug!(
                 "attempt to despawn the only root line {:?}, skipping",
-                self.0
+                self.target
             );
             return;
         };
 
         // despawning target causing dangling selected line -> changing the selected line to the first root line
-        if selected_line.0 == self.0
+        if selected_line.0 == self.target
             || parent_query
                 .iter_ancestors(selected_line.0)
-                .any(|x| x == self.0)
+                .any(|x| x == self.target)
         {
             // unwrap: other_root_lines.len() != 0
             selected_line.0 = *other_root_lines.first().unwrap();
         }
 
-        debug!("despawned line {:?}", self.0);
-        world.entity_mut(self.0).despawn_recursive();
+        debug!(
+            "despawned line {:?}{}",
+            self.target,
+            if self.keep_entity { "(keep empty)" } else { "" }
+        );
+        if self.keep_entity {
+            replace_with_empty(world, self.target);
+        } else {
+            world.entity_mut(self.target).despawn_recursive();
+        }
     }
 }
 

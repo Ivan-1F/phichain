@@ -1,6 +1,5 @@
 use crate::events::line::{DespawnLineEvent, SpawnLineEvent};
 use crate::events::EditorEvent;
-use crate::utils::entity::replace_with_empty;
 use bevy::prelude::*;
 use phichain_chart::serialization::LineWrapper;
 use undo::Edit;
@@ -23,15 +22,15 @@ impl Edit for CreateLine {
             .line(LineWrapper::default())
             .build()
             .run(target);
-        target.send_event(SpawnLineEvent::builder()
-            .line(LineWrapper::default())
-            .build());
         self.0 = Some(entity);
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
         if let Some(entity) = self.0 {
-            DespawnLineEvent(entity).run(target);
+            DespawnLineEvent::builder()
+                .target(entity)
+                .build()
+                .run(target);
         }
     }
 }
@@ -58,7 +57,11 @@ impl Edit for RemoveLine {
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
         let parent = target.entity(self.entity).get::<Parent>().map(|x| x.get());
         self.line = Some((LineWrapper::serialize_line(target, self.entity), parent));
-        replace_with_empty(target, self.entity);
+        DespawnLineEvent::builder()
+            .target(self.entity)
+            .keep_entity(true)
+            .build()
+            .run(target);
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
