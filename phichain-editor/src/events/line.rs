@@ -1,6 +1,10 @@
+use crate::events::{EditorEvent, EditorEventAppExt};
 use crate::selection::SelectedLine;
 use bevy::prelude::*;
-use phichain_chart::line::Line;
+use phichain_chart::event::LineEventBundle;
+use phichain_chart::line::{Line, LineBundle};
+use phichain_chart::note::NoteBundle;
+use phichain_chart::serialization::LineWrapper;
 use phichain_game::GameSet;
 
 pub struct LineEventPlugin;
@@ -8,7 +12,8 @@ pub struct LineEventPlugin;
 impl Plugin for LineEventPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<DespawnLineEvent>()
-            .add_systems(Update, handle_despawn_line_event_system.in_set(GameSet));
+            .add_systems(Update, handle_despawn_line_event_system.in_set(GameSet))
+            .add_editor_event::<SpawnLineEvent>();
     }
 }
 
@@ -55,5 +60,54 @@ fn handle_despawn_line_event_system(
 
         debug!("despawned line {:?}", entity);
         commands.entity(*entity).despawn_recursive();
+    }
+}
+
+#[derive(Debug, Clone, Event)]
+pub struct SpawnLineEvent {
+    /// The line data
+    pub line: LineWrapper,
+    /// The entity of the parent line
+    pub parent: Option<Entity>,
+    /// The target entity to spawn the line. If given, components will be inserted to this entity instead of a new entity
+    pub target: Option<Entity>,
+}
+
+impl EditorEvent for SpawnLineEvent {
+    type Output = Entity;
+
+    // TODO: move part of the logic to phichain-game utils, duplication of phichain_game::loader::load_line()
+    fn run(self, world: &mut World) -> Self::Output {
+        let id = match self.target {
+            None => world.spawn(LineBundle::new(self.line.line)).id(),
+            Some(target) => world
+                .entity_mut(target)
+                .insert(LineBundle::new(self.line.line))
+                .id(),
+        };
+
+        world.entity_mut(id).with_children(|parent| {
+            for note in self.line.notes {
+                parent.spawn(NoteBundle::new(note));
+            }
+            for event in self.line.events {
+                parent.spawn(LineEventBundle::new(event));
+            }
+        });
+
+        if let Some(parent) = self.parent {
+            world.entity_mut(id).set_parent(parent);
+        }
+
+        for child in self.line.children {
+            SpawnLineEvent {
+                line: child,
+                parent: Some(id),
+                target: None,
+            }
+            .run(world);
+        }
+
+        id
     }
 }

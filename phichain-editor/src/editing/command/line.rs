@@ -1,8 +1,7 @@
-use crate::events::line::DespawnLineEvent;
+use crate::events::line::{DespawnLineEvent, SpawnLineEvent};
+use crate::events::EditorEvent;
+use crate::utils::entity::replace_with_empty;
 use bevy::prelude::*;
-use phichain_chart::event::LineEventBundle;
-use phichain_chart::line::LineBundle;
-use phichain_chart::note::NoteBundle;
 use phichain_chart::serialization::LineWrapper;
 use undo::Edit;
 
@@ -20,14 +19,12 @@ impl Edit for CreateLine {
     type Output = ();
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
-        let entity = target
-            .spawn(LineBundle::default())
-            .with_children(|parent| {
-                for event in LineWrapper::default().events {
-                    parent.spawn(LineEventBundle::new(event));
-                }
-            })
-            .id();
+        let entity = SpawnLineEvent {
+            line: LineWrapper::default(),
+            parent: None,
+            target: None,
+        }
+        .run(target);
         self.0 = Some(entity);
     }
 
@@ -41,7 +38,7 @@ impl Edit for CreateLine {
 #[derive(Debug, Clone)]
 pub struct RemoveLine {
     entity: Entity,
-    line: Option<LineWrapper>,
+    line: Option<(LineWrapper, Option<Entity>)>,
 }
 
 impl RemoveLine {
@@ -58,33 +55,20 @@ impl Edit for RemoveLine {
     // Instead, we retain the entity, despawn all its children and remove all components
     // When undoing, we restore the line entity and its children
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
-        self.line = Some(LineWrapper::serialize_line(target, self.entity));
-
-        // despawn all children
-        if let Some(children) = target.entity_mut(self.entity).take::<Children>() {
-            for child in children.iter() {
-                target.entity_mut(*child).despawn_recursive();
-            }
-        }
-
-        // remove all components
-        target.entity_mut(self.entity).retain::<()>();
+        let parent = target.entity(self.entity).get::<Parent>().map(|x| x.get());
+        self.line = Some((LineWrapper::serialize_line(target, self.entity), parent));
+        replace_with_empty(target, self.entity);
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
         if let Some(ref line) = self.line {
             // restore line entity and its children
-            target
-                .entity_mut(self.entity)
-                .insert(LineBundle::new(line.line.clone()))
-                .with_children(|parent| {
-                    for note in &line.notes {
-                        parent.spawn(NoteBundle::new(*note));
-                    }
-                    for event in &line.events {
-                        parent.spawn(LineEventBundle::new(*event));
-                    }
-                });
+            SpawnLineEvent {
+                line: line.0.clone(),
+                parent: line.1,
+                target: Some(self.entity),
+            }
+            .run(target);
         }
     }
 }
