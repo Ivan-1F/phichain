@@ -182,6 +182,16 @@ fn unload_project_system(
             world.entity_mut(entity).despawn_recursive();
         }
 
+        // despawn ghost entities created when despawning an entity with `keep_entity`
+        let to_remove = world
+            .query::<Entity>()
+            .iter(world)
+            .filter(|entity| world.inspect_entity(*entity).iter().map(|x| x.name()).len() == 0)
+            .collect::<Vec<_>>();
+        for entity in to_remove {
+            world.entity_mut(entity).despawn_recursive();
+        }
+
         // clear editor history
         world.resource_mut::<EditorHistory>().0.clear();
     }
