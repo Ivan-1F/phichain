@@ -1,4 +1,6 @@
+use crate::events::event::LineEventEventPlugin;
 use crate::events::line::LineEventPlugin;
+use crate::events::note::NoteEventPlugin;
 use bevy::app::{App, Plugin};
 use bevy::ecs::system::SystemState;
 use bevy::log::debug;
@@ -6,6 +8,7 @@ use bevy::prelude::{Event, EventReader, IntoSystemConfigs, Update, World};
 use phichain_game::GameSet;
 use std::fmt::Debug;
 
+pub mod event;
 pub mod line;
 pub mod note;
 
@@ -13,7 +16,9 @@ pub struct EventPlugin;
 
 impl Plugin for EventPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(LineEventPlugin);
+        app.add_plugins(LineEventPlugin)
+            .add_plugins(NoteEventPlugin)
+            .add_plugins(LineEventEventPlugin);
     }
 }
 
