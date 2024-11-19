@@ -68,7 +68,11 @@ impl EditorEvent for DespawnLineEvent {
         debug!(
             "despawned line {:?}{}",
             self.target,
-            if self.keep_entity { "(keep empty)" } else { "" }
+            if self.keep_entity {
+                " (keep entity)"
+            } else {
+                ""
+            }
         );
         if self.keep_entity {
             replace_with_empty(world, self.target);

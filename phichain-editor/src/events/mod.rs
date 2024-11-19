@@ -7,6 +7,7 @@ use phichain_game::GameSet;
 use std::fmt::Debug;
 
 pub mod line;
+pub mod note;
 
 pub struct EventPlugin;
 

@@ -20,6 +20,7 @@ impl Edit for CreateLine {
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
         let entity = SpawnLineEvent::builder()
             .line(LineWrapper::default())
+            .maybe_target(self.0)
             .build()
             .run(target);
         self.0 = Some(entity);
@@ -29,6 +30,7 @@ impl Edit for CreateLine {
         if let Some(entity) = self.0 {
             DespawnLineEvent::builder()
                 .target(entity)
+                .keep_entity(true)
                 .build()
                 .run(target);
         }
