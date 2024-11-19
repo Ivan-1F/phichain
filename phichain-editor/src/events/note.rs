@@ -28,14 +28,14 @@ impl EditorEvent for SpawnNoteEvent {
     fn run(self, world: &mut World) -> Self::Output {
         match self.target {
             None => {
-                debug!("spawned note {:?} on new entity", self.note,);
+                debug!("spawned note {:?} on new entity", self.note);
             }
             Some(target) => {
-                debug!("spawned note {:?} on entity {:?}", self.note, target,);
+                debug!("spawned note {:?} on entity {:?}", self.note, target);
             }
         }
         let id = match self.target {
-            None => world.spawn(NoteBundle::new(self.note)).id(),
+            None => world.spawn_empty().id(),
             Some(target) => target,
         };
         world
