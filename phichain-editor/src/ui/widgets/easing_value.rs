@@ -13,7 +13,7 @@ impl<'a> EasingValue<'a> {
     }
 }
 
-impl<'a> Widget for EasingValue<'a> {
+impl Widget for EasingValue<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
         ui.vertical(|ui| {
             let mut drag_stopped = false;

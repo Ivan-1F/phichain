@@ -57,7 +57,7 @@ pub struct TimelineContext<'w> {
     audio_duration: Res<'w, AudioDuration>,
 }
 
-impl<'w> TimelineContext<'w> {
+impl TimelineContext<'_> {
     pub fn primary_beat_times(&self) -> Vec<f32> {
         std::iter::repeat(0)
             .enumerate()
