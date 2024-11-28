@@ -189,7 +189,7 @@ pub fn update_note_y_system(
     query: Query<(&Children, Entity), With<Line>>,
     game_viewport: Res<GameViewport>,
     speed_event_query: Query<(&SpeedEvent, &LineEvent, &Parent)>,
-    mut note_query: Query<(&mut Transform, &mut Sprite, &Note)>,
+    mut note_query: Query<(&mut Transform, &mut Sprite, &mut Visibility, &Note)>,
     time: Res<ChartTime>,
     bpm_list: Res<BpmList>,
 ) {
@@ -210,7 +210,9 @@ pub fn update_note_y_system(
         };
         let current_distance = distance(time.0);
         for child in children {
-            if let Ok((mut transform, mut sprite, note)) = note_query.get_mut(*child) {
+            if let Ok((mut transform, mut sprite, mut visibility, note)) =
+                note_query.get_mut(*child)
+            {
                 let mut y = (distance(bpm_list.time_at(note.beat)) - current_distance) * note.speed;
                 match note.kind {
                     NoteKind::Hold { hold_beat } => {
@@ -224,10 +226,24 @@ pub fn update_note_y_system(
                             if note.above { 0.0_f32 } else { 180.0_f32 }.to_radians(),
                         );
                         transform.scale.y = height / 1900.0;
+
+                        // hide notes behind line (cover)
+                        *visibility = if height < 0.0 {
+                            Visibility::Hidden
+                        } else {
+                            Visibility::Inherited
+                        };
                     }
                     _ => {
                         sprite.anchor = Anchor::Center;
                         transform.rotation = Quat::from_rotation_z(0.0_f32.to_radians());
+
+                        // hide notes behind line (cover)
+                        *visibility = if y < 0.0 {
+                            Visibility::Hidden
+                        } else {
+                            Visibility::Inherited
+                        };
                     }
                 }
 
