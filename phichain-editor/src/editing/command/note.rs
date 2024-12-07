@@ -1,11 +1,14 @@
+use crate::events::note::{DespawnNoteEvent, SpawnNoteEvent};
+use crate::events::EditorEvent;
 use bevy::prelude::*;
-use phichain_chart::note::{Note, NoteBundle};
+use phichain_chart::note::Note;
 use undo::Edit;
 
 #[derive(Debug, Copy, Clone)]
 pub struct CreateNote {
     pub line_entity: Entity,
     pub note: Note,
+
     pub note_entity: Option<Entity>,
 }
 
@@ -24,14 +27,22 @@ impl Edit for CreateNote {
     type Output = ();
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
-        target.entity_mut(self.line_entity).with_children(|parent| {
-            self.note_entity = Some(parent.spawn(NoteBundle::new(self.note)).id());
-        });
+        let entity = SpawnNoteEvent::builder()
+            .note(self.note)
+            .line_entity(self.line_entity)
+            .maybe_target(self.note_entity)
+            .build()
+            .run(target);
+        self.note_entity = Some(entity)
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
         if let Some(entity) = self.note_entity {
-            target.entity_mut(entity).despawn_recursive();
+            DespawnNoteEvent::builder()
+                .target(entity)
+                .keep_entity(true)
+                .build()
+                .run(target);
         }
     }
 }
@@ -39,7 +50,7 @@ impl Edit for CreateNote {
 #[derive(Debug, Copy, Clone)]
 pub struct RemoveNote {
     pub entity: Entity,
-    pub note: Option<Note>,
+    pub note: Option<(Note, Entity)>,
 }
 
 impl RemoveNote {
@@ -53,13 +64,24 @@ impl Edit for RemoveNote {
     type Output = ();
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
-        self.note = target.entity(self.entity).get::<Note>().copied();
-        target.entity_mut(self.entity).retain::<Parent>();
+        let note = target.entity(self.entity).get::<Note>().copied();
+        let parent = target.entity(self.entity).get::<Parent>().map(|x| x.get());
+        self.note = Some((note.unwrap(), parent.unwrap()));
+        DespawnNoteEvent::builder()
+            .target(self.entity)
+            .keep_entity(true)
+            .build()
+            .run(target);
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
-        if let Some(note) = self.note {
-            target.entity_mut(self.entity).insert(NoteBundle::new(note));
+        if let Some((note, line_entity)) = self.note {
+            SpawnNoteEvent::builder()
+                .target(self.entity)
+                .note(note)
+                .line_entity(line_entity)
+                .build()
+                .run(target);
         }
     }
 }

@@ -1,6 +1,7 @@
-use bevy::hierarchy::BuildWorldChildren;
+use crate::events::event::{DespawnLineEventEvent, SpawnLineEventEvent};
+use crate::events::EditorEvent;
 use bevy::prelude::*;
-use phichain_chart::event::{LineEvent, LineEventBundle};
+use phichain_chart::event::LineEvent;
 use undo::Edit;
 
 #[derive(Debug, Copy, Clone)]
@@ -25,14 +26,22 @@ impl Edit for CreateEvent {
     type Output = ();
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
-        target.entity_mut(self.line_entity).with_children(|parent| {
-            self.event_entity = Some(parent.spawn(LineEventBundle::new(self.event)).id());
-        });
+        let entity = SpawnLineEventEvent::builder()
+            .event(self.event)
+            .line_entity(self.line_entity)
+            .maybe_target(self.event_entity)
+            .build()
+            .run(target);
+        self.event_entity = Some(entity)
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
         if let Some(entity) = self.event_entity {
-            target.despawn(entity);
+            DespawnLineEventEvent::builder()
+                .target(entity)
+                .keep_entity(true)
+                .build()
+                .run(target);
         }
     }
 }
@@ -40,7 +49,7 @@ impl Edit for CreateEvent {
 #[derive(Debug, Copy, Clone)]
 pub struct RemoveEvent {
     pub entity: Entity,
-    pub event: Option<LineEvent>,
+    pub event: Option<(LineEvent, Entity)>,
 }
 
 impl RemoveEvent {
@@ -57,15 +66,24 @@ impl Edit for RemoveEvent {
     type Output = ();
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
-        self.event = target.entity(self.entity).get::<LineEvent>().copied();
-        target.entity_mut(self.entity).retain::<Parent>();
+        let event = target.entity(self.entity).get::<LineEvent>().copied();
+        let parent = target.entity(self.entity).get::<Parent>().map(|x| x.get());
+        self.event = Some((event.unwrap(), parent.unwrap()));
+        DespawnLineEventEvent::builder()
+            .target(self.entity)
+            .keep_entity(true)
+            .build()
+            .run(target);
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
-        if let Some(event) = self.event {
-            target
-                .entity_mut(self.entity)
-                .insert(LineEventBundle::new(event));
+        if let Some((event, line_entity)) = self.event {
+            SpawnLineEventEvent::builder()
+                .target(self.entity)
+                .event(event)
+                .line_entity(line_entity)
+                .build()
+                .run(target);
         }
     }
 }

@@ -83,3 +83,4 @@ phichain-assets = { path = "../phichain-assets", features = ["egui"] }
 phichain-game = { path = "../phichain-game" }
 phichain-compiler = { path = "../phichain-compiler" }
 rand = "0.8.5"
+bon = "3.0.1"

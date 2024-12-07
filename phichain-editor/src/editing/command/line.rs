@@ -1,7 +1,6 @@
+use crate::events::line::{DespawnLineEvent, SpawnLineEvent};
+use crate::events::EditorEvent;
 use bevy::prelude::*;
-use phichain_chart::event::LineEventBundle;
-use phichain_chart::line::LineBundle;
-use phichain_chart::note::NoteBundle;
 use phichain_chart::serialization::LineWrapper;
 use undo::Edit;
 
@@ -19,20 +18,21 @@ impl Edit for CreateLine {
     type Output = ();
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
-        let entity = target
-            .spawn(LineBundle::default())
-            .with_children(|parent| {
-                for event in LineWrapper::default().events {
-                    parent.spawn(LineEventBundle::new(event));
-                }
-            })
-            .id();
+        let entity = SpawnLineEvent::builder()
+            .line(LineWrapper::default())
+            .maybe_target(self.0)
+            .build()
+            .run(target);
         self.0 = Some(entity);
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
         if let Some(entity) = self.0 {
-            target.entity_mut(entity).despawn_recursive();
+            DespawnLineEvent::builder()
+                .target(entity)
+                .keep_entity(true)
+                .build()
+                .run(target);
         }
     }
 }
@@ -40,7 +40,7 @@ impl Edit for CreateLine {
 #[derive(Debug, Clone)]
 pub struct RemoveLine {
     entity: Entity,
-    line: Option<LineWrapper>,
+    line: Option<(LineWrapper, Option<Entity>)>,
 }
 
 impl RemoveLine {
@@ -57,33 +57,24 @@ impl Edit for RemoveLine {
     // Instead, we retain the entity, despawn all its children and remove all components
     // When undoing, we restore the line entity and its children
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
-        self.line = Some(LineWrapper::serialize_line(target, self.entity));
-
-        // despawn all children
-        if let Some(children) = target.entity_mut(self.entity).take::<Children>() {
-            for child in children.iter() {
-                target.entity_mut(*child).despawn_recursive();
-            }
-        }
-
-        // remove all components
-        target.entity_mut(self.entity).retain::<()>();
+        let parent = target.entity(self.entity).get::<Parent>().map(|x| x.get());
+        self.line = Some((LineWrapper::serialize_line(target, self.entity), parent));
+        DespawnLineEvent::builder()
+            .target(self.entity)
+            .keep_entity(true)
+            .build()
+            .run(target);
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
         if let Some(ref line) = self.line {
             // restore line entity and its children
-            target
-                .entity_mut(self.entity)
-                .insert(LineBundle::new(line.line.clone()))
-                .with_children(|parent| {
-                    for note in &line.notes {
-                        parent.spawn(NoteBundle::new(*note));
-                    }
-                    for event in &line.events {
-                        parent.spawn(LineEventBundle::new(*event));
-                    }
-                });
+            SpawnLineEvent::builder()
+                .line(line.0.clone())
+                .maybe_parent(line.1)
+                .target(self.entity)
+                .build()
+                .run(target);
         }
     }
 }

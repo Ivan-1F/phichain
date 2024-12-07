@@ -23,7 +23,7 @@ impl<'a> BeatValue<'a> {
     }
 }
 
-impl<'a> Widget for BeatValue<'a> {
+impl Widget for BeatValue<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
         ui.horizontal(|ui| {
             let mut value = self.beat.value();

@@ -156,27 +156,29 @@ impl LineWrapper {
     pub fn serialize_line(world: &bevy::prelude::World, entity: bevy::prelude::Entity) -> Self {
         use bevy::prelude::*;
 
-        let children = world
-            .get::<Children>(entity)
-            .expect("Entity does not have children");
+        let children = world.get::<Children>(entity);
         let line = world.get::<Line>(entity).expect("Entity is not a line");
 
         let mut notes: Vec<Note> = vec![];
         let mut events: Vec<LineEvent> = vec![];
-        for child in children.iter() {
-            if let Some(note) = world.get::<Note>(*child) {
-                notes.push(*note);
-            }
-            if let Some(event) = world.get::<LineEvent>(*child) {
-                events.push(*event);
+        if let Some(children) = children {
+            for child in children.iter() {
+                if let Some(note) = world.get::<Note>(*child) {
+                    notes.push(*note);
+                }
+                if let Some(event) = world.get::<LineEvent>(*child) {
+                    events.push(*event);
+                }
             }
         }
 
         let mut child_lines = vec![];
 
-        for child in children.iter() {
-            if world.get::<Line>(*child).is_some() {
-                child_lines.push(LineWrapper::serialize_line(world, *child));
+        if let Some(children) = children {
+            for child in children.iter() {
+                if world.get::<Line>(*child).is_some() {
+                    child_lines.push(LineWrapper::serialize_line(world, *child));
+                }
             }
         }
 
