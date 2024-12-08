@@ -5,11 +5,20 @@ use strum::IntoEnumIterator;
 
 pub struct EasingValue<'a> {
     value: &'a mut Easing,
+    show_graph: bool,
 }
 
 impl<'a> EasingValue<'a> {
     pub fn new(value: &'a mut Easing) -> Self {
-        Self { value }
+        Self {
+            value,
+            show_graph: true,
+        }
+    }
+
+    pub fn show_graph(mut self, show_graph: bool) -> Self {
+        self.show_graph = show_graph;
+        self
     }
 }
 
@@ -19,7 +28,7 @@ impl Widget for EasingValue<'_> {
             let mut drag_stopped = false;
 
             let mut combobox_changed = false;
-            egui::ComboBox::from_label("")
+            let response = egui::ComboBox::from_label("")
                 .selected_text(format!("{}", self.value))
                 .show_ui(ui, |ui| {
                     for easing in Easing::iter() {
@@ -35,7 +44,12 @@ impl Widget for EasingValue<'_> {
                             }
                         }
                     }
-                });
+                })
+                .response;
+
+            if !self.show_graph {
+                return response;
+            }
 
             let (mut response, painter) = ui.allocate_painter(
                 Vec2::new(ui.available_width(), ui.available_width() / 3.0 * 2.0),
