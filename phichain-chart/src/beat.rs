@@ -8,7 +8,7 @@ use std::{
 
 #[cfg(feature = "bevy")]
 use bevy::log::warn;
-use num::{FromPrimitive, Rational32};
+use num::{CheckedAdd, FromPrimitive, Rational32, Signed, Zero};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[cfg(not(feature = "bevy"))]
 use tracing::warn;
@@ -201,6 +201,21 @@ impl Beat {
     pub fn value(&self) -> f32 {
         (*self).into()
     }
+
+    // TODO: implement `Num`, `Neg` and `Signed` for `Beat`
+    pub fn abs(&self) -> Self {
+        Self(self.0.abs(), self.1.abs(), self.2.abs())
+    }
+}
+
+impl Zero for Beat {
+    fn zero() -> Self {
+        Self::ZERO
+    }
+
+    fn is_zero(&self) -> bool {
+        self.0.is_zero() && self.1.is_zero() && self.2.is_zero()
+    }
 }
 
 impl Sub for Beat {
@@ -230,6 +245,18 @@ impl AddAssign for Beat {
         *self = *self + rhs
     }
 }
+
+impl CheckedAdd for Beat {
+    fn checked_add(&self, rhs: &Self) -> Option<Self> {
+        Some(Self(
+            self.0.checked_add(rhs.0)?,
+            self.1.checked_add(&rhs.1)?,
+            self.2 + rhs.2, // FIXME
+        ))
+    }
+}
+
+// TODO: implement `Mul`, `Div` for `Beat`
 
 impl PartialEq for Beat {
     fn eq(&self, other: &Self) -> bool {
