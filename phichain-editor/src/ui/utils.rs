@@ -1,9 +1,10 @@
 use egui::epaint::PathShape;
-use egui::{emath, Color32, Pos2, Rect, Stroke, Ui, Vec2};
+use egui::{emath, Color32, Pos2, Rect, Response, Sense, Stroke, Ui, Vec2};
 use phichain_chart::easing::Easing;
 
 /// Draw a easing curve with a [`Ui`] on the given [`Rect`]
-pub fn draw_easing(ui: &mut Ui, rect: Rect, easing: Easing) {
+pub fn draw_easing(ui: &mut Ui, rect: Rect, easing: Easing) -> Response {
+    let response = ui.allocate_rect(rect, Sense::hover());
     let painter = ui.painter_at(rect);
 
     let to_screen =
@@ -20,4 +21,6 @@ pub fn draw_easing(ui: &mut Ui, rect: Rect, easing: Easing) {
         .collect();
 
     painter.add(PathShape::line(points, Stroke::new(2.0, Color32::WHITE)));
+
+    response
 }

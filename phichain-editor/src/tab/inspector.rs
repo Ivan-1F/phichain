@@ -116,7 +116,7 @@ fn filling_notes_inspector(
             ui.end_row();
 
             ui.label(t!("tab.inspector.filling_notes.curve"));
-            ui.add(EasingValue::new(&mut filling.easing).show_graph(true));
+            ui.add(EasingValue::new(&mut filling.easing).show_graph(false));
             ui.end_row();
         });
 

@@ -10,10 +10,11 @@ use crate::ui::utils::draw_easing;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use bevy_egui::EguiUserTextures;
-use egui::{Color32, Pos2, Rangef, Rect, Sense, Ui};
+use egui::{emath, Color32, Pos2, Rangef, Rect, Sense, Stroke, Ui};
 use phichain_assets::ImageAssets;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::CANVAS_WIDTH;
+use phichain_chart::easing::Easing;
 use phichain_chart::note::{Note, NoteKind};
 use phichain_game::highlight::Highlighted;
 use std::cmp::Ordering;
@@ -260,7 +261,7 @@ impl Timeline for NoteTimeline {
         }
 
         // TODO: optimize
-        if let Ok(filling) = filling_notes_query.get_single() {
+        if let Ok(mut filling) = filling_notes_query.get_single_mut() {
             if let (Some(from), Some(to)) = (filling.from, filling.to) {
                 let from = note_query.get(from);
                 let to = note_query.get(to);
@@ -270,13 +271,58 @@ impl Timeline for NoteTimeline {
                     let from_y = ctx.time_to_y(bpm_list.time_at(from.0.beat));
                     let to_x = viewport.min.x + (to.0.x / CANVAS_WIDTH + 0.5) * viewport.width();
                     let to_y = ctx.time_to_y(bpm_list.time_at(to.0.beat));
-                    draw_easing(
-                        ui,
-                        Rect::from_two_pos(Pos2::new(from_x, from_y), Pos2::new(to_x, to_y)),
-                        filling.easing,
-                    );
+                    let rect = Rect::from_two_pos(Pos2::new(from_x, from_y), Pos2::new(to_x, to_y));
+                    let response = draw_easing(ui, rect, filling.easing);
+                    if let Easing::Custom(ref mut x1, ref mut y1, ref mut x2, ref mut y2) =
+                        filling.easing
+                    {
+                        let painter = ui.painter_at(rect);
+                        let to_screen = emath::RectTransform::from_to(
+                            Rect::from_min_size(Pos2::ZERO, egui::Vec2::new(1.0, 1.0)),
+                            rect,
+                        );
 
-                    for note in generate_notes(*from.0, *to.0, filling) {
+                        let mut p1 = Pos2::new(*x1, 1.0 - *y1);
+                        let mut p2 = Pos2::new(*x2, 1.0 - *y2);
+                        let size = egui::Vec2::splat(2.0 * 4.0);
+
+                        let point_in_screen = to_screen.transform_pos(p1);
+                        let point_rect = Rect::from_center_size(point_in_screen, size);
+                        let point_id = response.id.with(1);
+                        egui::Id::new("");
+                        let point_response = ui.interact(point_rect, point_id, Sense::drag());
+
+                        p1 += point_response.drag_delta() / rect.size();
+                        p1 = to_screen.from().clamp(p1);
+
+                        let point_in_screen = to_screen.transform_pos(p2);
+                        let point_rect = Rect::from_center_size(point_in_screen, size);
+                        let point_id = response.id.with(2);
+                        let point_response = ui.interact(point_rect, point_id, Sense::drag());
+
+                        p2 += point_response.drag_delta() / rect.size();
+                        p2 = to_screen.from().clamp(p2);
+
+                        ui.add_space(4.0); // add some space to make sure 0, 0 and drag values are not too close
+
+                        if p1.x != *x1 || p1.y != *y1 || p2.x != *x2 || p2.y != *y2 {
+                            filling.easing = Easing::Custom(p1.x, 1.0 - p1.y, p2.x, 1.0 - p2.y);
+                        }
+
+                        painter.circle(to_screen * p1, 4.0, Color32::WHITE, Stroke::NONE);
+                        painter.circle(to_screen * p2, 4.0, Color32::WHITE, Stroke::NONE);
+
+                        painter.line_segment(
+                            [to_screen * Pos2::new(0.0, 1.0), to_screen * p1],
+                            Stroke::new(2.0, Color32::GRAY),
+                        );
+                        painter.line_segment(
+                            [to_screen * Pos2::new(1.0, 0.0), to_screen * p2],
+                            Stroke::new(2.0, Color32::GRAY),
+                        );
+                    }
+
+                    for note in generate_notes(*from.0, *to.0, &filling) {
                         let x = viewport.min.x + (note.x / CANVAS_WIDTH + 0.5) * viewport.width();
                         let y = ctx.time_to_y(bpm_list.time_at(note.beat));
 
