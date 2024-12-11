@@ -128,11 +128,7 @@ fn handle_confirm_fill_event_system(
                 return;
             }
 
-            dbg!(from, to, filling);
-
             let notes = generate_notes(*from, *to, filling);
-
-            dbg!(&notes);
 
             let create_note_commands: Vec<_> = notes
                 .iter()
