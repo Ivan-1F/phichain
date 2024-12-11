@@ -36,6 +36,7 @@ impl FillingNotes {
     }
 }
 
+/// Generate a note sequence from a note to another note with a [`FillingNotes`] option
 pub fn generate_notes(from: Note, to: Note, options: &FillingNotes) -> Vec<Note> {
     let delta = beat!(1, options.density);
     let beats = iter::range_step(from.beat, to.beat, delta).collect::<Vec<_>>();
@@ -55,6 +56,7 @@ pub fn generate_notes(from: Note, to: Note, options: &FillingNotes) -> Vec<Note>
                 1.0,
             )
         })
+        .skip(1)
         .collect()
 }
 
@@ -129,7 +131,7 @@ fn handle_confirm_fill_event_system(
             dbg!(from, to, filling);
 
             let notes = generate_notes(*from, *to, filling);
-            
+
             dbg!(&notes);
 
             let create_note_commands: Vec<_> = notes
