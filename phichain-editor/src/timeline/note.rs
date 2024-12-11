@@ -6,7 +6,7 @@ use crate::editing::DoCommandEvent;
 use crate::selection::{SelectEvent, Selected, SelectedLine};
 use crate::tab::timeline::TimelineFilter;
 use crate::timeline::{Timeline, TimelineContext};
-use crate::ui::widgets::easing_value::EasingGraph;
+use crate::ui::widgets::easing::EasingGraph;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use bevy_egui::EguiUserTextures;

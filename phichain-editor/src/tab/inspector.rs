@@ -10,7 +10,7 @@ use crate::editing::DoCommandEvent;
 use crate::selection::{Selected, SelectedLine};
 use crate::ui::latch;
 use crate::ui::widgets::beat_value::BeatExt;
-use crate::ui::widgets::easing_value::EasingValue;
+use crate::ui::widgets::easing::EasingValue;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use phichain_chart::line::Line;
 use phichain_chart::note::{Note, NoteKind};
