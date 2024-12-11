@@ -1,7 +1,3 @@
-use bevy::prelude::*;
-use egui::{Align, Color32, DragValue, Layout, RichText, Ui};
-use phichain_chart::beat;
-
 use crate::editing::command::event::EditEvent;
 use crate::editing::command::note::EditNote;
 use crate::editing::command::{CommandSequence, EditorCommand};
@@ -11,6 +7,10 @@ use crate::selection::{Selected, SelectedLine};
 use crate::ui::latch;
 use crate::ui::widgets::beat_value::BeatExt;
 use crate::ui::widgets::easing::EasingValue;
+use bevy::prelude::*;
+use egui::{Align, Color32, DragValue, Layout, RichText, Ui};
+use phichain_chart::beat;
+use phichain_chart::easing::Easing;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use phichain_chart::line::Line;
 use phichain_chart::note::{Note, NoteKind};
@@ -116,7 +116,21 @@ fn filling_notes_inspector(
             ui.end_row();
 
             ui.label(t!("tab.inspector.filling_notes.curve"));
-            ui.add(EasingValue::new(&mut filling.easing).show_graph(false));
+            ui.add(
+                EasingValue::new(&mut filling.easing)
+                    .show_graph(false)
+                    .disabled_easings(vec![
+                        Easing::EaseInBack,
+                        Easing::EaseOutBack,
+                        Easing::EaseInOutBack,
+                        Easing::EaseInElastic,
+                        Easing::EaseOutElastic,
+                        Easing::EaseInOutElastic,
+                        Easing::EaseInBounce,
+                        Easing::EaseOutBounce,
+                        Easing::EaseInOutBounce,
+                    ]),
+            );
             ui.end_row();
         });
 

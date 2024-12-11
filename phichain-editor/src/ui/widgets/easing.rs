@@ -105,6 +105,9 @@ impl Widget for EasingGraph<'_> {
 pub struct EasingValue<'a> {
     value: &'a mut Easing,
     show_graph: bool,
+
+    /// Easings in this vec will not be shown in the combobox
+    disabled_easings: Vec<Easing>,
 }
 
 impl<'a> EasingValue<'a> {
@@ -112,11 +115,18 @@ impl<'a> EasingValue<'a> {
         Self {
             value,
             show_graph: true,
+
+            disabled_easings: vec![],
         }
     }
 
     pub fn show_graph(mut self, show_graph: bool) -> Self {
         self.show_graph = show_graph;
+        self
+    }
+
+    pub fn disabled_easings(mut self, disabled_easings: Vec<Easing>) -> Self {
+        self.disabled_easings = disabled_easings;
         self
     }
 }
@@ -147,7 +157,7 @@ impl Widget for EasingValue<'_> {
             let mut response = egui::ComboBox::from_label("")
                 .selected_text(format!("{}", self.value))
                 .show_ui(ui, |ui| {
-                    for easing in Easing::iter() {
+                    for easing in Easing::iter().filter(|x| !self.disabled_easings.contains(x)) {
                         if ui
                             .selectable_label(*self.value == easing, format!("{}", easing))
                             .clicked()
