@@ -59,12 +59,17 @@ impl Widget for EasingGraph<'_> {
 
             ui.add_space(4.0); // add some space to make sure 0, 0 and drag values are not too close
 
-            // TODO: these changes does not affect drag_stopped()
             ui.horizontal(|ui| {
-                ui.add(egui::DragValue::new(&mut x1_).speed(0.01));
-                ui.add(egui::DragValue::new(&mut y1_).speed(0.01));
-                ui.add(egui::DragValue::new(&mut x2_).speed(0.01));
-                ui.add(egui::DragValue::new(&mut y2_).speed(0.01));
+                // make changes affect response.drag_stopped
+                macro_rules! drag_value {
+                    ($($x:ident)*) => {
+                        $(
+                            let dv_response = ui.add(egui::DragValue::new(&mut $x).speed(0.01));
+                            drag_stopped |= dv_response.drag_stopped() || dv_response.lost_focus();
+                        )*
+                    };
+                }
+                drag_value!(x1_ y1_ x2_ y2_);
             });
 
             if x1_ != *x1 || y1_ != *y1 || x2_ != *x2 || y2_ != *y2 {
