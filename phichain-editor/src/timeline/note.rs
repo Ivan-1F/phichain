@@ -6,15 +6,14 @@ use crate::editing::DoCommandEvent;
 use crate::selection::{SelectEvent, Selected, SelectedLine};
 use crate::tab::timeline::TimelineFilter;
 use crate::timeline::{Timeline, TimelineContext};
-use crate::ui::utils::draw_easing;
+use crate::ui::widgets::easing_value::EasingGraph;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use bevy_egui::EguiUserTextures;
-use egui::{emath, Color32, Pos2, Rangef, Rect, Sense, Stroke, Ui};
+use egui::{Color32, Pos2, Rangef, Rect, Sense, Ui};
 use phichain_assets::ImageAssets;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::CANVAS_WIDTH;
-use phichain_chart::easing::Easing;
 use phichain_chart::note::{Note, NoteKind};
 use phichain_game::highlight::Highlighted;
 use std::cmp::Ordering;
@@ -272,55 +271,7 @@ impl Timeline for NoteTimeline {
                     let to_x = viewport.min.x + (to.0.x / CANVAS_WIDTH + 0.5) * viewport.width();
                     let to_y = ctx.time_to_y(bpm_list.time_at(to.0.beat));
                     let rect = Rect::from_two_pos(Pos2::new(from_x, from_y), Pos2::new(to_x, to_y));
-                    let response = draw_easing(ui, rect, filling.easing);
-                    if let Easing::Custom(ref mut x1, ref mut y1, ref mut x2, ref mut y2) =
-                        filling.easing
-                    {
-                        let painter = ui.painter_at(rect);
-                        let to_screen = emath::RectTransform::from_to(
-                            Rect::from_min_size(Pos2::ZERO, egui::Vec2::new(1.0, 1.0)),
-                            rect,
-                        );
-
-                        let mut p1 = Pos2::new(*x1, 1.0 - *y1);
-                        let mut p2 = Pos2::new(*x2, 1.0 - *y2);
-                        let size = egui::Vec2::splat(2.0 * 4.0);
-
-                        let point_in_screen = to_screen.transform_pos(p1);
-                        let point_rect = Rect::from_center_size(point_in_screen, size);
-                        let point_id = response.id.with(1);
-                        egui::Id::new("");
-                        let point_response = ui.interact(point_rect, point_id, Sense::drag());
-
-                        p1 += point_response.drag_delta() / rect.size();
-                        p1 = to_screen.from().clamp(p1);
-
-                        let point_in_screen = to_screen.transform_pos(p2);
-                        let point_rect = Rect::from_center_size(point_in_screen, size);
-                        let point_id = response.id.with(2);
-                        let point_response = ui.interact(point_rect, point_id, Sense::drag());
-
-                        p2 += point_response.drag_delta() / rect.size();
-                        p2 = to_screen.from().clamp(p2);
-
-                        ui.add_space(4.0); // add some space to make sure 0, 0 and drag values are not too close
-
-                        if p1.x != *x1 || p1.y != *y1 || p2.x != *x2 || p2.y != *y2 {
-                            filling.easing = Easing::Custom(p1.x, 1.0 - p1.y, p2.x, 1.0 - p2.y);
-                        }
-
-                        painter.circle(to_screen * p1, 4.0, Color32::WHITE, Stroke::NONE);
-                        painter.circle(to_screen * p2, 4.0, Color32::WHITE, Stroke::NONE);
-
-                        painter.line_segment(
-                            [to_screen * Pos2::new(0.0, 1.0), to_screen * p1],
-                            Stroke::new(2.0, Color32::GRAY),
-                        );
-                        painter.line_segment(
-                            [to_screen * Pos2::new(1.0, 0.0), to_screen * p2],
-                            Stroke::new(2.0, Color32::GRAY),
-                        );
-                    }
+                    ui.put(rect, EasingGraph::new(&mut filling.easing));
 
                     for note in generate_notes(*from.0, *to.0, &filling) {
                         let x = viewport.min.x + (note.x / CANVAS_WIDTH + 0.5) * viewport.width();
