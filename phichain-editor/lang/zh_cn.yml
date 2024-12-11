@@ -17,6 +17,18 @@ tab:
     title: 时间线
   inspector:
     title: 检查器
+    filling_notes:
+      start: 从这里开始填充曲线音符
+      title: '正在填充曲线音符:'
+      instructions:
+        select_destination: 请选择终点
+        select_origin: 请选择起点
+        select_origin_destination: 请选择起点和终点
+      density: 密度
+      kind: 类型
+      curve: 曲线
+      cancel: 取消
+      fill: 填充
     single_note:
       x: X
       beat: 时间

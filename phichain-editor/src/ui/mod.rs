@@ -3,6 +3,7 @@ use bevy::prelude::*;
 
 mod compat;
 pub mod latch;
+pub mod utils;
 pub mod widgets;
 
 pub struct UiPlugin;

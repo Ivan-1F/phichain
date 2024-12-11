@@ -4,21 +4,22 @@ use crate::editing::command::EditorCommand;
 use crate::editing::create_event::CreateEventPlugin;
 use crate::editing::create_note::CreateNoteSystem;
 use crate::editing::delete_selected::DeleteSelectedPlugin;
+use crate::editing::fill_notes::FillingNotesPlugin;
 use crate::editing::history::EditorHistory;
 use crate::editing::move_event::MoveEventPlugin;
 use crate::editing::move_note::MoveNotePlugin;
 use crate::hotkey::HotkeyRegistrationExt;
-use bevy::ecs::system::SystemState;
-use bevy::prelude::*;
-
 use crate::schedule::EditorSet;
 use crate::utils::compat::ControlKeyExt;
+use bevy::ecs::system::SystemState;
+use bevy::prelude::*;
 
 mod clipboard;
 pub mod command;
 mod create_event;
 mod create_note;
 mod delete_selected;
+pub mod fill_notes;
 pub mod history;
 mod move_event;
 mod move_note;
@@ -35,6 +36,7 @@ impl Plugin for EditingPlugin {
             .add_plugins(CreateEventPlugin)
             .add_plugins(MoveNotePlugin)
             .add_plugins(MoveEventPlugin)
+            .add_plugins(FillingNotesPlugin)
             .add_plugins(ClipboardPlugin)
             .add_systems(Update, handle_edit_command.in_set(EditorSet::Edit))
             .register_action("phichain.undo", undo_system)

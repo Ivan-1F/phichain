@@ -4,6 +4,7 @@
 
 use serde::{Deserialize, Serialize};
 use simple_easing::*;
+use std::f32::consts::PI;
 use std::fmt::{Debug, Display, Formatter};
 use strum::EnumIter;
 
@@ -57,6 +58,35 @@ pub enum Easing {
     Custom(f32, f32, f32, f32),
 }
 
+fn bezier_y(t: f32, y1: f32, y2: f32) -> f32 {
+    let inv_t = 1.0 - t;
+    3.0 * y1 * t * inv_t * inv_t + 3.0 * y2 * t * t * inv_t + t * t * t
+}
+
+fn bezier_x(t: f32, x1: f32, x2: f32) -> f32 {
+    let inv_t = 1.0 - t;
+    3.0 * x1 * t * inv_t * inv_t + 3.0 * x2 * t * t * inv_t + t * t * t
+}
+
+fn invert_bezier(x1: f32, y1: f32, x2: f32, y2: f32, y: f32) -> f32 {
+    let mut low = 0.0;
+    let mut high = 1.0;
+    let eps = 1e-7;
+
+    while high - low > eps {
+        let mid = (low + high) * 0.5;
+        let val = bezier_y(mid, y1, y2);
+        if val < y {
+            low = mid;
+        } else {
+            high = mid;
+        }
+    }
+
+    let t = (low + high) * 0.5;
+    bezier_x(t, x1, x2)
+}
+
 impl Easing {
     pub fn ease(self, x: f32) -> f32 {
         match self {
@@ -93,6 +123,113 @@ impl Easing {
             Self::EaseInOutBounce => bounce_in_out(x),
 
             Self::Custom(x1, y1, x2, y2) => BezierTween::new((x1, y1), (x2, y2)).y(x),
+        }
+    }
+
+    /// Computes the inverse of the easing function for a given value `y`.
+    ///
+    /// This method calculates the input `x` such that the easing function would produce the given
+    /// output `y`. It is used to reverse the easing process and retrieve the original input
+    /// value based on the output. This is particularly useful for animations or interpolations
+    /// where you need to determine the progress `x` for a known result `y`.
+    ///
+    /// # Parameters
+    /// - `y`: The eased output value for which the inverse needs to be calculated.
+    ///        It is expected to be in the range [0.0, 1.0].
+    ///
+    /// # Returns
+    /// - `Some(f32)`: If the easing function has a closed-form inverse, the computed input value is returned.
+    /// - `None`: If the easing function does not have a closed-form inverse or is otherwise non-invertible.
+    pub fn inverse(self, y: f32) -> Option<f32> {
+        match self {
+            Self::Linear => Some(y),
+            Self::EaseInSine => Some((2.0 / PI) * (1.0 - y).acos()),
+            Self::EaseOutSine => Some((2.0 / PI) * y.asin()),
+            Self::EaseInOutSine => Some((1.0 / PI) * (1.0 - 2.0 * y).acos()),
+            Self::EaseInQuad => Some(y.sqrt()),
+            Self::EaseOutQuad => Some(1.0 - (1.0 - y).sqrt()),
+            Self::EaseInOutQuad => {
+                if y < 0.5 {
+                    Some((y / 2.0).sqrt())
+                } else {
+                    Some(1.0 - ((1.0 - y) / 2.0).sqrt())
+                }
+            }
+            Self::EaseInCubic => Some(y.cbrt()),
+            Self::EaseOutCubic => Some(1.0 - (1.0 - y).cbrt()),
+            Self::EaseInOutCubic => {
+                if y < 0.5 {
+                    Some((y / 4.0).cbrt())
+                } else {
+                    Some(1.0 - ((1.0 - y) / 4.0).cbrt())
+                }
+            }
+            Self::EaseInQuart => Some(y.powf(0.25)),
+            Self::EaseOutQuart => Some(1.0 - (1.0 - y).powf(0.25)),
+            Self::EaseInOutQuart => {
+                if y < 0.5 {
+                    Some((y / 8.0).powf(0.25))
+                } else {
+                    Some(1.0 - ((1.0 - y) / 8.0).powf(0.25))
+                }
+            }
+            Self::EaseInQuint => Some(y.powf(0.2)),
+            Self::EaseOutQuint => Some(1.0 - (1.0 - y).powf(0.2)),
+            Self::EaseInOutQuint => {
+                if y < 0.5 {
+                    Some((y / 16.0).powf(0.2))
+                } else {
+                    Some(1.0 - ((1.0 - y) / 16.0).powf(0.2))
+                }
+            }
+            Self::EaseInExpo => {
+                if y == 0.0 {
+                    Some(0.0)
+                } else {
+                    Some(1.0 + (y.log2() / 10.0))
+                }
+            }
+            Self::EaseOutExpo => {
+                if y == 1.0 {
+                    Some(1.0)
+                } else {
+                    Some(-(1.0 / 10.0) * ((1.0 - y).log2()))
+                }
+            }
+            Self::EaseInOutExpo => {
+                if y == 0.0 {
+                    Some(0.0)
+                } else if y == 1.0 {
+                    Some(1.0)
+                } else if y < 0.5 {
+                    Some(0.5 + ((2.0 * y).log2() / 20.0))
+                } else {
+                    Some((1.0 - ((2.0 * (1.0 - y)).log2() / 10.0)) / 2.0)
+                }
+            }
+            Self::EaseInCirc => Some((1.0 - (1.0 - y).powi(2)).sqrt()),
+            Self::EaseOutCirc => Some(1.0 - (1.0 - y * y).sqrt()),
+            Self::EaseInOutCirc => {
+                if y < 0.5 {
+                    Some(0.5 * ((1.0 - (1.0 - 2.0 * y).powi(2)).sqrt()))
+                } else {
+                    Some(1.0 + ((1.0 - (2.0 * y - 1.0).powi(2)).sqrt()) / 2.0)
+                }
+            }
+
+            Self::EaseInBack => None,
+            Self::EaseOutBack => None,
+            Self::EaseInOutBack => None,
+
+            Self::EaseInElastic => None,
+            Self::EaseOutElastic => None,
+            Self::EaseInOutElastic => None,
+
+            Self::EaseInBounce => None,
+            Self::EaseOutBounce => None,
+            Self::EaseInOutBounce => None,
+
+            Easing::Custom(x1, y1, x2, y2) => Some(invert_bezier(x1, y1, x2, y2, y)),
         }
     }
 }

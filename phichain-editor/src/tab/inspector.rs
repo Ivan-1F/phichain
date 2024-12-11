@@ -1,10 +1,11 @@
 use bevy::prelude::*;
-use egui::{Align, Layout, Ui};
+use egui::{Align, Color32, DragValue, Layout, RichText, Ui};
 use phichain_chart::beat;
 
 use crate::editing::command::event::EditEvent;
 use crate::editing::command::note::EditNote;
 use crate::editing::command::{CommandSequence, EditorCommand};
+use crate::editing::fill_notes::{CancelFillEvent, ConfirmFillEvent, FillingNotes};
 use crate::editing::DoCommandEvent;
 use crate::selection::{Selected, SelectedLine};
 use crate::ui::latch;
@@ -16,12 +17,27 @@ use phichain_chart::note::{Note, NoteKind};
 
 pub fn inspector_ui_system(
     In(mut ui): In<Ui>,
+
     mut selected_notes: Query<(&mut Note, Entity), With<Selected>>,
     mut selected_events: Query<(&mut LineEvent, Entity), With<Selected>>,
     selected_line: Res<SelectedLine>,
     mut line_query: Query<&mut Line>,
     event_writer: EventWriter<DoCommandEvent>,
+
+    mut filling_notes_query: Query<&mut FillingNotes>,
+    cancel_fill_event_writer: EventWriter<CancelFillEvent>,
+    confirm_fill_event_writer: EventWriter<ConfirmFillEvent>,
 ) {
+    if let Ok(mut filling) = filling_notes_query.get_single_mut() {
+        filling_notes_inspector(
+            &mut ui,
+            &mut filling,
+            cancel_fill_event_writer,
+            confirm_fill_event_writer,
+        );
+        return;
+    }
+
     let mut selected_notes: Vec<_> = selected_notes.iter_mut().collect();
     let mut selected_events: Vec<_> = selected_events.iter_mut().collect();
     if selected_notes.len() == 1 && selected_events.is_empty() {
@@ -37,6 +53,91 @@ pub fn inspector_ui_system(
     } else if let Ok(mut line) = line_query.get_mut(selected_line.0) {
         line_inspector(&mut ui, &mut line);
     }
+}
+
+fn filling_notes_inspector(
+    ui: &mut Ui,
+    filling: &mut FillingNotes,
+    mut cancel: EventWriter<CancelFillEvent>,
+    mut confirm: EventWriter<ConfirmFillEvent>,
+) {
+    ui.label(t!("tab.inspector.filling_notes.title"));
+    match (filling.from.is_some(), filling.to.is_some()) {
+        (true, true) => {}
+        (true, false) => {
+            ui.label(
+                RichText::new(t!(
+                    "tab.inspector.filling_notes.instructions.select_destination"
+                ))
+                .color(Color32::RED),
+            );
+        }
+        (false, true) => {
+            ui.label(
+                RichText::new(t!("tab.inspector.filling_notes.instructions.select_origin"))
+                    .color(Color32::RED),
+            );
+        }
+        (false, false) => {
+            ui.label(
+                RichText::new(t!(
+                    "tab.inspector.filling_notes.instructions.select_origin_destination"
+                ))
+                .color(Color32::RED),
+            );
+        }
+    }
+    ui.separator();
+
+    ui.label(format!("From: {:?}", filling.from));
+    ui.label(format!("To: {:?}", filling.to));
+
+    ui.separator();
+
+    egui::Grid::new("inspector_grid")
+        .num_columns(2)
+        .spacing([20.0, 2.0])
+        .striped(true)
+        .show(ui, |ui| {
+            ui.label(t!("tab.inspector.filling_notes.density"));
+            ui.add(
+                DragValue::new(&mut filling.density)
+                    .clamp_range(1..=32)
+                    .speed(1),
+            );
+            ui.end_row();
+
+            ui.label(t!("tab.inspector.filling_notes.kind"));
+            ui.horizontal(|ui| {
+                ui.selectable_value(&mut filling.kind, NoteKind::Tap, "Tap");
+                ui.selectable_value(&mut filling.kind, NoteKind::Drag, "Drag");
+                ui.selectable_value(&mut filling.kind, NoteKind::Flick, "Flick");
+            });
+            ui.end_row();
+
+            ui.label(t!("tab.inspector.filling_notes.curve"));
+            ui.add(EasingValue::new(&mut filling.easing).show_graph(true));
+            ui.end_row();
+        });
+
+    ui.separator();
+
+    ui.columns(2, |column| {
+        if column[0]
+            .button(t!("tab.inspector.filling_notes.cancel"))
+            .clicked()
+        {
+            cancel.send_default();
+        }
+        if filling.from.is_some()
+            && filling.to.is_some()
+            && column[1]
+                .button(t!("tab.inspector.filling_notes.fill"))
+                .clicked()
+        {
+            confirm.send_default();
+        }
+    });
 }
 
 fn single_event_inspector(

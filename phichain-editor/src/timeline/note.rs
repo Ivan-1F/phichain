@@ -1,14 +1,16 @@
 use crate::editing::command::note::EditNote;
 use crate::editing::command::EditorCommand;
+use crate::editing::fill_notes::{generate_notes, FillingNotes};
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
 use crate::selection::{SelectEvent, Selected, SelectedLine};
 use crate::tab::timeline::TimelineFilter;
 use crate::timeline::{Timeline, TimelineContext};
+use crate::ui::utils::draw_easing;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use bevy_egui::EguiUserTextures;
-use egui::{Color32, Rangef, Rect, Sense, Ui};
+use egui::{Color32, Pos2, Rangef, Rect, Sense, Ui};
 use phichain_assets::ImageAssets;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::CANVAS_WIDTH;
@@ -51,6 +53,7 @@ impl Timeline for NoteTimeline {
                 Option<&Selected>,
                 Option<&Pending>,
             )>,
+            Query<&mut FillingNotes>,
             Res<BpmList>,
             Res<ImageAssets>,
             Res<Assets<Image>>,
@@ -62,6 +65,7 @@ impl Timeline for NoteTimeline {
         let (
             ctx,
             mut note_query,
+            mut filling_notes_query,
             bpm_list,
             assets,
             images,
@@ -83,6 +87,8 @@ impl Timeline for NoteTimeline {
                 Ordering::Greater
             }
         });
+
+        let mut start_filling_note = None::<Entity>;
 
         for (mut note, parent, entity, highlighted, selected, pending) in notes {
             if !ctx.settings.note_side_filter.filter(*note) {
@@ -152,6 +158,21 @@ impl Timeline for NoteTimeline {
                     .sense(Sense::click()),
             );
 
+            response.context_menu(|ui| {
+                ui.add_enabled_ui(filling_notes_query.is_empty(), |ui| {
+                    if ui
+                        .button(t!("tab.inspector.filling_notes.start")) // TODO: this should not be under `tab.inspector`
+                        .on_disabled_hover_text(
+                            "Please cancel the current filling task to start a new one",
+                        )
+                        .clicked()
+                    {
+                        start_filling_note.replace(entity);
+                        ui.close_menu();
+                    }
+                });
+            });
+
             if let NoteKind::Hold { .. } = note.kind {
                 let mut make_drag_zone = |start: bool| {
                     let drag_zone = egui::Rect::from_x_y_ranges(
@@ -212,7 +233,11 @@ impl Timeline for NoteTimeline {
             }
 
             if response.clicked() {
-                select_events.send(SelectEvent(vec![entity]));
+                if let Ok(mut filling) = filling_notes_query.get_single_mut() {
+                    filling.to(entity);
+                } else {
+                    select_events.send(SelectEvent(vec![entity]));
+                }
             }
         }
 
@@ -232,6 +257,69 @@ impl Timeline for NoteTimeline {
                     Color32::from_rgba_unmultiplied(255, 255, 255, 40)
                 },
             );
+        }
+
+        // TODO: optimize
+        if let Ok(filling) = filling_notes_query.get_single() {
+            if let (Some(from), Some(to)) = (filling.from, filling.to) {
+                let from = note_query.get(from);
+                let to = note_query.get(to);
+                if let (Ok(from), Ok(to)) = (from, to) {
+                    let from_x =
+                        viewport.min.x + (from.0.x / CANVAS_WIDTH + 0.5) * viewport.width();
+                    let from_y = ctx.time_to_y(bpm_list.time_at(from.0.beat));
+                    let to_x = viewport.min.x + (to.0.x / CANVAS_WIDTH + 0.5) * viewport.width();
+                    let to_y = ctx.time_to_y(bpm_list.time_at(to.0.beat));
+                    draw_easing(
+                        ui,
+                        Rect::from_two_pos(Pos2::new(from_x, from_y), Pos2::new(to_x, to_y)),
+                        filling.easing,
+                    );
+
+                    for note in generate_notes(*from.0, *to.0, filling) {
+                        let x = viewport.min.x + (note.x / CANVAS_WIDTH + 0.5) * viewport.width();
+                        let y = ctx.time_to_y(bpm_list.time_at(note.beat));
+
+                        let get_asset = |handle: &Handle<Image>| {
+                            (
+                                images.get(handle).unwrap().size(),
+                                textures.image_id(handle).unwrap(),
+                            )
+                        };
+
+                        let (size, image) = get_asset(match note.kind {
+                            NoteKind::Tap => &assets.tap,
+                            NoteKind::Drag => &assets.drag,
+                            NoteKind::Flick => &assets.flick,
+                            NoteKind::Hold { .. } => &assets.hold,
+                        });
+
+                        let size = egui::Vec2::new(
+                            viewport.width() / 8000.0 * size.x as f32,
+                            viewport.width() / 8000.0 * size.y as f32,
+                        );
+
+                        let center = Pos2::new(x, y);
+
+                        let tint = Color32::from_rgba_unmultiplied(255, 255, 255, 100);
+
+                        let rect = Rect::from_center_size(center, size);
+
+                        ui.put(
+                            rect,
+                            egui::Image::new((image, size))
+                                .maintain_aspect_ratio(false)
+                                .fit_to_exact_size(size)
+                                .tint(tint)
+                                .sense(Sense::click()),
+                        );
+                    }
+                }
+            }
+        }
+
+        if let Some(entity) = start_filling_note {
+            world.spawn(FillingNotes::from(entity));
         }
     }
 
