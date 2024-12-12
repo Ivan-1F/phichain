@@ -34,6 +34,17 @@ impl FillingNotes {
     pub fn to(&mut self, entity: Entity) {
         self.to = Some(entity);
     }
+
+    /// Return the [`Entity`] of the origin and the destination
+    ///
+    /// If one of them is missing, return a [`None`], otherwise a [`Some`]
+    pub fn get_entities(&self) -> Option<(Entity, Entity)> {
+        if let (Some(from), Some(to)) = (self.from, self.to) {
+            Some((from, to))
+        } else {
+            None
+        }
+    }
 }
 
 /// Generate a note sequence from a note to another note with a [`FillingNotes`] option

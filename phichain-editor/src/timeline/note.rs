@@ -275,21 +275,20 @@ impl Timeline for NoteTimeline {
             );
         }
 
-        // TODO: optimize
         if let Ok(mut filling) = filling_notes_query.get_single_mut() {
-            if let (Some(from), Some(to)) = (filling.from, filling.to) {
-                let from = note_query.get(from);
-                let to = note_query.get(to);
-                if let (Ok(from), Ok(to)) = (from, to) {
-                    let from_x =
-                        viewport.min.x + (from.0.x / CANVAS_WIDTH + 0.5) * viewport.width();
-                    let from_y = ctx.time_to_y(bpm_list.time_at(from.0.beat));
-                    let to_x = viewport.min.x + (to.0.x / CANVAS_WIDTH + 0.5) * viewport.width();
-                    let to_y = ctx.time_to_y(bpm_list.time_at(to.0.beat));
+            if let Some((from, to)) = filling.get_entities() {
+                if let (Ok(from), Ok(to)) = (
+                    note_query.get(from).map(|x| x.0),
+                    note_query.get(to).map(|x| x.0),
+                ) {
+                    let from_x = viewport.min.x + (from.x / CANVAS_WIDTH + 0.5) * viewport.width();
+                    let from_y = ctx.time_to_y(bpm_list.time_at(from.beat));
+                    let to_x = viewport.min.x + (to.x / CANVAS_WIDTH + 0.5) * viewport.width();
+                    let to_y = ctx.time_to_y(bpm_list.time_at(to.beat));
                     let rect = Rect::from_two_pos(Pos2::new(from_x, from_y), Pos2::new(to_x, to_y));
                     ui.put(rect, EasingGraph::new(&mut filling.easing));
 
-                    for note in generate_notes(*from.0, *to.0, &filling) {
+                    for note in generate_notes(*from, *to, &filling) {
                         render_note!(note: note, highlighted: false, fake: true, tint: Color32::WHITE);
                     }
                 }
