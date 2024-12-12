@@ -75,6 +75,7 @@ impl Timeline for NoteTimeline {
         ) = state.get_mut(world);
 
         // TODO: optimize
+        // make sure hold is rendered below other note
         let mut notes: Vec<_> = note_query.iter_mut().collect();
         notes.sort_by(|a, b| {
             let a_is_hold = a.0.kind.is_hold();
@@ -88,6 +89,70 @@ impl Timeline for NoteTimeline {
             }
         });
 
+        macro_rules! render_note {
+            (note: $note:expr, highlighted: $highlighted:expr, fake: $fake:expr, tint: $tint:expr) => {{
+                let note = $note;
+
+                let x = viewport.min.x + (note.x / CANVAS_WIDTH + 0.5) * viewport.width();
+                let y = ctx.time_to_y(bpm_list.time_at(note.beat));
+
+                let get_asset = |handle: &Handle<Image>| {
+                    (
+                        images.get(handle).unwrap().size(),
+                        textures.image_id(handle).unwrap(),
+                    )
+                };
+
+                let handle = match (note.kind, $highlighted) {
+                    (NoteKind::Tap, true) => &assets.tap_highlight,
+                    (NoteKind::Drag, true) => &assets.drag_highlight,
+                    (NoteKind::Hold { .. }, true) => &assets.hold_highlight,
+                    (NoteKind::Flick, true) => &assets.flick_highlight,
+                    (NoteKind::Tap, false) => &assets.tap,
+                    (NoteKind::Drag, false) => &assets.drag,
+                    (NoteKind::Hold { .. }, false) => &assets.hold,
+                    (NoteKind::Flick, false) => &assets.flick,
+                };
+
+                let (size, image) = get_asset(handle);
+
+                let size = match note.kind {
+                    NoteKind::Hold { hold_beat } => egui::Vec2::new(
+                        viewport.width() / 8000.0 * size.x as f32,
+                        y - ctx.time_to_y(bpm_list.time_at(note.beat + hold_beat)),
+                    ),
+                    _ => egui::Vec2::new(
+                        viewport.width() / 8000.0 * size.x as f32,
+                        viewport.width() / 8000.0 * size.y as f32,
+                    ),
+                };
+
+                let center = match note.kind {
+                    NoteKind::Hold { hold_beat: _ } => egui::Pos2::new(x, y - size.y / 2.0),
+                    _ => egui::Pos2::new(x, y),
+                };
+
+                let mut tint = $tint;
+
+                if $fake {
+                    tint = Color32::from_rgba_unmultiplied(tint.r(), tint.g(), tint.b(), 20);
+                }
+
+                let rect = Rect::from_center_size(center, size);
+
+                let response = ui.put(
+                    rect,
+                    egui::Image::new((image, size))
+                        .maintain_aspect_ratio(false)
+                        .fit_to_exact_size(size)
+                        .tint(tint)
+                        .sense(Sense::click()),
+                );
+
+                (response, rect)
+            }};
+        }
+
         let mut start_filling_note = None::<Entity>;
 
         for (mut note, parent, entity, highlighted, selected, pending) in notes {
@@ -98,64 +163,15 @@ impl Timeline for NoteTimeline {
                 continue;
             }
 
-            let x = viewport.min.x + (note.x / CANVAS_WIDTH + 0.5) * viewport.width();
-            let y = ctx.time_to_y(bpm_list.time_at(note.beat));
-
-            let get_asset = |handle: &Handle<Image>| {
-                (
-                    images.get(handle).unwrap().size(),
-                    textures.image_id(handle).unwrap(),
-                )
-            };
-
-            let handle = match (note.kind, highlighted.is_some()) {
-                (NoteKind::Tap, true) => &assets.tap_highlight,
-                (NoteKind::Drag, true) => &assets.drag_highlight,
-                (NoteKind::Hold { .. }, true) => &assets.hold_highlight,
-                (NoteKind::Flick, true) => &assets.flick_highlight,
-                (NoteKind::Tap, false) => &assets.tap,
-                (NoteKind::Drag, false) => &assets.drag,
-                (NoteKind::Hold { .. }, false) => &assets.hold,
-                (NoteKind::Flick, false) => &assets.flick,
-            };
-
-            let (size, image) = get_asset(handle);
-
-            let size = match note.kind {
-                NoteKind::Hold { hold_beat } => egui::Vec2::new(
-                    viewport.width() / 8000.0 * size.x as f32,
-                    y - ctx.time_to_y(bpm_list.time_at(note.beat + hold_beat)),
-                ),
-                _ => egui::Vec2::new(
-                    viewport.width() / 8000.0 * size.x as f32,
-                    viewport.width() / 8000.0 * size.y as f32,
-                ),
-            };
-
-            let center = match note.kind {
-                NoteKind::Hold { hold_beat: _ } => egui::Pos2::new(x, y - size.y / 2.0),
-                _ => egui::Pos2::new(x, y),
-            };
-
-            let mut tint = if selected.is_some() {
-                Color32::LIGHT_GREEN
-            } else {
-                Color32::WHITE
-            };
-
-            if pending.is_some() {
-                tint = Color32::from_rgba_unmultiplied(tint.r(), tint.g(), tint.b(), 20);
-            }
-
-            let rect = Rect::from_center_size(center, size);
-
-            let response = ui.put(
-                rect,
-                egui::Image::new((image, size))
-                    .maintain_aspect_ratio(false)
-                    .fit_to_exact_size(size)
-                    .tint(tint)
-                    .sense(Sense::click()),
+            let (response, rect) = render_note!(
+                note: &note,
+                highlighted: highlighted.is_some(),
+                fake: pending.is_some(),
+                tint: if selected.is_some() {
+                    Color32::LIGHT_GREEN
+                } else {
+                    Color32::WHITE
+                }
             );
 
             response.context_menu(|ui| {
@@ -175,7 +191,7 @@ impl Timeline for NoteTimeline {
 
             if let NoteKind::Hold { .. } = note.kind {
                 let mut make_drag_zone = |start: bool| {
-                    let drag_zone = egui::Rect::from_x_y_ranges(
+                    let drag_zone = Rect::from_x_y_ranges(
                         rect.x_range(),
                         if start {
                             Rangef::from(rect.max.y - 5.0..=rect.max.y)
@@ -244,7 +260,7 @@ impl Timeline for NoteTimeline {
         for percent in ctx.settings.lane_percents() {
             ui.painter().rect_filled(
                 Rect::from_center_size(
-                    egui::Pos2::new(
+                    Pos2::new(
                         viewport.min.x + viewport.width() * percent,
                         viewport.center().y,
                     ),
@@ -274,42 +290,7 @@ impl Timeline for NoteTimeline {
                     ui.put(rect, EasingGraph::new(&mut filling.easing));
 
                     for note in generate_notes(*from.0, *to.0, &filling) {
-                        let x = viewport.min.x + (note.x / CANVAS_WIDTH + 0.5) * viewport.width();
-                        let y = ctx.time_to_y(bpm_list.time_at(note.beat));
-
-                        let get_asset = |handle: &Handle<Image>| {
-                            (
-                                images.get(handle).unwrap().size(),
-                                textures.image_id(handle).unwrap(),
-                            )
-                        };
-
-                        let (size, image) = get_asset(match note.kind {
-                            NoteKind::Tap => &assets.tap,
-                            NoteKind::Drag => &assets.drag,
-                            NoteKind::Flick => &assets.flick,
-                            NoteKind::Hold { .. } => &assets.hold,
-                        });
-
-                        let size = egui::Vec2::new(
-                            viewport.width() / 8000.0 * size.x as f32,
-                            viewport.width() / 8000.0 * size.y as f32,
-                        );
-
-                        let center = Pos2::new(x, y);
-
-                        let tint = Color32::from_rgba_unmultiplied(255, 255, 255, 100);
-
-                        let rect = Rect::from_center_size(center, size);
-
-                        ui.put(
-                            rect,
-                            egui::Image::new((image, size))
-                                .maintain_aspect_ratio(false)
-                                .fit_to_exact_size(size)
-                                .tint(tint)
-                                .sense(Sense::click()),
-                        );
+                        render_note!(note: note, highlighted: false, fake: true, tint: Color32::WHITE);
                     }
                 }
             }
