@@ -17,6 +17,19 @@ tab:
     title: Timeline
   inspector:
     title: Inspector
+    start: Filling Curve Notes from Here
+    filling_notes:
+      title: 'Filling Curve Notes:'
+      instructions:
+        confirm: Confirm the options and click 'Fill' to proceed or 'Cancel' to cancel
+        select_destination: Please select the destination
+        select_origin: Please select the origin
+        select_origin_destination: Please select the origin and the destination
+      density: Density
+      kind: Kind
+      curve: Curve
+      cancel: Cancel
+      fill: Fill
     single_note:
       x: X
       beat: Beat
