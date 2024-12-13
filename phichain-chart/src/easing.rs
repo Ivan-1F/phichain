@@ -211,9 +211,9 @@ impl Easing {
             Self::EaseOutCirc => Some(1.0 - (1.0 - y * y).sqrt()),
             Self::EaseInOutCirc => {
                 if y < 0.5 {
-                    Some(0.5 * ((1.0 - (1.0 - 2.0 * y).powi(2)).sqrt()))
+                    Some((y * (1.0 - y)).sqrt())
                 } else {
-                    Some(1.0 + ((1.0 - (2.0 * y - 1.0).powi(2)).sqrt()) / 2.0)
+                    Some(1.0 - (y * (1.0 - y)).sqrt())
                 }
             }
 
