@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 use std::fmt::Display;
 use std::fs::File;
+use std::path::Path;
 use std::{fs, iter};
 
 pub enum EditorHotkeys {
@@ -95,6 +96,20 @@ impl HotkeyState {
 
     pub fn set(&mut self, id: impl IntoIdentifier, hotkey: Hotkey) {
         self.0.insert(id.into_identifier(), hotkey);
+    }
+
+    pub fn save_to<P: AsRef<Path>>(&self, path: P) -> std::io::Result<()> {
+        fs::write(
+            path,
+            serde_yaml::to_string(
+                &self
+                    .0
+                    .iter()
+                    .map(|(k, v)| (k.to_string(), v))
+                    .collect::<HashMap<_, _>>(),
+            )
+            .expect("Failed to serialize hotkey config"),
+        )
     }
 }
 
@@ -206,17 +221,7 @@ fn load_hotkey_settings_system(
     }
 
     // write the fixed config back
-    let _ = fs::write(
-        config_path,
-        serde_yaml::to_string(
-            &&state
-                .0
-                .iter()
-                .map(|(k, v)| (k.to_string(), v))
-                .collect::<HashMap<_, _>>(),
-        )
-        .expect("Failed to serialize hotkey config"),
-    );
+    let _ = state.save_to(config_path);
 }
 
 #[derive(SystemParam)]

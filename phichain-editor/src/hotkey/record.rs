@@ -1,6 +1,7 @@
 use crate::hotkey::modifier::Modifier;
 use crate::hotkey::next::{Hotkey, HotkeyState};
 use crate::identifier::{Identifier, IntoIdentifier};
+use crate::misc::WorkingDirectory;
 use bevy::app::{App, Plugin};
 use bevy::input::ButtonInput;
 use bevy::prelude::{
@@ -59,13 +60,20 @@ fn record_hotkey_system(
     keyboard: Res<ButtonInput<KeyCode>>,
     mut query: Query<(&mut RecordingHotkey, Entity)>,
     mut state: ResMut<HotkeyState>,
+
+    working_directory: Res<WorkingDirectory>,
 ) {
     if let Ok((mut recording, entity)) = query.get_single_mut() {
         for key in keyboard.get_just_pressed() {
             recording.push(*key);
             if let Some(hotkey) = recording.hotkey() {
                 state.set(recording.id.clone(), hotkey);
-                // TODO: save to file
+                let _ = state.save_to(
+                    working_directory
+                        .config()
+                        .expect("Failed to locate config directory")
+                        .join("hotkey.yml"),
+                );
                 commands.entity(entity).despawn();
             }
         }
