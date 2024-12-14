@@ -3,7 +3,7 @@ use crate::hotkey::next::{Hotkey, HotkeyContext};
 use crate::identifier::{Identifier, IntoIdentifier};
 use bevy::app::{App, Plugin};
 use bevy::input::ButtonInput;
-use bevy::prelude::{Commands, Component, Entity, IntoSystemConfigs, KeyCode, Query, Res, Update};
+use bevy::prelude::{Commands, Component, IntoSystemConfigs, KeyCode, Res, Update};
 use phichain_game::GameSet;
 
 #[derive(Debug, Clone, Component)]
@@ -58,17 +58,22 @@ fn record_hotkey_system(
     mut ctx: HotkeyContext,
 
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut query: Query<(&mut RecordingHotkey, Entity)>,
 ) {
-    if let Ok((mut recording, entity)) = query.get_single_mut() {
+    let mut should_save = false;
+
+    if let Ok((mut recording, entity)) = ctx.query.get_single_mut() {
         for key in keyboard.get_just_pressed() {
             recording.push(*key);
             if let Some(hotkey) = recording.hotkey() {
                 ctx.state.set(recording.id.clone(), hotkey);
 
-                let _ = ctx.save();
+                should_save = true;
                 commands.entity(entity).despawn();
             }
         }
+    }
+
+    if should_save {
+        let _ = ctx.save();
     }
 }

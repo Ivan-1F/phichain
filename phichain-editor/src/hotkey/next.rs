@@ -2,6 +2,8 @@ use crate::hotkey::modifier::{Modifier, AVAILABLE_MODIFIERS};
 use crate::hotkey::record::{RecordHotkeyPlugin, RecordingHotkey};
 use crate::identifier::{Identifier, IntoIdentifier};
 use crate::misc::WorkingDirectory;
+use crate::timeline::settings::TimelineSettings;
+use crate::timeline::TimelineContext;
 use bevy::app::App;
 use bevy::ecs::system::SystemParam;
 use bevy::input::ButtonInput;
@@ -208,13 +210,32 @@ fn load_hotkey_settings_system(mut hotkey: HotkeyContext) {
     let _ = hotkey.save();
 }
 
+/// Resources and context to work with hotkeys
+///
+/// ---
+///
+/// This [`SystemParam`] conflicts with all mutable resources it contains (https://bevyengine.org/learn/errors/b0002/):
+///
+/// - [`HotkeyState`]
+///
+/// So it is impossible to have both [`HotkeyContext`] and [`Res<HotkeyState>`] (or [`ResMut<HotkeyState>`]) params of a system
+///
+/// Instead, access the required resources directly from [`HotkeyContext`]: `ctx.state`
+///
+/// ---
+///
+/// This [`SystemParam`] conflicts with queries to [`RecodingHotkey`] (https://bevyengine.org/learn/errors/b0001/)
+///
+/// Since this [`SystemParam`] holds a mutable query of [`RecodingHotkey`] (`Query<(&mut RecodingHotkey, Entity)>`), use `ctx.query` instead
 #[derive(SystemParam)]
 pub struct HotkeyContext<'w, 's> {
     pub state: ResMut<'w, HotkeyState>,
     pub registry: Res<'w, HotkeyRegistry>,
     input: Res<'w, ButtonInput<KeyCode>>,
 
-    query: Query<'w, 's, &'static RecordingHotkey>,
+    // `record_hotkey_system` will use `HotkeyContext` and require mutable `RecordingHotkey`,
+    // so we need mutable query here
+    pub query: Query<'w, 's, (&'static mut RecordingHotkey, Entity)>,
 
     working_directory: Res<'w, WorkingDirectory>,
 }

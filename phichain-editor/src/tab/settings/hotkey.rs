@@ -4,7 +4,7 @@ use crate::identifier::Identifier;
 use crate::settings::EditorSettings;
 use crate::tab::settings::SettingCategory;
 use bevy::ecs::system::SystemState;
-use bevy::prelude::{Entity, Query, World};
+use bevy::prelude::{Entity, World};
 use egui::Ui;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
@@ -18,9 +18,8 @@ impl SettingCategory for Hotkey {
     fn ui(&self, ui: &mut Ui, _: &mut EditorSettings, world: &mut World) -> bool {
         // TODO: add grouping for hotkeys
 
-        let mut state: SystemState<(HotkeyContext, Query<(&RecordingHotkey, Entity)>)> =
-            SystemState::new(world);
-        let (mut ctx, recording) = state.get_mut(world);
+        let mut state: SystemState<HotkeyContext> = SystemState::new(world);
+        let mut ctx = state.get_mut(world);
 
         let mut despawn = None::<Entity>;
         let mut spawn = None::<Identifier>;
@@ -32,7 +31,7 @@ impl SettingCategory for Hotkey {
             .show(ui, |ui| {
                 for (id, default) in ctx.registry.0.clone().iter() {
                     ui.label(t!(format!("hotkey.{}", id).as_str()));
-                    match recording.get_single() {
+                    match ctx.query.get_single() {
                         Ok((recording, _)) if recording.id == *id => {
                             let mut keys = recording
                                 .modifiers
@@ -57,7 +56,7 @@ impl SettingCategory for Hotkey {
                     }
 
                     ui.horizontal(|ui| {
-                        match recording.get_single() {
+                        match ctx.query.get_single() {
                             Ok((recording, entity)) if recording.id == *id => {
                                 if ui
                                     .button(t!("tab.settings.category.hotkey.cancel"))
@@ -67,7 +66,7 @@ impl SettingCategory for Hotkey {
                                 }
                             }
                             _ => {
-                                ui.add_enabled_ui(recording.get_single().is_err(), |ui| {
+                                ui.add_enabled_ui(ctx.query.get_single().is_err(), |ui| {
                                     if ui
                                         .button(t!("tab.settings.category.hotkey.record"))
                                         .clicked()
