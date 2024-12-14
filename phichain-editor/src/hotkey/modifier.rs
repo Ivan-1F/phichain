@@ -33,7 +33,10 @@ impl Modifier {
     #[allow(dead_code)]
     pub fn from_key_code(key_code: &KeyCode) -> Option<Self> {
         match key_code {
-            KeyCode::ControlLeft | KeyCode::ControlRight => Some(Self::Control),
+            #[cfg(target_os = "macos")]
+            KeyCode::SuperLeft | KeyCode::SuperRight => Some(Self::Control),
+            #[cfg(not(target_os = "macos"))]
+            Modifier::Control => vec![KeyCode::ControlLeft, KeyCode::ControlRight],
             KeyCode::ShiftLeft | KeyCode::ShiftRight => Some(Self::Shift),
             KeyCode::AltLeft | KeyCode::AltRight => Some(Self::Alt),
             _ => None,
