@@ -13,11 +13,6 @@ use std::fs::File;
 use std::{fs, iter};
 
 pub enum EditorHotkeys {
-    PlaceTap,
-    PlaceDrag,
-    PlaceFlick,
-    PlaceHold,
-
     PlaceTransitionEvent,
     PlaceConstantEvent,
 
@@ -38,10 +33,6 @@ pub enum EditorHotkeys {
 impl IntoIdentifier for EditorHotkeys {
     fn into_identifier(self) -> Identifier {
         match self {
-            EditorHotkeys::PlaceTap => "phichain.place_tap".into(),
-            EditorHotkeys::PlaceDrag => "phichain.place_drag".into(),
-            EditorHotkeys::PlaceFlick => "phichain.place_flick".into(),
-            EditorHotkeys::PlaceHold => "phichain.place_hold".into(),
             EditorHotkeys::PlaceTransitionEvent => "phichain.place_transition_event".into(),
             EditorHotkeys::PlaceConstantEvent => "phichain.place_constant_event".into(),
             EditorHotkeys::SaveProject => "phichain.save_project".into(),

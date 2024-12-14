@@ -7,12 +7,31 @@ use crate::editing::command::note::CreateNote;
 use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
-use crate::hotkey::next::{EditorHotkeys, Hotkey, HotkeyContext, HotkeyExt};
+use crate::hotkey::next::{Hotkey, HotkeyContext, HotkeyExt};
+use crate::identifier::{Identifier, IntoIdentifier};
 use crate::schedule::EditorSet;
 use crate::timeline::{TimelineContext, TimelineItem};
 use crate::utils::convert::BevyEguiConvert;
 use crate::{constants::CANVAS_WIDTH, selection::SelectedLine};
 use phichain_chart::note::NoteBundle;
+
+enum CreateNoteHotkeys {
+    PlaceTap,
+    PlaceDrag,
+    PlaceFlick,
+    PlaceHold,
+}
+
+impl IntoIdentifier for CreateNoteHotkeys {
+    fn into_identifier(self) -> Identifier {
+        match self {
+            CreateNoteHotkeys::PlaceTap => "phichain.place_tap".into(),
+            CreateNoteHotkeys::PlaceDrag => "phichain.place_drag".into(),
+            CreateNoteHotkeys::PlaceFlick => "phichain.place_flick".into(),
+            CreateNoteHotkeys::PlaceHold => "phichain.place_hold".into(),
+        }
+    }
+}
 
 pub struct CreateNoteSystem;
 
@@ -22,13 +41,22 @@ impl Plugin for CreateNoteSystem {
             Update,
             (create_note_system, remove_pending_note_on_esc_system).in_set(EditorSet::Edit),
         )
-        .add_hotkey(EditorHotkeys::PlaceTap, Hotkey::new(KeyCode::KeyQ, vec![]))
-        .add_hotkey(EditorHotkeys::PlaceDrag, Hotkey::new(KeyCode::KeyW, vec![]))
         .add_hotkey(
-            EditorHotkeys::PlaceFlick,
+            CreateNoteHotkeys::PlaceTap,
+            Hotkey::new(KeyCode::KeyQ, vec![]),
+        )
+        .add_hotkey(
+            CreateNoteHotkeys::PlaceDrag,
+            Hotkey::new(KeyCode::KeyW, vec![]),
+        )
+        .add_hotkey(
+            CreateNoteHotkeys::PlaceFlick,
             Hotkey::new(KeyCode::KeyE, vec![]),
         )
-        .add_hotkey(EditorHotkeys::PlaceHold, Hotkey::new(KeyCode::KeyR, vec![]));
+        .add_hotkey(
+            CreateNoteHotkeys::PlaceHold,
+            Hotkey::new(KeyCode::KeyR, vec![]),
+        );
     }
 }
 
@@ -94,11 +122,11 @@ fn create_note_system(
                 ))));
             };
 
-            if hotkey.just_pressed(EditorHotkeys::PlaceTap) {
+            if hotkey.just_pressed(CreateNoteHotkeys::PlaceTap) {
                 create_note(NoteKind::Tap);
             }
 
-            if hotkey.just_pressed(EditorHotkeys::PlaceDrag) {
+            if hotkey.just_pressed(CreateNoteHotkeys::PlaceDrag) {
                 create_note(NoteKind::Drag);
             }
 
@@ -112,11 +140,11 @@ fn create_note_system(
                 }
             }
 
-            if hotkey.just_pressed(EditorHotkeys::PlaceFlick) {
+            if hotkey.just_pressed(CreateNoteHotkeys::PlaceFlick) {
                 create_note(NoteKind::Flick);
             }
 
-            if hotkey.just_pressed(EditorHotkeys::PlaceHold) {
+            if hotkey.just_pressed(CreateNoteHotkeys::PlaceHold) {
                 if let Ok((pending_note, entity)) = pending_note_query.get_single() {
                     commands.entity(entity).despawn_recursive();
                     event.send(DoCommandEvent(EditorCommand::CreateNote(CreateNote::new(
