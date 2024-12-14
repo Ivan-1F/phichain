@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 use std::fmt::Display;
 use std::fs::File;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::{fs, iter};
 
 pub enum EditorHotkeys {
@@ -167,10 +167,7 @@ impl Plugin for HotkeyPlugin {
     }
 }
 
-fn parse_hotkey_config(
-    value: Value,
-    registry: Res<HotkeyRegistry>,
-) -> IndexMap<Identifier, Hotkey> {
+fn parse_hotkey_config(value: Value, registry: &HotkeyRegistry) -> IndexMap<Identifier, Hotkey> {
     if let Some(mapping) = value.as_mapping() {
         let mut result: IndexMap<Identifier, Hotkey> = IndexMap::new();
 
@@ -195,37 +192,31 @@ fn parse_hotkey_config(
     }
 }
 
-fn load_hotkey_settings_system(
-    working_dir: Res<WorkingDirectory>,
-    registry: Res<HotkeyRegistry>,
-    mut state: ResMut<HotkeyState>,
-) {
-    let config_path = working_dir
-        .config()
-        .expect("Failed to locate config directory")
-        .join("hotkey.yml");
-
-    if let Ok(file) = File::open(&config_path) {
+fn load_hotkey_settings_system(mut hotkey: HotkeyContext) {
+    if let Ok(file) = File::open(hotkey.config_path()) {
         if let Ok(data) = serde_yaml::from_reader::<File, Value>(file) {
-            state.0 = parse_hotkey_config(data, registry);
+            hotkey.state.0 = parse_hotkey_config(data, &hotkey.registry);
         } else {
-            state.0 = registry.0.clone();
+            hotkey.state.0 = hotkey.registry.0.clone();
         }
     } else {
         // no hotkey config exist, use default values from registry
-        state.0 = registry.0.clone();
+        hotkey.state.0 = hotkey.registry.0.clone();
     }
 
     // write the fixed config back
-    let _ = state.save_to(config_path);
+    let _ = hotkey.save();
 }
 
 #[derive(SystemParam)]
 pub struct HotkeyContext<'w, 's> {
-    state: Res<'w, HotkeyState>,
+    pub state: ResMut<'w, HotkeyState>,
+    pub registry: Res<'w, HotkeyRegistry>,
     input: Res<'w, ButtonInput<KeyCode>>,
 
     query: Query<'w, 's, &'static RecordingHotkey>,
+
+    working_directory: Res<'w, WorkingDirectory>,
 }
 
 impl HotkeyContext<'_, '_> {
@@ -239,5 +230,16 @@ impl HotkeyContext<'_, '_> {
             // disable all hotkey while recording hotkey
             false
         }
+    }
+
+    pub fn config_path(&self) -> PathBuf {
+        self.working_directory
+            .config()
+            .map(|x| x.join("hotkey.yml"))
+            .expect("Failed to locate hotkey config path")
+    }
+
+    pub fn save(&self) -> std::io::Result<()> {
+        self.state.save_to(self.config_path())
     }
 }

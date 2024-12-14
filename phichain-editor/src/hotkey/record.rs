@@ -1,12 +1,9 @@
 use crate::hotkey::modifier::Modifier;
-use crate::hotkey::next::{Hotkey, HotkeyState};
+use crate::hotkey::next::{Hotkey, HotkeyContext};
 use crate::identifier::{Identifier, IntoIdentifier};
-use crate::misc::WorkingDirectory;
 use bevy::app::{App, Plugin};
 use bevy::input::ButtonInput;
-use bevy::prelude::{
-    Commands, Component, Entity, IntoSystemConfigs, KeyCode, Query, Res, ResMut, Update,
-};
+use bevy::prelude::{Commands, Component, Entity, IntoSystemConfigs, KeyCode, Query, Res, Update};
 use phichain_game::GameSet;
 
 #[derive(Debug, Clone, Component)]
@@ -57,23 +54,19 @@ impl Plugin for RecordHotkeyPlugin {
 
 fn record_hotkey_system(
     mut commands: Commands,
+
+    mut ctx: HotkeyContext,
+
     keyboard: Res<ButtonInput<KeyCode>>,
     mut query: Query<(&mut RecordingHotkey, Entity)>,
-    mut state: ResMut<HotkeyState>,
-
-    working_directory: Res<WorkingDirectory>,
 ) {
     if let Ok((mut recording, entity)) = query.get_single_mut() {
         for key in keyboard.get_just_pressed() {
             recording.push(*key);
             if let Some(hotkey) = recording.hotkey() {
-                state.set(recording.id.clone(), hotkey);
-                let _ = state.save_to(
-                    working_directory
-                        .config()
-                        .expect("Failed to locate config directory")
-                        .join("hotkey.yml"),
-                );
+                ctx.state.set(recording.id.clone(), hotkey);
+
+                let _ = ctx.save();
                 commands.entity(entity).despawn();
             }
         }
