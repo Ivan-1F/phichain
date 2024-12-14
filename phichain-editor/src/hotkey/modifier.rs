@@ -36,7 +36,7 @@ impl Modifier {
             #[cfg(target_os = "macos")]
             KeyCode::SuperLeft | KeyCode::SuperRight => Some(Self::Control),
             #[cfg(not(target_os = "macos"))]
-            Modifier::Control => vec![KeyCode::ControlLeft, KeyCode::ControlRight],
+            KeyCode::ControlLeft | KeyCode::ControlRight => Some(Self::Control),
             KeyCode::ShiftLeft | KeyCode::ShiftRight => Some(Self::Shift),
             KeyCode::AltLeft | KeyCode::AltRight => Some(Self::Alt),
             _ => None,
