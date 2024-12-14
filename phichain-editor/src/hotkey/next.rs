@@ -45,7 +45,7 @@ impl IntoIdentifier for EditorHotkeys {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Hotkey {
     pub key: KeyCode,
     pub modifiers: Vec<Modifier>,
