@@ -1,3 +1,6 @@
+pub mod modifier;
+pub mod next;
+
 use crate::action::ActionRegistry;
 use crate::identifier::Identifier;
 use crate::schedule::EditorSet;

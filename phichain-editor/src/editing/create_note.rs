@@ -7,6 +7,7 @@ use crate::editing::command::note::CreateNote;
 use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
+use crate::hotkey::next::{EditorHotkeys, Hotkey, HotkeyContext, HotkeyExt};
 use crate::schedule::EditorSet;
 use crate::timeline::{TimelineContext, TimelineItem};
 use crate::utils::convert::BevyEguiConvert;
@@ -20,14 +21,21 @@ impl Plugin for CreateNoteSystem {
         app.add_systems(
             Update,
             (create_note_system, remove_pending_note_on_esc_system).in_set(EditorSet::Edit),
-        );
+        )
+        .add_hotkey(EditorHotkeys::PlaceTap, Hotkey::new(KeyCode::KeyQ, vec![]))
+        .add_hotkey(EditorHotkeys::PlaceDrag, Hotkey::new(KeyCode::KeyW, vec![]))
+        .add_hotkey(
+            EditorHotkeys::PlaceFlick,
+            Hotkey::new(KeyCode::KeyE, vec![]),
+        )
+        .add_hotkey(EditorHotkeys::PlaceHold, Hotkey::new(KeyCode::KeyR, vec![]));
     }
 }
 
 fn create_note_system(
     mut commands: Commands,
     ctx: TimelineContext,
-    keyboard: Res<ButtonInput<KeyCode>>,
+    hotkey: HotkeyContext,
 
     selected_line: Res<SelectedLine>,
 
@@ -86,11 +94,11 @@ fn create_note_system(
                 ))));
             };
 
-            if keyboard.just_pressed(KeyCode::KeyQ) {
+            if hotkey.just_pressed(EditorHotkeys::PlaceTap) {
                 create_note(NoteKind::Tap);
             }
 
-            if keyboard.just_pressed(KeyCode::KeyW) {
+            if hotkey.just_pressed(EditorHotkeys::PlaceDrag) {
                 create_note(NoteKind::Drag);
             }
 
@@ -104,11 +112,11 @@ fn create_note_system(
                 }
             }
 
-            if keyboard.just_pressed(KeyCode::KeyE) {
+            if hotkey.just_pressed(EditorHotkeys::PlaceFlick) {
                 create_note(NoteKind::Flick);
             }
 
-            if keyboard.just_pressed(KeyCode::KeyR) {
+            if hotkey.just_pressed(EditorHotkeys::PlaceHold) {
                 if let Ok((pending_note, entity)) = pending_note_query.get_single() {
                     commands.entity(entity).despawn_recursive();
                     event.send(DoCommandEvent(EditorCommand::CreateNote(CreateNote::new(

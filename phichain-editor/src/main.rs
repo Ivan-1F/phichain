@@ -102,6 +102,7 @@ fn main() {
         )
         .insert_resource(ClearColor(Color::BLACK))
         .insert_resource(UiState::new())
+        .add_plugins(hotkey::next::HotkeyPlugin)
         .add_plugins(CliPlugin)
         .add_plugins(MiscPlugin)
         .add_plugins(UiPlugin)
