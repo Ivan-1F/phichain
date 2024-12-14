@@ -2,8 +2,6 @@ use crate::hotkey::modifier::{Modifier, AVAILABLE_MODIFIERS};
 use crate::hotkey::record::{RecordHotkeyPlugin, RecordingHotkey};
 use crate::identifier::{Identifier, IntoIdentifier};
 use crate::misc::WorkingDirectory;
-use crate::timeline::settings::TimelineSettings;
-use crate::timeline::TimelineContext;
 use bevy::app::App;
 use bevy::ecs::system::SystemParam;
 use bevy::input::ButtonInput;
