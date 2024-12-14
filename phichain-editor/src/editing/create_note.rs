@@ -15,6 +15,7 @@ use crate::utils::convert::BevyEguiConvert;
 use crate::{constants::CANVAS_WIDTH, selection::SelectedLine};
 use phichain_chart::note::NoteBundle;
 
+#[allow(clippy::enum_variant_names)]
 enum CreateNoteHotkeys {
     PlaceTap,
     PlaceDrag,

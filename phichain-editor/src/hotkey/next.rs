@@ -88,14 +88,14 @@ impl Display for Hotkey {
 pub struct HotkeyState(HashMap<Identifier, Hotkey>);
 
 impl HotkeyState {
-    fn get(&self, hotkey: impl IntoIdentifier) -> Option<Hotkey> {
+    pub fn get(&self, hotkey: impl IntoIdentifier) -> Option<Hotkey> {
         self.0.get(&hotkey.into_identifier()).cloned()
     }
 }
 
 /// Holds the default value for all the possible hotkeys
 #[derive(Debug, Clone, Default, Resource)]
-pub struct HotkeyRegistry(HashMap<Identifier, Hotkey>); // id -> default
+pub struct HotkeyRegistry(pub HashMap<Identifier, Hotkey>); // id -> default
 
 pub trait HotkeyExt {
     fn add_hotkey(&mut self, id: impl IntoIdentifier, default: Hotkey) -> &mut Self;
