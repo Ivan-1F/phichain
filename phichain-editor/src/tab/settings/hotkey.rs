@@ -15,7 +15,6 @@ impl SettingCategory for Hotkey {
     }
 
     fn ui(&self, ui: &mut Ui, _: &mut EditorSettings, world: &mut World) -> bool {
-        // TODO: currently due to HashMap based registry, display is in arbitrary order
         // TODO: add grouping for hotkeys
 
         world.resource_scope(|world, registry: Mut<HotkeyRegistry>| {
