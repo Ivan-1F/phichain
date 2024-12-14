@@ -139,6 +139,8 @@ tab:
       hotkey:
         title: Hotkey
         record: Record
+        recording: Recording
+        cancel: Cancel
         reset: Reset
 
 project:

@@ -138,6 +138,8 @@ tab:
       hotkey:
         title: 快捷键
         record: 录制
+        recording: 正在录制
+        cancel: 取消
         reset: 重置
 
 project:

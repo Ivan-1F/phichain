@@ -1,4 +1,5 @@
 use crate::hotkey::modifier::{Modifier, AVAILABLE_MODIFIERS};
+use crate::hotkey::record::RecordHotkeyPlugin;
 use crate::identifier::{Identifier, IntoIdentifier};
 use crate::misc::WorkingDirectory;
 use bevy::app::App;
@@ -91,6 +92,10 @@ impl HotkeyState {
     pub fn get(&self, hotkey: impl IntoIdentifier) -> Option<Hotkey> {
         self.0.get(&hotkey.into_identifier()).cloned()
     }
+
+    pub fn set(&mut self, id: impl IntoIdentifier, hotkey: Hotkey) {
+        self.0.insert(id.into_identifier(), hotkey);
+    }
 }
 
 /// Holds the default value for all the possible hotkeys
@@ -154,7 +159,8 @@ impl Plugin for HotkeyPlugin {
                 EditorHotkeys::Paste,
                 Hotkey::new(KeyCode::KeyV, vec![Modifier::Control]),
             )
-            .add_systems(Startup, load_hotkey_settings_system);
+            .add_systems(Startup, load_hotkey_settings_system)
+            .add_plugins(RecordHotkeyPlugin);
     }
 }
 

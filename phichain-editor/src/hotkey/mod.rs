@@ -1,5 +1,6 @@
 pub mod modifier;
 pub mod next;
+pub mod record;
 
 use crate::action::ActionRegistry;
 use crate::identifier::Identifier;
