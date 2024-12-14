@@ -2,7 +2,7 @@ use crate::action::ActionRegistrationExt;
 use crate::editing::clipboard::ClipboardPlugin;
 use crate::editing::command::EditorCommand;
 use crate::editing::create_event::CreateEventPlugin;
-use crate::editing::create_note::CreateNoteSystem;
+use crate::editing::create_note::CreateNotePlugin;
 use crate::editing::delete_selected::DeleteSelectedPlugin;
 use crate::editing::fill_notes::FillingNotesPlugin;
 use crate::editing::history::EditorHistory;
@@ -32,7 +32,7 @@ impl Plugin for EditingPlugin {
         app.add_event::<DoCommandEvent>()
             .init_resource::<EditorHistory>()
             .add_plugins(DeleteSelectedPlugin)
-            .add_plugins(CreateNoteSystem)
+            .add_plugins(CreateNotePlugin)
             .add_plugins(CreateEventPlugin)
             .add_plugins(MoveNotePlugin)
             .add_plugins(MoveEventPlugin)

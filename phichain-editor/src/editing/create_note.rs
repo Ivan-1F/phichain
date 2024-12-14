@@ -33,9 +33,9 @@ impl IntoIdentifier for CreateNoteHotkeys {
     }
 }
 
-pub struct CreateNoteSystem;
+pub struct CreateNotePlugin;
 
-impl Plugin for CreateNoteSystem {
+impl Plugin for CreateNotePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
