@@ -7,6 +7,7 @@ use bevy::ecs::system::SystemParam;
 use bevy::input::ButtonInput;
 use bevy::prelude::{KeyCode, Plugin, Query, Res, ResMut, Resource, Startup};
 use bevy::utils::HashMap;
+use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 use std::fmt::Display;
@@ -87,7 +88,7 @@ impl Display for Hotkey {
 }
 
 #[derive(Debug, Clone, Default, Resource)]
-pub struct HotkeyState(HashMap<Identifier, Hotkey>);
+pub struct HotkeyState(IndexMap<Identifier, Hotkey>);
 
 impl HotkeyState {
     pub fn get(&self, hotkey: impl IntoIdentifier) -> Option<Hotkey> {
@@ -115,7 +116,7 @@ impl HotkeyState {
 
 /// Holds the default value for all the possible hotkeys
 #[derive(Debug, Clone, Default, Resource)]
-pub struct HotkeyRegistry(pub HashMap<Identifier, Hotkey>); // id -> default
+pub struct HotkeyRegistry(pub IndexMap<Identifier, Hotkey>); // id -> default
 
 pub trait HotkeyExt {
     fn add_hotkey(&mut self, id: impl IntoIdentifier, default: Hotkey) -> &mut Self;
@@ -179,9 +180,12 @@ impl Plugin for HotkeyPlugin {
     }
 }
 
-fn parse_hotkey_config(value: Value, registry: Res<HotkeyRegistry>) -> HashMap<Identifier, Hotkey> {
+fn parse_hotkey_config(
+    value: Value,
+    registry: Res<HotkeyRegistry>,
+) -> IndexMap<Identifier, Hotkey> {
     if let Some(mapping) = value.as_mapping() {
-        let mut result: HashMap<Identifier, Hotkey> = HashMap::new();
+        let mut result: IndexMap<Identifier, Hotkey> = IndexMap::new();
 
         for (id, default) in &registry.0 {
             if let Some(value) = mapping.get(id.to_string()) {
