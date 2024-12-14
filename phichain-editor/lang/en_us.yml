@@ -200,6 +200,7 @@ hotkey:
   phichain.close_project: Close Project
   phichain.copy: Copy
   phichain.paste: Paste
+  phichain.cut: Cut
   phichain.undo: Undo
   phichain.redo: Repo
   phichain.pause_resume: Pause/Resume

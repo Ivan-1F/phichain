@@ -5,7 +5,7 @@ use crate::misc::WorkingDirectory;
 use bevy::app::App;
 use bevy::ecs::system::SystemParam;
 use bevy::input::ButtonInput;
-use bevy::prelude::{KeyCode, Plugin, Query, Res, ResMut, Resource, Startup};
+use bevy::prelude::*;
 use bevy::utils::HashMap;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
@@ -25,9 +25,6 @@ pub enum EditorHotkeys {
 
     Undo,
     Redo,
-
-    Copy,
-    Paste,
 }
 
 impl IntoIdentifier for EditorHotkeys {
@@ -40,8 +37,6 @@ impl IntoIdentifier for EditorHotkeys {
             EditorHotkeys::Backward => "phichain.backward".into(),
             EditorHotkeys::Undo => "phichain.undo".into(),
             EditorHotkeys::Redo => "phichain.redo".into(),
-            EditorHotkeys::Copy => "phichain.copy".into(),
-            EditorHotkeys::Paste => "phichain.paste".into(),
         }
     }
 }
@@ -167,14 +162,6 @@ impl Plugin for HotkeyPlugin {
                 EditorHotkeys::Redo,
                 Hotkey::new(KeyCode::KeyZ, vec![Modifier::Control, Modifier::Shift]),
             )
-            .add_hotkey(
-                EditorHotkeys::Copy,
-                Hotkey::new(KeyCode::KeyC, vec![Modifier::Control]),
-            )
-            .add_hotkey(
-                EditorHotkeys::Paste,
-                Hotkey::new(KeyCode::KeyV, vec![Modifier::Control]),
-            )
             .add_systems(Startup, load_hotkey_settings_system)
             .add_plugins(RecordHotkeyPlugin);
     }
@@ -188,12 +175,17 @@ fn parse_hotkey_config(
         let mut result: IndexMap<Identifier, Hotkey> = IndexMap::new();
 
         for (id, default) in &registry.0 {
-            if let Some(value) = mapping.get(id.to_string()) {
-                if let Ok(hotkey) = serde_yaml::from_value::<Hotkey>(value.clone()) {
-                    result.insert(id.clone(), hotkey);
-                } else {
-                    result.insert(id.clone(), default.clone());
-                }
+            if let Some(hotkey) = mapping
+                .get(id.to_string())
+                .and_then(|x| serde_yaml::from_value::<Hotkey>(x.clone()).ok())
+            {
+                result.insert(id.clone(), hotkey);
+            } else {
+                warn!(
+                    "Missing hotkey config for {}, using default value ({})",
+                    id, default
+                );
+                result.insert(id.clone(), default.clone());
             }
         }
 

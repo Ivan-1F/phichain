@@ -199,6 +199,7 @@ hotkey:
   phichain.close_project: 关闭项目
   phichain.copy: 复制
   phichain.paste: 粘贴
+  phichain.cut: 剪切
   phichain.undo: 撤销
   phichain.redo: 重做
   phichain.pause_resume: 暂停/播放
