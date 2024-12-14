@@ -1,11 +1,11 @@
 use crate::hotkey::modifier::{Modifier, AVAILABLE_MODIFIERS};
-use crate::hotkey::record::RecordHotkeyPlugin;
+use crate::hotkey::record::{RecordHotkeyPlugin, RecordingHotkey};
 use crate::identifier::{Identifier, IntoIdentifier};
 use crate::misc::WorkingDirectory;
 use bevy::app::App;
 use bevy::ecs::system::SystemParam;
 use bevy::input::ButtonInput;
-use bevy::prelude::{KeyCode, Plugin, Res, ResMut, Resource, Startup};
+use bevy::prelude::{KeyCode, Plugin, Query, Res, ResMut, Resource, Startup};
 use bevy::utils::HashMap;
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
@@ -225,16 +225,23 @@ fn load_hotkey_settings_system(
 }
 
 #[derive(SystemParam)]
-pub struct HotkeyContext<'w> {
+pub struct HotkeyContext<'w, 's> {
     state: Res<'w, HotkeyState>,
     input: Res<'w, ButtonInput<KeyCode>>,
+
+    query: Query<'w, 's, &'static RecordingHotkey>,
 }
 
-impl HotkeyContext<'_> {
+impl HotkeyContext<'_, '_> {
     pub fn just_pressed(&self, hotkey: impl IntoIdentifier) -> bool {
-        self.state
-            .get(hotkey)
-            .map(|x| x.just_pressed(&self.input))
-            .unwrap_or(false)
+        if self.query.is_empty() {
+            self.state
+                .get(hotkey)
+                .map(|x| x.just_pressed(&self.input))
+                .unwrap_or(false)
+        } else {
+            // disable all hotkey while recording hotkey
+            false
+        }
     }
 }
