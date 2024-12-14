@@ -13,9 +13,6 @@ use std::fs::File;
 use std::{fs, iter};
 
 pub enum EditorHotkeys {
-    PlaceTransitionEvent,
-    PlaceConstantEvent,
-
     SaveProject,
     CloseProject,
 
@@ -33,8 +30,6 @@ pub enum EditorHotkeys {
 impl IntoIdentifier for EditorHotkeys {
     fn into_identifier(self) -> Identifier {
         match self {
-            EditorHotkeys::PlaceTransitionEvent => "phichain.place_transition_event".into(),
-            EditorHotkeys::PlaceConstantEvent => "phichain.place_constant_event".into(),
             EditorHotkeys::SaveProject => "phichain.save_project".into(),
             EditorHotkeys::CloseProject => "phichain.close_project".into(),
             EditorHotkeys::PauseResume => "phichain.pause_resume".into(),
@@ -123,14 +118,6 @@ impl Plugin for HotkeyPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<HotkeyRegistry>()
             .init_resource::<HotkeyState>()
-            .add_hotkey(
-                EditorHotkeys::PlaceTransitionEvent,
-                Hotkey::new(KeyCode::KeyR, vec![]),
-            )
-            .add_hotkey(
-                EditorHotkeys::PlaceConstantEvent,
-                Hotkey::new(KeyCode::KeyD, vec![]),
-            )
             .add_hotkey(
                 EditorHotkeys::SaveProject,
                 Hotkey::new(KeyCode::KeyS, vec![Modifier::Control]),
