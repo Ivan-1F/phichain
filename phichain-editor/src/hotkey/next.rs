@@ -16,9 +16,6 @@ use std::path::{Path, PathBuf};
 use std::{fs, iter};
 
 pub enum EditorHotkeys {
-    SaveProject,
-    CloseProject,
-
     PauseResume,
     Forward,
     Backward,
@@ -30,8 +27,6 @@ pub enum EditorHotkeys {
 impl IntoIdentifier for EditorHotkeys {
     fn into_identifier(self) -> Identifier {
         match self {
-            EditorHotkeys::SaveProject => "phichain.save_project".into(),
-            EditorHotkeys::CloseProject => "phichain.close_project".into(),
             EditorHotkeys::PauseResume => "phichain.pause_resume".into(),
             EditorHotkeys::Forward => "phichain.forward".into(),
             EditorHotkeys::Backward => "phichain.backward".into(),
@@ -134,14 +129,6 @@ impl Plugin for HotkeyPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<HotkeyRegistry>()
             .init_resource::<HotkeyState>()
-            .add_hotkey(
-                EditorHotkeys::SaveProject,
-                Hotkey::new(KeyCode::KeyS, vec![Modifier::Control]),
-            )
-            .add_hotkey(
-                EditorHotkeys::CloseProject,
-                Hotkey::new(KeyCode::KeyW, vec![Modifier::Control]),
-            )
             .add_hotkey(
                 EditorHotkeys::PauseResume,
                 Hotkey::new(KeyCode::Space, vec![]),

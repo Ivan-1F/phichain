@@ -1,11 +1,14 @@
 use anyhow::Context;
 use bevy::prelude::*;
 
-use crate::action::ActionRegistrationExt;
+use crate::action::{ActionRegistrationExt, ActionRegistry};
 use crate::audio::load_audio;
 use crate::editing::history::EditorHistory;
 use crate::exporter::phichain::PhichainExporter;
 use crate::exporter::Exporter;
+use crate::hotkey::modifier::Modifier;
+use crate::hotkey::next::{Hotkey, HotkeyContext, HotkeyExt};
+use crate::identifier::{Identifier, IntoIdentifier};
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::recent_projects::{PersistentRecentProjectsExt, RecentProject, RecentProjects};
 use bevy::ecs::system::SystemState;
@@ -14,7 +17,22 @@ use bevy_persistent::Persistent;
 use phichain_chart::line::Line;
 pub use phichain_chart::project::{Project, ProjectMeta, ProjectPath};
 use phichain_chart::serialization::PhichainChart;
+use phichain_game::GameSet;
 use std::path::PathBuf;
+
+enum ProjectHotkeys {
+    Save,
+    Close,
+}
+
+impl IntoIdentifier for ProjectHotkeys {
+    fn into_identifier(self) -> Identifier {
+        match self {
+            ProjectHotkeys::Save => "phichain.save_project".into(),
+            ProjectHotkeys::Close => "phichain.close_project".into(),
+        }
+    }
+}
 
 /// A [Condition] represents the project is loaded
 pub fn project_loaded() -> impl Condition<()> {
@@ -34,13 +52,36 @@ impl Plugin for ProjectPlugin {
             .add_systems(Update, load_project_system.run_if(project_not_loaded()))
             .add_event::<UnloadProjectEvent>()
             .add_systems(PreUpdate, unload_project_system.run_if(project_loaded()))
+            .add_hotkey(
+                ProjectHotkeys::Save,
+                Hotkey::new(KeyCode::KeyS, vec![Modifier::Control]),
+            )
+            .add_hotkey(
+                ProjectHotkeys::Close,
+                Hotkey::new(KeyCode::KeyW, vec![Modifier::Control]),
+            )
             .register_action("phichain.project.save", save_project_system)
             .register_action(
                 "phichain.project.unload",
                 |mut events: EventWriter<UnloadProjectEvent>| {
                     events.send(UnloadProjectEvent);
                 },
-            );
+            )
+            .add_systems(Update, handle_project_hotkeys_system.in_set(GameSet));
+    }
+}
+
+fn handle_project_hotkeys_system(world: &mut World) {
+    let mut state: SystemState<HotkeyContext> = SystemState::new(world);
+    let hotkey = state.get_mut(world);
+    if hotkey.just_pressed(ProjectHotkeys::Save) {
+        world.resource_scope(|world, mut action: Mut<ActionRegistry>| {
+            action.run_action(world, "phichain.project.save");
+        });
+    } else if hotkey.just_pressed(ProjectHotkeys::Close) {
+        world.resource_scope(|world, mut action: Mut<ActionRegistry>| {
+            action.run_action(world, "phichain.project.unload");
+        });
     }
 }
 

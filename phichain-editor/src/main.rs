@@ -39,7 +39,7 @@ use crate::export::ExportPlugin;
 use crate::file::{pick_folder, FilePickingPlugin, PickingKind};
 use crate::hit_sound::HitSoundPlugin;
 use crate::home::HomePlugin;
-use crate::hotkey::{HotkeyPlugin, HotkeyRegistrationExt};
+use crate::hotkey::HotkeyPlugin;
 use crate::misc::MiscPlugin;
 use crate::notification::NotificationPlugin;
 use crate::project::project_loaded;
@@ -61,7 +61,6 @@ use crate::timeline::TimelinePlugin;
 use crate::timing::TimingPlugin;
 use crate::translation::TranslationPlugin;
 use crate::ui::UiPlugin;
-use crate::utils::compat::ControlKeyExt;
 use crate::utils::convert::BevyEguiConvert;
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
@@ -142,10 +141,6 @@ fn main() {
         .add_systems(
             Startup,
             (apply_args_config_system, apply_editor_settings_system),
-        )
-        .register_hotkey(
-            "phichain.project.save",
-            vec![KeyCode::control(), KeyCode::KeyS],
         )
         .run();
 }
