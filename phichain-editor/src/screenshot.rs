@@ -1,6 +1,6 @@
 use crate::action::ActionRegistrationExt;
 use crate::hotkey::modifier::Modifier;
-use crate::hotkey::next::Hotkey;
+use crate::hotkey::Hotkey;
 use crate::misc::WorkingDirectory;
 use crate::notification::{ToastsExt, ToastsStorage};
 use bevy::prelude::*;

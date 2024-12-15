@@ -7,7 +7,7 @@ use crate::editing::history::EditorHistory;
 use crate::exporter::phichain::PhichainExporter;
 use crate::exporter::Exporter;
 use crate::hotkey::modifier::Modifier;
-use crate::hotkey::next::Hotkey;
+use crate::hotkey::Hotkey;
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::recent_projects::{PersistentRecentProjectsExt, RecentProject, RecentProjects};
 use bevy::ecs::system::SystemState;

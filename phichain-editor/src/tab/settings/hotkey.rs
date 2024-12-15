@@ -1,5 +1,5 @@
-use crate::hotkey::next::HotkeyContext;
 use crate::hotkey::record::RecordingHotkey;
+use crate::hotkey::HotkeyContext;
 use crate::identifier::Identifier;
 use crate::settings::EditorSettings;
 use crate::tab::settings::SettingCategory;

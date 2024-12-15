@@ -4,7 +4,7 @@ use bevy_persistent::Persistent;
 use phichain_chart::bpm_list::BpmList;
 
 use crate::action::ActionRegistrationExt;
-use crate::hotkey::next::Hotkey;
+use crate::hotkey::Hotkey;
 use crate::project::project_loaded;
 use crate::settings::EditorSettings;
 use crate::tab::timeline::TimelineViewport;

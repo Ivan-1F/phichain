@@ -3,7 +3,7 @@ use crate::editing::command::note::{CreateNote, RemoveNote};
 use crate::editing::command::{CommandSequence, EditorCommand};
 use crate::editing::DoCommandEvent;
 use crate::hotkey::modifier::Modifier;
-use crate::hotkey::next::{Hotkey, HotkeyContext, HotkeyExt};
+use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
 use crate::identifier::{Identifier, IntoIdentifier};
 use crate::selection::{Selected, SelectedLine};
 use crate::timeline::TimelineContext;

@@ -9,7 +9,7 @@ use crate::editing::history::EditorHistory;
 use crate::editing::move_event::MoveEventPlugin;
 use crate::editing::move_note::MoveNotePlugin;
 use crate::hotkey::modifier::Modifier;
-use crate::hotkey::next::Hotkey;
+use crate::hotkey::Hotkey;
 use crate::schedule::EditorSet;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;

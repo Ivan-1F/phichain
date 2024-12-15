@@ -3,7 +3,7 @@ use crate::editing::command::event::RemoveEvent;
 use crate::editing::command::note::RemoveNote;
 use crate::editing::command::{CommandSequence, EditorCommand};
 use crate::editing::DoCommandEvent;
-use crate::hotkey::next::Hotkey;
+use crate::hotkey::Hotkey;
 use crate::selection::Selected;
 use bevy::prelude::*;
 use phichain_chart::event::LineEvent;

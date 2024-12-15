@@ -1,4 +1,4 @@
-use crate::hotkey::next::{Hotkey, HotkeyContext, HotkeyExt};
+use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
 use crate::identifier::Identifier;
 use bevy::ecs::system::SystemState;
 use bevy::{prelude::*, utils::HashMap};

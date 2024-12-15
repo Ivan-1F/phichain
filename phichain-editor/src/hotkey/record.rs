@@ -1,5 +1,5 @@
 use crate::hotkey::modifier::Modifier;
-use crate::hotkey::next::{Hotkey, HotkeyContext};
+use crate::hotkey::{Hotkey, HotkeyContext};
 use crate::identifier::{Identifier, IntoIdentifier};
 use bevy::app::{App, Plugin};
 use bevy::input::ButtonInput;

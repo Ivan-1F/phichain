@@ -6,7 +6,7 @@ use crate::editing::command::event::CreateEvent;
 use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
-use crate::hotkey::next::{Hotkey, HotkeyContext, HotkeyExt};
+use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
 use crate::identifier::{Identifier, IntoIdentifier};
 use crate::schedule::EditorSet;
 use crate::selection::SelectedLine;
