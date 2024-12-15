@@ -5,7 +5,6 @@ pub mod record;
 use crate::action::ActionRegistry;
 use crate::identifier::Identifier;
 use crate::schedule::EditorSet;
-use crate::utils::compat::ControlKeyExt;
 use bevy::ecs::system::SystemState;
 use bevy::input::keyboard::KeyboardInput;
 use bevy::prelude::*;
@@ -26,8 +25,7 @@ impl Plugin for HotkeyPlugin {
                 (listen_to_key_events_system, handle_hotkey_system)
                     .chain()
                     .in_set(EditorSet::Edit),
-            )
-            .register_hotkey("phichain.debug", vec![KeyCode::control(), KeyCode::KeyD]);
+            );
     }
 }
 

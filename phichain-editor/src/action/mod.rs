@@ -36,13 +36,6 @@ pub struct ActionPlugin;
 impl Plugin for ActionPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ActionRegistry>()
-            .register_action(
-                "phichain.debug",
-                || {
-                    println!("Hello from Phichain!");
-                },
-                None,
-            )
             .add_systems(Update, handle_action_hotkey_system.in_set(GameSet));
     }
 }
