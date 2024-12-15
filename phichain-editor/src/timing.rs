@@ -4,7 +4,7 @@ use bevy_persistent::Persistent;
 use phichain_chart::bpm_list::BpmList;
 
 use crate::action::ActionRegistrationExt;
-use crate::hotkey::HotkeyRegistrationExt;
+use crate::hotkey::next::Hotkey;
 use crate::project::project_loaded;
 use crate::settings::EditorSettings;
 use crate::tab::timeline::TimelineViewport;
@@ -53,8 +53,11 @@ impl Plugin for TimingPlugin {
                 Update,
                 scroll_progress_control_system.run_if(project_loaded()),
             )
-            .register_action("phichain.toggle", toggle_system, None)
-            .register_hotkey("phichain.toggle", vec![KeyCode::Space]);
+            .register_action(
+                "phichain.pause_resume",
+                toggle_system,
+                Some(Hotkey::new(KeyCode::Space, vec![])),
+            );
     }
 }
 

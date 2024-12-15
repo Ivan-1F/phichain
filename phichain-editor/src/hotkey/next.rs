@@ -16,7 +16,6 @@ use std::path::{Path, PathBuf};
 use std::{fs, iter};
 
 pub enum EditorHotkeys {
-    PauseResume,
     Forward,
     Backward,
 }
@@ -24,7 +23,6 @@ pub enum EditorHotkeys {
 impl IntoIdentifier for EditorHotkeys {
     fn into_identifier(self) -> Identifier {
         match self {
-            EditorHotkeys::PauseResume => "phichain.pause_resume".into(),
             EditorHotkeys::Forward => "phichain.forward".into(),
             EditorHotkeys::Backward => "phichain.backward".into(),
         }
@@ -124,10 +122,6 @@ impl Plugin for HotkeyPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<HotkeyRegistry>()
             .init_resource::<HotkeyState>()
-            .add_hotkey(
-                EditorHotkeys::PauseResume,
-                Hotkey::new(KeyCode::Space, vec![]),
-            )
             .add_hotkey(
                 EditorHotkeys::Forward,
                 Hotkey::new(KeyCode::BracketLeft, vec![]),
