@@ -206,3 +206,4 @@ hotkey:
   phichain.forward: 前进
   phichain.backward: 后退
   phichain.take_screenshot: 截屏
+  phichain.delete_selected: 删除选中

@@ -207,3 +207,4 @@ hotkey:
   phichain.forward: Forward
   phichain.backward: Backward
   phichain.take_screenshot: Take Screenshot
+  phichain.delete_selected: Delete Selected

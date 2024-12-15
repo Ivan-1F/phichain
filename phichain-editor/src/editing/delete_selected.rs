@@ -3,7 +3,7 @@ use crate::editing::command::event::RemoveEvent;
 use crate::editing::command::note::RemoveNote;
 use crate::editing::command::{CommandSequence, EditorCommand};
 use crate::editing::DoCommandEvent;
-use crate::hotkey::HotkeyRegistrationExt;
+use crate::hotkey::next::Hotkey;
 use crate::selection::Selected;
 use bevy::prelude::*;
 use phichain_chart::event::LineEvent;
@@ -13,8 +13,11 @@ pub struct DeleteSelectedPlugin;
 
 impl Plugin for DeleteSelectedPlugin {
     fn build(&self, app: &mut App) {
-        app.register_action("phichain.delete", delete_selected_system, None)
-            .register_hotkey("phichain.delete", vec![KeyCode::Backspace]);
+        app.register_action(
+            "phichain.delete_selected",
+            delete_selected_system,
+            Some(Hotkey::new(KeyCode::Backspace, vec![])),
+        );
     }
 }
 
