@@ -53,7 +53,7 @@ impl Plugin for TimingPlugin {
                 Update,
                 scroll_progress_control_system.run_if(project_loaded()),
             )
-            .register_action("phichain.toggle", toggle_system)
+            .register_action("phichain.toggle", toggle_system, None)
             .register_hotkey("phichain.toggle", vec![KeyCode::Space]);
     }
 }

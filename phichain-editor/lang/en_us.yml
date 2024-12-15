@@ -206,3 +206,4 @@ hotkey:
   phichain.pause_resume: Pause/Resume
   phichain.forward: Forward
   phichain.backward: Backward
+  phichain.take_screenshot: Take Screenshot

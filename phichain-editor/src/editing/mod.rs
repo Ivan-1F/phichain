@@ -8,9 +8,9 @@ use crate::editing::fill_notes::FillingNotesPlugin;
 use crate::editing::history::EditorHistory;
 use crate::editing::move_event::MoveEventPlugin;
 use crate::editing::move_note::MoveNotePlugin;
-use crate::hotkey::HotkeyRegistrationExt;
+use crate::hotkey::modifier::Modifier;
+use crate::hotkey::next::Hotkey;
 use crate::schedule::EditorSet;
-use crate::utils::compat::ControlKeyExt;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 
@@ -39,12 +39,18 @@ impl Plugin for EditingPlugin {
             .add_plugins(FillingNotesPlugin)
             .add_plugins(ClipboardPlugin)
             .add_systems(Update, handle_edit_command.in_set(EditorSet::Edit))
-            .register_action("phichain.undo", undo_system)
-            .register_hotkey("phichain.undo", vec![KeyCode::control(), KeyCode::KeyZ])
-            .register_action("phichain.redo", redo_system)
-            .register_hotkey(
+            .register_action(
+                "phichain.undo",
+                undo_system,
+                Some(Hotkey::new(KeyCode::KeyZ, vec![Modifier::Control])),
+            )
+            .register_action(
                 "phichain.redo",
-                vec![KeyCode::control(), KeyCode::ShiftLeft, KeyCode::KeyZ],
+                redo_system,
+                Some(Hotkey::new(
+                    KeyCode::KeyZ,
+                    vec![Modifier::Control, Modifier::Shift],
+                )),
             );
     }
 }

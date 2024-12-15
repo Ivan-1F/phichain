@@ -13,7 +13,7 @@ pub struct DeleteSelectedPlugin;
 
 impl Plugin for DeleteSelectedPlugin {
     fn build(&self, app: &mut App) {
-        app.register_action("phichain.delete", delete_selected_system)
+        app.register_action("phichain.delete", delete_selected_system, None)
             .register_hotkey("phichain.delete", vec![KeyCode::Backspace]);
     }
 }

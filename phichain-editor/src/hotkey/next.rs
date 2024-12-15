@@ -19,9 +19,6 @@ pub enum EditorHotkeys {
     PauseResume,
     Forward,
     Backward,
-
-    Undo,
-    Redo,
 }
 
 impl IntoIdentifier for EditorHotkeys {
@@ -30,8 +27,6 @@ impl IntoIdentifier for EditorHotkeys {
             EditorHotkeys::PauseResume => "phichain.pause_resume".into(),
             EditorHotkeys::Forward => "phichain.forward".into(),
             EditorHotkeys::Backward => "phichain.backward".into(),
-            EditorHotkeys::Undo => "phichain.undo".into(),
-            EditorHotkeys::Redo => "phichain.redo".into(),
         }
     }
 }
@@ -140,14 +135,6 @@ impl Plugin for HotkeyPlugin {
             .add_hotkey(
                 EditorHotkeys::Backward,
                 Hotkey::new(KeyCode::BracketRight, vec![]),
-            )
-            .add_hotkey(
-                EditorHotkeys::Undo,
-                Hotkey::new(KeyCode::KeyZ, vec![Modifier::Control]),
-            )
-            .add_hotkey(
-                EditorHotkeys::Redo,
-                Hotkey::new(KeyCode::KeyZ, vec![Modifier::Control, Modifier::Shift]),
             )
             .add_systems(Startup, load_hotkey_settings_system)
             .add_plugins(RecordHotkeyPlugin);

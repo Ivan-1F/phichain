@@ -205,3 +205,4 @@ hotkey:
   phichain.pause_resume: 暂停/播放
   phichain.forward: 前进
   phichain.backward: 后退
+  phichain.take_screenshot: 截屏
