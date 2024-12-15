@@ -37,12 +37,12 @@ impl Plugin for ProjectPlugin {
             .add_event::<UnloadProjectEvent>()
             .add_systems(PreUpdate, unload_project_system.run_if(project_loaded()))
             .register_action(
-                "phichain.project.save",
+                "phichain.save_project",
                 save_project_system,
                 Some(Hotkey::new(KeyCode::KeyS, vec![Modifier::Control])),
             )
             .register_action(
-                "phichain.project.unload",
+                "phichain.close_project",
                 |mut events: EventWriter<UnloadProjectEvent>| {
                     events.send(UnloadProjectEvent);
                 },
