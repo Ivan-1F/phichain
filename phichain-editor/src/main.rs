@@ -315,13 +315,13 @@ fn ui_system(world: &mut World) {
             ui.menu_button(t!("menu_bar.file.title"), |ui| {
                 if ui.button(t!("menu_bar.file.save")).clicked() {
                     world.resource_scope(|world, mut registry: Mut<ActionRegistry>| {
-                        registry.run_action(world, "phichain.project.save");
+                        registry.run_action(world, "phichain.save_project");
                     });
                     ui.close_menu();
                 }
                 if ui.button(t!("menu_bar.file.close")).clicked() {
                     world.resource_scope(|world, mut registry: Mut<ActionRegistry>| {
-                        registry.run_action(world, "phichain.project.unload");
+                        registry.run_action(world, "phichain.close_project");
                     });
                     ui.close_menu();
                 }
