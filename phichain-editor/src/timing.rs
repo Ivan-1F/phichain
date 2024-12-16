@@ -53,7 +53,7 @@ impl Plugin for TimingPlugin {
                 Update,
                 scroll_progress_control_system.run_if(project_loaded()),
             )
-            .register_action(
+            .add_action(
                 "phichain.pause_resume",
                 toggle_system,
                 Some(Hotkey::new(KeyCode::Space, vec![])),

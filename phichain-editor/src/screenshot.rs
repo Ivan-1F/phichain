@@ -11,7 +11,7 @@ pub struct ScreenshotPlugin;
 
 impl Plugin for ScreenshotPlugin {
     fn build(&self, app: &mut App) {
-        app.register_action(
+        app.add_action(
             "phichain.take_screenshot",
             take_screenshot_system,
             Some(Hotkey::new(KeyCode::KeyP, vec![Modifier::Control])),

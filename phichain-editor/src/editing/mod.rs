@@ -39,12 +39,12 @@ impl Plugin for EditingPlugin {
             .add_plugins(FillingNotesPlugin)
             .add_plugins(ClipboardPlugin)
             .add_systems(Update, handle_edit_command.in_set(EditorSet::Edit))
-            .register_action(
+            .add_action(
                 "phichain.undo",
                 undo_system,
                 Some(Hotkey::new(KeyCode::KeyZ, vec![Modifier::Control])),
             )
-            .register_action(
+            .add_action(
                 "phichain.redo",
                 redo_system,
                 Some(Hotkey::new(

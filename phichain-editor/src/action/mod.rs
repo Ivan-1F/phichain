@@ -41,7 +41,7 @@ impl Plugin for ActionPlugin {
 }
 
 pub trait ActionRegistrationExt {
-    fn register_action<M1>(
+    fn add_action<M1>(
         &mut self,
         id: impl Into<ActionIdentifier>,
         system: impl IntoSystem<(), (), M1>,
@@ -50,7 +50,7 @@ pub trait ActionRegistrationExt {
 }
 
 impl ActionRegistrationExt for App {
-    fn register_action<M1>(
+    fn add_action<M1>(
         &mut self,
         id: impl Into<ActionIdentifier>,
         system: impl IntoSystem<(), (), M1>,
