@@ -18,20 +18,6 @@ use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::{fs, iter};
 
-pub enum EditorHotkeys {
-    Forward,
-    Backward,
-}
-
-impl IntoIdentifier for EditorHotkeys {
-    fn into_identifier(self) -> Identifier {
-        match self {
-            EditorHotkeys::Forward => "phichain.forward".into(),
-            EditorHotkeys::Backward => "phichain.backward".into(),
-        }
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Hotkey {
     pub key: KeyCode,
@@ -55,6 +41,10 @@ impl Hotkey {
 
     pub fn just_pressed(&self, input: &ButtonInput<KeyCode>) -> bool {
         self.modifiers_pressed(input) && input.just_pressed(self.key)
+    }
+
+    pub fn pressed(&self, input: &ButtonInput<KeyCode>) -> bool {
+        self.modifiers_pressed(input) && input.pressed(self.key)
     }
 }
 
@@ -125,14 +115,6 @@ impl Plugin for HotkeyPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<HotkeyRegistry>()
             .init_resource::<HotkeyState>()
-            .add_hotkey(
-                EditorHotkeys::Forward,
-                Hotkey::new(KeyCode::BracketLeft, vec![]),
-            )
-            .add_hotkey(
-                EditorHotkeys::Backward,
-                Hotkey::new(KeyCode::BracketRight, vec![]),
-            )
             .add_systems(Startup, load_hotkey_settings_system)
             .add_plugins(RecordHotkeyPlugin);
     }
@@ -215,6 +197,17 @@ impl HotkeyContext<'_, '_> {
             self.state
                 .get(hotkey)
                 .map(|x| x.just_pressed(&self.input))
+                .unwrap_or(false)
+        } else {
+            // disable all hotkey while recording hotkey
+            false
+        }
+    }
+    pub fn pressed(&self, hotkey: impl IntoIdentifier) -> bool {
+        if self.query.is_empty() {
+            self.state
+                .get(hotkey)
+                .map(|x| x.pressed(&self.input))
                 .unwrap_or(false)
         } else {
             // disable all hotkey while recording hotkey
