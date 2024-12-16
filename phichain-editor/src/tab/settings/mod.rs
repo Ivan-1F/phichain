@@ -1,12 +1,14 @@
 mod audio;
 mod game;
 mod general;
+mod hotkey;
 
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::settings::EditorSettings;
 use crate::tab::settings::audio::Audio;
 use crate::tab::settings::game::Game;
 use crate::tab::settings::general::General;
+use crate::tab::settings::hotkey::Hotkey;
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
 use egui::{Layout, Ui};
@@ -25,6 +27,7 @@ enum SettingCategories {
     General,
     Audio,
     Game,
+    Hotkey,
 }
 
 pub fn settings_tab(In(mut ui): In<Ui>, world: &mut World) {

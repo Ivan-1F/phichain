@@ -136,6 +136,12 @@ tab:
         note_scale: Note Scale
         multi_highlight: Multi Highlight
         hit_effect_follow_game_time: Hit Effect Follow Game Time (DEBUG)
+      hotkey:
+        title: Hotkey
+        record: Record
+        recording: Recording
+        cancel: Cancel
+        reset: Reset
 
 project:
   save:
@@ -182,3 +188,23 @@ audio_setting:
 game:
   aspect_ratio:
     free: Free
+
+hotkey:
+  phichain.place_tap: Place Tap
+  phichain.place_drag: Place Drag
+  phichain.place_flick: Place Flick
+  phichain.place_hold: Place Hold
+  phichain.place_transition_event: Place Transition Event
+  phichain.place_constant_event: Place Constant Event
+  phichain.save_project: Save Project
+  phichain.close_project: Close Project
+  phichain.copy: Copy
+  phichain.paste: Paste
+  phichain.cut: Cut
+  phichain.undo: Undo
+  phichain.redo: Repo
+  phichain.pause_resume: Pause/Resume
+  phichain.forward: Forward
+  phichain.backward: Backward
+  phichain.take_screenshot: Take Screenshot
+  phichain.delete_selected: Delete Selected

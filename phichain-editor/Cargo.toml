@@ -37,6 +37,7 @@ bevy = { version = "0.13.2", default-features = false, features = [
     "default_font",
     "webgl2",
     "bevy_debug_stepping",
+    "serialize",
 ] }
 bevy_mod_picking = "0.18"
 bevy_kira_audio = { version = "0.19.0", features = [
@@ -84,3 +85,4 @@ phichain-game = { path = "../phichain-game" }
 phichain-compiler = { path = "../phichain-compiler" }
 rand = "0.8.5"
 bon = "3.0.1"
+indexmap = "2.7.0"

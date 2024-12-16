@@ -135,6 +135,12 @@ tab:
         note_scale: 音符缩放
         multi_highlight: 多押高亮
         hit_effect_follow_game_time: 打击特效使用游戏时间 (调试)
+      hotkey:
+        title: 快捷键
+        record: 录制
+        recording: 正在录制
+        cancel: 取消
+        reset: 重置
 
 project:
   save:
@@ -181,3 +187,23 @@ audio_setting:
 game:
   aspect_ratio:
     free: 自由
+
+hotkey:
+  phichain.place_tap: 放置 Tap
+  phichain.place_drag: 放置 Drag
+  phichain.place_flick: 放置 Flick
+  phichain.place_hold: 放置 Hold
+  phichain.place_transition_event: 放置过度事件
+  phichain.place_constant_event: 放置常量事件
+  phichain.save_project: 保存项目
+  phichain.close_project: 关闭项目
+  phichain.copy: 复制
+  phichain.paste: 粘贴
+  phichain.cut: 剪切
+  phichain.undo: 撤销
+  phichain.redo: 重做
+  phichain.pause_resume: 暂停/播放
+  phichain.forward: 前进
+  phichain.backward: 后退
+  phichain.take_screenshot: 截屏
+  phichain.delete_selected: 删除选中

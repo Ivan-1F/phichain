@@ -39,7 +39,7 @@ use crate::export::ExportPlugin;
 use crate::file::{pick_folder, FilePickingPlugin, PickingKind};
 use crate::hit_sound::HitSoundPlugin;
 use crate::home::HomePlugin;
-use crate::hotkey::{HotkeyPlugin, HotkeyRegistrationExt};
+use crate::hotkey::HotkeyPlugin;
 use crate::misc::MiscPlugin;
 use crate::notification::NotificationPlugin;
 use crate::project::project_loaded;
@@ -61,7 +61,6 @@ use crate::timeline::TimelinePlugin;
 use crate::timing::TimingPlugin;
 use crate::translation::TranslationPlugin;
 use crate::ui::UiPlugin;
-use crate::utils::compat::ControlKeyExt;
 use crate::utils::convert::BevyEguiConvert;
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
@@ -102,6 +101,7 @@ fn main() {
         )
         .insert_resource(ClearColor(Color::BLACK))
         .insert_resource(UiState::new())
+        .add_plugins(HotkeyPlugin)
         .add_plugins(CliPlugin)
         .add_plugins(MiscPlugin)
         .add_plugins(UiPlugin)
@@ -114,7 +114,6 @@ fn main() {
         }))
         .add_plugins(GamePlugin)
         .add_plugins(ActionPlugin)
-        .add_plugins(HotkeyPlugin)
         .add_plugins(ScreenshotPlugin)
         .add_plugins(TimingPlugin)
         .add_plugins(AudioPlugin)
@@ -141,10 +140,6 @@ fn main() {
         .add_systems(
             Startup,
             (apply_args_config_system, apply_editor_settings_system),
-        )
-        .register_hotkey(
-            "phichain.project.save",
-            vec![KeyCode::control(), KeyCode::KeyS],
         )
         .run();
 }
@@ -320,13 +315,13 @@ fn ui_system(world: &mut World) {
             ui.menu_button(t!("menu_bar.file.title"), |ui| {
                 if ui.button(t!("menu_bar.file.save")).clicked() {
                     world.resource_scope(|world, mut registry: Mut<ActionRegistry>| {
-                        registry.run_action(world, "phichain.project.save");
+                        registry.run_action(world, "phichain.save_project");
                     });
                     ui.close_menu();
                 }
                 if ui.button(t!("menu_bar.file.close")).clicked() {
                     world.resource_scope(|world, mut registry: Mut<ActionRegistry>| {
-                        registry.run_action(world, "phichain.project.unload");
+                        registry.run_action(world, "phichain.close_project");
                     });
                     ui.close_menu();
                 }

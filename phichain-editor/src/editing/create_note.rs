@@ -7,19 +7,56 @@ use crate::editing::command::note::CreateNote;
 use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
+use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
+use crate::identifier::{Identifier, IntoIdentifier};
 use crate::schedule::EditorSet;
 use crate::timeline::{TimelineContext, TimelineItem};
 use crate::utils::convert::BevyEguiConvert;
 use crate::{constants::CANVAS_WIDTH, selection::SelectedLine};
 use phichain_chart::note::NoteBundle;
 
-pub struct CreateNoteSystem;
+#[allow(clippy::enum_variant_names)]
+enum CreateNoteHotkeys {
+    PlaceTap,
+    PlaceDrag,
+    PlaceFlick,
+    PlaceHold,
+}
 
-impl Plugin for CreateNoteSystem {
+impl IntoIdentifier for CreateNoteHotkeys {
+    fn into_identifier(self) -> Identifier {
+        match self {
+            CreateNoteHotkeys::PlaceTap => "phichain.place_tap".into(),
+            CreateNoteHotkeys::PlaceDrag => "phichain.place_drag".into(),
+            CreateNoteHotkeys::PlaceFlick => "phichain.place_flick".into(),
+            CreateNoteHotkeys::PlaceHold => "phichain.place_hold".into(),
+        }
+    }
+}
+
+pub struct CreateNotePlugin;
+
+impl Plugin for CreateNotePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
             (create_note_system, remove_pending_note_on_esc_system).in_set(EditorSet::Edit),
+        )
+        .add_hotkey(
+            CreateNoteHotkeys::PlaceTap,
+            Hotkey::new(KeyCode::KeyQ, vec![]),
+        )
+        .add_hotkey(
+            CreateNoteHotkeys::PlaceDrag,
+            Hotkey::new(KeyCode::KeyW, vec![]),
+        )
+        .add_hotkey(
+            CreateNoteHotkeys::PlaceFlick,
+            Hotkey::new(KeyCode::KeyE, vec![]),
+        )
+        .add_hotkey(
+            CreateNoteHotkeys::PlaceHold,
+            Hotkey::new(KeyCode::KeyR, vec![]),
         );
     }
 }
@@ -27,7 +64,7 @@ impl Plugin for CreateNoteSystem {
 fn create_note_system(
     mut commands: Commands,
     ctx: TimelineContext,
-    keyboard: Res<ButtonInput<KeyCode>>,
+    hotkey: HotkeyContext,
 
     selected_line: Res<SelectedLine>,
 
@@ -86,11 +123,11 @@ fn create_note_system(
                 ))));
             };
 
-            if keyboard.just_pressed(KeyCode::KeyQ) {
+            if hotkey.just_pressed(CreateNoteHotkeys::PlaceTap) {
                 create_note(NoteKind::Tap);
             }
 
-            if keyboard.just_pressed(KeyCode::KeyW) {
+            if hotkey.just_pressed(CreateNoteHotkeys::PlaceDrag) {
                 create_note(NoteKind::Drag);
             }
 
@@ -104,11 +141,11 @@ fn create_note_system(
                 }
             }
 
-            if keyboard.just_pressed(KeyCode::KeyE) {
+            if hotkey.just_pressed(CreateNoteHotkeys::PlaceFlick) {
                 create_note(NoteKind::Flick);
             }
 
-            if keyboard.just_pressed(KeyCode::KeyR) {
+            if hotkey.just_pressed(CreateNoteHotkeys::PlaceHold) {
                 if let Ok((pending_note, entity)) = pending_note_query.get_single() {
                     commands.entity(entity).despawn_recursive();
                     event.send(DoCommandEvent(EditorCommand::CreateNote(CreateNote::new(

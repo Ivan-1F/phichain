@@ -1,8 +1,8 @@
 use crate::action::ActionRegistrationExt;
-use crate::hotkey::HotkeyRegistrationExt;
+use crate::hotkey::modifier::Modifier;
+use crate::hotkey::Hotkey;
 use crate::misc::WorkingDirectory;
 use crate::notification::{ToastsExt, ToastsStorage};
-use crate::utils::compat::ControlKeyExt;
 use bevy::prelude::*;
 use bevy::render::view::screenshot::ScreenshotManager;
 use bevy::window::PrimaryWindow;
@@ -11,11 +11,11 @@ pub struct ScreenshotPlugin;
 
 impl Plugin for ScreenshotPlugin {
     fn build(&self, app: &mut App) {
-        app.register_action("phichain.take_screenshot", take_screenshot_system)
-            .register_hotkey(
-                "phichain.take_screenshot",
-                vec![KeyCode::control(), KeyCode::KeyP],
-            );
+        app.add_action(
+            "phichain.take_screenshot",
+            take_screenshot_system,
+            Some(Hotkey::new(KeyCode::KeyP, vec![Modifier::Control])),
+        );
     }
 }
 

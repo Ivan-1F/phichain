@@ -6,11 +6,27 @@ use crate::editing::command::event::CreateEvent;
 use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
+use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
+use crate::identifier::{Identifier, IntoIdentifier};
 use crate::schedule::EditorSet;
 use crate::selection::SelectedLine;
 use crate::timeline::{TimelineContext, TimelineItem};
 use crate::utils::convert::BevyEguiConvert;
 use phichain_chart::event::{LineEvent, LineEventBundle, LineEventKind, LineEventValue};
+
+enum CreateEventHotkeys {
+    PlaceTransitionEvent,
+    PlaceConstantEvent,
+}
+
+impl IntoIdentifier for CreateEventHotkeys {
+    fn into_identifier(self) -> Identifier {
+        match self {
+            CreateEventHotkeys::PlaceTransitionEvent => "phichain.place_transition_event".into(),
+            CreateEventHotkeys::PlaceConstantEvent => "phichain.place_constant_event".into(),
+        }
+    }
+}
 
 pub struct CreateEventPlugin;
 
@@ -19,6 +35,14 @@ impl Plugin for CreateEventPlugin {
         app.add_systems(
             Update,
             (create_event_system, remove_pending_event_on_esc_system).in_set(EditorSet::Edit),
+        )
+        .add_hotkey(
+            CreateEventHotkeys::PlaceTransitionEvent,
+            Hotkey::new(KeyCode::KeyR, vec![]),
+        )
+        .add_hotkey(
+            CreateEventHotkeys::PlaceConstantEvent,
+            Hotkey::new(KeyCode::KeyQ, vec![]),
         );
     }
 }
@@ -26,7 +50,7 @@ impl Plugin for CreateEventPlugin {
 fn create_event_system(
     mut commands: Commands,
     ctx: TimelineContext,
-    keyboard: Res<ButtonInput<KeyCode>>,
+    hotkey: HotkeyContext,
 
     selected_line: Res<SelectedLine>,
 
@@ -73,9 +97,10 @@ fn create_event_system(
                 pending_event.kind = LineEventKind::try_from(track).expect("Unknown event track");
             }
 
-            if keyboard.just_pressed(KeyCode::KeyR) {
+            if hotkey.just_pressed(CreateEventHotkeys::PlaceTransitionEvent)
+                || hotkey.just_pressed(CreateEventHotkeys::PlaceConstantEvent)
+            {
                 if let Ok((pending_event, entity)) = pending_event_query.get_single() {
-                    // TODO: compat constant events
                     // inherit event's start & end value from neighbor events
                     let mut new_event = *pending_event;
                     let mut events = event_query.iter().collect::<Vec<_>>();
@@ -123,10 +148,17 @@ fn create_event_system(
                     let (track, beat) = calc_event_attrs();
                     let kind = LineEventKind::try_from(track).expect("Unknown event track");
                     commands.entity(line_entity).with_children(|parent| {
+                        let value = if hotkey.just_pressed(CreateEventHotkeys::PlaceTransitionEvent)
+                        {
+                            LineEventValue::transition(0.0, 0.0, Easing::Linear)
+                        } else {
+                            // hotkey.just_pressed(CreateEventHotkeys::PlaceConstantEvent)
+                            LineEventValue::constant(0.0)
+                        };
                         parent.spawn((
                             LineEventBundle::new(LineEvent {
                                 kind,
-                                value: LineEventValue::transition(0.0, 0.0, Easing::Linear),
+                                value,
                                 start_beat: beat,
                                 end_beat: beat + ctx.settings.minimum_beat(),
                             }),

@@ -6,6 +6,8 @@ use crate::audio::load_audio;
 use crate::editing::history::EditorHistory;
 use crate::exporter::phichain::PhichainExporter;
 use crate::exporter::Exporter;
+use crate::hotkey::modifier::Modifier;
+use crate::hotkey::Hotkey;
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::recent_projects::{PersistentRecentProjectsExt, RecentProject, RecentProjects};
 use bevy::ecs::system::SystemState;
@@ -34,12 +36,17 @@ impl Plugin for ProjectPlugin {
             .add_systems(Update, load_project_system.run_if(project_not_loaded()))
             .add_event::<UnloadProjectEvent>()
             .add_systems(PreUpdate, unload_project_system.run_if(project_loaded()))
-            .register_action("phichain.project.save", save_project_system)
-            .register_action(
-                "phichain.project.unload",
+            .add_action(
+                "phichain.save_project",
+                save_project_system,
+                Some(Hotkey::new(KeyCode::KeyS, vec![Modifier::Control])),
+            )
+            .add_action(
+                "phichain.close_project",
                 |mut events: EventWriter<UnloadProjectEvent>| {
                     events.send(UnloadProjectEvent);
                 },
+                Some(Hotkey::new(KeyCode::KeyW, vec![Modifier::Control])),
             );
     }
 }

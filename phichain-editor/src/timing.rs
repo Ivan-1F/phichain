@@ -4,7 +4,8 @@ use bevy_persistent::Persistent;
 use phichain_chart::bpm_list::BpmList;
 
 use crate::action::ActionRegistrationExt;
-use crate::hotkey::HotkeyRegistrationExt;
+use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
+use crate::identifier::{Identifier, IntoIdentifier};
 use crate::project::project_loaded;
 use crate::settings::EditorSettings;
 use crate::tab::timeline::TimelineViewport;
@@ -33,6 +34,20 @@ pub struct SeekEvent(pub f32);
 #[derive(Event, Default)]
 pub struct SeekToEvent(pub f32);
 
+pub enum TimingHotkeys {
+    Forward,
+    Backward,
+}
+
+impl IntoIdentifier for TimingHotkeys {
+    fn into_identifier(self) -> Identifier {
+        match self {
+            TimingHotkeys::Forward => "phichain.forward".into(),
+            TimingHotkeys::Backward => "phichain.backward".into(),
+        }
+    }
+}
+
 pub struct TimingPlugin;
 
 impl Plugin for TimingPlugin {
@@ -43,6 +58,14 @@ impl Plugin for TimingPlugin {
             .add_event::<ResumeEvent>()
             .add_event::<SeekEvent>()
             .add_event::<SeekToEvent>()
+            .add_hotkey(
+                TimingHotkeys::Backward,
+                Hotkey::new(KeyCode::BracketLeft, vec![]),
+            )
+            .add_hotkey(
+                TimingHotkeys::Forward,
+                Hotkey::new(KeyCode::BracketRight, vec![]),
+            )
             .add_systems(Update, progress_control_system.run_if(project_loaded()))
             .add_systems(
                 Update,
@@ -53,8 +76,11 @@ impl Plugin for TimingPlugin {
                 Update,
                 scroll_progress_control_system.run_if(project_loaded()),
             )
-            .register_action("phichain.toggle", toggle_system)
-            .register_hotkey("phichain.toggle", vec![KeyCode::Space]);
+            .add_action(
+                "phichain.pause_resume",
+                toggle_system,
+                Some(Hotkey::new(KeyCode::Space, vec![])),
+            );
     }
 }
 
@@ -71,14 +97,11 @@ fn toggle_system(
 }
 
 /// Use ArrowLeft and ArrowRight to control the progress
-fn progress_control_system(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut events: EventWriter<SeekEvent>,
-) {
-    if keyboard.pressed(KeyCode::BracketLeft) {
+fn progress_control_system(hotkey: HotkeyContext, mut events: EventWriter<SeekEvent>) {
+    if hotkey.pressed(TimingHotkeys::Backward) {
         events.send(SeekEvent(-0.02));
     }
-    if keyboard.pressed(KeyCode::BracketRight) {
+    if hotkey.pressed(TimingHotkeys::Forward) {
         events.send(SeekEvent(0.02));
     }
 }

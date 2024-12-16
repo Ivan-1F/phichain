@@ -8,6 +8,16 @@ use std::str::FromStr;
 #[derive(Deref, Hash, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct Identifier(SmallVec<[String; 6]>);
 
+pub trait IntoIdentifier {
+    fn into_identifier(self) -> Identifier;
+}
+
+impl IntoIdentifier for Identifier {
+    fn into_identifier(self) -> Identifier {
+        self
+    }
+}
+
 impl Display for Identifier {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.0.join("."))

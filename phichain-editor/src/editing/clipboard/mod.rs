@@ -1,12 +1,12 @@
 use crate::action::ActionRegistrationExt;
-use crate::editing::command::event::CreateEvent;
-use crate::editing::command::note::CreateNote;
+use crate::editing::command::event::{CreateEvent, RemoveEvent};
+use crate::editing::command::note::{CreateNote, RemoveNote};
 use crate::editing::command::{CommandSequence, EditorCommand};
 use crate::editing::DoCommandEvent;
-use crate::hotkey::HotkeyRegistrationExt;
+use crate::hotkey::modifier::Modifier;
+use crate::hotkey::Hotkey;
 use crate::selection::{Selected, SelectedLine};
 use crate::timeline::TimelineContext;
-use crate::utils::compat::ControlKeyExt;
 use crate::utils::convert::BevyEguiConvert;
 use bevy::prelude::*;
 use phichain_chart::bpm_list::BpmList;
@@ -31,10 +31,21 @@ pub struct ClipboardPlugin;
 impl Plugin for ClipboardPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<EditorClipboard>()
-            .register_action("phichain.copy", copy_system)
-            .register_hotkey("phichain.copy", vec![KeyCode::control(), KeyCode::KeyC])
-            .register_action("phichain.paste", paste_system)
-            .register_hotkey("phichain.paste", vec![KeyCode::control(), KeyCode::KeyV]);
+            .add_action(
+                "phichain.copy",
+                copy_system,
+                Some(Hotkey::new(KeyCode::KeyC, vec![Modifier::Control])),
+            )
+            .add_action(
+                "phichain.cut",
+                cut_system,
+                Some(Hotkey::new(KeyCode::KeyX, vec![Modifier::Control])),
+            )
+            .add_action(
+                "phichain.paste",
+                paste_system,
+                Some(Hotkey::new(KeyCode::KeyV, vec![Modifier::Control])),
+            );
     }
 }
 
@@ -55,6 +66,35 @@ fn copy_system(
             clipboard.events.push(*event);
         }
     }
+}
+
+fn cut_system(
+    mut clipboard: ResMut<EditorClipboard>,
+
+    note_query: Query<&Note>,
+    event_query: Query<&LineEvent>,
+
+    selected_query: Query<Entity, With<Selected>>,
+
+    mut event_writer: EventWriter<DoCommandEvent>,
+) {
+    clipboard.clear();
+
+    let mut commands = vec![];
+
+    for entity in &selected_query {
+        if let Ok(note) = note_query.get(entity) {
+            clipboard.notes.push(*note);
+            commands.push(EditorCommand::RemoveNote(RemoveNote::new(entity)));
+        } else if let Ok(event) = event_query.get(entity) {
+            clipboard.events.push(*event);
+            commands.push(EditorCommand::RemoveEvent(RemoveEvent::new(entity)));
+        }
+    }
+
+    event_writer.send(DoCommandEvent(EditorCommand::CommandSequence(
+        CommandSequence(commands),
+    )));
 }
 
 fn paste_system(
