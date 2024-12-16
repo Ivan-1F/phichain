@@ -425,6 +425,10 @@ pub fn despawn_hold_component_system(
     for (parent, entity) in &component_query {
         let note = query.get(parent.get());
         if note.is_err() || note.is_ok_and(|n| !n.kind.is_hold()) {
+            // despawning children does not remove references for parent
+            // https://github.com/bevyengine/bevy/issues/12235
+            commands.entity(parent.get()).remove_children(&[entity]);
+
             commands.entity(entity).despawn();
         }
     }
