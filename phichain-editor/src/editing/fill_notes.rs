@@ -50,7 +50,8 @@ impl FillingNotes {
 /// Generate a note sequence from a note to another note with a [`FillingNotes`] option
 pub fn generate_notes(from: Note, to: Note, options: &FillingNotes) -> Vec<Note> {
     let delta = beat!(1, options.density);
-    let beats = iter::range_step(from.beat, to.beat, delta).collect::<Vec<_>>();
+    let beats =
+        iter::range_step(from.beat.min(to.beat), from.beat.max(to.beat), delta).collect::<Vec<_>>();
 
     beats
         .iter()
