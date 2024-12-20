@@ -5,7 +5,7 @@ use strum::IntoEnumIterator;
 
 pub struct EasingGraph<'a> {
     value: &'a mut Easing,
-    reverse: bool,
+    inverse: bool,
     mirror: bool,
 }
 
@@ -13,13 +13,13 @@ impl<'a> EasingGraph<'a> {
     pub fn new(value: &'a mut Easing) -> Self {
         Self {
             value,
-            reverse: false,
+            inverse: false,
             mirror: false,
         }
     }
 
-    pub fn reverse(mut self, reverse: bool) -> Self {
-        self.reverse = reverse;
+    pub fn inverse(mut self, reverse: bool) -> Self {
+        self.inverse = reverse;
         self
     }
 
@@ -38,7 +38,7 @@ impl Widget for EasingGraph<'_> {
             Sense::hover(),
         );
 
-        draw_easing(ui, response.rect, *self.value, self.reverse, self.mirror);
+        draw_easing(ui, response.rect, *self.value, self.inverse, self.mirror);
 
         let to_screen = emath::RectTransform::from_to(
             Rect::from_min_size(Pos2::ZERO, Vec2::new(1.0, 1.0)),

@@ -295,7 +295,7 @@ impl Timeline for NoteTimeline {
                     ui.put(
                         rect,
                         EasingGraph::new(&mut filling.easing)
-                            .reverse(true)
+                            .inverse(true)
                             .mirror(from.x > to.x),
                     );
 
