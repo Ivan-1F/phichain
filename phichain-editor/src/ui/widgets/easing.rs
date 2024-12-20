@@ -5,11 +5,27 @@ use strum::IntoEnumIterator;
 
 pub struct EasingGraph<'a> {
     value: &'a mut Easing,
+    reverse: bool,
+    mirror: bool,
 }
 
 impl<'a> EasingGraph<'a> {
     pub fn new(value: &'a mut Easing) -> Self {
-        Self { value }
+        Self {
+            value,
+            reverse: false,
+            mirror: false,
+        }
+    }
+
+    pub fn reverse(mut self, reverse: bool) -> Self {
+        self.reverse = reverse;
+        self
+    }
+
+    pub fn mirror(mut self, mirror: bool) -> Self {
+        self.mirror = mirror;
+        self
     }
 }
 
@@ -22,7 +38,7 @@ impl Widget for EasingGraph<'_> {
             Sense::hover(),
         );
 
-        draw_easing(ui, response.rect, *self.value);
+        draw_easing(ui, response.rect, *self.value, self.reverse, self.mirror);
 
         let to_screen = emath::RectTransform::from_to(
             Rect::from_min_size(Pos2::ZERO, Vec2::new(1.0, 1.0)),
@@ -132,7 +148,7 @@ impl<'a> EasingValue<'a> {
 }
 
 /// Draw a easing curve with a [`Ui`] on the given [`Rect`]
-pub fn draw_easing(ui: &mut Ui, rect: Rect, easing: Easing) {
+pub fn draw_easing(ui: &mut Ui, rect: Rect, easing: Easing, reverse: bool, mirror: bool) {
     let painter = ui.painter_at(rect);
     let to_screen =
         emath::RectTransform::from_to(Rect::from_min_size(Pos2::ZERO, Vec2::new(1.0, 1.0)), rect);
@@ -142,7 +158,17 @@ pub fn draw_easing(ui: &mut Ui, rect: Rect, easing: Easing) {
         .enumerate()
         .map(|(i, _)| {
             let x = i as f32 / 40.0;
-            Pos2::new(x, 1.0 - easing.ease(x))
+            if reverse {
+                if mirror {
+                    Pos2::new(1.0 - easing.ease(1.0 - x), x)
+                } else {
+                    Pos2::new(easing.ease(1.0 - x), x)
+                }
+            } else if mirror {
+                Pos2::new(x, easing.ease(x))
+            } else {
+                Pos2::new(x, 1.0 - easing.ease(x))
+            }
         })
         .map(|x| to_screen * x)
         .collect();

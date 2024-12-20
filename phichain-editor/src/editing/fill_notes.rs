@@ -49,27 +49,44 @@ impl FillingNotes {
 
 /// Generate a note sequence from a note to another note with a [`FillingNotes`] option
 pub fn generate_notes(from: Note, to: Note, options: &FillingNotes) -> Vec<Note> {
-    let delta = beat!(1, options.density);
-    let beats =
-        iter::range_step(from.beat.min(to.beat), from.beat.max(to.beat), delta).collect::<Vec<_>>();
+    // make sure from.beat < to.beat
+    let (from, to) = if from.beat < to.beat {
+        (from, to)
+    } else {
+        (to, from)
+    };
 
-    beats
+    let mirror = from.x > to.x;
+
+    let beats = iter::range_step(
+        from.beat.min(to.beat),
+        from.beat.max(to.beat),
+        beat!(1, options.density),
+    )
+    .collect::<Vec<_>>();
+    let notes = beats
         .iter()
         .enumerate()
         .map(|(i, beat)| {
-            let y = i as f32 / beats.len() as f32;
-            let x = options.easing.inverse(y).unwrap();
+            let x = i as f32 / beats.len() as f32;
+            let y = if mirror {
+                1.0 - options.easing.ease(x)
+            } else {
+                options.easing.ease(x)
+            };
 
             Note::new(
                 options.kind,
                 true,
                 *beat,
-                (from.x - to.x).abs() * x + from.x.min(to.x),
+                (from.x - to.x).abs() * y + from.x.min(to.x),
                 1.0,
             )
         })
         .skip(1)
-        .collect()
+        .collect::<Vec<_>>();
+
+    notes
 }
 
 pub struct FillingNotesPlugin;

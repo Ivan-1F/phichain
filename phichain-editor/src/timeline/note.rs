@@ -281,12 +281,23 @@ impl Timeline for NoteTimeline {
                     note_query.get(from).map(|x| x.0),
                     note_query.get(to).map(|x| x.0),
                 ) {
+                    let (from, to) = if from.beat < to.beat {
+                        (from, to)
+                    } else {
+                        (to, from)
+                    };
+
                     let from_x = viewport.min.x + (from.x / CANVAS_WIDTH + 0.5) * viewport.width();
                     let from_y = ctx.time_to_y(bpm_list.time_at(from.beat));
                     let to_x = viewport.min.x + (to.x / CANVAS_WIDTH + 0.5) * viewport.width();
                     let to_y = ctx.time_to_y(bpm_list.time_at(to.beat));
                     let rect = Rect::from_two_pos(Pos2::new(from_x, from_y), Pos2::new(to_x, to_y));
-                    ui.put(rect, EasingGraph::new(&mut filling.easing));
+                    ui.put(
+                        rect,
+                        EasingGraph::new(&mut filling.easing)
+                            .reverse(true)
+                            .mirror(from.x > to.x),
+                    );
 
                     for note in generate_notes(*from, *to, &filling) {
                         render_note!(note: note, highlighted: false, fake: true, tint: Color32::WHITE);
