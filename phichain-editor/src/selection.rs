@@ -12,6 +12,9 @@ pub struct SelectedLine(pub Entity);
 #[derive(Component, Debug)]
 pub struct Selected;
 
+#[derive(Component, Debug)]
+pub struct CanNotBeSelected;
+
 /// Select a vec of [Entity] in the world
 #[derive(Event)]
 pub struct SelectEvent(pub Vec<Entity>);
@@ -31,6 +34,7 @@ pub fn handle_select_event(
 
     keyboard: Res<ButtonInput<KeyCode>>,
 
+    can_not_be_selected_query: Query<&CanNotBeSelected>,
     pending_query: Query<&Pending>,
 
     selected_notes_and_events_query: Query<
@@ -47,6 +51,9 @@ pub fn handle_select_event(
         }
 
         for entity in &event.0 {
+            if can_not_be_selected_query.get(*entity).is_ok() {
+                continue;
+            }
             // pending entities cannot be selected
             if pending_query.get(*entity).is_ok() {
                 continue;

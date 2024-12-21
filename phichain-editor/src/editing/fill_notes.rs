@@ -1,6 +1,7 @@
 use crate::editing::command::note::CreateNote;
 use crate::editing::command::{CommandSequence, EditorCommand};
 use crate::editing::DoCommandEvent;
+use crate::selection::CanNotBeSelected;
 use bevy::prelude::*;
 use num::iter;
 use phichain_chart::beat;
@@ -149,7 +150,7 @@ fn update_filling_notes_system(
                     }
                     commands.entity(from.1.get()).with_children(|p| {
                         for note in notes {
-                            p.spawn((NoteBundle::new(note), CurveNote(entity)));
+                            p.spawn((NoteBundle::new(note), CurveNote(entity), CanNotBeSelected));
                         }
                     });
                 }
