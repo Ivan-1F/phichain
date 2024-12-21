@@ -1,5 +1,5 @@
 use super::GameCamera;
-use crate::editing::fill_notes::CurveNote;
+use crate::editing::curve_note_track::CurveNote;
 use crate::editing::pending::Pending;
 use crate::project::project_loaded;
 use crate::selection::{Selected, SelectedLine};

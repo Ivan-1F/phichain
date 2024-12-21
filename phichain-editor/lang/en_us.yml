@@ -17,10 +17,9 @@ tab:
     title: Timeline
   inspector:
     title: Inspector
-    filling_notes:
-      start: Filling Curve Notes from Here
+    curve_note_track:
+      start: Start Curve Note Track from Here
       removed: A curve note track has been removed as it did not contain any notes
-      title: 'Filling Curve Notes:'
       instructions:
         confirm: Confirm the options and click 'Fill' to proceed or 'Cancel' to cancel
         select_destination: Please select the destination
@@ -29,8 +28,6 @@ tab:
       density: Density
       kind: Kind
       curve: Curve
-      cancel: Cancel
-      fill: Fill
     single_note:
       x: X
       beat: Beat

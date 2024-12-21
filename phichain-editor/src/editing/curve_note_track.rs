@@ -1,6 +1,3 @@
-use crate::editing::command::note::CreateNote;
-use crate::editing::command::{CommandSequence, EditorCommand};
-use crate::editing::DoCommandEvent;
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::selection::Selected;
 use bevy::prelude::*;
@@ -10,9 +7,8 @@ use phichain_chart::easing::Easing;
 use phichain_chart::note::{Note, NoteBundle, NoteKind};
 use phichain_game::GameSet;
 
-/// A pending filling notes task
 #[derive(Debug, Clone, Component)]
-pub struct FillingNotes {
+pub struct CurveNoteTrack {
     pub from: Option<Entity>,
     pub to: Option<Entity>,
 
@@ -21,7 +17,7 @@ pub struct FillingNotes {
     pub kind: NoteKind,
 }
 
-impl FillingNotes {
+impl CurveNoteTrack {
     pub fn from(entity: Entity) -> Self {
         Self {
             from: Some(entity),
@@ -49,8 +45,8 @@ impl FillingNotes {
     }
 }
 
-/// Generate a note sequence from a note to another note with a [`FillingNotes`] option
-pub fn generate_notes(from: Note, to: Note, options: &FillingNotes) -> Vec<Note> {
+/// Generate a note sequence from a note to another note with a [`CurveNoteTrack`] option
+pub fn generate_notes(from: Note, to: Note, options: &CurveNoteTrack) -> Vec<Note> {
     // make sure from.beat < to.beat
     let (from, to) = if from.beat < to.beat {
         (from, to)
@@ -91,21 +87,11 @@ pub fn generate_notes(from: Note, to: Note, options: &FillingNotes) -> Vec<Note>
     notes
 }
 
-pub struct FillingNotesPlugin;
+pub struct CurveNoteTrackPlugin;
 
-impl Plugin for FillingNotesPlugin {
+impl Plugin for CurveNoteTrackPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<CancelFillEvent>()
-            .add_event::<ConfirmFillEvent>()
-            .add_systems(
-                Update,
-                (
-                    handle_cancel_fill_event_system,
-                    handle_confirm_fill_event_system,
-                    update_filling_notes_system,
-                )
-                    .in_set(GameSet),
-            );
+        app.add_systems(Update, update_curve_note_track_system.in_set(GameSet));
     }
 }
 
@@ -115,12 +101,12 @@ struct CurveNoteCache(Vec<Note>);
 #[derive(Component)]
 pub struct CurveNote(pub Entity);
 
-fn update_filling_notes_system(
+fn update_curve_note_track_system(
     mut commands: Commands,
     note_query: Query<(&Note, &Parent)>,
     query: Query<(&CurveNote, Entity)>,
-    mut filling_query: Query<(
-        &FillingNotes,
+    mut track_query: Query<(
+        &CurveNoteTrack,
         Option<&mut CurveNoteCache>,
         Option<&Selected>,
         Entity,
@@ -128,13 +114,13 @@ fn update_filling_notes_system(
 
     mut toasts: ResMut<ToastsStorage>,
 ) {
-    for (filling, cache, selected, entity) in &mut filling_query {
-        if let Some((from, to)) = filling.get_entities() {
+    for (track, cache, selected, entity) in &mut track_query {
+        if let Some((from, to)) = track.get_entities() {
             if let (Ok(from), Ok(to)) = (note_query.get(from), note_query.get(to)) {
-                let notes = generate_notes(*from.0, *to.0, filling);
+                let notes = generate_notes(*from.0, *to.0, track);
 
                 // if the curve evaluates to zero notes and is not selected,
-                // despawn all existing `CurveNote` objects associated with it, and despawn the `FillingNotes` itself
+                // despawn all existing `CurveNote` objects associated with it, and despawn the `CurveNoteTrack` itself
                 if notes.is_empty() && selected.is_none() {
                     for (note, note_entity) in &query {
                         if note.0 == entity {
@@ -143,7 +129,7 @@ fn update_filling_notes_system(
                     }
                     commands.entity(entity).despawn();
 
-                    toasts.info(t!("tab.inspector.filling_notes.removed")); // TODO: this should not be under `tab.inspector`
+                    toasts.info(t!("tab.inspector.curve_note_track.removed")); // TODO: this should not be under `tab.inspector`
 
                     continue;
                 }
@@ -178,76 +164,6 @@ fn update_filling_notes_system(
                     });
                 }
             }
-        }
-    }
-}
-
-#[derive(Debug, Default, Event)]
-pub struct CancelFillEvent;
-
-#[derive(Debug, Default, Event)]
-pub struct ConfirmFillEvent;
-
-fn handle_cancel_fill_event_system(
-    mut commands: Commands,
-    mut events: EventReader<CancelFillEvent>,
-    query: Query<Entity, With<FillingNotes>>,
-) {
-    for _ in events.read() {
-        if let Ok(entity) = query.get_single() {
-            commands.entity(entity).despawn();
-        } else {
-            warn!("received `CancelFillEvent` when no `FillingNotes` present in the world");
-        }
-    }
-}
-
-fn handle_confirm_fill_event_system(
-    mut commands: Commands,
-    mut events: EventReader<ConfirmFillEvent>,
-    query: Query<(&FillingNotes, Entity)>,
-    note_query: Query<(&Note, &Parent)>,
-    mut do_command: EventWriter<DoCommandEvent>,
-) {
-    for _ in events.read() {
-        if let Ok((filling, entity)) = query.get_single() {
-            let Some(from) = filling.from else {
-                warn!("received `ConfirmFillEvent` when no an active `FillingNotes` is not complete: missing `from`");
-                return;
-            };
-            let Some(to) = filling.to else {
-                warn!("received `ConfirmFillEvent` when no an active `FillingNotes` is not complete: missing `to`");
-                return;
-            };
-            let Ok((from, from_parent)) = note_query.get(from) else {
-                warn!("received `ConfirmFillEvent` when no an active `FillingNotes` is not valid: `from` is not valid");
-                return;
-            };
-            let Ok((to, to_parent)) = note_query.get(to) else {
-                warn!("received `ConfirmFillEvent` when no an active `FillingNotes` is not valid: `to` is not valid");
-                return;
-            };
-
-            if from_parent.get() != to_parent.get() {
-                warn!("received `ConfirmFillEvent` when no an active `FillingNotes` is not valid: parent lines of `from` and `to` are not identical");
-                return;
-            }
-
-            let notes = generate_notes(*from, *to, filling);
-
-            let create_note_commands: Vec<_> = notes
-                .iter()
-                .copied()
-                .map(|note| EditorCommand::CreateNote(CreateNote::new(from_parent.get(), note)))
-                .collect();
-
-            do_command.send(DoCommandEvent(EditorCommand::CommandSequence(
-                CommandSequence(create_note_commands),
-            )));
-
-            commands.entity(entity).despawn();
-        } else {
-            warn!("received `ConfirmFillEvent` when no `FillingNotes` present in the world");
         }
     }
 }

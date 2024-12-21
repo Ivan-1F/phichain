@@ -3,8 +3,8 @@ use crate::editing::clipboard::ClipboardPlugin;
 use crate::editing::command::EditorCommand;
 use crate::editing::create_event::CreateEventPlugin;
 use crate::editing::create_note::CreateNotePlugin;
+use crate::editing::curve_note_track::CurveNoteTrackPlugin;
 use crate::editing::delete_selected::DeleteSelectedPlugin;
-use crate::editing::fill_notes::FillingNotesPlugin;
 use crate::editing::history::EditorHistory;
 use crate::editing::move_event::MoveEventPlugin;
 use crate::editing::move_note::MoveNotePlugin;
@@ -18,8 +18,8 @@ mod clipboard;
 pub mod command;
 mod create_event;
 mod create_note;
+pub mod curve_note_track;
 mod delete_selected;
-pub mod fill_notes;
 pub mod history;
 mod move_event;
 mod move_note;
@@ -36,7 +36,7 @@ impl Plugin for EditingPlugin {
             .add_plugins(CreateEventPlugin)
             .add_plugins(MoveNotePlugin)
             .add_plugins(MoveEventPlugin)
-            .add_plugins(FillingNotesPlugin)
+            .add_plugins(CurveNoteTrackPlugin)
             .add_plugins(ClipboardPlugin)
             .add_systems(Update, handle_edit_command.in_set(EditorSet::Edit))
             .add_action(

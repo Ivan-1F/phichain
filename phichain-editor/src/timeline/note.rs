@@ -1,6 +1,6 @@
 use crate::editing::command::note::EditNote;
 use crate::editing::command::EditorCommand;
-use crate::editing::fill_notes::{CurveNote, FillingNotes};
+use crate::editing::curve_note_track::{CurveNote, CurveNoteTrack};
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
 use crate::selection::{SelectEvent, Selected, SelectedLine};
@@ -55,7 +55,7 @@ impl Timeline for NoteTimeline {
                 Option<&Pending>,
             )>,
             Query<&Selected>,
-            Query<(&mut FillingNotes, Entity)>,
+            Query<(&mut CurveNoteTrack, Entity)>,
             Res<BpmList>,
             Res<ImageAssets>,
             Res<Assets<Image>>,
@@ -68,7 +68,7 @@ impl Timeline for NoteTimeline {
             ctx,
             mut note_query,
             selected_query,
-            mut filling_notes_query,
+            mut track_query,
             bpm_list,
             assets,
             images,
@@ -156,7 +156,7 @@ impl Timeline for NoteTimeline {
             }};
         }
 
-        let mut start_filling_note = None::<Entity>;
+        let mut start_track_note = None::<Entity>;
 
         for (mut note, parent, entity, highlighted, selected, curve_note, pending) in notes {
             if !ctx.settings.note_side_filter.filter(*note) {
@@ -186,10 +186,10 @@ impl Timeline for NoteTimeline {
 
             response.context_menu(|ui| {
                 if ui
-                    .button(t!("tab.inspector.filling_notes.start")) // TODO: this should not be under `tab.inspector`
+                    .button(t!("tab.inspector.curve_note_track.start")) // TODO: this should not be under `tab.inspector`
                     .clicked()
                 {
-                    start_filling_note.replace(entity);
+                    start_track_note.replace(entity);
                     ui.close_menu();
                 }
             });
@@ -256,12 +256,10 @@ impl Timeline for NoteTimeline {
             if response.clicked() {
                 let mut handled = false;
 
-                for (mut filling, filling_entity) in &mut filling_notes_query {
-                    if selected_query.get(filling_entity).is_ok()
-                        && filling.get_entities().is_none()
-                    {
-                        // this filling is selected and not completed
-                        filling.to(entity);
+                for (mut track, track_entity) in &mut track_query {
+                    if selected_query.get(track_entity).is_ok() && track.get_entities().is_none() {
+                        // this track is selected and not completed
+                        track.to(entity);
                         handled = true;
                     }
                 }
@@ -290,8 +288,8 @@ impl Timeline for NoteTimeline {
             );
         }
 
-        for (mut filling, _) in &mut filling_notes_query {
-            if let Some((from, to)) = filling.get_entities() {
+        for (mut track, _) in &mut track_query {
+            if let Some((from, to)) = track.get_entities() {
                 if let (Ok(from), Ok(to)) = (
                     note_query.get(from).map(|x| x.0),
                     note_query.get(to).map(|x| x.0),
@@ -309,7 +307,7 @@ impl Timeline for NoteTimeline {
                     let rect = Rect::from_two_pos(Pos2::new(from_x, from_y), Pos2::new(to_x, to_y));
                     ui.put(
                         rect,
-                        EasingGraph::new(&mut filling.easing)
+                        EasingGraph::new(&mut track.easing)
                             .inverse(true)
                             .mirror(from.x > to.x),
                     );
@@ -317,8 +315,8 @@ impl Timeline for NoteTimeline {
             }
         }
 
-        if let Some(entity) = start_filling_note {
-            let id = world.spawn(FillingNotes::from(entity)).id();
+        if let Some(entity) = start_track_note {
+            let id = world.spawn(CurveNoteTrack::from(entity)).id();
             world.send_event(SelectEvent(vec![id])); // TODO: make this always unselect everything
         }
     }

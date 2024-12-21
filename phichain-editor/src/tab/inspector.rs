@@ -1,7 +1,7 @@
 use crate::editing::command::event::EditEvent;
 use crate::editing::command::note::EditNote;
 use crate::editing::command::{CommandSequence, EditorCommand};
-use crate::editing::fill_notes::FillingNotes;
+use crate::editing::curve_note_track::CurveNoteTrack;
 use crate::editing::DoCommandEvent;
 use crate::selection::{Selected, SelectedLine};
 use crate::ui::latch;
@@ -24,10 +24,10 @@ pub fn inspector_ui_system(
     mut line_query: Query<&mut Line>,
     event_writer: EventWriter<DoCommandEvent>,
 
-    mut selected_curve_note: Query<&mut FillingNotes, With<Selected>>,
+    mut selected_track: Query<&mut CurveNoteTrack, With<Selected>>,
 ) {
-    if let Ok(mut filling) = selected_curve_note.get_single_mut() {
-        filling_notes_inspector(&mut ui, &mut filling);
+    if let Ok(mut track) = selected_track.get_single_mut() {
+        curve_note_track_inspector(&mut ui, &mut track);
         return;
     }
 
@@ -48,28 +48,29 @@ pub fn inspector_ui_system(
     }
 }
 
-fn filling_notes_inspector(ui: &mut Ui, filling: &mut FillingNotes) {
-    ui.label(t!("tab.inspector.filling_notes.title"));
-    match (filling.from.is_some(), filling.to.is_some()) {
+fn curve_note_track_inspector(ui: &mut Ui, track: &mut CurveNoteTrack) {
+    match (track.from.is_some(), track.to.is_some()) {
         (true, true) => {}
         (true, false) => {
             ui.label(
                 RichText::new(t!(
-                    "tab.inspector.filling_notes.instructions.select_destination"
+                    "tab.inspector.curve_note_track.instructions.select_destination"
                 ))
                 .color(Color32::RED),
             );
         }
         (false, true) => {
             ui.label(
-                RichText::new(t!("tab.inspector.filling_notes.instructions.select_origin"))
-                    .color(Color32::RED),
+                RichText::new(t!(
+                    "tab.inspector.curve_note_track.instructions.select_origin"
+                ))
+                .color(Color32::RED),
             );
         }
         (false, false) => {
             ui.label(
                 RichText::new(t!(
-                    "tab.inspector.filling_notes.instructions.select_origin_destination"
+                    "tab.inspector.curve_note_track.instructions.select_origin_destination"
                 ))
                 .color(Color32::RED),
             );
@@ -77,8 +78,8 @@ fn filling_notes_inspector(ui: &mut Ui, filling: &mut FillingNotes) {
     }
     ui.separator();
 
-    ui.label(format!("From: {:?}", filling.from));
-    ui.label(format!("To: {:?}", filling.to));
+    ui.label(format!("From: {:?}", track.from));
+    ui.label(format!("To: {:?}", track.to));
 
     ui.separator();
 
@@ -87,25 +88,25 @@ fn filling_notes_inspector(ui: &mut Ui, filling: &mut FillingNotes) {
         .spacing([20.0, 2.0])
         .striped(true)
         .show(ui, |ui| {
-            ui.label(t!("tab.inspector.filling_notes.density"));
+            ui.label(t!("tab.inspector.curve_note_track.density"));
             ui.add(
-                DragValue::new(&mut filling.density)
+                DragValue::new(&mut track.density)
                     .clamp_range(1..=32)
                     .speed(1),
             );
             ui.end_row();
 
-            ui.label(t!("tab.inspector.filling_notes.kind"));
+            ui.label(t!("tab.inspector.curve_note_track.kind"));
             ui.horizontal(|ui| {
-                ui.selectable_value(&mut filling.kind, NoteKind::Tap, "Tap");
-                ui.selectable_value(&mut filling.kind, NoteKind::Drag, "Drag");
-                ui.selectable_value(&mut filling.kind, NoteKind::Flick, "Flick");
+                ui.selectable_value(&mut track.kind, NoteKind::Tap, "Tap");
+                ui.selectable_value(&mut track.kind, NoteKind::Drag, "Drag");
+                ui.selectable_value(&mut track.kind, NoteKind::Flick, "Flick");
             });
             ui.end_row();
 
-            ui.label(t!("tab.inspector.filling_notes.curve"));
+            ui.label(t!("tab.inspector.curve_note_track.curve"));
             ui.add(
-                EasingValue::new(&mut filling.easing)
+                EasingValue::new(&mut track.easing)
                     .show_graph(false)
                     .disabled_easings(vec![
                         Easing::EaseInBack,
@@ -123,23 +124,6 @@ fn filling_notes_inspector(ui: &mut Ui, filling: &mut FillingNotes) {
         });
 
     ui.separator();
-
-    // ui.columns(2, |column| {
-    //     if column[0]
-    //         .button(t!("tab.inspector.filling_notes.cancel"))
-    //         .clicked()
-    //     {
-    //         cancel.send_default();
-    //     }
-    //     if filling.from.is_some()
-    //         && filling.to.is_some()
-    //         && column[1]
-    //             .button(t!("tab.inspector.filling_notes.fill"))
-    //             .clicked()
-    //     {
-    //         confirm.send_default();
-    //     }
-    // });
 }
 
 fn single_event_inspector(
