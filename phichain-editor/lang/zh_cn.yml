@@ -19,6 +19,7 @@ tab:
     title: 检查器
     filling_notes:
       start: 从这里开始填充曲线音符
+      removed: 由于一条曲线音符轨迹没有包含任何音符，已将其移除
       title: '正在填充曲线音符:'
       instructions:
         select_destination: 请选择终点

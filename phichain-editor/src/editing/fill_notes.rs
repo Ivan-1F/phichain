@@ -1,7 +1,8 @@
 use crate::editing::command::note::CreateNote;
 use crate::editing::command::{CommandSequence, EditorCommand};
 use crate::editing::DoCommandEvent;
-use crate::selection::CanNotBeSelected;
+use crate::notification::{ToastsExt, ToastsStorage};
+use crate::selection::{CanNotBeSelected, Selected};
 use bevy::prelude::*;
 use num::iter;
 use phichain_chart::beat;
@@ -118,12 +119,34 @@ fn update_filling_notes_system(
     mut commands: Commands,
     note_query: Query<(&Note, &Parent)>,
     query: Query<(&CurveNote, Entity)>,
-    mut filling_query: Query<(&FillingNotes, Option<&mut CurveNoteCache>, Entity)>,
+    mut filling_query: Query<(
+        &FillingNotes,
+        Option<&mut CurveNoteCache>,
+        Option<&Selected>,
+        Entity,
+    )>,
+
+    mut toasts: ResMut<ToastsStorage>,
 ) {
-    for (filling, cache, entity) in &mut filling_query {
+    for (filling, cache, selected, entity) in &mut filling_query {
         if let Some((from, to)) = filling.get_entities() {
             if let (Ok(from), Ok(to)) = (note_query.get(from), note_query.get(to)) {
                 let notes = generate_notes(*from.0, *to.0, filling);
+
+                // if the curve evaluates to zero notes and is not selected,
+                // despawn all existing `CurveNote` objects associated with it, and despawn the `FillingNotes` itself
+                if notes.is_empty() && selected.is_none() {
+                    for (note, note_entity) in &query {
+                        if note.0 == entity {
+                            commands.entity(note_entity).despawn();
+                        }
+                    }
+                    commands.entity(entity).despawn();
+
+                    toasts.info(t!("tab.inspector.filling_notes.removed")); // TODO: this should not be under `tab.inspector`
+
+                    continue;
+                }
 
                 let update = match cache {
                     None => {
