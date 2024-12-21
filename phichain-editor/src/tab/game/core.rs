@@ -1,4 +1,5 @@
 use super::GameCamera;
+use crate::editing::fill_notes::CurveNote;
 use crate::editing::pending::Pending;
 use crate::project::project_loaded;
 use crate::selection::{Selected, SelectedLine};
@@ -51,11 +52,21 @@ fn zoom_scale_system(
 }
 
 fn update_note_tint_system(
-    mut query: Query<(&mut Sprite, Option<&Selected>, Option<&Pending>), With<Note>>,
+    mut query: Query<
+        (
+            &mut Sprite,
+            Option<&CurveNote>,
+            Option<&Selected>,
+            Option<&Pending>,
+        ),
+        With<Note>,
+    >,
 ) {
-    for (mut sprite, selected, pending) in &mut query {
+    for (mut sprite, curve_note, selected, pending) in &mut query {
         let tint = if selected.is_some() {
             Color::LIME_GREEN
+        } else if curve_note.is_some() {
+            Color::ORANGE
         } else {
             Color::WHITE
         };

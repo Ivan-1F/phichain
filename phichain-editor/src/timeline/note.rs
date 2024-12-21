@@ -1,6 +1,6 @@
 use crate::editing::command::note::EditNote;
 use crate::editing::command::EditorCommand;
-use crate::editing::fill_notes::{generate_notes, FillingNotes};
+use crate::editing::fill_notes::{generate_notes, CurveNote, FillingNotes};
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
 use crate::selection::{SelectEvent, Selected, SelectedLine};
@@ -51,6 +51,7 @@ impl Timeline for NoteTimeline {
                 Entity,
                 Option<&Highlighted>,
                 Option<&Selected>,
+                Option<&CurveNote>,
                 Option<&Pending>,
             )>,
             Query<&mut FillingNotes>,
@@ -155,7 +156,7 @@ impl Timeline for NoteTimeline {
 
         let mut start_filling_note = None::<Entity>;
 
-        for (mut note, parent, entity, highlighted, selected, pending) in notes {
+        for (mut note, parent, entity, highlighted, selected, curve_note, pending) in notes {
             if !ctx.settings.note_side_filter.filter(*note) {
                 continue;
             }
@@ -169,6 +170,9 @@ impl Timeline for NoteTimeline {
                 fake: pending.is_some(),
                 tint: if selected.is_some() {
                     Color32::LIGHT_GREEN
+                } else if curve_note.is_some() {
+                    let [r, g, b, a] = Color::ORANGE.as_rgba_u8();
+                    Color32::from_rgba_unmultiplied(r, g, b, a)
                 } else {
                     Color32::WHITE
                 }

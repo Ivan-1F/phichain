@@ -111,7 +111,7 @@ impl Plugin for FillingNotesPlugin {
 struct CurveNoteCache(Vec<Note>);
 
 #[derive(Component)]
-struct CurveNote(Entity);
+pub struct CurveNote(Entity);
 
 fn update_filling_notes_system(
     mut commands: Commands,
