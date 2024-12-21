@@ -2,7 +2,7 @@ use crate::editing::command::note::CreateNote;
 use crate::editing::command::{CommandSequence, EditorCommand};
 use crate::editing::DoCommandEvent;
 use crate::notification::{ToastsExt, ToastsStorage};
-use crate::selection::{CanNotBeSelected, Selected};
+use crate::selection::{Selected};
 use bevy::prelude::*;
 use num::iter;
 use phichain_chart::beat;
@@ -113,7 +113,7 @@ impl Plugin for FillingNotesPlugin {
 struct CurveNoteCache(Vec<Note>);
 
 #[derive(Component)]
-pub struct CurveNote(Entity);
+pub struct CurveNote(pub Entity);
 
 fn update_filling_notes_system(
     mut commands: Commands,
@@ -173,7 +173,7 @@ fn update_filling_notes_system(
                     }
                     commands.entity(from.1.get()).with_children(|p| {
                         for note in notes {
-                            p.spawn((NoteBundle::new(note), CurveNote(entity), CanNotBeSelected));
+                            p.spawn((NoteBundle::new(note), CurveNote(entity)));
                         }
                     });
                 }

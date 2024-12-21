@@ -1,7 +1,7 @@
 use crate::editing::command::event::EditEvent;
 use crate::editing::command::note::EditNote;
 use crate::editing::command::{CommandSequence, EditorCommand};
-use crate::editing::fill_notes::{CancelFillEvent, ConfirmFillEvent, FillingNotes};
+use crate::editing::fill_notes::FillingNotes;
 use crate::editing::DoCommandEvent;
 use crate::selection::{Selected, SelectedLine};
 use crate::ui::latch;
@@ -24,17 +24,10 @@ pub fn inspector_ui_system(
     mut line_query: Query<&mut Line>,
     event_writer: EventWriter<DoCommandEvent>,
 
-    mut filling_notes_query: Query<&mut FillingNotes>,
-    cancel_fill_event_writer: EventWriter<CancelFillEvent>,
-    confirm_fill_event_writer: EventWriter<ConfirmFillEvent>,
+    mut selected_curve_note: Query<&mut FillingNotes, With<Selected>>,
 ) {
-    if let Ok(mut filling) = filling_notes_query.get_single_mut() {
-        filling_notes_inspector(
-            &mut ui,
-            &mut filling,
-            cancel_fill_event_writer,
-            confirm_fill_event_writer,
-        );
+    if let Ok(mut filling) = selected_curve_note.get_single_mut() {
+        filling_notes_inspector(&mut ui, &mut filling);
         return;
     }
 
@@ -55,12 +48,7 @@ pub fn inspector_ui_system(
     }
 }
 
-fn filling_notes_inspector(
-    ui: &mut Ui,
-    filling: &mut FillingNotes,
-    mut cancel: EventWriter<CancelFillEvent>,
-    mut confirm: EventWriter<ConfirmFillEvent>,
-) {
+fn filling_notes_inspector(ui: &mut Ui, filling: &mut FillingNotes) {
     ui.label(t!("tab.inspector.filling_notes.title"));
     match (filling.from.is_some(), filling.to.is_some()) {
         (true, true) => {}
@@ -136,22 +124,22 @@ fn filling_notes_inspector(
 
     ui.separator();
 
-    ui.columns(2, |column| {
-        if column[0]
-            .button(t!("tab.inspector.filling_notes.cancel"))
-            .clicked()
-        {
-            cancel.send_default();
-        }
-        if filling.from.is_some()
-            && filling.to.is_some()
-            && column[1]
-                .button(t!("tab.inspector.filling_notes.fill"))
-                .clicked()
-        {
-            confirm.send_default();
-        }
-    });
+    // ui.columns(2, |column| {
+    //     if column[0]
+    //         .button(t!("tab.inspector.filling_notes.cancel"))
+    //         .clicked()
+    //     {
+    //         cancel.send_default();
+    //     }
+    //     if filling.from.is_some()
+    //         && filling.to.is_some()
+    //         && column[1]
+    //             .button(t!("tab.inspector.filling_notes.fill"))
+    //             .clicked()
+    //     {
+    //         confirm.send_default();
+    //     }
+    // });
 }
 
 fn single_event_inspector(

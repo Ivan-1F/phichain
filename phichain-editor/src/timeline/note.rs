@@ -7,6 +7,7 @@ use crate::selection::{SelectEvent, Selected, SelectedLine};
 use crate::tab::timeline::TimelineFilter;
 use crate::timeline::{Timeline, TimelineContext};
 use crate::ui::widgets::easing::EasingGraph;
+use bevy::ecs::query::QuerySingleError;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use bevy_egui::EguiUserTextures;
@@ -253,10 +254,13 @@ impl Timeline for NoteTimeline {
             }
 
             if response.clicked() {
-                if let Ok(mut filling) = filling_notes_query.get_single_mut() {
-                    filling.to(entity);
-                } else {
-                    select_events.send(SelectEvent(vec![entity]));
+                match filling_notes_query.get_single_mut() {
+                    Ok(mut filling) if filling.get_entities().is_none() => {
+                        filling.to(entity);
+                    }
+                    _ => {
+                        select_events.send(SelectEvent(vec![entity]));
+                    }
                 }
             }
         }
@@ -311,7 +315,7 @@ impl Timeline for NoteTimeline {
         }
 
         if let Some(entity) = start_filling_note {
-            world.spawn(FillingNotes::from(entity));
+            world.spawn((FillingNotes::from(entity), Selected));
         }
     }
 

@@ -1,10 +1,10 @@
+use crate::editing::fill_notes::CurveNote;
 use crate::editing::pending::Pending;
+use crate::project::project_loaded;
+use crate::utils::compat::ControlKeyExt;
 use bevy::prelude::*;
 use phichain_chart::event::LineEvent;
 use phichain_chart::note::Note;
-
-use crate::project::project_loaded;
-use crate::utils::compat::ControlKeyExt;
 
 #[derive(Resource)]
 pub struct SelectedLine(pub Entity);
@@ -34,24 +34,22 @@ pub fn handle_select_event(
 
     keyboard: Res<ButtonInput<KeyCode>>,
 
-    can_not_be_selected_query: Query<&CanNotBeSelected>,
+    curve_note_query: Query<&CurveNote>,
     pending_query: Query<&Pending>,
 
-    selected_notes_and_events_query: Query<
-        Entity,
-        (With<Selected>, Or<(With<Note>, With<LineEvent>)>),
-    >,
+    selected_query: Query<Entity, With<Selected>>,
 ) {
     for event in select_events.read() {
         if !keyboard.pressed(KeyCode::control()) {
-            // unselect all notes and events
-            for entity in &selected_notes_and_events_query {
+            // unselect everything
+            for entity in &selected_query {
                 commands.entity(entity).remove::<Selected>();
             }
         }
 
         for entity in &event.0 {
-            if can_not_be_selected_query.get(*entity).is_ok() {
+            if let Ok(curve_note) = curve_note_query.get(*entity) {
+                commands.entity(curve_note.0).insert(Selected);
                 continue;
             }
             // pending entities cannot be selected
