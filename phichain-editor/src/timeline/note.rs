@@ -288,7 +288,7 @@ impl Timeline for NoteTimeline {
             );
         }
 
-        for (mut track, _) in &mut track_query {
+        for (mut track, entity) in &mut track_query {
             if let Some((from, to)) = track.get_entities() {
                 if let (Ok(from), Ok(to)) = (
                     note_query.get(from).map(|x| x.0),
@@ -309,7 +309,11 @@ impl Timeline for NoteTimeline {
                         rect,
                         EasingGraph::new(&mut track.easing)
                             .inverse(true)
-                            .mirror(from.x > to.x),
+                            .mirror(from.x > to.x)
+                            .color(match selected_query.get(entity) {
+                                Ok(_) => Color32::LIGHT_GREEN,
+                                Err(_) => Color32::WHITE,
+                            }),
                     );
                 }
             }

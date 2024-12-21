@@ -7,6 +7,7 @@ pub struct EasingGraph<'a> {
     value: &'a mut Easing,
     inverse: bool,
     mirror: bool,
+    color: Color32,
 }
 
 impl<'a> EasingGraph<'a> {
@@ -15,6 +16,7 @@ impl<'a> EasingGraph<'a> {
             value,
             inverse: false,
             mirror: false,
+            color: Color32::WHITE,
         }
     }
 
@@ -25,6 +27,11 @@ impl<'a> EasingGraph<'a> {
 
     pub fn mirror(mut self, mirror: bool) -> Self {
         self.mirror = mirror;
+        self
+    }
+
+    pub fn color(mut self, color: Color32) -> Self {
+        self.color = color;
         self
     }
 }
@@ -38,7 +45,14 @@ impl Widget for EasingGraph<'_> {
             Sense::hover(),
         );
 
-        draw_easing(ui, response.rect, *self.value, self.inverse, self.mirror);
+        draw_easing(
+            ui,
+            response.rect,
+            *self.value,
+            self.inverse,
+            self.mirror,
+            self.color,
+        );
 
         let to_screen = emath::RectTransform::from_to(
             Rect::from_min_size(Pos2::ZERO, Vec2::new(1.0, 1.0)),
@@ -148,7 +162,14 @@ impl<'a> EasingValue<'a> {
 }
 
 /// Draw a easing curve with a [`Ui`] on the given [`Rect`]
-pub fn draw_easing(ui: &mut Ui, rect: Rect, easing: Easing, reverse: bool, mirror: bool) {
+pub fn draw_easing(
+    ui: &mut Ui,
+    rect: Rect,
+    easing: Easing,
+    reverse: bool,
+    mirror: bool,
+    color: Color32,
+) {
     let painter = ui.painter_at(rect);
     let to_screen =
         emath::RectTransform::from_to(Rect::from_min_size(Pos2::ZERO, Vec2::new(1.0, 1.0)), rect);
@@ -173,7 +194,7 @@ pub fn draw_easing(ui: &mut Ui, rect: Rect, easing: Easing, reverse: bool, mirro
         .map(|x| to_screen * x)
         .collect();
 
-    painter.add(PathShape::line(points, Stroke::new(2.0, Color32::WHITE)));
+    painter.add(PathShape::line(points, Stroke::new(2.0, color)));
 }
 
 impl Widget for EasingValue<'_> {
