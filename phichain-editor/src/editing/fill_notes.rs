@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use num::iter;
 use phichain_chart::beat;
 use phichain_chart::easing::Easing;
-use phichain_chart::note::{Note, NoteKind};
+use phichain_chart::note::{Note, NoteBundle, NoteKind};
 use phichain_game::GameSet;
 
 /// A pending filling notes task
@@ -100,9 +100,61 @@ impl Plugin for FillingNotesPlugin {
                 (
                     handle_cancel_fill_event_system,
                     handle_confirm_fill_event_system,
+                    update_filling_notes_system,
                 )
                     .in_set(GameSet),
             );
+    }
+}
+
+#[derive(Component)]
+struct CurveNoteCache(Vec<Note>);
+
+#[derive(Component)]
+struct CurveNote(Entity);
+
+fn update_filling_notes_system(
+    mut commands: Commands,
+    note_query: Query<(&Note, &Parent)>,
+    query: Query<(&CurveNote, Entity)>,
+    mut filling_query: Query<(&FillingNotes, Option<&mut CurveNoteCache>, Entity)>,
+) {
+    for (filling, cache, entity) in &mut filling_query {
+        if let Some((from, to)) = filling.get_entities() {
+            if let (Ok(from), Ok(to)) = (note_query.get(from), note_query.get(to)) {
+                let notes = generate_notes(*from.0, *to.0, filling);
+
+                let update = match cache {
+                    None => {
+                        commands
+                            .entity(entity)
+                            .insert(CurveNoteCache(notes.clone()));
+                        true
+                    }
+                    Some(mut cache) => {
+                        if cache.0 != notes {
+                            cache.0 = notes.clone();
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                };
+
+                if update {
+                    for (note, note_entity) in &query {
+                        if note.0 == entity {
+                            commands.entity(note_entity).despawn();
+                        }
+                    }
+                    commands.entity(from.1.get()).with_children(|p| {
+                        for note in notes {
+                            p.spawn((NoteBundle::new(note), CurveNote(entity)));
+                        }
+                    });
+                }
+            }
+        }
     }
 }
 
