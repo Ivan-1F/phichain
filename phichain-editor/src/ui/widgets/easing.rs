@@ -155,6 +155,7 @@ impl<'a> EasingValue<'a> {
         self
     }
 
+    #[allow(dead_code)]
     pub fn disabled_easings(mut self, disabled_easings: Vec<Easing>) -> Self {
         self.disabled_easings = disabled_easings;
         self

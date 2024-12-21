@@ -10,7 +10,6 @@ use crate::ui::widgets::easing::EasingValue;
 use bevy::prelude::*;
 use egui::{Align, Color32, DragValue, Layout, RichText, Ui};
 use phichain_chart::beat;
-use phichain_chart::easing::Easing;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use phichain_chart::line::Line;
 use phichain_chart::note::{Note, NoteKind};
@@ -105,21 +104,7 @@ fn curve_note_track_inspector(ui: &mut Ui, track: &mut CurveNoteTrack) {
             ui.end_row();
 
             ui.label(t!("tab.inspector.curve_note_track.curve"));
-            ui.add(
-                EasingValue::new(&mut track.easing)
-                    .show_graph(false)
-                    .disabled_easings(vec![
-                        Easing::EaseInBack,
-                        Easing::EaseOutBack,
-                        Easing::EaseInOutBack,
-                        Easing::EaseInElastic,
-                        Easing::EaseOutElastic,
-                        Easing::EaseInOutElastic,
-                        Easing::EaseInBounce,
-                        Easing::EaseOutBounce,
-                        Easing::EaseInOutBounce,
-                    ]),
-            );
+            ui.add(EasingValue::new(&mut track.easing).show_graph(false));
             ui.end_row();
         });
 
