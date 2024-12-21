@@ -2,7 +2,7 @@ use crate::editing::command::note::CreateNote;
 use crate::editing::command::{CommandSequence, EditorCommand};
 use crate::editing::DoCommandEvent;
 use crate::notification::{ToastsExt, ToastsStorage};
-use crate::selection::{Selected};
+use crate::selection::Selected;
 use bevy::prelude::*;
 use num::iter;
 use phichain_chart::beat;

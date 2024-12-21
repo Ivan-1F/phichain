@@ -3,17 +3,12 @@ use crate::editing::pending::Pending;
 use crate::project::project_loaded;
 use crate::utils::compat::ControlKeyExt;
 use bevy::prelude::*;
-use phichain_chart::event::LineEvent;
-use phichain_chart::note::Note;
 
 #[derive(Resource)]
 pub struct SelectedLine(pub Entity);
 
 #[derive(Component, Debug)]
 pub struct Selected;
-
-#[derive(Component, Debug)]
-pub struct CanNotBeSelected;
 
 /// Select a vec of [Entity] in the world
 #[derive(Event)]
