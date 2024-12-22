@@ -19,7 +19,10 @@ tab:
     title: Inspector
     curve_note_track:
       start: Start Curve Note Track from Here
-      removed: A curve note track has been removed as it did not contain any notes
+      removed:
+        incomplete: 'A curve note track has been removed: missing origin or destination'
+        invalid: 'A curve note track has been removed: invalid origin or destination'
+        empty: 'A curve note track has been removed: does not contain any notes'
       instructions:
         confirm: Confirm the options and click 'Fill' to proceed or 'Cancel' to cancel
         select_destination: Please select the destination

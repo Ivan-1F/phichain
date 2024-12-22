@@ -19,7 +19,10 @@ tab:
     title: 检查器
     curve_note_track:
       start: 从这里开始新建曲线音符轨迹
-      removed: 由于一条曲线音符轨迹没有包含任何音符，已将其移除
+      removed:
+        incomplete: 一条曲线音符轨迹被移除：缺失起点或终点
+        invalid: 一条曲线音符轨迹被移除：起点或终点无效
+        empty: 一条曲线音符轨迹被移除：没有包含任何音符
       instructions:
         select_destination: 请选择终点
         select_origin: 请选择起点

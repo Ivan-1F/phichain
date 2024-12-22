@@ -326,8 +326,8 @@ impl Timeline for NoteTimeline {
         }
 
         if let Some(entity) = start_track_note {
-            let id = world.spawn(CurveNoteTrack::from(entity)).id();
-            world.send_event(SelectEvent(vec![id])); // TODO: make this always unselect everything
+            world.spawn((CurveNoteTrack::from(entity), Selected));
+            // TODO: unselect everything
         }
     }
 

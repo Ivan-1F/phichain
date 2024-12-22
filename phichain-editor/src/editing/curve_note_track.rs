@@ -115,55 +115,71 @@ fn update_curve_note_track_system(
     mut toasts: ResMut<ToastsStorage>,
 ) {
     for (track, cache, selected, entity) in &mut track_query {
-        if let Some((from, to)) = track.get_entities() {
-            if let (Ok(from), Ok(to)) = (note_query.get(from), note_query.get(to)) {
-                let notes = generate_notes(*from.0, *to.0, track);
-
-                // if the curve evaluates to zero notes and is not selected,
-                // despawn all existing `CurveNote` objects associated with it, and despawn the `CurveNoteTrack` itself
-                if notes.is_empty() && selected.is_none() {
-                    for (note, note_entity) in &query {
-                        if note.0 == entity {
-                            commands.entity(note_entity).despawn();
-                        }
-                    }
-                    commands.entity(entity).despawn();
-
-                    toasts.info(t!("tab.inspector.curve_note_track.removed")); // TODO: this should not be under `tab.inspector`
-
-                    continue;
-                }
-
-                let update = match cache {
-                    None => {
-                        commands
-                            .entity(entity)
-                            .insert(CurveNoteCache(notes.clone()));
-                        true
-                    }
-                    Some(mut cache) => {
-                        if cache.0 != notes {
-                            cache.0 = notes.clone();
-                            true
-                        } else {
-                            false
-                        }
-                    }
-                };
-
-                if update {
-                    for (note, note_entity) in &query {
-                        if note.0 == entity {
-                            commands.entity(note_entity).despawn();
-                        }
-                    }
-                    commands.entity(from.1.get()).with_children(|p| {
-                        for note in notes {
-                            p.spawn((NoteBundle::new(note), CurveNote(entity)));
-                        }
-                    });
+        let mut despawn_invalid_track = |message: &str| {
+            // despawn all existing `CurveNote` objects associated with it, and despawn the `CurveNoteTrack` itself
+            for (note, note_entity) in &query {
+                if note.0 == entity {
+                    commands.entity(note_entity).despawn();
                 }
             }
+            commands.entity(entity).despawn();
+
+            toasts.info(t!(message));
+        };
+
+        let Some((from, to)) = track.get_entities() else {
+            // despawn unselected incomplete track
+            if selected.is_none() {
+                debug!("despawn unselected incomplete CNT");
+                despawn_invalid_track("tab.inspector.curve_note_track.removed.incomplete");
+            }
+            continue;
+        };
+
+        let (Ok(from), Ok(to)) = (note_query.get(from), note_query.get(to)) else {
+            // despawn invalid track
+            debug!("despawn invalid CNT");
+            despawn_invalid_track("tab.inspector.curve_note_track.removed.invalid");
+            continue;
+        };
+
+        let notes = generate_notes(*from.0, *to.0, track);
+
+        if notes.is_empty() && selected.is_none() {
+            // despawn unselected empty tracks
+            debug!("despawn unselected empty CNT");
+            despawn_invalid_track("tab.inspector.curve_note_track.removed.empty");
+            continue;
+        }
+
+        let update = match cache {
+            None => {
+                commands
+                    .entity(entity)
+                    .insert(CurveNoteCache(notes.clone()));
+                true
+            }
+            Some(mut cache) => {
+                if cache.0 != notes {
+                    cache.0 = notes.clone();
+                    true
+                } else {
+                    false
+                }
+            }
+        };
+
+        if update {
+            for (note, note_entity) in &query {
+                if note.0 == entity {
+                    commands.entity(note_entity).despawn();
+                }
+            }
+            commands.entity(from.1.get()).with_children(|p| {
+                for note in notes {
+                    p.spawn((NoteBundle::new(note), CurveNote(entity)));
+                }
+            });
         }
     }
 }
