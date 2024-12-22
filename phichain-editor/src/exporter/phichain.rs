@@ -4,9 +4,9 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::line::Line;
 use phichain_chart::offset::Offset;
 
-use phichain_chart::serialization::{PhichainChart, SerializedLine};
-
 use super::Exporter;
+use crate::serialization::SerializeLine;
+use phichain_chart::serialization::{PhichainChart, SerializedLine};
 
 pub struct PhichainExporter;
 
