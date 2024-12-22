@@ -184,15 +184,17 @@ impl Timeline for NoteTimeline {
                 }
             );
 
-            response.context_menu(|ui| {
-                if ui
-                    .button(t!("tab.inspector.curve_note_track.start")) // TODO: this should not be under `tab.inspector`
-                    .clicked()
-                {
-                    start_track_note.replace(entity);
-                    ui.close_menu();
-                }
-            });
+            if curve_note.is_none() {
+                response.context_menu(|ui| {
+                    if ui
+                        .button(t!("tab.inspector.curve_note_track.start")) // TODO: this should not be under `tab.inspector`
+                        .clicked()
+                    {
+                        start_track_note.replace(entity);
+                        ui.close_menu();
+                    }
+                });
+            }
 
             if let NoteKind::Hold { .. } = note.kind {
                 let mut make_drag_zone = |start: bool| {
@@ -256,11 +258,15 @@ impl Timeline for NoteTimeline {
             if response.clicked() {
                 let mut handled = false;
 
-                for (mut track, track_entity) in &mut track_query {
-                    if selected_query.get(track_entity).is_ok() && track.get_entities().is_none() {
-                        // this track is selected and not completed
-                        track.to(entity);
-                        handled = true;
+                if curve_note.is_none() {
+                    for (mut track, track_entity) in &mut track_query {
+                        if selected_query.get(track_entity).is_ok()
+                            && track.get_entities().is_none()
+                        {
+                            // this track is selected and not completed
+                            track.to(entity);
+                            handled = true;
+                        }
                     }
                 }
 
