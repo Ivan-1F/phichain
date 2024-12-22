@@ -4,7 +4,7 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::line::Line;
 use phichain_chart::offset::Offset;
 
-use phichain_chart::serialization::{LineWrapper, PhichainChart};
+use phichain_chart::serialization::{PhichainChart, SerializedLine};
 
 use super::Exporter;
 
@@ -21,7 +21,9 @@ impl Exporter for PhichainExporter {
         let mut lines = line_query.iter(world).collect::<Vec<_>>();
         lines.sort();
         for entity in lines {
-            chart.lines.push(LineWrapper::serialize_line(world, entity));
+            chart
+                .lines
+                .push(SerializedLine::serialize_line(world, entity));
         }
 
         serde_json::to_string(&chart).context("Failed to export chart as phichain")

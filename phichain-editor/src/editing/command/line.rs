@@ -1,7 +1,7 @@
 use crate::events::line::{DespawnLineEvent, SpawnLineEvent};
 use crate::events::EditorEvent;
 use bevy::prelude::*;
-use phichain_chart::serialization::LineWrapper;
+use phichain_chart::serialization::SerializedLine;
 use undo::Edit;
 
 #[derive(Debug, Copy, Clone)]
@@ -19,7 +19,7 @@ impl Edit for CreateLine {
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
         let entity = SpawnLineEvent::builder()
-            .line(LineWrapper::default())
+            .line(SerializedLine::default())
             .maybe_target(self.0)
             .build()
             .run(target);
@@ -40,7 +40,7 @@ impl Edit for CreateLine {
 #[derive(Debug, Clone)]
 pub struct RemoveLine {
     entity: Entity,
-    line: Option<(LineWrapper, Option<Entity>)>,
+    line: Option<(SerializedLine, Option<Entity>)>,
 }
 
 impl RemoveLine {
@@ -58,7 +58,7 @@ impl Edit for RemoveLine {
     // When undoing, we restore the line entity and its children
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
         let parent = target.entity(self.entity).get::<Parent>().map(|x| x.get());
-        self.line = Some((LineWrapper::serialize_line(target, self.entity), parent));
+        self.line = Some((SerializedLine::serialize_line(target, self.entity), parent));
         DespawnLineEvent::builder()
             .target(self.entity)
             .keep_entity(true)
