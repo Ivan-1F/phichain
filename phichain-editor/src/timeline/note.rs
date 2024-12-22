@@ -326,7 +326,10 @@ impl Timeline for NoteTimeline {
         }
 
         if let Some(entity) = start_track_note {
-            world.spawn((CurveNoteTrack::from(entity), Selected));
+            let parent = note_query.get(entity).unwrap().1.get();
+            world.entity_mut(parent).with_children(|p| {
+                p.spawn((CurveNoteTrack::from(entity), Selected));
+            });
             // TODO: unselect everything
         }
     }
