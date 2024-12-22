@@ -2,6 +2,7 @@ use crate::beat::Beat;
 use serde::{Deserialize, Serialize};
 
 use crate::bpm_list::BpmList;
+use crate::curve_note_track::CurveNoteTrack;
 use crate::event::{LineEvent, LineEventKind, LineEventValue};
 use crate::line::Line;
 use crate::migration::CURRENT_FORMAT;
@@ -51,6 +52,7 @@ impl Format for PhichainChart {
                         line.notes.clone(),
                         line.events.iter().map(|x| (*x).into()).collect(),
                         vec![],
+                        vec![],
                     )
                 })
                 .collect(),
@@ -89,6 +91,7 @@ pub struct LineWrapper {
     pub notes: Vec<Note>,
     pub events: Vec<LineEvent>,
     pub children: Vec<LineWrapper>,
+    pub curve_note_tracks: Vec<CurveNoteTrack>,
 }
 
 impl LineWrapper {
@@ -97,12 +100,14 @@ impl LineWrapper {
         notes: Vec<Note>,
         events: Vec<LineEvent>,
         children: Vec<LineWrapper>,
+        curve_note_tracks: Vec<CurveNoteTrack>,
     ) -> Self {
         Self {
             line,
             notes,
             events,
             children,
+            curve_note_tracks,
         }
     }
 }
@@ -146,6 +151,7 @@ impl Default for LineWrapper {
                 },
             ],
             children: vec![],
+            curve_note_tracks: vec![],
         }
     }
 }
@@ -182,6 +188,6 @@ impl LineWrapper {
             }
         }
 
-        LineWrapper::new(line.clone(), notes, events, child_lines)
+        LineWrapper::new(line.clone(), notes, events, child_lines, vec![])
     }
 }
