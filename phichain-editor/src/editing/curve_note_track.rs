@@ -3,8 +3,8 @@ use crate::selection::Selected;
 use bevy::prelude::*;
 use num::iter;
 use phichain_chart::beat;
-use phichain_chart::easing::Easing;
-use phichain_chart::note::{Note, NoteBundle, NoteKind};
+use phichain_chart::curve_note_track::CurveNoteTrackOptions;
+use phichain_chart::note::{Note, NoteBundle};
 use phichain_game::GameSet;
 
 #[derive(Debug, Clone, Component)]
@@ -12,9 +12,7 @@ pub struct CurveNoteTrack {
     pub from: Option<Entity>,
     pub to: Option<Entity>,
 
-    pub density: u32,
-    pub easing: Easing,
-    pub kind: NoteKind,
+    pub options: CurveNoteTrackOptions,
 }
 
 impl CurveNoteTrack {
@@ -23,9 +21,7 @@ impl CurveNoteTrack {
             from: Some(entity),
             to: None,
 
-            density: 16,
-            easing: Easing::EaseInOutSine,
-            kind: NoteKind::Drag,
+            options: Default::default(),
         }
     }
 
@@ -45,8 +41,8 @@ impl CurveNoteTrack {
     }
 }
 
-/// Generate a note sequence from a note to another note with a [`CurveNoteTrack`] option
-pub fn generate_notes(from: Note, to: Note, options: &CurveNoteTrack) -> Vec<Note> {
+/// Generate a note sequence from a note to another note with a [`CurveNoteTrackOptions`] option
+pub fn generate_notes(from: Note, to: Note, options: &CurveNoteTrackOptions) -> Vec<Note> {
     // make sure from.beat < to.beat
     let (from, to) = if from.beat < to.beat {
         (from, to)
@@ -68,9 +64,9 @@ pub fn generate_notes(from: Note, to: Note, options: &CurveNoteTrack) -> Vec<Not
         .map(|(i, beat)| {
             let x = i as f32 / beats.len() as f32;
             let y = if mirror {
-                1.0 - options.easing.ease(x)
+                1.0 - options.curve.ease(x)
             } else {
-                options.easing.ease(x)
+                options.curve.ease(x)
             };
 
             Note::new(
@@ -143,7 +139,7 @@ fn update_curve_note_track_system(
             continue;
         };
 
-        let notes = generate_notes(*from.0, *to.0, track);
+        let notes = generate_notes(*from.0, *to.0, &track.options);
 
         if notes.is_empty() && selected.is_none() {
             // despawn unselected empty tracks

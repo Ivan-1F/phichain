@@ -313,7 +313,7 @@ impl Timeline for NoteTimeline {
                     let rect = Rect::from_two_pos(Pos2::new(from_x, from_y), Pos2::new(to_x, to_y));
                     ui.put(
                         rect,
-                        EasingGraph::new(&mut track.easing)
+                        EasingGraph::new(&mut track.options.curve)
                             .inverse(true)
                             .mirror(from.x > to.x)
                             .color(match selected_query.get(entity) {

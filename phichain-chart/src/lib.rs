@@ -1,6 +1,7 @@
 pub mod beat;
 pub mod bpm_list;
 pub mod constants;
+pub mod curve_note_track;
 pub mod easing;
 pub mod event;
 pub mod format;

@@ -89,7 +89,7 @@ fn curve_note_track_inspector(ui: &mut Ui, track: &mut CurveNoteTrack) {
         .show(ui, |ui| {
             ui.label(t!("tab.inspector.curve_note_track.density"));
             ui.add(
-                DragValue::new(&mut track.density)
+                DragValue::new(&mut track.options.density)
                     .clamp_range(1..=32)
                     .speed(1),
             );
@@ -97,14 +97,14 @@ fn curve_note_track_inspector(ui: &mut Ui, track: &mut CurveNoteTrack) {
 
             ui.label(t!("tab.inspector.curve_note_track.kind"));
             ui.horizontal(|ui| {
-                ui.selectable_value(&mut track.kind, NoteKind::Tap, "Tap");
-                ui.selectable_value(&mut track.kind, NoteKind::Drag, "Drag");
-                ui.selectable_value(&mut track.kind, NoteKind::Flick, "Flick");
+                ui.selectable_value(&mut track.options.kind, NoteKind::Tap, "Tap");
+                ui.selectable_value(&mut track.options.kind, NoteKind::Drag, "Drag");
+                ui.selectable_value(&mut track.options.kind, NoteKind::Flick, "Flick");
             });
             ui.end_row();
 
             ui.label(t!("tab.inspector.curve_note_track.curve"));
-            ui.add(EasingValue::new(&mut track.easing).show_graph(false));
+            ui.add(EasingValue::new(&mut track.options.curve).show_graph(false));
             ui.end_row();
         });
 
