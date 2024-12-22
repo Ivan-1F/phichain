@@ -16,7 +16,7 @@ pub trait Migration {
     fn migrate(old: &Value) -> anyhow::Result<Value>;
 }
 
-pub const CURRENT_FORMAT: u64 = 4;
+pub const CURRENT_FORMAT: u64 = 5;
 
 fn get_format(chart: &Value) -> anyhow::Result<u64> {
     let version = chart
