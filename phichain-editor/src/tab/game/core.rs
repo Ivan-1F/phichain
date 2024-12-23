@@ -1,5 +1,4 @@
 use super::GameCamera;
-use crate::editing::curve_note_track::CurveNote;
 use crate::editing::pending::Pending;
 use crate::project::project_loaded;
 use crate::selection::{Selected, SelectedLine};
@@ -11,6 +10,7 @@ use phichain_chart::line::Line;
 use phichain_chart::note::Note;
 use phichain_chart::project::Project;
 use phichain_game::core::HoldComponent;
+use phichain_game::curve_note_track::CurveNote;
 use phichain_game::GameConfig;
 
 pub struct CoreGamePlugin;

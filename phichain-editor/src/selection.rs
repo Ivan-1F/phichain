@@ -1,8 +1,8 @@
-use crate::editing::curve_note_track::CurveNote;
 use crate::editing::pending::Pending;
 use crate::project::project_loaded;
 use crate::utils::compat::ControlKeyExt;
 use bevy::prelude::*;
+use phichain_game::curve_note_track::CurveNote;
 
 #[derive(Resource)]
 pub struct SelectedLine(pub Entity);

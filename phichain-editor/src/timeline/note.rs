@@ -1,6 +1,5 @@
 use crate::editing::command::note::EditNote;
 use crate::editing::command::EditorCommand;
-use crate::editing::curve_note_track::{CurveNote, CurveNoteTrack};
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
 use crate::selection::{SelectEvent, Selected, SelectedLine};
@@ -15,6 +14,7 @@ use phichain_assets::ImageAssets;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::CANVAS_WIDTH;
 use phichain_chart::note::{Note, NoteKind};
+use phichain_game::curve_note_track::{CurveNote, CurveNoteTrack};
 use phichain_game::highlight::Highlighted;
 use std::cmp::Ordering;
 

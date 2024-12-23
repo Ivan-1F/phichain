@@ -1,9 +1,9 @@
-use crate::editing::curve_note_track::{CurveNote, CurveNoteTrack};
 use bevy::prelude::{Entity, World};
 use phichain_chart::event::LineEvent;
 use phichain_chart::line::Line;
 use phichain_chart::note::Note;
 use phichain_chart::serialization::SerializedLine;
+use phichain_game::curve_note_track::{CurveNote, CurveNoteTrack};
 
 pub trait SerializeLine {
     fn serialize_line(world: &World, entity: Entity) -> Self;

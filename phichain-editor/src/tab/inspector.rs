@@ -1,7 +1,6 @@
 use crate::editing::command::event::EditEvent;
 use crate::editing::command::note::EditNote;
 use crate::editing::command::{CommandSequence, EditorCommand};
-use crate::editing::curve_note_track::CurveNoteTrack;
 use crate::editing::DoCommandEvent;
 use crate::selection::{Selected, SelectedLine};
 use crate::ui::latch;
@@ -13,6 +12,7 @@ use phichain_chart::beat;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use phichain_chart::line::Line;
 use phichain_chart::note::{Note, NoteKind};
+use phichain_game::curve_note_track::CurveNoteTrack;
 
 pub fn inspector_ui_system(
     In(mut ui): In<Ui>,
