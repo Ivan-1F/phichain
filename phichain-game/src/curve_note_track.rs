@@ -99,9 +99,14 @@ pub fn update_curve_note_track_system(
     mut commands: Commands,
     note_query: Query<(&Note, &Parent)>,
     query: Query<(&CurveNote, Entity)>,
-    mut track_query: Query<(&CurveNoteTrack, Option<&mut CurveNoteCache>, Entity)>,
+    mut track_query: Query<(
+        &CurveNoteTrack,
+        &Parent,
+        Option<&mut CurveNoteCache>,
+        Entity,
+    )>,
 ) {
-    for (track, cache, entity) in &mut track_query {
+    for (track, parent, cache, entity) in &mut track_query {
         let Some((from, to)) = track.get_entities() else {
             continue;
         };
@@ -132,6 +137,11 @@ pub fn update_curve_note_track_system(
         if update {
             for (note, note_entity) in &query {
                 if note.0 == entity {
+                    // despawning children does not remove references for parent
+                    // https://github.com/bevyengine/bevy/issues/12235
+                    commands
+                        .entity(parent.get())
+                        .remove_children(&[note_entity]);
                     commands.entity(note_entity).despawn();
                 }
             }
