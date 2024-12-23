@@ -21,8 +21,8 @@ impl Default for CurveNoteTrackOptions {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CurveNoteTrack {
-    pub from: u32,
-    pub to: u32,
+    pub from: usize,
+    pub to: usize,
 
     #[serde(flatten)]
     pub options: CurveNoteTrackOptions,

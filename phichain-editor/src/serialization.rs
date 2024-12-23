@@ -1,3 +1,4 @@
+use crate::editing::curve_note_track::{CurveNote, CurveNoteTrack};
 use bevy::prelude::{Entity, World};
 use phichain_chart::event::LineEvent;
 use phichain_chart::line::Line;
@@ -18,13 +19,38 @@ impl SerializeLine for SerializedLine {
 
         let mut notes: Vec<Note> = vec![];
         let mut events: Vec<LineEvent> = vec![];
+        let mut cnts = vec![];
+
+        let mut note_entity_order = vec![];
+
         if let Some(children) = children {
             for child in children.iter() {
                 if let Some(note) = world.get::<Note>(*child) {
+                    if world.get::<CurveNote>(*child).is_some() {
+                        // skip curve notes
+                        continue;
+                    }
+                    note_entity_order.push(*child);
                     notes.push(*note);
                 }
                 if let Some(event) = world.get::<LineEvent>(*child) {
                     events.push(*event);
+                }
+            }
+            for child in children.iter() {
+                if let Some(track) = world.get::<CurveNoteTrack>(*child) {
+                    if let Some((from, to)) = track.get_entities() {
+                        if let (Some(from), Some(to)) = (
+                            note_entity_order.iter().position(|x| *x == from),
+                            note_entity_order.iter().position(|x| *x == to),
+                        ) {
+                            cnts.push(phichain_chart::curve_note_track::CurveNoteTrack {
+                                from,
+                                to,
+                                options: track.options.clone(),
+                            })
+                        }
+                    }
                 }
             }
         }
@@ -39,6 +65,6 @@ impl SerializeLine for SerializedLine {
             }
         }
 
-        SerializedLine::new(line.clone(), notes, events, child_lines, vec![])
+        SerializedLine::new(line.clone(), notes, events, child_lines, cnts)
     }
 }
