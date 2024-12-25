@@ -65,12 +65,16 @@ fn update_note_tint_system(
     for (mut sprite, curve_note, selected, pending) in &mut query {
         let tint = if selected.is_some() {
             Color::LIME_GREEN
-        } else if curve_note.is_some() {
-            Color::ORANGE
         } else {
             Color::WHITE
         };
-        let alpha = if pending.is_some() { 40.0 / 255.0 } else { 1.0 };
+        let alpha = if pending.is_some() {
+            40.0 / 255.0
+        } else if curve_note.is_some() {
+            100.0 / 255.0
+        } else {
+            1.0
+        };
         sprite.color = tint.with_a(alpha);
     }
 }

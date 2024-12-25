@@ -176,7 +176,7 @@ impl Timeline for NoteTimeline {
                     if selected_query.get(curve_note.unwrap().0).is_ok() {
                         Color32::LIGHT_GREEN
                     } else {
-                        let [r, g, b, a] = Color::ORANGE.as_rgba_u8();
+                        let [r, g, b, a] = Color::WHITE.with_a(100.0 / 255.0).as_rgba_u8();
                         Color32::from_rgba_unmultiplied(r, g, b, a)
                     }
                 } else {
