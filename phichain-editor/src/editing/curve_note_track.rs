@@ -2,10 +2,9 @@ use crate::notification::{ToastsExt, ToastsStorage};
 use crate::selection::Selected;
 use crate::GameSet;
 use bevy::prelude::*;
+use phichain_chart::curve_note_track::generate_notes;
 use phichain_chart::note::Note;
-use phichain_game::curve_note_track::{
-    generate_notes, update_curve_note_track_system, CurveNote, CurveNoteTrack,
-};
+use phichain_game::curve_note_track::{update_curve_note_track_system, CurveNote, CurveNoteTrack};
 
 pub struct CurveNoteTrackPlugin;
 
