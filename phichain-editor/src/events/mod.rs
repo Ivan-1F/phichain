@@ -1,3 +1,4 @@
+use crate::events::curve_note_track::CurveNoteTrackEventPlugin;
 use crate::events::event::LineEventEventPlugin;
 use crate::events::line::LineEventPlugin;
 use crate::events::note::NoteEventPlugin;
@@ -8,6 +9,7 @@ use bevy::prelude::{Event, EventReader, IntoSystemConfigs, Update, World};
 use phichain_game::GameSet;
 use std::fmt::Debug;
 
+pub mod curve_note_track;
 pub mod event;
 pub mod line;
 pub mod note;
@@ -18,7 +20,8 @@ impl Plugin for EventPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(LineEventPlugin)
             .add_plugins(NoteEventPlugin)
-            .add_plugins(LineEventEventPlugin);
+            .add_plugins(LineEventEventPlugin)
+            .add_plugins(CurveNoteTrackEventPlugin);
     }
 }
 

@@ -5,34 +5,35 @@ use bevy::hierarchy::DespawnRecursiveExt;
 use bevy::log::debug;
 use bevy::prelude::{BuildWorldChildren, Entity, Event, World};
 use bon::Builder;
-use phichain_chart::note::{Note, NoteBundle};
+use phichain_game::curve_note_track::CurveNoteTrack;
 
-pub struct NoteEventPlugin;
+pub struct CurveNoteTrackEventPlugin;
 
-impl Plugin for NoteEventPlugin {
+impl Plugin for CurveNoteTrackEventPlugin {
     fn build(&self, app: &mut App) {
-        app.add_editor_event::<SpawnNoteEvent>()
-            .add_editor_event::<DespawnNoteEvent>();
+        app.add_editor_event::<SpawnCurveNoteTrackEvent>()
+            .add_editor_event::<DespawnCurveNoteTrackEvent>();
     }
 }
 
 #[derive(Debug, Clone, Event, Builder)]
-pub struct SpawnNoteEvent {
-    note: Note,
+pub struct SpawnCurveNoteTrackEvent {
+    track: CurveNoteTrack,
     line_entity: Entity,
     target: Option<Entity>,
 }
 
-impl EditorEvent for SpawnNoteEvent {
+impl EditorEvent for SpawnCurveNoteTrackEvent {
     type Output = Entity;
 
     fn run(self, world: &mut World) -> Self::Output {
+        debug!("spawn curve note track");
         match self.target {
             None => {
-                debug!("spawned note {:?} on new entity", self.note);
+                debug!("spawned CNT {:?} on new entity", self.track);
             }
             Some(target) => {
-                debug!("spawned note {:?} on entity {:?}", self.note, target);
+                debug!("spawned CNT {:?} on entity {:?}", self.track, target);
             }
         }
         let id = match self.target {
@@ -41,25 +42,25 @@ impl EditorEvent for SpawnNoteEvent {
         };
         world
             .entity_mut(id)
-            .insert(NoteBundle::new(self.note))
+            .insert(self.track)
             .set_parent(self.line_entity)
             .id()
     }
 }
 
 #[derive(Debug, Clone, Event, Builder)]
-pub struct DespawnNoteEvent {
+pub struct DespawnCurveNoteTrackEvent {
     target: Entity,
     #[builder(default = false)]
     keep_entity: bool,
 }
 
-impl EditorEvent for DespawnNoteEvent {
+impl EditorEvent for DespawnCurveNoteTrackEvent {
     type Output = ();
 
     fn run(self, world: &mut World) -> Self::Output {
         debug!(
-            "despawned note {:?}{}",
+            "despawned CNT {:?}{}",
             self.target,
             if self.keep_entity {
                 " (keep entity)"

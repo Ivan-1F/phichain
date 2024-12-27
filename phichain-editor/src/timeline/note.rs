@@ -1,3 +1,4 @@
+use crate::editing::command::curve_note_track::CreateCurveNoteTrack;
 use crate::editing::command::note::EditNote;
 use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
@@ -157,6 +158,7 @@ impl Timeline for NoteTimeline {
         }
 
         let mut start_track_note = None::<Entity>;
+        let mut despawn_cnt = None::<Entity>;
 
         for (mut note, parent, entity, highlighted, selected, curve_note, pending) in notes {
             if !ctx.settings.note_side_filter.filter(*note) {
@@ -259,12 +261,20 @@ impl Timeline for NoteTimeline {
                 let mut handled = false;
 
                 if curve_note.is_none() {
-                    for (mut track, track_entity) in &mut track_query {
+                    for (track, track_entity) in &mut track_query {
                         if selected_query.get(track_entity).is_ok()
                             && track.get_entities().is_none()
                         {
-                            // this track is selected and not completed
-                            track.to(entity);
+                            // commands.entity(track_entity).despawn_recursive();
+                            despawn_cnt.replace(track_entity);
+
+                            let mut completed_track = track.clone();
+                            completed_track.to(entity);
+
+                            event_writer.send(DoCommandEvent(EditorCommand::CreateCurveNoteTrack(
+                                CreateCurveNoteTrack::new(entity, completed_track),
+                            )));
+
                             handled = true;
                         }
                     }
@@ -331,6 +341,10 @@ impl Timeline for NoteTimeline {
                 p.spawn((CurveNoteTrack::from(entity), Selected));
             });
             // TODO: unselect everything
+        }
+
+        if let Some(despawn_cnt) = despawn_cnt {
+            world.entity_mut(despawn_cnt).despawn_recursive();
         }
     }
 
