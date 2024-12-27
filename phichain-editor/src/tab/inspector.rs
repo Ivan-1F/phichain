@@ -57,6 +57,7 @@ fn curve_note_track_inspector(ui: &mut Ui, track: &mut CurveNoteTrack) {
                 ))
                 .color(Color32::RED),
             );
+            ui.separator();
         }
         (false, true) => {
             ui.label(
@@ -65,6 +66,7 @@ fn curve_note_track_inspector(ui: &mut Ui, track: &mut CurveNoteTrack) {
                 ))
                 .color(Color32::RED),
             );
+            ui.separator();
         }
         (false, false) => {
             ui.label(
@@ -73,14 +75,9 @@ fn curve_note_track_inspector(ui: &mut Ui, track: &mut CurveNoteTrack) {
                 ))
                 .color(Color32::RED),
             );
+            ui.separator();
         }
     }
-    ui.separator();
-
-    ui.label(format!("From: {:?}", track.from));
-    ui.label(format!("To: {:?}", track.to));
-
-    ui.separator();
 
     egui::Grid::new("inspector_grid")
         .num_columns(2)
