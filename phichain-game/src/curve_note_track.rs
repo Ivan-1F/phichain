@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use phichain_chart::curve_note_track::{generate_notes, CurveNoteTrackOptions};
 use phichain_chart::note::{Note, NoteBundle};
 
+/// Represents a curve note track
 #[derive(Debug, Clone, Component)]
 pub struct CurveNoteTrack {
     pub from: Option<Entity>,
@@ -12,6 +13,7 @@ pub struct CurveNoteTrack {
 }
 
 impl CurveNoteTrack {
+    // TODO: rename to `start` to avoid confusion with the `From<T>` trait
     pub fn from(entity: Entity) -> Self {
         Self {
             from: Some(entity),
@@ -41,16 +43,27 @@ pub struct CurveNoteTrackPlugin;
 
 impl Plugin for CurveNoteTrackPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, update_curve_note_track_system.in_set(GameSet));
+        app.add_systems(
+            Update,
+            (
+                update_curve_note_track_system,
+                despawn_dangle_curve_note_system,
+            )
+                .in_set(GameSet),
+        );
     }
 }
 
 #[derive(Component)]
 pub struct CurveNoteCache(Vec<Note>);
 
+/// Inner value is the attached entity ID of [`CurveNoteTrack`]
 #[derive(Component)]
 pub struct CurveNote(pub Entity);
 
+/// For each existing [`CurveNoteTrack`], calculate its note sequence and compare it with the cached version.
+///
+/// If the cache is outdated, invalidate the cache, despawn all associated [`CurveNote`] instances and generate new ones
 pub fn update_curve_note_track_system(
     mut commands: Commands,
     note_query: Query<(&Note, &Parent)>,
@@ -106,6 +119,19 @@ pub fn update_curve_note_track_system(
                     p.spawn((NoteBundle::new(note), CurveNote(entity)));
                 }
             });
+        }
+    }
+}
+
+/// Search for [`CurveNote`] with an invalid associated [`CurveNoteTrack`] and despawn them
+pub fn despawn_dangle_curve_note_system(
+    mut commands: Commands,
+    query: Query<(Entity, &CurveNote)>,
+    track_query: Query<&CurveNoteTrack>,
+) {
+    for (entity, note) in &query {
+        if track_query.get(note.0).is_err() {
+            commands.entity(entity).despawn_recursive();
         }
     }
 }
