@@ -75,7 +75,6 @@ pub fn update_curve_note_track_system(
         Entity,
     )>,
 ) {
-    dbg!(&track_query.iter().count());
     for (track, parent, cache, entity) in &mut track_query {
         let Some((from, to)) = track.get_entities() else {
             continue;
