@@ -272,7 +272,7 @@ impl Timeline for NoteTimeline {
                             completed_track.to(entity);
 
                             event_writer.send(DoCommandEvent(EditorCommand::CreateCurveNoteTrack(
-                                CreateCurveNoteTrack::new(entity, completed_track),
+                                CreateCurveNoteTrack::new(parent.get(), completed_track),
                             )));
 
                             handled = true;
