@@ -1,6 +1,6 @@
+use crate::editing::command::curve_note_track::CreateCurveNoteTrack;
 use crate::editing::command::note::EditNote;
 use crate::editing::command::EditorCommand;
-use crate::editing::fill_notes::{generate_notes, FillingNotes};
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
 use crate::selection::{SelectEvent, Selected, SelectedLine};
@@ -15,6 +15,7 @@ use phichain_assets::ImageAssets;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::CANVAS_WIDTH;
 use phichain_chart::note::{Note, NoteKind};
+use phichain_game::curve_note_track::{CurveNote, CurveNoteTrack};
 use phichain_game::highlight::Highlighted;
 use std::cmp::Ordering;
 
@@ -51,9 +52,11 @@ impl Timeline for NoteTimeline {
                 Entity,
                 Option<&Highlighted>,
                 Option<&Selected>,
+                Option<&CurveNote>,
                 Option<&Pending>,
             )>,
-            Query<&mut FillingNotes>,
+            Query<&Selected>,
+            Query<(&mut CurveNoteTrack, Entity)>,
             Res<BpmList>,
             Res<ImageAssets>,
             Res<Assets<Image>>,
@@ -65,7 +68,8 @@ impl Timeline for NoteTimeline {
         let (
             ctx,
             mut note_query,
-            mut filling_notes_query,
+            selected_query,
+            mut track_query,
             bpm_list,
             assets,
             images,
@@ -153,9 +157,10 @@ impl Timeline for NoteTimeline {
             }};
         }
 
-        let mut start_filling_note = None::<Entity>;
+        let mut start_track_note = None::<Entity>;
+        let mut despawn_cnt = None::<Entity>;
 
-        for (mut note, parent, entity, highlighted, selected, pending) in notes {
+        for (mut note, parent, entity, highlighted, selected, curve_note, pending) in notes {
             if !ctx.settings.note_side_filter.filter(*note) {
                 continue;
             }
@@ -169,25 +174,29 @@ impl Timeline for NoteTimeline {
                 fake: pending.is_some(),
                 tint: if selected.is_some() {
                     Color32::LIGHT_GREEN
+                } else if curve_note.is_some() {
+                    if selected_query.get(curve_note.unwrap().0).is_ok() {
+                        Color32::LIGHT_GREEN
+                    } else {
+                        let [r, g, b, a] = Color::WHITE.with_a(100.0 / 255.0).as_rgba_u8();
+                        Color32::from_rgba_unmultiplied(r, g, b, a)
+                    }
                 } else {
                     Color32::WHITE
                 }
             );
 
-            response.context_menu(|ui| {
-                ui.add_enabled_ui(filling_notes_query.is_empty(), |ui| {
+            if curve_note.is_none() {
+                response.context_menu(|ui| {
                     if ui
-                        .button(t!("tab.inspector.filling_notes.start")) // TODO: this should not be under `tab.inspector`
-                        .on_disabled_hover_text(
-                            "Please cancel the current filling task to start a new one",
-                        )
+                        .button(t!("tab.inspector.curve_note_track.start")) // TODO: this should not be under `tab.inspector`
                         .clicked()
                     {
-                        start_filling_note.replace(entity);
+                        start_track_note.replace(entity);
                         ui.close_menu();
                     }
                 });
-            });
+            }
 
             if let NoteKind::Hold { .. } = note.kind {
                 let mut make_drag_zone = |start: bool| {
@@ -249,9 +258,29 @@ impl Timeline for NoteTimeline {
             }
 
             if response.clicked() {
-                if let Ok(mut filling) = filling_notes_query.get_single_mut() {
-                    filling.to(entity);
-                } else {
+                let mut handled = false;
+
+                if curve_note.is_none() {
+                    for (track, track_entity) in &mut track_query {
+                        if selected_query.get(track_entity).is_ok()
+                            && track.get_entities().is_none()
+                        {
+                            // commands.entity(track_entity).despawn_recursive();
+                            despawn_cnt.replace(track_entity);
+
+                            let mut completed_track = track.clone();
+                            completed_track.to(entity);
+
+                            event_writer.send(DoCommandEvent(EditorCommand::CreateCurveNoteTrack(
+                                CreateCurveNoteTrack::new(parent.get(), completed_track),
+                            )));
+
+                            handled = true;
+                        }
+                    }
+                }
+
+                if !handled {
                     select_events.send(SelectEvent(vec![entity]));
                 }
             }
@@ -275,8 +304,8 @@ impl Timeline for NoteTimeline {
             );
         }
 
-        if let Ok(mut filling) = filling_notes_query.get_single_mut() {
-            if let Some((from, to)) = filling.get_entities() {
+        for (mut track, entity) in &mut track_query {
+            if let Some((from, to)) = track.get_entities() {
                 if let (Ok(from), Ok(to)) = (
                     note_query.get(from).map(|x| x.0),
                     note_query.get(to).map(|x| x.0),
@@ -294,20 +323,28 @@ impl Timeline for NoteTimeline {
                     let rect = Rect::from_two_pos(Pos2::new(from_x, from_y), Pos2::new(to_x, to_y));
                     ui.put(
                         rect,
-                        EasingGraph::new(&mut filling.easing)
+                        EasingGraph::new(&mut track.options.curve)
                             .inverse(true)
-                            .mirror(from.x > to.x),
+                            .mirror(from.x > to.x)
+                            .color(match selected_query.get(entity) {
+                                Ok(_) => Color32::LIGHT_GREEN,
+                                Err(_) => Color32::WHITE,
+                            }),
                     );
-
-                    for note in generate_notes(*from, *to, &filling) {
-                        render_note!(note: note, highlighted: false, fake: true, tint: Color32::WHITE);
-                    }
                 }
             }
         }
 
-        if let Some(entity) = start_filling_note {
-            world.spawn(FillingNotes::from(entity));
+        if let Some(entity) = start_track_note {
+            let parent = note_query.get(entity).unwrap().1.get();
+            world.entity_mut(parent).with_children(|p| {
+                p.spawn((CurveNoteTrack::from(entity), Selected));
+            });
+            // TODO: unselect everything
+        }
+
+        if let Some(despawn_cnt) = despawn_cnt {
+            world.entity_mut(despawn_cnt).despawn_recursive();
         }
     }
 

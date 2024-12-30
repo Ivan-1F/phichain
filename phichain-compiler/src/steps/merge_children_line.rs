@@ -3,9 +3,9 @@ use nalgebra::{Isometry2, Rotation2, Vector2};
 use phichain_chart::beat;
 use phichain_chart::easing::Easing;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
-use phichain_chart::serialization::{LineWrapper, PhichainChart};
+use phichain_chart::serialization::{PhichainChart, SerializedLine};
 
-fn merge(parent: LineWrapper) -> Vec<LineWrapper> {
+fn merge(parent: SerializedLine) -> Vec<SerializedLine> {
     if parent.children.is_empty() {
         vec![parent]
     } else {
@@ -130,7 +130,7 @@ fn merge(parent: LineWrapper) -> Vec<LineWrapper> {
                 .cloned()
                 .collect::<Vec<_>>();
 
-            let merged = LineWrapper {
+            let merged = SerializedLine {
                 events: [other_events, merged_move_events, merged_rotate_events].concat(),
                 children: vec![],
                 ..child

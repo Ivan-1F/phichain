@@ -1,5 +1,6 @@
 pub mod constants;
 pub mod core;
+pub mod curve_note_track;
 pub mod highlight;
 mod hit_effect;
 pub mod illustration;
@@ -12,6 +13,7 @@ mod ui;
 pub use crate::loader::load_project;
 
 use crate::core::CoreGamePlugin;
+use crate::curve_note_track::CurveNoteTrackPlugin;
 use crate::highlight::HighlightPlugin;
 use crate::hit_effect::HitEffectPlugin;
 use crate::illustration::IllustrationPlugin;
@@ -76,10 +78,13 @@ pub struct GameSet;
 /// - Updating translations for entities with [`Line`]s and [`Note`]s
 /// - If [`GameConfig::multi_highlight`] is true, attach [`Highlighted`] for all notes with multi highlight
 /// - Hit effects (including animations and particles)
+/// - Generating and managing [`CurveNote`]s based on [`CurveNoteTrack`]s
 ///
 /// [`Line`]: phichain_chart::line::Line
 /// [`Note`]: phichain_chart::note::Note
 /// [`Highlighted`]: highlight::Highlighted
+/// [`CurveNote`]: curve_note_track::CurveNote
+/// [`CurveNoteTrack`]: curve_note_track::CurveNoteTrack
 pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
@@ -91,6 +96,7 @@ impl Plugin for GamePlugin {
             .add_plugins(HighlightPlugin)
             .add_plugins(ScalePlugin)
             .add_plugins(CoreGamePlugin)
+            .add_plugins(CurveNoteTrackPlugin)
             .add_plugins(ShapePlugin)
             .add_plugins(HitEffectPlugin)
             .add_plugins(ScorePlugin)

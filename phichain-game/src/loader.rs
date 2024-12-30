@@ -1,3 +1,4 @@
+use crate::curve_note_track::CurveNoteTrack;
 use crate::illustration::load_illustration;
 use anyhow::Context;
 use bevy::prelude::*;
@@ -6,7 +7,7 @@ use phichain_chart::line::LineBundle;
 use phichain_chart::migration::migrate;
 use phichain_chart::note::NoteBundle;
 use phichain_chart::project::Project;
-use phichain_chart::serialization::{LineWrapper, PhichainChart};
+use phichain_chart::serialization::{PhichainChart, SerializedLine};
 use serde_json::Value;
 use std::fs::File;
 
@@ -32,15 +33,32 @@ pub fn load_project(project: &Project, commands: &mut Commands) -> anyhow::Resul
     Ok(())
 }
 
-fn load_line(line: LineWrapper, commands: &mut Commands, parent: Option<Entity>) -> Entity {
+fn load_line(line: SerializedLine, commands: &mut Commands, parent: Option<Entity>) -> Entity {
     let id = commands
         .spawn(LineBundle::new(line.line))
         .with_children(|parent| {
+            let mut note_entity_order = vec![];
+
             for note in line.notes {
-                parent.spawn(NoteBundle::new(note));
+                let id = parent.spawn(NoteBundle::new(note)).id();
+                note_entity_order.push(id);
             }
             for event in line.events {
                 parent.spawn(LineEventBundle::new(event));
+            }
+            for track in line.curve_note_tracks {
+                if let (Some(from), Some(to)) = (
+                    note_entity_order.get(track.from),
+                    note_entity_order.get(track.to),
+                ) {
+                    parent.spawn(CurveNoteTrack {
+                        from: Some(*from),
+                        to: Some(*to),
+                        options: track.options,
+                    });
+                } else {
+                    warn!("invalid curve note track detected: {:?}", track);
+                }
             }
         })
         .id();

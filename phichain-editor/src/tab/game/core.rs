@@ -10,6 +10,7 @@ use phichain_chart::line::Line;
 use phichain_chart::note::Note;
 use phichain_chart::project::Project;
 use phichain_game::core::HoldComponent;
+use phichain_game::curve_note_track::CurveNote;
 use phichain_game::GameConfig;
 
 pub struct CoreGamePlugin;
@@ -51,15 +52,29 @@ fn zoom_scale_system(
 }
 
 fn update_note_tint_system(
-    mut query: Query<(&mut Sprite, Option<&Selected>, Option<&Pending>), With<Note>>,
+    mut query: Query<
+        (
+            &mut Sprite,
+            Option<&CurveNote>,
+            Option<&Selected>,
+            Option<&Pending>,
+        ),
+        With<Note>,
+    >,
 ) {
-    for (mut sprite, selected, pending) in &mut query {
+    for (mut sprite, curve_note, selected, pending) in &mut query {
         let tint = if selected.is_some() {
             Color::LIME_GREEN
         } else {
             Color::WHITE
         };
-        let alpha = if pending.is_some() { 40.0 / 255.0 } else { 1.0 };
+        let alpha = if pending.is_some() {
+            40.0 / 255.0
+        } else if curve_note.is_some() {
+            100.0 / 255.0
+        } else {
+            1.0
+        };
         sprite.color = tint.with_a(alpha);
     }
 }

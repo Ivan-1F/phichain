@@ -1,10 +1,12 @@
 pub mod bpm_list;
+pub mod curve_note_track;
 pub mod event;
 pub mod line;
 pub mod meta;
 pub mod note;
 
 use crate::editing::command::bpm_list::{CreateBpmPoint, EditBpmPoint, RemoveBpmPoint};
+use crate::editing::command::curve_note_track::{CreateCurveNoteTrack, RemoveCurveNoteTrack};
 use crate::editing::command::event::{CreateEvent, EditEvent, RemoveEvent};
 use crate::editing::command::line::{CreateLine, MoveLineAsChild, RemoveLine};
 use crate::editing::command::meta::{EditMeta, EditOffset};
@@ -25,6 +27,9 @@ pub enum EditorCommand {
     CreateLine(CreateLine),
     RemoveLine(RemoveLine),
     MoveLineAsChild(MoveLineAsChild),
+
+    CreateCurveNoteTrack(CreateCurveNoteTrack),
+    RemoveCurveNoteTrack(RemoveCurveNoteTrack),
 
     CreateBpmPoint(CreateBpmPoint),
     RemoveBpmPoint(RemoveBpmPoint),
@@ -56,6 +61,7 @@ impl Edit for CommandSequence {
     }
 }
 
+// TODO: use enum_dispatch
 macro_rules! impl_edit_for_command {
     ($($variant:ident),*) => {
         impl Edit for EditorCommand {
@@ -91,6 +97,8 @@ impl_edit_for_command!(
     CreateLine,
     RemoveLine,
     MoveLineAsChild,
+    CreateCurveNoteTrack,
+    RemoveCurveNoteTrack,
     CreateBpmPoint,
     RemoveBpmPoint,
     EditBpmPoint,

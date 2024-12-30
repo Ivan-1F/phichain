@@ -7,7 +7,7 @@ use bon::Builder;
 use phichain_chart::event::LineEventBundle;
 use phichain_chart::line::{Line, LineBundle};
 use phichain_chart::note::NoteBundle;
-use phichain_chart::serialization::LineWrapper;
+use phichain_chart::serialization::SerializedLine;
 
 pub struct LineEventPlugin;
 
@@ -85,7 +85,7 @@ impl EditorEvent for DespawnLineEvent {
 #[derive(Debug, Clone, Event, Builder)]
 pub struct SpawnLineEvent {
     /// The line data
-    line: LineWrapper,
+    line: SerializedLine,
     /// The entity of the parent line
     parent: Option<Entity>,
     /// The target entity to spawn the line. If given, components will be inserted to this entity instead of a new entity

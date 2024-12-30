@@ -21,6 +21,7 @@ mod recent_projects;
 mod schedule;
 mod screenshot;
 mod selection;
+mod serialization;
 mod settings;
 mod tab;
 mod timeline;
