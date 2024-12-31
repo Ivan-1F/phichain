@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use bevy::prelude::*;
 use bevy_egui::EguiContext;
 use bevy_persistent::Persistent;
-use egui::{Align2, RichText, Sense};
+use egui::{Align2, RichText, ScrollArea, Sense};
 use rfd::FileDialog;
 
 use crate::recent_projects::{PersistentRecentProjectsExt, RecentProjects};
@@ -163,36 +163,38 @@ fn ui_system(world: &mut World) {
         if recent_projects.0.is_empty() {
             ui.label(t!("home.recent_projects.empty"));
         }
-        for (index, recent_project) in recent_projects.0.iter().rev().enumerate() {
-            ui.group(|ui| {
-                ui.horizontal(|ui| {
-                    if ui
-                        .add(egui::Label::new(&recent_project.name).sense(Sense::click()))
-                        .clicked()
-                    {
-                        open.replace(recent_project.path.clone());
-                    }
-                    ui.add_space(ui.available_width() - 10.0);
-                    if ui
-                        .add(egui::Label::new("×").sense(Sense::click()))
-                        .clicked()
-                    {
-                        remove.replace(index);
-                    }
-                });
-                ui.label(RichText::new(recent_project.path.to_string_lossy()).weak());
-                ui.label(
-                    RichText::new(t!(
-                        "home.recent_projects.last_opened",
-                        time = recent_project.last_opened.format("%Y/%m/%d %H:%M")
-                    ))
-                    .weak(),
-                );
-            })
-            .response
-            .on_hover_cursor(egui::CursorIcon::PointingHand)
-            .on_hover_and_drag_cursor(egui::CursorIcon::PointingHand);
-        }
+        ScrollArea::vertical().show(ui, |ui| {
+            for (index, recent_project) in recent_projects.0.iter().rev().enumerate() {
+                ui.group(|ui| {
+                    ui.horizontal(|ui| {
+                        if ui
+                            .add(egui::Label::new(&recent_project.name).sense(Sense::click()))
+                            .clicked()
+                        {
+                            open.replace(recent_project.path.clone());
+                        }
+                        ui.add_space(ui.available_width() - 10.0);
+                        if ui
+                            .add(egui::Label::new("×").sense(Sense::click()))
+                            .clicked()
+                        {
+                            remove.replace(index);
+                        }
+                    });
+                    ui.label(RichText::new(recent_project.path.to_string_lossy()).weak());
+                    ui.label(
+                        RichText::new(t!(
+                            "home.recent_projects.last_opened",
+                            time = recent_project.last_opened.format("%Y/%m/%d %H:%M")
+                        ))
+                        .weak(),
+                    );
+                })
+                .response
+                .on_hover_cursor(egui::CursorIcon::PointingHand)
+                .on_hover_and_drag_cursor(egui::CursorIcon::PointingHand);
+            }
+        });
         ui.style_mut().interaction.selectable_labels = true;
 
         if let Some(index) = remove {
