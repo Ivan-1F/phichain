@@ -1,7 +1,7 @@
 use crate::events::curve_note_track::{DespawnCurveNoteTrackEvent, SpawnCurveNoteTrackEvent};
 use crate::events::EditorEvent;
 use bevy::hierarchy::Parent;
-use bevy::prelude::{Entity, World};
+use bevy::prelude::{debug, Entity, World};
 use phichain_game::curve_note_track::CurveNoteTrack;
 use undo::Edit;
 
@@ -40,6 +40,12 @@ impl Edit for CreateCurveNoteTrack {
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
         if let Some(entity) = self.track_entity {
+            if target.get_entity(entity).is_none() {
+                debug!("skipping undo `CreateCurveNoteTrack`, the track has been removed internally");
+                self.track_entity.take();
+                return;
+            }
+
             DespawnCurveNoteTrackEvent::builder()
                 .target(entity)
                 .keep_entity(true)
