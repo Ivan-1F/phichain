@@ -41,7 +41,9 @@ impl Edit for CreateCurveNoteTrack {
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
         if let Some(entity) = self.track_entity {
             if target.get_entity(entity).is_none() {
-                debug!("skipping undo `CreateCurveNoteTrack`, the track has been removed internally");
+                debug!(
+                    "skipping undo `CreateCurveNoteTrack`, the track has been removed internally"
+                );
                 self.track_entity.take();
                 return;
             }
