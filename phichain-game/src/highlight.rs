@@ -42,13 +42,18 @@ fn mark_highlight_system(
     settings: Res<GameConfig>,
 ) {
     for (entity, note) in &query {
+        #[allow(clippy::collapsible_else_if)] // keeping the current form for better readability
         if highlighted_beat.0.contains_key(&note.beat.reduced())
             && highlighted_beat.0[&note.beat.reduced()] > 1
             && settings.multi_highlight
         {
-            commands.entity(entity).insert(Highlighted);
+            if let Some(mut entity) = commands.get_entity(entity) {
+                entity.try_insert(Highlighted);
+            }
         } else {
-            commands.entity(entity).remove::<Highlighted>();
+            if let Some(mut entity) = commands.get_entity(entity) {
+                entity.remove::<Highlighted>();
+            }
         }
     }
 }
