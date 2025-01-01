@@ -56,7 +56,7 @@ impl Timeline for NoteTimeline {
                 Option<&Pending>,
             )>,
             Query<&Selected>,
-            Query<(&mut CurveNoteTrack, Entity)>,
+            Query<(&mut CurveNoteTrack, &Parent, Entity)>,
             Res<BpmList>,
             Res<ImageAssets>,
             Res<Assets<Image>>,
@@ -261,11 +261,10 @@ impl Timeline for NoteTimeline {
                 let mut handled = false;
 
                 if curve_note.is_none() {
-                    for (track, track_entity) in &mut track_query {
+                    for (track, _, track_entity) in &mut track_query {
                         if selected_query.get(track_entity).is_ok()
                             && track.get_entities().is_none()
                         {
-                            // commands.entity(track_entity).despawn_recursive();
                             despawn_cnt.replace(track_entity);
 
                             let mut completed_track = track.clone();
@@ -304,7 +303,11 @@ impl Timeline for NoteTimeline {
             );
         }
 
-        for (mut track, entity) in &mut track_query {
+        for (mut track, parent, entity) in &mut track_query {
+            if parent.get() != line_entity {
+                continue;
+            }
+
             if let Some((from, to)) = track.get_entities() {
                 if let (Ok(from), Ok(to)) = (
                     note_query.get(from).map(|x| x.0),
