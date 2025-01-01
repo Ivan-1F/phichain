@@ -136,6 +136,7 @@ pub mod common {
     use bevy::ecs::system::SystemState;
     use bevy::prelude::*;
     use egui::{Align2, Color32, FontId, Sense, Ui};
+    use phichain_chart::bpm_list::BpmList;
 
     pub fn beat_line_ui(ui: &mut Ui, world: &mut World) {
         let mut state: SystemState<TimelineContext> = SystemState::new(world);
@@ -232,6 +233,27 @@ pub mod common {
             0.0,
             Color32::WHITE,
         );
+    }
+
+    pub fn bpm_change_ui(ui: &mut Ui, world: &mut World) {
+        let mut state: SystemState<(TimelineContext, Res<BpmList>)> = SystemState::new(world);
+        let (ctx, bpm_list) = state.get_mut(world);
+        for point in &bpm_list.0 {
+            let y = ctx.time_to_y(bpm_list.time_at(point.beat));
+
+            let rect = egui::Rect::from_center_size(
+                egui::Pos2::new(ctx.viewport.0.width() / 2.0 + ctx.viewport.0.min.x, y),
+                egui::Vec2::new(ctx.viewport.0.width(), 0.5),
+            );
+
+            ui.painter().text(
+                rect.center_top(),
+                Align2::CENTER_BOTTOM,
+                format!("BPM: {}", point.bpm),
+                FontId::monospace(14.0),
+                Color32::WHITE,
+            );
+        }
     }
 }
 
