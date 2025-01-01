@@ -7,5 +7,6 @@ edition = "2021"
 anyhow = "1.0.86"
 clap = { version = "4.5.4", features = ["derive"] }
 phichain-chart = { path = "../phichain-chart" }
+phichain-compiler = { path = "../phichain-compiler" }
 serde_json = "1.0.117"
 strum = { version = "0.26", features = ["derive"] }

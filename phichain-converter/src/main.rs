@@ -45,7 +45,7 @@ fn convert(args: Args) -> anyhow::Result<()> {
         }
         Formats::Phichain => {
             let chart: PhichainChart = serde_json::from_reader(file)?;
-            chart.into_primitive()?
+            phichain_compiler::compile(chart)?
         }
         Formats::Rpe => {
             let chart: RpeChart = serde_json::from_reader(file)?;

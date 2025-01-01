@@ -4716,6 +4716,7 @@ dependencies = [
  "anyhow",
  "clap",
  "phichain-chart",
+ "phichain-compiler",
  "serde_json",
  "strum",
 ]
