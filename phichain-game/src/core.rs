@@ -228,22 +228,18 @@ pub fn update_note_y_system(
                         transform.scale.y = height / 1900.0;
 
                         // hide notes behind line (cover)
-                        *visibility = if height < 0.0 {
-                            Visibility::Hidden
-                        } else {
-                            Visibility::Inherited
-                        };
+                        if height < 0.0 {
+                            *visibility = Visibility::Hidden;
+                        }
                     }
                     _ => {
                         sprite.anchor = Anchor::Center;
                         transform.rotation = Quat::from_rotation_z(0.0_f32.to_radians());
 
                         // hide notes behind line (cover)
-                        *visibility = if y < 0.0 {
-                            Visibility::Hidden
-                        } else {
-                            Visibility::Inherited
-                        };
+                        if y < 0.0 {
+                            *visibility = Visibility::Hidden;
+                        }
                     }
                 }
 
