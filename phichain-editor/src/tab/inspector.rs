@@ -191,10 +191,12 @@ fn single_event_inspector(
                         finished |= response.drag_stopped() || response.lost_focus();
                         ui.end_row();
 
-                        ui.label(t!("tab.inspector.single_event.easing"));
-                        let response = ui.add(EasingValue::new(easing));
-                        finished |= response.drag_stopped() || response.lost_focus();
-                        ui.end_row();
+                        if !event.kind.is_speed() {
+                            ui.label(t!("tab.inspector.single_event.easing"));
+                            let response = ui.add(EasingValue::new(easing));
+                            finished |= response.drag_stopped() || response.lost_focus();
+                            ui.end_row();
+                        }
                     }
                     LineEventValue::Constant(ref mut value) => {
                         ui.label(t!("tab.inspector.single_event.value"));
