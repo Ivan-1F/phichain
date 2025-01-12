@@ -45,7 +45,7 @@ impl ProjectPath {
             .find(|path| {
                 path.is_file()
                     && path.file_stem() == Some(name.as_ref())
-                    && path.extension().map_or(false, |ext| {
+                    && path.extension().is_some_and(|ext| {
                         allowed_extensions
                             .iter()
                             .any(|allowed| *allowed.to_string() == *ext)
