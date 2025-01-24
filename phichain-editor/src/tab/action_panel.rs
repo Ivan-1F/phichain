@@ -1,7 +1,8 @@
 use crate::action::{ActionRegistrationExt, ActionRegistry, RunActionEvent};
 use crate::hotkey::modifier::Modifier;
 use crate::hotkey::{Hotkey, HotkeyRegistry};
-use crate::tab::{EditorTab, TabRegistry};
+use crate::identifier::Identifier;
+use crate::tab::TabRegistry;
 use crate::UiState;
 use bevy::app::App;
 use bevy::prelude::{
@@ -50,7 +51,7 @@ enum ActionPanelEntryKind {
 #[derive(Debug, Clone)]
 struct ActionPanelEntry {
     kind: ActionPanelEntryKind,
-    id: String,
+    id: String, // TODO: change to Identifier
     title: String,
     hotkey: Option<Hotkey>,
 }
@@ -95,11 +96,11 @@ fn action_panel_ui_system(
         })
     }
 
-    for (tab, registered_tab) in tab_registry.iter() {
+    for (id, _) in tab_registry.iter() {
         entries.push(ActionPanelEntry {
             kind: ActionPanelEntryKind::Tab,
-            id: format!("{:?}", tab), // TODO
-            title: t!(registered_tab.title()).to_string(),
+            id: id.to_string(),
+            title: t!(format!("tab.{}.title", id).as_str()).to_string(),
             hotkey: None,
         })
     }
@@ -209,31 +210,20 @@ fn action_panel_ui_system(
                                     run.send(RunActionEvent(entry.id.parse().unwrap()));
                                 }
                                 ActionPanelEntryKind::Tab => {
-                                    // TODO: normalize tab id
-                                    let tab = match entry.id.as_str() {
-                                        "Game" => EditorTab::Game,
-                                        "Timeline" => EditorTab::Timeline,
-                                        "Inspector" => EditorTab::Inspector,
-                                        "TimelineSetting" => EditorTab::TimelineSetting,
-                                        "ChartBasicSetting" => EditorTab::ChartBasicSetting,
-                                        "LineList" => EditorTab::LineList,
-                                        "BpmList" => EditorTab::BpmList,
-                                        "Settings" => EditorTab::Settings,
-                                        _ => unreachable!(),
-                                    };
+                                    let id: Identifier = entry.id.parse().unwrap();
                                     let opened = ui_state
                                         .state
                                         .iter_all_tabs()
                                         .map(|x| x.1)
                                         .collect::<Vec<_>>()
-                                        .contains(&&tab);
+                                        .contains(&&id);
 
                                     if opened {
-                                        if let Some(node) = ui_state.state.find_tab(&tab) {
+                                        if let Some(node) = ui_state.state.find_tab(&id) {
                                             ui_state.state.remove_tab(node);
                                         }
                                     } else {
-                                        ui_state.state.add_window(vec![tab]);
+                                        ui_state.state.add_window(vec![id]);
                                     }
                                 }
                             }

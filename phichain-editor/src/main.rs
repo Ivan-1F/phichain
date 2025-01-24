@@ -41,6 +41,7 @@ use crate::file::{pick_folder, FilePickingPlugin, PickingKind};
 use crate::hit_sound::HitSoundPlugin;
 use crate::home::HomePlugin;
 use crate::hotkey::HotkeyPlugin;
+use crate::identifier::{Identifier, IntoIdentifier};
 use crate::misc::MiscPlugin;
 use crate::notification::NotificationPlugin;
 use crate::project::project_loaded;
@@ -50,19 +51,16 @@ use crate::recent_projects::RecentProjectsPlugin;
 use crate::schedule::EditorSet;
 use crate::screenshot::ScreenshotPlugin;
 use crate::selection::Selected;
-use crate::settings::{AspectRatio, EditorSettings, EditorSettingsPlugin};
+use crate::settings::{EditorSettings, EditorSettingsPlugin};
 use crate::tab::game::GameCamera;
 use crate::tab::game::GameTabPlugin;
-use crate::tab::game::GameViewport;
 use crate::tab::quick_action::quick_action;
-use crate::tab::timeline::TimelineViewport;
 use crate::tab::TabPlugin;
 use crate::tab::{EditorTab, TabRegistry};
 use crate::timeline::TimelinePlugin;
 use crate::timing::TimingPlugin;
 use crate::translation::TranslationPlugin;
 use crate::ui::UiPlugin;
-use crate::utils::convert::BevyEguiConvert;
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy::render::render_resource::WgpuFeatures;
@@ -195,24 +193,38 @@ struct TabViewer<'a> {
 
 #[derive(Resource)]
 struct UiState {
-    state: DockState<EditorTab>,
+    state: DockState<Identifier>,
 }
 
 impl UiState {
     fn new() -> Self {
-        let mut state = DockState::new(vec![EditorTab::Game]);
+        let mut state = DockState::new(vec![EditorTab::Game.into_identifier()]);
         let tree = state.main_surface_mut();
         let [game, timeline] = tree.split_left(
             NodeIndex::root(),
             2.0 / 3.0,
-            vec![EditorTab::Timeline, EditorTab::Settings],
+            vec![
+                EditorTab::Timeline.into_identifier(),
+                EditorTab::Settings.into_identifier(),
+            ],
         );
 
-        let [_line_list, _timeline] =
-            tree.split_left(timeline, 1.0 / 4.0, vec![EditorTab::LineList]);
+        let [_line_list, _timeline] = tree.split_left(
+            timeline,
+            1.0 / 4.0,
+            vec![EditorTab::LineList.into_identifier()],
+        );
 
-        let [_, inspector] = tree.split_below(game, 2.0 / 5.0, vec![EditorTab::Inspector]);
-        tree.split_right(inspector, 1.0 / 2.0, vec![EditorTab::TimelineSetting]);
+        let [_, inspector] = tree.split_below(
+            game,
+            2.0 / 5.0,
+            vec![EditorTab::Inspector.into_identifier()],
+        );
+        tree.split_right(
+            inspector,
+            1.0 / 2.0,
+            vec![EditorTab::TimelineSetting.into_identifier()],
+        );
 
         Self { state }
     }
@@ -227,54 +239,13 @@ impl UiState {
 }
 
 impl egui_dock::TabViewer for TabViewer<'_> {
-    type Tab = EditorTab;
+    type Tab = Identifier;
 
     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
-        self.registry
-            .get(tab)
-            .map(|t| t!(t.title()))
-            .unwrap_or("Unknown".into())
-            .into()
+        t!(format!("tab.{}.title", tab).as_str()).into()
     }
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
         self.registry.tab_ui(ui, self.world, tab);
-        match tab {
-            EditorTab::Game => {
-                let aspect_ratio = &self
-                    .world
-                    .resource::<Persistent<EditorSettings>>()
-                    .game
-                    .aspect_ratio;
-                let clip_rect = ui.clip_rect();
-                let viewport = match aspect_ratio {
-                    AspectRatio::Free => clip_rect,
-                    AspectRatio::Fixed { width, height } => {
-                        utils::misc::keep_aspect_ratio(clip_rect, width / height)
-                    }
-                };
-
-                let mut game_viewport = self.world.resource_mut::<GameViewport>();
-                game_viewport.0 = viewport.into_bevy();
-
-                let mut game_viewport = self.world.resource_mut::<phichain_game::GameViewport>();
-                game_viewport.0 = viewport.into_bevy();
-            }
-            EditorTab::Timeline => {
-                let mut timeline_viewport = self.world.resource_mut::<TimelineViewport>();
-                let clip_rect = ui.clip_rect();
-                timeline_viewport.0 = Rect::from_corners(
-                    Vec2 {
-                        x: clip_rect.min.x,
-                        y: clip_rect.min.y,
-                    },
-                    Vec2 {
-                        x: clip_rect.max.x,
-                        y: clip_rect.max.y,
-                    },
-                );
-            }
-            _ => {}
-        }
     }
 
     fn closeable(&mut self, tab: &mut Self::Tab) -> bool {
@@ -282,17 +253,20 @@ impl egui_dock::TabViewer for TabViewer<'_> {
     }
 
     fn allowed_in_windows(&self, tab: &mut Self::Tab) -> bool {
-        !matches!(tab, EditorTab::Game)
+        tab.to_string() != EditorTab::Game.into_identifier().to_string()
     }
 
     fn clear_background(&self, tab: &Self::Tab) -> bool {
-        !matches!(tab, EditorTab::Game | EditorTab::Timeline)
+        *tab != EditorTab::Game.into_identifier() && *tab != EditorTab::Timeline.into_identifier()
     }
 
     fn scroll_bars(&self, tab: &Self::Tab) -> [bool; 2] {
-        match tab {
-            EditorTab::Game | EditorTab::Timeline => [false, false],
-            _ => [true, true],
+        if *tab == EditorTab::Game.into_identifier()
+            || *tab == EditorTab::Timeline.into_identifier()
+        {
+            [false, false]
+        } else {
+            [true, true]
         }
     }
 }
@@ -336,7 +310,7 @@ fn ui_system(world: &mut World) {
             ui.menu_button(t!("menu_bar.tabs.title"), |ui| {
                 world.resource_scope(|world, mut ui_state: Mut<UiState>| {
                     world.resource_scope(|_, registry: Mut<TabRegistry>| {
-                        for (tab, registered_tab) in registry.iter() {
+                        for (tab, _) in registry.iter() {
                             let opened = ui_state
                                 .state
                                 .iter_all_tabs()
@@ -344,7 +318,7 @@ fn ui_system(world: &mut World) {
                                 .collect::<Vec<_>>()
                                 .contains(&tab);
                             if ui
-                                .selectable_label(opened, t!(registered_tab.title()))
+                                .selectable_label(opened, t!(format!("tab.{}.title", tab).as_str()))
                                 .clicked()
                             {
                                 if opened {
@@ -353,7 +327,7 @@ fn ui_system(world: &mut World) {
                                     }
                                     ui.close_menu();
                                 } else {
-                                    ui_state.state.add_window(vec![*tab]);
+                                    ui_state.state.add_window(vec![tab.clone()]);
                                     ui.close_menu();
                                 }
                             }

@@ -1,10 +1,33 @@
 pub mod core;
 
-use bevy::{prelude::*, render::camera::Viewport};
-
-use crate::project::project_loaded;
-
 use self::core::CoreGamePlugin;
+use crate::project::project_loaded;
+use crate::settings::{AspectRatio, EditorSettings};
+use crate::utils;
+use crate::utils::convert::BevyEguiConvert;
+use bevy::{prelude::*, render::camera::Viewport};
+use bevy_persistent::Persistent;
+use egui::Ui;
+
+pub fn game_tab(In(ui): In<Ui>, world: &mut World) {
+    let aspect_ratio = &world
+        .resource::<Persistent<EditorSettings>>()
+        .game
+        .aspect_ratio;
+    let clip_rect = ui.clip_rect();
+    let viewport = match aspect_ratio {
+        AspectRatio::Free => clip_rect,
+        AspectRatio::Fixed { width, height } => {
+            utils::misc::keep_aspect_ratio(clip_rect, width / height)
+        }
+    };
+
+    let mut game_viewport = world.resource_mut::<GameViewport>();
+    game_viewport.0 = viewport.into_bevy();
+
+    let mut game_viewport = world.resource_mut::<phichain_game::GameViewport>();
+    game_viewport.0 = viewport.into_bevy();
+}
 
 pub struct GameTabPlugin;
 

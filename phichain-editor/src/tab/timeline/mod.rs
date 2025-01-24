@@ -8,6 +8,19 @@ use crate::utils::convert::BevyEguiConvert;
 use phichain_chart::note::Note;
 
 pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
+    let mut timeline_viewport = world.resource_mut::<TimelineViewport>();
+    let clip_rect = ui.clip_rect();
+    timeline_viewport.0 = Rect::from_corners(
+        Vec2 {
+            x: clip_rect.min.x,
+            y: clip_rect.min.y,
+        },
+        Vec2 {
+            x: clip_rect.max.x,
+            y: clip_rect.max.y,
+        },
+    );
+
     timeline::drag_selection::timeline_drag_selection(&mut ui, world);
     let viewport = world.resource::<TimelineViewport>();
     let timeline_settings = world.resource::<TimelineSettings>();
