@@ -1,3 +1,4 @@
+mod action_panel;
 pub mod bpm_list;
 pub mod chart_basic_setting;
 pub mod game;
@@ -8,6 +9,7 @@ pub mod settings;
 pub mod timeline;
 pub mod timeline_setting;
 
+use crate::tab::action_panel::ActionPanelPlugin;
 use crate::tab::bpm_list::bpm_list_tab;
 use crate::tab::chart_basic_setting::chart_basic_setting_tab;
 use crate::tab::inspector::inspector_ui_system;
@@ -85,7 +87,8 @@ impl Plugin for TabPlugin {
             )
             .register_tab(EditorTab::BpmList, "tab.bpm_list.title", bpm_list_tab)
             .register_tab(EditorTab::LineList, "tab.line_list.title", line_list_tab)
-            .register_tab(EditorTab::Settings, "tab.settings.title", settings_tab);
+            .register_tab(EditorTab::Settings, "tab.settings.title", settings_tab)
+            .add_plugins(ActionPanelPlugin);
     }
 }
 

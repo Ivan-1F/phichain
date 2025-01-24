@@ -8,7 +8,7 @@ pub type ActionIdentifier = Identifier;
 
 pub struct RegisteredAction {
     system: Box<dyn System<In = (), Out = ()>>,
-    enable_hotkey: bool,
+    pub enable_hotkey: bool,
 }
 
 impl RegisteredAction {
@@ -18,7 +18,7 @@ impl RegisteredAction {
 }
 
 #[derive(Resource, Deref, Default)]
-pub struct ActionRegistry(HashMap<ActionIdentifier, RegisteredAction>);
+pub struct ActionRegistry(pub HashMap<ActionIdentifier, RegisteredAction>);
 
 impl ActionRegistry {
     pub fn run_action(&mut self, world: &mut World, id: impl Into<ActionIdentifier>) {

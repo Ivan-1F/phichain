@@ -12,9 +12,10 @@ pub trait IntoIdentifier {
     fn into_identifier(self) -> Identifier;
 }
 
-impl IntoIdentifier for Identifier {
+// TODO: optimize
+impl<T: Into<Identifier>> IntoIdentifier for T {
     fn into_identifier(self) -> Identifier {
-        self
+        self.into()
     }
 }
 
