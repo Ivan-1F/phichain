@@ -70,8 +70,6 @@ fn action_panel_ui_system(
         .show(ctx, |ui| {
             ui.style_mut().interaction.selectable_labels = false;
 
-            ui.heading("Action Panel");
-            ui.separator();
             TextEdit::singleline(&mut panel.query)
                 .desired_width(f32::INFINITY)
                 .ui(ui)
