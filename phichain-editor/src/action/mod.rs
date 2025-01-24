@@ -106,8 +106,10 @@ fn handle_action_hotkey_system(world: &mut World) {
 #[derive(Debug, Clone, Event)]
 pub struct RunActionEvent(pub Identifier);
 
-fn handle_run_action_event_system(world: &mut World) {
-    let mut state: SystemState<EventReader<RunActionEvent>> = SystemState::new(world);
+fn handle_run_action_event_system(
+    world: &mut World,
+    state: &mut SystemState<EventReader<RunActionEvent>>,
+) {
     let mut events = state.get_mut(world);
 
     let actions_to_run: Vec<_> = events.read().map(|x| x.0.clone()).collect();
