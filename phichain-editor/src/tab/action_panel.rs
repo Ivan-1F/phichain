@@ -56,7 +56,7 @@ fn action_panel_ui_system(
 
     let window = window.single();
 
-    egui::Window::new("Action Panel")
+    let response = egui::Window::new("Action Panel")
         .title_bar(false)
         .collapsible(false)
         .resizable(false)
@@ -100,4 +100,8 @@ fn action_panel_ui_system(
                 }
             });
         });
+
+    if response.is_some_and(|x| x.response.clicked_elsewhere()) {
+        commands.entity(entity).despawn();
+    }
 }
