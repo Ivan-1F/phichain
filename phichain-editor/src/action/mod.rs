@@ -36,7 +36,9 @@ pub struct ActionPlugin;
 impl Plugin for ActionPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ActionRegistry>()
-            .add_systems(Update, handle_action_hotkey_system.in_set(GameSet));
+            .add_systems(Update, handle_action_hotkey_system.in_set(GameSet))
+            .add_event::<RunActionEvent>()
+            .add_systems(Update, handle_run_action_event_system.in_set(GameSet));
     }
 }
 
@@ -99,4 +101,20 @@ fn handle_action_hotkey_system(world: &mut World) {
             }
         });
     }
+}
+
+#[derive(Debug, Clone, Event)]
+pub struct RunActionEvent(pub Identifier);
+
+fn handle_run_action_event_system(world: &mut World) {
+    let mut state: SystemState<EventReader<RunActionEvent>> = SystemState::new(world);
+    let mut events = state.get_mut(world);
+
+    let actions_to_run: Vec<_> = events.read().map(|x| x.0.clone()).collect();
+
+    world.resource_scope(|world, mut registry: Mut<ActionRegistry>| {
+        for action in actions_to_run {
+            registry.run_action(world, action);
+        }
+    });
 }
