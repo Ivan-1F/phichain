@@ -196,6 +196,10 @@ hotkey:
   phichain.place_hold: 放置 Hold
   phichain.place_transition_event: 放置过度事件
   phichain.place_constant_event: 放置常量事件
+  phichain.forward: 前进
+  phichain.backward: 后退
+
+action:
   phichain.save_project: 保存项目
   phichain.close_project: 关闭项目
   phichain.copy: 复制
@@ -204,7 +208,5 @@ hotkey:
   phichain.undo: 撤销
   phichain.redo: 重做
   phichain.pause_resume: 暂停/播放
-  phichain.forward: 前进
-  phichain.backward: 后退
   phichain.take_screenshot: 截屏
   phichain.delete_selected: 删除选中

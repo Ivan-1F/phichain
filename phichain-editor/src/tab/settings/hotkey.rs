@@ -1,10 +1,11 @@
+use crate::action::ActionRegistry;
 use crate::hotkey::record::RecordingHotkey;
 use crate::hotkey::HotkeyContext;
 use crate::identifier::Identifier;
 use crate::settings::EditorSettings;
 use crate::tab::settings::SettingCategory;
 use bevy::ecs::system::SystemState;
-use bevy::prelude::{Entity, World};
+use bevy::prelude::{Entity, Res, World};
 use egui::Ui;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
@@ -18,8 +19,8 @@ impl SettingCategory for Hotkey {
     fn ui(&self, ui: &mut Ui, _: &mut EditorSettings, world: &mut World) -> bool {
         // TODO: add grouping for hotkeys
 
-        let mut state: SystemState<HotkeyContext> = SystemState::new(world);
-        let mut ctx = state.get_mut(world);
+        let mut state: SystemState<(HotkeyContext, Res<ActionRegistry>)> = SystemState::new(world);
+        let (mut ctx, actions) = state.get_mut(world);
 
         let mut despawn = None::<Entity>;
         let mut spawn = None::<Identifier>;
@@ -30,7 +31,12 @@ impl SettingCategory for Hotkey {
             .striped(true)
             .show(ui, |ui| {
                 for (id, default) in ctx.registry.0.clone().iter() {
-                    ui.label(t!(format!("hotkey.{}", id).as_str()));
+                    let key = if actions.0.contains_key(id) {
+                        format!("action.{}", id)
+                    } else {
+                        format!("hotkey.{}", id)
+                    };
+                    ui.label(t!(key.as_str()));
                     match ctx.query.get_single() {
                         Ok((recording, _)) if recording.id == *id => {
                             let mut keys = recording
