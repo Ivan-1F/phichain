@@ -1,10 +1,12 @@
 use crate::action::{ActionRegistrationExt, ActionRegistry, RunActionEvent};
 use crate::hotkey::modifier::Modifier;
 use crate::hotkey::{Hotkey, HotkeyRegistry};
+use crate::tab::{EditorTab, TabRegistry};
+use crate::UiState;
 use bevy::app::App;
 use bevy::prelude::{
     Commands, Component, Entity, EventWriter, IntoSystemConfigs, KeyCode, Plugin, Query, Res,
-    Update, Window, With, World,
+    ResMut, Update, Window, With, World,
 };
 use bevy::window::PrimaryWindow;
 use bevy_egui::EguiContext;
@@ -39,6 +41,20 @@ fn open_action_panel_system(world: &mut World) {
     world.spawn(ActionPanel::default());
 }
 
+#[derive(Debug, Clone)]
+enum ActionPanelEntryKind {
+    Action,
+    Tab,
+}
+
+#[derive(Debug, Clone)]
+struct ActionPanelEntry {
+    kind: ActionPanelEntryKind,
+    id: String,
+    title: String,
+    hotkey: Option<Hotkey>,
+}
+
 fn action_panel_ui_system(
     mut commands: Commands,
     actions: Res<ActionRegistry>,
@@ -46,6 +62,9 @@ fn action_panel_ui_system(
     window: Query<&Window, With<PrimaryWindow>>,
     mut context: Query<&mut EguiContext>,
     mut query: Query<(Entity, &mut ActionPanel)>,
+
+    tab_registry: Res<TabRegistry>,
+    mut ui_state: ResMut<UiState>,
 
     mut run: EventWriter<RunActionEvent>,
 ) {
@@ -61,11 +80,35 @@ fn action_panel_ui_system(
 
     let window = window.single();
 
+    let mut entries = vec![];
+
+    for (id, _) in actions
+        .0
+        .iter()
+        .filter(|(id, _)| id.to_string() != "phichain.open_action_panel")
+    {
+        entries.push(ActionPanelEntry {
+            kind: ActionPanelEntryKind::Action,
+            id: id.to_string(),
+            title: t!(format!("action.{}", id).as_str()).to_string(),
+            hotkey: hotkeys.0.get(id).cloned(),
+        })
+    }
+
+    for (tab, registered_tab) in tab_registry.iter() {
+        entries.push(ActionPanelEntry {
+            kind: ActionPanelEntryKind::Tab,
+            id: format!("{:?}", tab), // TODO
+            title: t!(registered_tab.title()).to_string(),
+            hotkey: None,
+        })
+    }
+
     let response = egui::Window::new("Action Panel")
         .title_bar(false)
         .collapsible(false)
         .resizable(false)
-        .fixed_size((window.width() * 0.6, window.height() * 0.5))
+        .fixed_size((window.width() * 0.5, window.height() * 0.5))
         .anchor(Align2::CENTER_CENTER, egui::Vec2::ZERO)
         .show(ctx, |ui| {
             ui.style_mut().interaction.selectable_labels = false;
@@ -77,18 +120,22 @@ fn action_panel_ui_system(
 
             ui.separator();
 
-            let entries = actions
-                .0
+            let entries = entries
                 .iter()
-                .filter(|(id, _)| id.to_string() != "phichain.open_action_panel")
-                .filter(|(id, _)| {
-                    let label = t!(format!("action.{}", id).as_str()).to_string();
-                    label.contains(panel.query.as_str())
-                        || id.to_string().contains(panel.query.as_str())
+                .filter(|entry| {
+                    entry
+                        .title
+                        .to_ascii_lowercase()
+                        .contains(panel.query.to_ascii_lowercase().as_str())
+                        || entry
+                            .id
+                            .to_ascii_lowercase()
+                            .contains(panel.query.to_ascii_lowercase().as_str())
                 })
+                .cloned()
                 .collect::<Vec<_>>();
 
-            for (index, (id, action)) in entries.iter().enumerate() {
+            for (index, entry) in entries.iter().enumerate() {
                 let selected = panel.cursor.is_some_and(|x| x == index);
 
                 egui::Frame::none()
@@ -99,15 +146,17 @@ fn action_panel_ui_system(
                     })
                     .show(ui, |ui| {
                         ui.horizontal(|ui| {
-                            ui.label(t!(format!("action.{}", id).as_str()));
+                            let icon = match entry.kind {
+                                ActionPanelEntryKind::Action => egui_phosphor::regular::COMMAND,
+                                ActionPanelEntryKind::Tab => egui_phosphor::regular::BROWSER,
+                            };
+                            ui.label(format!("{} {}", icon, entry.title));
 
                             let remain = ui.available_width();
                             ui.add_space(remain - 200.0);
 
-                            if action.enable_hotkey {
-                                if let Some(hotkey) = hotkeys.0.get(*id) {
-                                    ui.label(hotkey.to_string());
-                                }
+                            if let Some(hotkey) = &entry.hotkey {
+                                ui.label(hotkey.to_string());
                             }
 
                             ui.add_space(ui.available_width());
@@ -153,9 +202,41 @@ fn action_panel_ui_system(
             ui.input(|x| {
                 if x.key_pressed(egui::Key::Enter) {
                     if let Some(cursor) = panel.cursor {
-                        if let Some(action) = entries.get(cursor) {
+                        if let Some(entry) = entries.get(cursor) {
                             commands.entity(entity).despawn();
-                            run.send(RunActionEvent(action.0.clone()));
+                            match entry.kind {
+                                ActionPanelEntryKind::Action => {
+                                    run.send(RunActionEvent(entry.id.parse().unwrap()));
+                                }
+                                ActionPanelEntryKind::Tab => {
+                                    // TODO: normalize tab id
+                                    let tab = match entry.id.as_str() {
+                                        "Game" => EditorTab::Game,
+                                        "Timeline" => EditorTab::Timeline,
+                                        "Inspector" => EditorTab::Inspector,
+                                        "TimelineSetting" => EditorTab::TimelineSetting,
+                                        "ChartBasicSetting" => EditorTab::ChartBasicSetting,
+                                        "LineList" => EditorTab::LineList,
+                                        "BpmList" => EditorTab::BpmList,
+                                        "Settings" => EditorTab::Settings,
+                                        _ => unreachable!(),
+                                    };
+                                    let opened = ui_state
+                                        .state
+                                        .iter_all_tabs()
+                                        .map(|x| x.1)
+                                        .collect::<Vec<_>>()
+                                        .contains(&&tab);
+
+                                    if opened {
+                                        if let Some(node) = ui_state.state.find_tab(&tab) {
+                                            ui_state.state.remove_tab(node);
+                                        }
+                                    } else {
+                                        ui_state.state.add_window(vec![tab]);
+                                    }
+                                }
+                            }
                         }
                     }
                 }

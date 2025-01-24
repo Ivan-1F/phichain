@@ -183,6 +183,8 @@ fn setup_egui_font_system(mut contexts: bevy_egui::EguiContexts) {
         .expect("Failed to setup font")
         .insert(0, font_name);
 
+    egui_phosphor::add_to_fonts(&mut font_def, egui_phosphor::Variant::Regular);
+
     ctx.set_fonts(font_def);
 }
 

@@ -2553,6 +2553,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "egui-phosphor"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c873785789bc94a14dcbbd361cda1e498957fa1b4ec389ba650fd651849463b"
+dependencies = [
+ "egui",
+]
+
+[[package]]
 name = "egui-toast"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4643,6 +4652,7 @@ dependencies = [
  "chrono",
  "clap",
  "egui",
+ "egui-phosphor",
  "egui-toast",
  "egui_dock",
  "egui_extras",

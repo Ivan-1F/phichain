@@ -86,3 +86,4 @@ phichain-compiler = { path = "../phichain-compiler" }
 rand = "0.8.5"
 bon = "3.0.1"
 indexmap = "2.7.0"
+egui-phosphor = "0.5.0"
