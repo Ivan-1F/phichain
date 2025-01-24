@@ -75,8 +75,11 @@ fn action_panel_ui_system(
             ui.separator();
 
             for (id, action) in &actions.0 {
+                if id.to_string() == "phichain.open_action_panel" {
+                    continue;
+                }
                 ui.horizontal(|ui| {
-                    ui.label(id.to_string());
+                    ui.label(t!(format!("action.{}", id).as_str()));
 
                     let remain = ui.available_width();
                     ui.add_space(remain - 200.0);
