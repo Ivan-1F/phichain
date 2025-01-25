@@ -210,3 +210,4 @@ action:
   phichain.pause_resume: 暂停/播放
   phichain.take_screenshot: 截屏
   phichain.delete_selected: 删除选中
+  phichain.open_action_panel: 打开命令面板

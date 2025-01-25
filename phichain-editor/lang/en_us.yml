@@ -211,3 +211,4 @@ action:
   phichain.pause_resume: Pause/Resume
   phichain.take_screenshot: Take Screenshot
   phichain.delete_selected: Delete Selected
+  phichain.open_action_panel: Open Action Panel
