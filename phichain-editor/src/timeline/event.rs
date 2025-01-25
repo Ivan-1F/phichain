@@ -1,3 +1,4 @@
+use crate::constants::INDICATOR_POSITION;
 use crate::editing::command::event::EditEvent;
 use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
@@ -169,6 +170,45 @@ impl Timeline for EventTimeline {
             }
         }
 
+        // event track type indicator banner
+        ui.painter().rect(
+            Rect::from_two_pos(
+                egui::Pos2::new(viewport.min.x, viewport.max.y * INDICATOR_POSITION + 10.0),
+                egui::Pos2::new(viewport.max.x, viewport.max.y * INDICATOR_POSITION + 40.0),
+            ),
+            0.0,
+            Color32::BLACK,
+            Stroke::NONE,
+        );
+
+        // event track type indicator
+        ui.style_mut().interaction.selectable_labels = false;
+        for (i, txt) in [
+            "X",
+            "Y",
+            egui_phosphor::regular::ARROWS_CLOCKWISE,
+            egui_phosphor::regular::CIRCLE_HALF,
+            egui_phosphor::regular::GAUGE,
+        ]
+        .iter()
+        .enumerate()
+        {
+            ui.put(
+                Rect::from_center_size(
+                    egui::Pos2::new(
+                        viewport.min.x
+                            + viewport.width() / 5.0 * i as f32
+                            + viewport.width() / 10.0,
+                        viewport.max.y * INDICATOR_POSITION + 20.0,
+                    ),
+                    egui::Vec2::splat(10.0),
+                ),
+                egui::Label::new(egui::RichText::new(*txt).color(Color32::WHITE).size(20.0)),
+            );
+        }
+        ui.style_mut().interaction.selectable_labels = true;
+
+        // lane
         // [0.2, 0.4, 0.6, 0.8]
         let lane_percents = iter::repeat(0.0)
             .take(5 - 1)
