@@ -226,10 +226,12 @@ pub fn update_time_system(
     mut game_time: ResMut<phichain_game::ChartTime>,
 ) {
     if let Some(instance) = audio_instances.get_mut(&handle.0) {
-        let value = instance.state().position().unwrap_or_default() as f32 - offset.0 / 1000.0;
+        let value = instance.state().position().unwrap_or_default() as f32;
         timing.update(time.elapsed_seconds(), value);
 
-        chart_time.0 = timing.now();
-        game_time.0 = timing.now();
+        let now = timing.now() - offset.0 / 1000.0;
+
+        chart_time.0 = now;
+        game_time.0 = now;
     }
 }
