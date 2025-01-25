@@ -33,11 +33,10 @@ pub trait EditorEvent: Event + Clone + Debug {
     fn run(self, world: &mut World) -> Self::Output;
 }
 
-fn handle_editor_event_system<T>(world: &mut World)
+fn handle_editor_event_system<T>(world: &mut World, state: &mut SystemState<EventReader<T>>)
 where
     T: EditorEvent,
 {
-    let mut state = SystemState::<EventReader<T>>::new(world);
     let mut event_reader = state.get_mut(world);
     let events = event_reader.read().cloned().collect::<Vec<_>>();
     event_reader.clear();
