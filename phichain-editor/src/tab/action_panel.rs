@@ -211,17 +211,9 @@ fn action_panel_ui_system(
                                 }
                                 ActionPanelEntryKind::Tab => {
                                     let id: Identifier = entry.id.parse().unwrap();
-                                    let opened = ui_state
-                                        .state
-                                        .iter_all_tabs()
-                                        .map(|x| x.1)
-                                        .collect::<Vec<_>>()
-                                        .contains(&&id);
 
-                                    if opened {
-                                        if let Some(node) = ui_state.state.find_tab(&id) {
-                                            ui_state.state.set_active_tab(node);
-                                        }
+                                    if let Some(node) = ui_state.state.find_tab(&id) {
+                                        ui_state.state.set_active_tab(node);
                                     } else {
                                         ui_state.state.add_window(vec![id]);
                                     }
