@@ -51,7 +51,7 @@ enum ActionPanelEntryKind {
 #[derive(Debug, Clone)]
 struct ActionPanelEntry {
     kind: ActionPanelEntryKind,
-    id: String, // TODO: change to Identifier
+    id: Identifier,
     title: String,
     hotkey: Option<Hotkey>,
 }
@@ -90,7 +90,7 @@ fn action_panel_ui_system(
     {
         entries.push(ActionPanelEntry {
             kind: ActionPanelEntryKind::Action,
-            id: id.to_string(),
+            id: id.clone(),
             title: t!(format!("action.{}", id).as_str()).to_string(),
             hotkey: hotkeys.0.get(id).cloned(),
         })
@@ -99,7 +99,7 @@ fn action_panel_ui_system(
     for (id, _) in tab_registry.iter() {
         entries.push(ActionPanelEntry {
             kind: ActionPanelEntryKind::Tab,
-            id: id.to_string(),
+            id: id.clone(),
             title: t!(format!("tab.{}.title", id).as_str()).to_string(),
             hotkey: None,
         })
@@ -130,6 +130,7 @@ fn action_panel_ui_system(
                         .contains(panel.query.to_ascii_lowercase().as_str())
                         || entry
                             .id
+                            .to_string()
                             .to_ascii_lowercase()
                             .contains(panel.query.to_ascii_lowercase().as_str())
                 })
@@ -207,10 +208,10 @@ fn action_panel_ui_system(
                             commands.entity(entity).despawn();
                             match entry.kind {
                                 ActionPanelEntryKind::Action => {
-                                    run.send(RunActionEvent(entry.id.parse().unwrap()));
+                                    run.send(RunActionEvent(entry.id.clone()));
                                 }
                                 ActionPanelEntryKind::Tab => {
-                                    let id: Identifier = entry.id.parse().unwrap();
+                                    let id = entry.id.clone();
 
                                     if let Some(node) = ui_state.state.find_tab(&id) {
                                         ui_state.state.set_active_tab(node);
