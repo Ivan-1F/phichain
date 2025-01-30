@@ -280,6 +280,9 @@ fn ui_system(world: &mut World) {
     };
     let mut egui_context = egui_context.clone();
     let ctx = egui_context.get_mut();
+    // TODO: move egui options to one place
+    // ctrl+plus / ctrl+minus / ctrl+zero is used for game viewport zooming in phichain. enabling this will cause ui glitch when using these hotkeys
+    ctx.options_mut(|options| options.zoom_with_keyboard = false);
 
     let diagnostics = world.resource::<DiagnosticsStore>();
     let mut fps = 0.0;

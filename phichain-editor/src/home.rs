@@ -51,6 +51,10 @@ fn ui_system(world: &mut World) {
     };
     let mut egui_context = egui_context.clone();
     let ctx = egui_context.get_mut();
+    // TODO: move egui options to one place
+    // ctrl+plus / ctrl+minus / ctrl+zero is used for game viewport zooming in phichain. enabling this will cause ui glitch when using these hotkeys
+    // even though there's no game preview in home page, we disable this for consistency
+    ctx.options_mut(|options| options.zoom_with_keyboard = false);
 
     egui::CentralPanel::default().show(ctx, |ui| {
         ui.heading(format!("Phichain v{}", env!("CARGO_PKG_VERSION")));
