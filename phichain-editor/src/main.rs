@@ -29,6 +29,7 @@ mod timing;
 mod translation;
 mod ui;
 mod utils;
+mod zoom;
 
 use crate::action::{ActionPlugin, ActionRegistry};
 use crate::audio::AudioPlugin;
@@ -61,6 +62,7 @@ use crate::timeline::TimelinePlugin;
 use crate::timing::TimingPlugin;
 use crate::translation::TranslationPlugin;
 use crate::ui::UiPlugin;
+use crate::zoom::ZoomPlugin;
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy::render::render_resource::WgpuFeatures;
@@ -132,6 +134,7 @@ fn main() {
         .add_plugins(NotificationPlugin)
         .add_plugins(FilePickingPlugin)
         .add_plugins(EventPlugin)
+        .add_plugins(ZoomPlugin)
         .add_systems(Startup, setup_egui_image_loader_system)
         .add_systems(Startup, setup_egui_font_system)
         .add_systems(Startup, setup_plugin)

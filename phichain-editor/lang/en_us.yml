@@ -212,3 +212,8 @@ action:
   phichain.take_screenshot: Take Screenshot
   phichain.delete_selected: Delete Selected
   phichain.open_action_panel: Open Action Panel
+
+  phichain.zoom_in: Zoom In 25%
+  phichain.zoom_out: Zoom Out 25%
+  phichain.reset_zoom: Reset Zoom to 100%
+
