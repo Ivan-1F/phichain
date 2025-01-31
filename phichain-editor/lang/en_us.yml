@@ -24,7 +24,6 @@ tab:
         invalid: 'A curve note track has been removed: invalid origin or destination'
         empty: 'A curve note track has been removed: does not contain any notes'
       instructions:
-        confirm: Confirm the options and click 'Fill' to proceed or 'Cancel' to cancel
         select_destination: Please select the destination
         select_origin: Please select the origin
         select_origin_destination: Please select the origin and the destination
