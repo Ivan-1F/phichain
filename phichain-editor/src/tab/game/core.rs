@@ -1,4 +1,3 @@
-use super::GameCamera;
 use crate::editing::pending::Pending;
 use crate::project::project_loaded;
 use crate::selection::{Selected, SelectedLine};
@@ -17,8 +16,7 @@ pub struct CoreGamePlugin;
 
 impl Plugin for CoreGamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, zoom_scale_system.run_if(project_loaded()))
-            .add_systems(Update, sync_game_config_system.run_if(project_loaded()))
+        app.add_systems(Update, sync_game_config_system.run_if(project_loaded()))
             .add_systems(Update, update_note_tint_system.run_if(project_loaded()))
             .add_systems(
                 Update,
@@ -36,18 +34,6 @@ impl Plugin for CoreGamePlugin {
                 Update,
                 (create_anchor_marker_system, update_anchor_marker_system).run_if(project_loaded()),
             );
-    }
-}
-
-fn zoom_scale_system(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut query: Query<&mut OrthographicProjection, With<GameCamera>>,
-) {
-    let mut projection = query.single_mut();
-    if keyboard.pressed(KeyCode::KeyI) {
-        projection.scale /= 1.01;
-    } else if keyboard.pressed(KeyCode::KeyO) {
-        projection.scale *= 1.01;
     }
 }
 
