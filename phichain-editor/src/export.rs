@@ -1,7 +1,7 @@
 use crate::file::{PickingEvent, PickingKind};
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::project::{project_loaded, Project};
-use anyhow::{bail, Context};
+use anyhow::Context;
 use bevy::app::App;
 use bevy::prelude::*;
 use phichain_chart::format::official::OfficialChart;
@@ -9,7 +9,7 @@ use phichain_chart::primitive::Format;
 use phichain_chart::serialization::PhichainChart;
 use std::fs;
 use std::io::{Read, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use zip::write::SimpleFileOptions;
 
 pub struct ExportPlugin;
@@ -20,11 +20,27 @@ impl Plugin for ExportPlugin {
     }
 }
 
-fn export_official(path: &Path, project: &Project) -> anyhow::Result<()> {
-    let zip_path = path.join("chart.zip");
-    if zip_path.exists() {
-        bail!("chart.zip already exists in the folder");
+/// Generates the export path under a path, ensuring the path does not already exist
+fn get_export_path(path: &Path, index: usize) -> Option<PathBuf> {
+    if index >= 10 {
+        None
+    } else {
+        let zip_path = path.join(if index == 0 {
+            "chart.zip".to_string()
+        } else {
+            format!("chart({}).zip", index)
+        });
+
+        if zip_path.exists() {
+            get_export_path(path, index + 1)
+        } else {
+            Some(zip_path)
+        }
     }
+}
+
+fn export_official(path: &Path, project: &Project) -> anyhow::Result<()> {
+    let zip_path = get_export_path(path, 0).context("Failed to get export path")?;
 
     let file = fs::File::create(zip_path)?;
 
