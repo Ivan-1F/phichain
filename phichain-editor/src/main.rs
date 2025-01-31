@@ -109,10 +109,20 @@ fn main() {
         .add_plugins(TranslationPlugin)
         .add_plugins(RecentProjectsPlugin)
         .add_plugins(HomePlugin)
-        .add_plugins(DefaultPlugins.set(RenderPlugin {
-            render_creation: wgpu_settings.into(),
-            synchronous_pipeline_compilation: false,
-        }))
+        .add_plugins(
+            DefaultPlugins
+                .set(RenderPlugin {
+                    render_creation: wgpu_settings.into(),
+                    synchronous_pipeline_compilation: false,
+                })
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        title: "Phichain".to_string(),
+                        ..default()
+                    }),
+                    ..default()
+                }),
+        )
         .add_plugins(GamePlugin)
         .add_plugins(ActionPlugin)
         .add_plugins(ScreenshotPlugin)
