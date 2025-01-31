@@ -8,7 +8,7 @@ menu_bar:
     title: Windows
   export:
     title: Export
-    as_official: Export as official
+    as_official: Export as Official
 
 tab:
   game:
@@ -217,3 +217,4 @@ action:
   phichain.zoom_out: Zoom Out 25%
   phichain.reset_zoom: Reset Zoom to 100%
 
+  phichain.export_as_official: Export as Official

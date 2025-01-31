@@ -38,7 +38,7 @@ use crate::editing::history::EditorHistory;
 use crate::editing::EditingPlugin;
 use crate::events::EventPlugin;
 use crate::export::ExportPlugin;
-use crate::file::{pick_folder, FilePickingPlugin, PickingKind};
+use crate::file::FilePickingPlugin;
 use crate::hit_sound::HitSoundPlugin;
 use crate::home::HomePlugin;
 use crate::hotkey::HotkeyPlugin;
@@ -77,7 +77,6 @@ use phichain_assets::AssetsPlugin;
 use phichain_chart::event::LineEvent;
 use phichain_chart::note::Note;
 use phichain_game::{GamePlugin, GameSet};
-use rfd::FileDialog;
 use rust_i18n::set_locale;
 use std::env;
 
@@ -354,7 +353,10 @@ fn ui_system(world: &mut World) {
 
             ui.menu_button(t!("menu_bar.export.title"), |ui| {
                 if ui.button(t!("menu_bar.export.as_official")).clicked() {
-                    pick_folder(world, PickingKind::ExportOfficial, FileDialog::new());
+                    // TODO: make menu bar powered by actions
+                    world.resource_scope(|world, mut actions: Mut<ActionRegistry>| {
+                        actions.run_action(world, "phichain.export_as_official");
+                    });
                     ui.close_menu();
                 }
             });

@@ -1,4 +1,7 @@
-use crate::file::{PickingEvent, PickingKind};
+use crate::action::ActionRegistrationExt;
+use crate::file::{pick_folder, PickingEvent, PickingKind};
+use crate::hotkey::modifier::Modifier;
+use crate::hotkey::Hotkey;
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::project::{project_loaded, Project};
 use anyhow::Context;
@@ -7,6 +10,7 @@ use bevy::prelude::*;
 use phichain_chart::format::official::OfficialChart;
 use phichain_chart::primitive::Format;
 use phichain_chart::serialization::PhichainChart;
+use rfd::FileDialog;
 use std::fs;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -16,8 +20,20 @@ pub struct ExportPlugin;
 
 impl Plugin for ExportPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, export_official_system.run_if(project_loaded()));
+        app.add_systems(Update, export_official_system.run_if(project_loaded()))
+            .add_action(
+                "phichain.export_as_official",
+                export_as_official_system,
+                Some(Hotkey::new(
+                    KeyCode::KeyO,
+                    vec![Modifier::Control, Modifier::Shift],
+                )),
+            );
     }
+}
+
+fn export_as_official_system(world: &mut World) {
+    pick_folder(world, PickingKind::ExportOfficial, FileDialog::new());
 }
 
 /// Generates the export path under a path, ensuring the path does not already exist

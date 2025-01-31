@@ -215,3 +215,5 @@ action:
   phichain.zoom_in: 缩近 25%
   phichain.zoom_out: 缩远 25%
   phichain.reset_zoom: 重置缩放至 100%
+
+  phichain.export_as_official: 导出为官谱
