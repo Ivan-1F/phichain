@@ -185,6 +185,11 @@ audio_setting:
   save:
     failed: '保存音频配置时发生错误: %{error}'
 
+export:
+  official:
+    success: 已导出至 %{path}
+    failed: '导出为官谱时发生错误: %{path}'
+
 game:
   aspect_ratio:
     free: 自由

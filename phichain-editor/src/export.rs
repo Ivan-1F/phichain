@@ -55,10 +55,10 @@ fn get_export_path(path: &Path, index: usize) -> Option<PathBuf> {
     }
 }
 
-fn export_official(path: &Path, project: &Project) -> anyhow::Result<()> {
+fn export_official(path: &Path, project: &Project) -> anyhow::Result<PathBuf> {
     let zip_path = get_export_path(path, 0).context("Failed to get export path")?;
 
-    let file = fs::File::create(zip_path)?;
+    let file = fs::File::create(&zip_path)?;
 
     let mut zip = zip::ZipWriter::new(file);
 
@@ -115,7 +115,7 @@ Charter: {}
 
     zip.finish()?;
 
-    Ok(())
+    Ok(zip_path)
 }
 
 fn export_official_system(
@@ -133,11 +133,11 @@ fn export_official_system(
         };
 
         match export_official(path, &project) {
-            Ok(_) => {
-                toasts.success("Successfully exported official chart");
+            Ok(path) => {
+                toasts.success(t!("export.official.success", path = path.to_string_lossy()));
             }
             Err(error) => {
-                toasts.error(format!("Failed to export official chart: {}", error));
+                toasts.error(t!("export.official.failed", error = error));
             }
         }
     }

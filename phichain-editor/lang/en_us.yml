@@ -185,6 +185,11 @@ audio_setting:
   save:
     failed: 'Failed to save audio settings: %{error}'
 
+export:
+  official:
+    success: Successfully exported to %{path}
+    failed: 'Failed to export official chart: %{path}'
+
 game:
   aspect_ratio:
     free: Free
