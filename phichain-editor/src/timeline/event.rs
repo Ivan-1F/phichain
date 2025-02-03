@@ -10,7 +10,7 @@ use bevy::hierarchy::Parent;
 use bevy::prelude::{Entity, EventWriter, Query, Res, World};
 use egui::{Align2, Color32, FontId, Rangef, Rect, Sense, Stroke, Ui};
 use phichain_chart::bpm_list::BpmList;
-use phichain_chart::event::LineEvent;
+use phichain_chart::event::{LineEvent, LineEventKind};
 use std::iter;
 
 #[derive(Debug, Clone)]
@@ -34,6 +34,59 @@ impl EventTimeline {
     }
 }
 
+#[derive(Debug, Clone)]
+struct EventTrackData<T> {
+    x: T,
+    y: T,
+    rotation: T,
+    opacity: T,
+    speed: T,
+}
+
+impl<T> EventTrackData<T> {
+    fn get(&self, kind: LineEventKind) -> &T {
+        match kind {
+            LineEventKind::X => &self.x,
+            LineEventKind::Y => &self.y,
+            LineEventKind::Rotation => &self.rotation,
+            LineEventKind::Opacity => &self.opacity,
+            LineEventKind::Speed => &self.speed,
+        }
+    }
+
+    fn get_mut(&mut self, kind: LineEventKind) -> &mut T {
+        match kind {
+            LineEventKind::X => &mut self.x,
+            LineEventKind::Y => &mut self.y,
+            LineEventKind::Rotation => &mut self.rotation,
+            LineEventKind::Opacity => &mut self.opacity,
+            LineEventKind::Speed => &mut self.speed,
+        }
+    }
+}
+
+impl<T: Clone> EventTrackData<T> {
+    fn splat(value: T) -> Self {
+        Self {
+            x: value.clone(),
+            y: value.clone(),
+            rotation: value.clone(),
+            opacity: value.clone(),
+            speed: value.clone(),
+        }
+    }
+}
+
+impl<T: PartialEq> EventTrackData<T> {
+    fn contains(&self, value: &T) -> bool {
+        &self.x == value
+            || &self.y == value
+            || &self.rotation == value
+            || &self.opacity == value
+            || &self.speed == value
+    }
+}
+
 impl Timeline for EventTimeline {
     fn ui(&self, ui: &mut Ui, world: &mut World, viewport: Rect) {
         let line_entity = self.line_entity(world);
@@ -54,6 +107,67 @@ impl Timeline for EventTimeline {
 
         let (ctx, mut event_query, bpm_list, mut select_events, mut event_writer) =
             state.get_mut(world);
+
+        // in viewport, but start value outside bottom
+        let mut start_outside_bottom = EventTrackData::splat(None::<Entity>);
+
+        // in viewport, but end value outside bottom
+        let mut end_outside_bottom = EventTrackData::splat(None::<Entity>);
+
+        // outside bottom
+        let mut first_events_outside_bottom = EventTrackData::splat(None::<Entity>);
+        let mut first_events_outside_bottom_y = EventTrackData::splat(f32::MAX);
+
+        // outside top
+        let mut first_events_outside_top = EventTrackData::splat(None::<Entity>);
+        let mut first_events_outside_top_y = EventTrackData::splat(f32::MIN);
+
+        for (event, parent, entity, _, _) in &mut event_query {
+            if parent.get() != line_entity {
+                continue;
+            }
+
+            let track: u8 = event.kind.into();
+
+            let x = viewport.width() / 5.0 * track as f32 - viewport.width() / 5.0 / 2.0
+                + viewport.min.x;
+            let y = ctx.time_to_y(bpm_list.time_at(event.start_beat));
+
+            let size = egui::Vec2::new(
+                viewport.width() / 8000.0 * 989.0,
+                y - ctx.time_to_y(bpm_list.time_at(event.end_beat)),
+            );
+
+            let center = egui::Pos2::new(x, y - size.y / 2.0);
+
+            let rect = Rect::from_center_size(center, size);
+
+            if rect.bottom() >= viewport.bottom() && rect.top() <= viewport.bottom() {
+                // in viewport, but start value outside bottom
+                *start_outside_bottom.get_mut(event.kind) = Some(entity);
+            }
+
+            if rect.top() <= viewport.top() && rect.bottom() >= viewport.top() {
+                // in viewport, but start value outside bottom
+                *end_outside_bottom.get_mut(event.kind) = Some(entity);
+            }
+
+            if rect.top() >= viewport.bottom() {
+                // outside bottom
+                if rect.top() < *first_events_outside_bottom_y.get(event.kind) {
+                    *first_events_outside_bottom_y.get_mut(event.kind) = rect.top();
+                    *first_events_outside_bottom.get_mut(event.kind) = Some(entity);
+                }
+            }
+
+            if rect.bottom() <= viewport.top() {
+                // outside top
+                if rect.bottom() > *first_events_outside_top_y.get(event.kind) {
+                    *first_events_outside_top_y.get_mut(event.kind) = rect.bottom();
+                    *first_events_outside_top.get_mut(event.kind) = Some(entity);
+                }
+            }
+        }
 
         for (mut event, parent, entity, selected, pending) in &mut event_query {
             if parent.get() != line_entity {
@@ -92,7 +206,10 @@ impl Timeline for EventTimeline {
             let rect = Rect::from_center_size(center, size);
 
             let response = ui.allocate_rect(rect, Sense::click());
-            if ui.is_rect_visible(rect) {
+            if ui.is_rect_visible(rect)
+                || first_events_outside_bottom.contains(&Some(entity))
+                || first_events_outside_top.contains(&Some(entity))
+            {
                 ui.painter()
                     .rect(rect, 0.0, color, Stroke::new(2.0, Color32::WHITE));
 
@@ -150,14 +267,28 @@ impl Timeline for EventTimeline {
                 make_drag_zone(false);
 
                 ui.painter().text(
-                    rect.center_top(),
+                    if end_outside_bottom.contains(&Some(entity)) {
+                        rect.center_top()
+                            .max(egui::Pos2::new(rect.center_top().x, viewport.top()))
+                    } else {
+                        rect.center_top()
+                            .min(egui::Pos2::new(rect.center_top().x, viewport.max.y - 18.0))
+                    },
                     Align2::CENTER_TOP,
                     event.value.end(),
                     FontId::default(),
                     Color32::DARK_GREEN,
                 );
                 ui.painter().text(
-                    rect.center_bottom(),
+                    if start_outside_bottom.contains(&Some(entity)) {
+                        rect.center_bottom()
+                            .min(egui::Pos2::new(rect.center_bottom().x, viewport.max.y))
+                    } else {
+                        rect.center_bottom().max(egui::Pos2::new(
+                            rect.center_bottom().x,
+                            viewport.top() + 18.0,
+                        ))
+                    },
                     Align2::CENTER_BOTTOM,
                     event.value.start(),
                     FontId::default(),
