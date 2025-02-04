@@ -68,8 +68,8 @@ impl Identifier {
 
 #[cfg(test)]
 mod tests {
-    use smallvec::smallvec;
     use super::*;
+    use smallvec::smallvec;
 
     #[test]
     fn test_construction() {

@@ -53,8 +53,7 @@ pub fn bpm_list_tab(
 
                                 ui.label(t!("tab.bpm_list.point.bpm"));
                                 let response = ui.add(
-                                    egui::DragValue::new(&mut point.bpm)
-                                        .range(0.01..=f32::MAX),
+                                    egui::DragValue::new(&mut point.bpm).range(0.01..=f32::MAX),
                                 );
                                 finished |= response.drag_stopped() || response.lost_focus();
                                 ui.end_row();
