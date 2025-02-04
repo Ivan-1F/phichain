@@ -226,3 +226,5 @@ action:
   phichain.export_as_official: 导出为官谱
 
   phichain.create_line: 新建判定线
+
+  phichain.open_in_file_manager: 在文件管理器中打开项目

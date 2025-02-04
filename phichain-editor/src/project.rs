@@ -47,6 +47,13 @@ impl Plugin for ProjectPlugin {
                     events.send(UnloadProjectEvent);
                 },
                 Some(Hotkey::new(KeyCode::KeyW, vec![Modifier::Control])),
+            )
+            .add_action(
+                "phichain.open_in_file_manager",
+                |project: Res<Project>| {
+                    let _ = open::that(project.path.0.clone());
+                },
+                None,
             );
     }
 }

@@ -226,3 +226,5 @@ action:
   phichain.export_as_official: Export as Official
 
   phichain.create_line: Create Line
+
+  phichain.open_in_file_manager: Open Project in File Manager
