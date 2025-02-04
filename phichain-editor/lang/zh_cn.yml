@@ -224,3 +224,5 @@ action:
   phichain.reset_zoom: 重置缩放至 100%
 
   phichain.export_as_official: 导出为官谱
+
+  phichain.create_line: 新建判定线

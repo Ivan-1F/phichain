@@ -6,6 +6,7 @@ use crate::editing::create_note::CreateNotePlugin;
 use crate::editing::curve_note_track::CurveNoteTrackPlugin;
 use crate::editing::delete_selected::DeleteSelectedPlugin;
 use crate::editing::history::EditorHistory;
+use crate::editing::line::LineEditingPlugin;
 use crate::editing::move_event::MoveEventPlugin;
 use crate::editing::move_note::MoveNotePlugin;
 use crate::hotkey::modifier::Modifier;
@@ -21,6 +22,7 @@ mod create_note;
 pub mod curve_note_track;
 mod delete_selected;
 pub mod history;
+mod line;
 mod move_event;
 mod move_note;
 pub mod pending;
@@ -38,6 +40,7 @@ impl Plugin for EditingPlugin {
             .add_plugins(MoveEventPlugin)
             .add_plugins(CurveNoteTrackPlugin)
             .add_plugins(ClipboardPlugin)
+            .add_plugins(LineEditingPlugin)
             .add_systems(Update, handle_edit_command.in_set(EditorSet::Edit))
             .add_action(
                 "phichain.undo",

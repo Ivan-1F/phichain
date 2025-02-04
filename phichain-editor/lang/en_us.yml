@@ -224,3 +224,5 @@ action:
   phichain.reset_zoom: Reset Zoom to 100%
 
   phichain.export_as_official: Export as Official
+
+  phichain.create_line: Create Line

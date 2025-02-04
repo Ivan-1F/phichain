@@ -1,4 +1,5 @@
-use crate::editing::command::line::{CreateLine, MoveLineAsChild, RemoveLine};
+use crate::action::ActionRegistry;
+use crate::editing::command::line::{MoveLineAsChild, RemoveLine};
 use crate::editing::command::EditorCommand;
 use crate::editing::DoCommandEvent;
 use crate::selection::SelectedLine;
@@ -26,16 +27,17 @@ impl LineList<'_> {
     fn show(&mut self, ui: &mut Ui) {
         let mut state: SystemState<(
             Query<Entity, (Without<Parent>, With<Line>)>,
-            EventWriter<DoCommandEvent>,
             ResMut<Persistent<EditorSettings>>,
         )> = SystemState::new(self.world);
-        let (root_query, mut do_command_event, mut editor_settings) = state.get_mut(self.world);
+        let (root_query, mut editor_settings) = state.get_mut(self.world);
         let mut entities = root_query.iter().collect::<Vec<_>>();
         entities.sort();
 
+        let mut create_line = false;
+
         ui.with_layout(Layout::top_down_justified(egui::Align::Center), |ui| {
             if ui.button(t!("tab.line_list.create_line")).clicked() {
-                do_command_event.send(DoCommandEvent(EditorCommand::CreateLine(CreateLine::new())));
+                create_line = true;
             }
         });
 
@@ -100,6 +102,13 @@ impl LineList<'_> {
                 self.entity_ui(ui, entity, 0);
             }
         });
+
+        if create_line {
+            self.world
+                .resource_scope(|world, mut actions: Mut<ActionRegistry>| {
+                    actions.run_action(world, "phichain.create_line");
+                });
+        }
     }
 
     fn entity_ui(&mut self, ui: &mut Ui, entity: Entity, level: u32) {
