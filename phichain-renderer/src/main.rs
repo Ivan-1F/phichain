@@ -51,7 +51,7 @@ fn main() {
         .configure_sets(Update, GameSet)
         .insert_resource(SceneController::new(args.video.width, args.video.height))
         .insert_resource(args)
-        .insert_resource(ClearColor(Color::rgb_u8(0, 0, 0)))
+        .insert_resource(ClearColor(Color::srgb_u8(0, 0, 0)))
         .add_plugins(
             DefaultPlugins
                 .set(ImagePlugin::default_nearest())
