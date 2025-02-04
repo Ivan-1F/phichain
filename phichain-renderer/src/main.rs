@@ -6,6 +6,7 @@ mod utils;
 use crate::args::Args;
 use bevy::app::{AppExit, RunMode, ScheduleRunnerPlugin};
 use bevy::core_pipeline::tonemapping::Tonemapping;
+use bevy::image::TextureFormatPixelInfo;
 use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use bevy::render::camera::RenderTarget;
@@ -16,7 +17,6 @@ use bevy::render::render_resource::{
     ImageDataLayout, Maintain, MapMode, TextureDimension, TextureFormat, TextureUsages,
 };
 use bevy::render::renderer::{RenderContext, RenderDevice, RenderQueue};
-use bevy::render::texture::{BevyDefault, TextureFormatPixelInfo};
 use bevy::render::{render_graph, Extract, Render, RenderApp, RenderSet};
 use bevy_kira_audio::AudioPlugin;
 use clap::Parser;
@@ -64,7 +64,7 @@ fn main() {
                 .set(LogPlugin {
                     filter: "warn,phichain_renderer=info".to_string(),
                     level: bevy::log::Level::DEBUG,
-                    update_subscriber: None,
+                    ..default()
                 }),
         )
         .add_plugins(ImageCopyPlugin)
@@ -189,7 +189,7 @@ fn setup_system(
     let height = args.video.height;
 
     let args = args.clone();
-    commands.add(move |world: &mut World| {
+    commands.queue(move |world: &mut World| {
         let mut viewport = world.resource_mut::<GameViewport>();
         viewport.0 = Rect::from_corners(Vec2::ZERO, Vec2::new(width as f32, height as f32));
         let mut paused = world.resource_mut::<Paused>();
@@ -200,15 +200,13 @@ fn setup_system(
     });
 
     commands.spawn((
-        Camera2dBundle {
-            tonemapping: Tonemapping::None,
-            camera: Camera {
-                // render to image
-                target: render_target,
-                ..default()
-            },
+        Camera2d,
+        Camera {
+            // render to image
+            target: render_target,
             ..default()
         },
+        Tonemapping::None,
         IsDefaultUiCamera,
     ));
 
@@ -226,7 +224,7 @@ impl Plugin for ImageCopyPlugin {
             .insert_resource(MainWorldReceiver(r))
             .sub_app_mut(RenderApp);
 
-        let mut graph = render_app.world.resource_mut::<RenderGraph>();
+        let mut graph = render_app.world_mut().resource_mut::<RenderGraph>();
         graph.add_node(ImageCopy, ImageCopyDriver);
         graph.add_node_edge(bevy::render::graph::CameraDriverLabel, ImageCopy);
 
@@ -363,7 +361,9 @@ impl render_graph::Node for ImageCopyDriver {
         world: &World,
     ) -> Result<(), NodeRunError> {
         let image_copiers = world.get_resource::<ImageCopiers>().unwrap();
-        let gpu_images = world.get_resource::<RenderAssets<Image>>().unwrap();
+        let gpu_images = world
+            .get_resource::<RenderAssets<bevy::render::texture::GpuImage>>()
+            .unwrap();
 
         for image_copier in image_copiers.iter() {
             if !image_copier.enabled() {
@@ -388,8 +388,8 @@ impl render_graph::Node for ImageCopyDriver {
             );
 
             let texture_extent = Extent3d {
-                width: src_image.size.x as u32,
-                height: src_image.size.y as u32,
+                width: src_image.size.x,
+                height: src_image.size.y,
                 depth_or_array_layers: 1,
             };
 
@@ -588,7 +588,7 @@ fn update_system(
                     }
                 }
                 if chart_time.0 >= to {
-                    app_exit_writer.send(AppExit);
+                    app_exit_writer.send(AppExit::Success);
                     ffmpeg.0.wait().expect("Failed to wait ffmpeg");
                 }
             }
