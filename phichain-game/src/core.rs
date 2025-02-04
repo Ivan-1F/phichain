@@ -465,7 +465,7 @@ pub fn calculate_speed_events_system(
 ) {
     for (event, entity) in &query {
         if let LineEventKind::Speed = event.kind {
-            commands.entity(entity).insert(SpeedEvent::new(
+            commands.entity(entity).try_insert(SpeedEvent::new(
                 bpm_list.time_at(event.start_beat),
                 bpm_list.time_at(event.end_beat),
                 event.value.start(),
