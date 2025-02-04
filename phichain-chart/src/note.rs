@@ -101,7 +101,7 @@ impl Note {
 #[cfg(feature = "bevy")]
 #[derive(bevy::prelude::Bundle)]
 pub struct NoteBundle {
-    sprite: bevy::prelude::SpriteBundle,
+    sprite: bevy::prelude::Sprite,
     note: Note,
 }
 
@@ -109,7 +109,7 @@ pub struct NoteBundle {
 impl NoteBundle {
     pub fn new(note: Note) -> Self {
         Self {
-            sprite: bevy::prelude::SpriteBundle::default(),
+            sprite: bevy::prelude::Sprite::default(),
             note,
         }
     }

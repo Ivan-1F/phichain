@@ -34,7 +34,7 @@ pub struct LineSpeed(pub f32);
 #[cfg(feature = "bevy")]
 #[derive(bevy::prelude::Bundle, Default)]
 pub struct LineBundle {
-    sprite: bevy::prelude::SpriteBundle,
+    sprite: bevy::prelude::Sprite,
     line: Line,
     position: LinePosition,
     rotation: LineRotation,
