@@ -17,7 +17,7 @@ impl<'a> BeatValue<'a> {
         }
     }
 
-    pub fn clamp_range(mut self, range: RangeInclusive<Beat>) -> Self {
+    pub fn range(mut self, range: RangeInclusive<Beat>) -> Self {
         self.clamp_range = range;
         self
     }
@@ -34,23 +34,23 @@ impl Widget for BeatValue<'_> {
 
             let response_whole = ui.add(
                 egui::DragValue::new(&mut whole)
-                    .clamp_range(0..=u32::MAX)
+                    .range(0..=u32::MAX)
                     .speed(1),
             );
             let response_numer = ui.add(
                 egui::DragValue::new(&mut numer)
-                    .clamp_range(0..=u32::MAX)
+                    .range(0..=u32::MAX)
                     .speed(1),
             );
             let response_denom = ui.add(
                 egui::DragValue::new(&mut denom)
-                    .clamp_range(1..=u32::MAX)
+                    .range(1..=u32::MAX)
                     .speed(1),
             );
 
             let response_value = ui.add(
                 egui::DragValue::new(&mut value)
-                    .clamp_range(0.0..=f32::MAX)
+                    .range(0.0..=f32::MAX)
                     .custom_formatter(|x, _| format!("{:?}", Beat::from(x as f32)))
                     .speed(0.01),
             );

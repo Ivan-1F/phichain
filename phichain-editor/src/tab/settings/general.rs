@@ -54,7 +54,7 @@ impl SettingCategory for General {
                     let response = ui.add(
                         egui::DragValue::new(&mut settings.general.timeline_scroll_sensitivity)
                             .speed(0.1)
-                            .clamp_range(0.01..=f32::MAX),
+                            .range(0.01..=f32::MAX),
                     );
                     finished |= response.drag_stopped() || response.lost_focus();
                     ui.end_row();
