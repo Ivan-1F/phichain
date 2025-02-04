@@ -15,6 +15,8 @@ tab:
     title: Preview
   timeline:
     title: Timeline
+    event:
+      jump_to_event: Jump to this event
   inspector:
     title: Inspector
     curve_note_track:

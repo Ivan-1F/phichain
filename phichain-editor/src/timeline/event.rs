@@ -321,7 +321,7 @@ impl Timeline for EventTimeline {
             if ui
                 .allocate_rect(Rect::from_center_size(center, size), Sense::click())
                 .on_hover_cursor(egui::CursorIcon::PointingHand)
-                .on_hover_text("Jump to this event")
+                .on_hover_text(t!("tab.timeline.event.jump_to_event"))
                 .clicked()
             {
                 if let Ok(event) = event_query.get(event) {
