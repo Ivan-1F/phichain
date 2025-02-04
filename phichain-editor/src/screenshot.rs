@@ -5,7 +5,6 @@ use crate::misc::WorkingDirectory;
 use crate::notification::{ToastsExt, ToastsStorage};
 use bevy::prelude::*;
 use bevy::render::view::screenshot::{save_to_disk, Screenshot};
-use bevy::window::PrimaryWindow;
 
 pub struct ScreenshotPlugin;
 
@@ -19,9 +18,9 @@ impl Plugin for ScreenshotPlugin {
     }
 }
 
+// FIXME: this is not working in Bevy 0.15, see https://github.com/bevyengine/bevy/issues/16689
 fn take_screenshot_system(
     mut commands: Commands,
-    main_window: Query<Entity, With<PrimaryWindow>>,
     mut toasts: ResMut<ToastsStorage>,
     working_directory: Res<WorkingDirectory>,
 ) {
