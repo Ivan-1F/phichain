@@ -200,7 +200,7 @@ fn unload_project_system(
         let to_remove = world
             .query::<Entity>()
             .iter(world)
-            .filter(|entity| world.inspect_entity(*entity).collect::<Vec<_>>().len() == 0)
+            .filter(|entity| world.inspect_entity(*entity).collect::<Vec<_>>().is_empty())
             .collect::<Vec<_>>();
         for entity in to_remove {
             world.entity_mut(entity).despawn_recursive();
