@@ -70,7 +70,6 @@ use bevy::render::settings::WgpuSettings;
 use bevy::render::RenderPlugin;
 use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{EguiContext, EguiPlugin};
-use bevy_mod_picking::prelude::*;
 use bevy_persistent::Persistent;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use phichain_assets::AssetsPlugin;
@@ -79,6 +78,7 @@ use phichain_chart::note::Note;
 use phichain_game::{GamePlugin, GameSet};
 use rust_i18n::set_locale;
 use std::env;
+use std::sync::Arc;
 
 i18n!("lang", fallback = "en_us");
 
@@ -131,7 +131,6 @@ fn main() {
         .add_plugins(HitSoundPlugin)
         .add_plugins(GameTabPlugin)
         .add_plugins(TimelinePlugin)
-        .add_plugins(DefaultPickingPlugins)
         .add_plugins(EguiPlugin)
         .add_plugins(ProjectPlugin)
         .add_plugins(ExportPlugin)
@@ -184,7 +183,9 @@ fn setup_egui_font_system(mut contexts: bevy_egui::EguiContexts) {
 
     let font_data = egui::FontData::from_owned(font_file_bytes);
     let mut font_def = egui::FontDefinitions::default();
-    font_def.font_data.insert(font_name.to_string(), font_data);
+    font_def
+        .font_data
+        .insert(font_name.to_string(), Arc::new(font_data));
 
     let font_family: egui::FontFamily = egui::FontFamily::Proportional;
     font_def

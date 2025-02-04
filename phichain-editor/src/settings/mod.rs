@@ -9,7 +9,7 @@ pub struct EditorSettingsPlugin;
 impl Plugin for EditorSettingsPlugin {
     fn build(&self, app: &mut App) {
         let config_dir = app
-            .world
+            .world()
             .resource::<WorkingDirectory>()
             .config()
             .expect("Failed to locate config directory");

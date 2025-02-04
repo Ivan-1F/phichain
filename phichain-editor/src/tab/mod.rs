@@ -20,18 +20,22 @@ use crate::tab::settings::settings_tab;
 use crate::tab::timeline::timeline_tab;
 use crate::tab::timeline_setting::timeline_setting_tab;
 use bevy::{prelude::*, utils::HashMap};
-use egui::Ui;
+use egui::{Ui, UiBuilder};
 
 #[allow(dead_code)]
 pub fn empty_tab(In(_): In<Ui>) {}
 
 pub struct RegisteredTab {
-    system: Box<dyn System<In = Ui, Out = ()>>,
+    system: Box<dyn System<In = In<Ui>, Out = ()>>,
 }
 
 impl RegisteredTab {
     pub fn run(&mut self, world: &mut World, ui: &mut Ui) {
-        let child = ui.child_ui(ui.max_rect(), *ui.layout());
+        let child = ui.new_child(
+            UiBuilder::new()
+                .max_rect(ui.max_rect())
+                .layout(*ui.layout()),
+        );
         self.system.run(child, world);
     }
 }
@@ -97,7 +101,7 @@ pub trait TabRegistrationExt {
     fn register_tab<M1>(
         &mut self,
         id: impl IntoIdentifier,
-        system: impl IntoSystem<Ui, (), M1>,
+        system: impl IntoSystem<In<Ui>, (), M1>,
     ) -> &mut Self;
 }
 
@@ -105,9 +109,9 @@ impl TabRegistrationExt for App {
     fn register_tab<M1>(
         &mut self,
         id: impl IntoIdentifier,
-        system: impl IntoSystem<Ui, (), M1>,
+        system: impl IntoSystem<In<Ui>, (), M1>,
     ) -> &mut Self {
-        self.world
+        self.world_mut()
             .resource_scope(|world, mut registry: Mut<TabRegistry>| {
                 registry.0.insert(
                     id.into_identifier(),

@@ -51,7 +51,7 @@ pub struct GameCamera;
 pub fn update_game_camera_viewport_system(
     mut query: Query<&mut Camera, With<GameCamera>>,
     window_query: Query<&Window>,
-    egui_settings: Res<bevy_egui::EguiSettings>,
+    egui_settings: Query<&bevy_egui::EguiContextSettings>,
     game_viewport: Res<GameViewport>,
 ) {
     let mut game_camera = query.single_mut();
@@ -59,7 +59,7 @@ pub fn update_game_camera_viewport_system(
         return;
     };
 
-    let scale_factor = window.scale_factor() * egui_settings.scale_factor;
+    let scale_factor = window.scale_factor() * egui_settings.single().scale_factor;
     let viewport_pos = game_viewport.0.min * scale_factor;
     let viewport_size = game_viewport.0.size() * scale_factor;
 

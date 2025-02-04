@@ -39,7 +39,7 @@ pub fn load_illustration(path: PathBuf, commands: &mut Commands) {
         image::ColorType::Rgb8 | image::ColorType::Rgba8
     );
 
-    commands.add(move |world: &mut World| {
+    commands.queue(move |world: &mut World| {
         world.resource_scope(|world, mut images: Mut<Assets<Image>>| {
             if world.query::<&Illustration>().get_single(world).is_ok() {
                 warn!("Trying to spawn illustration with Illustration exists");
@@ -51,20 +51,14 @@ pub fn load_illustration(path: PathBuf, commands: &mut Commands) {
                 RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
             ));
             world.insert_resource(IllustrationAssetId(handle.id()));
-            world.spawn((
-                SpriteBundle {
-                    texture: handle,
-                    ..default()
-                },
-                Illustration,
-            ));
+            world.spawn((Sprite::from_image(handle), Illustration));
         });
     });
 }
 
 fn update_alpha_system(mut query: Query<&mut Sprite, With<Illustration>>) {
     let mut illustration = query.single_mut();
-    illustration.color.set_a(ILLUSTRATION_ALPHA);
+    illustration.color.set_alpha(ILLUSTRATION_ALPHA);
 }
 
 fn resize_illustration_system(

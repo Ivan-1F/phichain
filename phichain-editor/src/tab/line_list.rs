@@ -19,7 +19,7 @@ struct LineList<'w> {
 
 macro_rules! trunc_label {
     ($text: expr) => {
-        egui::Label::new($text).truncate(true)
+        egui::Label::new($text).truncate()
     };
 }
 
@@ -159,7 +159,7 @@ impl LineList<'_> {
                     text = text.color(Color32::LIGHT_GREEN);
                 }
                 let response = ui
-                    .add(egui::Label::new(text).truncate(true).sense(Sense::click()))
+                    .add(egui::Label::new(text).truncate().sense(Sense::click()))
                     .on_hover_cursor(egui::CursorIcon::PointingHand);
 
                 response.context_menu(|ui| {

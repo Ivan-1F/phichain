@@ -227,7 +227,7 @@ pub fn update_time_system(
 ) {
     if let Some(instance) = audio_instances.get_mut(&handle.0) {
         let value = instance.state().position().unwrap_or_default() as f32;
-        timing.update(time.elapsed_seconds(), value);
+        timing.update(time.elapsed_secs(), value);
 
         let now = timing.now() - offset.0 / 1000.0;
 

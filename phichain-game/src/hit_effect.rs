@@ -48,7 +48,7 @@ fn update_hit_effect_time_system(
         het.current = chart_time.0;
     } else {
         // based on bevy's built in timer
-        het.delta = time.delta_seconds();
+        het.delta = time.delta_secs();
     }
 }
 
@@ -93,13 +93,7 @@ fn setup_system(
     mut commands: Commands,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-    let layout = TextureAtlasLayout::from_grid(
-        Vec2::splat(256.0),
-        1,
-        HIT_EFFECT_FRAMES as usize,
-        None,
-        None,
-    );
+    let layout = TextureAtlasLayout::from_grid(UVec2::splat(256), 1, HIT_EFFECT_FRAMES, None, None);
     let texture_atlas_layout = texture_atlas_layouts.add(layout);
     commands.insert_resource(TextureAtlasLayoutHandle(texture_atlas_layout.clone()));
 }
@@ -110,15 +104,17 @@ struct AnimationTimer(Timer);
 fn animate_hit_effect_system(
     mut commands: Commands,
     time: Res<HitEffectTime>,
-    mut query: Query<(Entity, &mut AnimationTimer, &mut TextureAtlas), With<HitEffect>>,
+    mut query: Query<(Entity, &mut AnimationTimer, &mut Sprite), With<HitEffect>>,
 ) {
-    for (entity, mut timer, mut atlas) in &mut query {
+    for (entity, mut timer, mut sprite) in &mut query {
         timer.tick(time.delta());
         if timer.just_finished() {
-            if atlas.index == 29 {
-                commands.entity(entity).despawn();
-            } else {
-                atlas.index += 1;
+            if let Some(atlas) = &mut sprite.texture_atlas {
+                if atlas.index == 29 {
+                    commands.entity(entity).despawn();
+                } else {
+                    atlas.index += 1;
+                }
             }
         }
     }
@@ -164,19 +160,18 @@ fn spawn_hit_effect_system(
         let mut spawn = || {
             let translation = global_transform.translation();
 
-            commands.spawn((
-                SpriteBundle {
-                    texture: assets.hit.clone(),
-                    sprite: Sprite {
-                        color: PERFECT_COLOR,
-                        ..default()
-                    },
-                    ..default()
-                },
+            let mut sprite = Sprite::from_atlas_image(
+                assets.hit.clone(),
                 TextureAtlas {
                     layout: texture_atlas_layout_handle.0.clone(),
                     index: 0,
                 },
+            );
+
+            sprite.color = PERFECT_COLOR;
+
+            commands.spawn((
+                sprite,
                 HitEffect(Vec2::new(translation.x, translation.y)),
                 AnimationTimer(Timer::new(
                     HIT_EFFECT_DURATION / HIT_EFFECT_FRAMES,
@@ -240,6 +235,7 @@ impl HitParticleBundle {
         let shape = shapes::Rectangle {
             extents: Vec2::splat(size),
             origin: Default::default(),
+            ..default()
         };
 
         let angle = rand::thread_rng().gen_range(-std::f32::consts::PI..=std::f32::consts::PI);
@@ -252,11 +248,8 @@ impl HitParticleBundle {
             lifetime: Default::default(),
             shape: ShapeBundle {
                 path: GeometryBuilder::build_as(&shape),
-                spatial: SpatialBundle {
-                    transform: Transform {
-                        translation: position.extend(HIT_EFFECT_LAYER),
-                        ..default()
-                    },
+                transform: Transform {
+                    translation: position.extend(HIT_EFFECT_LAYER),
                     ..default()
                 },
                 ..default()
@@ -286,7 +279,7 @@ fn update_lifetime_system(
 
 fn update_opacity_system(mut query: Query<(&mut Fill, &Lifetime), With<HitParticle>>) {
     for (mut fill, lifetime) in &mut query {
-        fill.color.set_a((0.5 - lifetime.0) / 0.5);
+        fill.color.set_alpha((0.5 - lifetime.0) / 0.5);
     }
 }
 

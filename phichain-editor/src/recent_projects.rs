@@ -81,7 +81,7 @@ pub struct RecentProjectsPlugin;
 impl Plugin for RecentProjectsPlugin {
     fn build(&self, app: &mut App) {
         let config_dir = app
-            .world
+            .world()
             .resource::<WorkingDirectory>()
             .config()
             .expect("Failed to locate config directory");

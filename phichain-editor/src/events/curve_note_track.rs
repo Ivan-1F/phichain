@@ -3,7 +3,7 @@ use crate::utils::entity::replace_with_empty;
 use bevy::app::{App, Plugin};
 use bevy::hierarchy::DespawnRecursiveExt;
 use bevy::log::debug;
-use bevy::prelude::{BuildWorldChildren, Entity, Event, World};
+use bevy::prelude::{BuildChildren, Entity, Event, World};
 use bon::Builder;
 use phichain_game::curve_note_track::CurveNoteTrack;
 

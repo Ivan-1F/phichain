@@ -60,7 +60,7 @@ impl ActionRegistrationExt for App {
     ) -> &mut Self {
         let id = id.into();
 
-        self.world
+        self.world_mut()
             .resource_scope(|world, mut registry: Mut<ActionRegistry>| {
                 registry.0.insert(
                     id.clone(),
