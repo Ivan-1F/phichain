@@ -5,6 +5,7 @@ use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
 use crate::selection::{SelectEvent, Selected, SelectedLine};
 use crate::timeline::{Timeline, TimelineContext};
+use crate::timing::SeekToEvent;
 use bevy::ecs::system::SystemState;
 use bevy::hierarchy::Parent;
 use bevy::prelude::{Entity, EventWriter, Query, Res, World};
@@ -63,6 +64,17 @@ impl<T> EventTrackData<T> {
             LineEventKind::Speed => &mut self.speed,
         }
     }
+
+    fn iter(&self) -> impl Iterator<Item = (LineEventKind, &T)> {
+        [
+            (LineEventKind::X, &self.x),
+            (LineEventKind::Y, &self.y),
+            (LineEventKind::Rotation, &self.rotation),
+            (LineEventKind::Opacity, &self.opacity),
+            (LineEventKind::Speed, &self.speed),
+        ]
+        .into_iter()
+    }
 }
 
 impl<T: Clone> EventTrackData<T> {
@@ -103,10 +115,29 @@ impl Timeline for EventTimeline {
             Res<BpmList>,
             EventWriter<SelectEvent>,
             EventWriter<DoCommandEvent>,
+            EventWriter<SeekToEvent>,
         )> = SystemState::new(world);
 
-        let (ctx, mut event_query, bpm_list, mut select_events, mut event_writer) =
+        let (ctx, mut event_query, bpm_list, mut select_events, mut event_writer, mut seek_to) =
             state.get_mut(world);
+
+        let compute_x = |track: u8| -> f32 {
+            viewport.width() / 5.0 * track as f32 - viewport.width() / 5.0 / 2.0 + viewport.min.x
+        };
+
+        let get_event_rect = |event: &LineEvent| {
+            let x = compute_x(event.kind.into());
+            let y = ctx.time_to_y(bpm_list.time_at(event.start_beat));
+
+            let size = egui::Vec2::new(
+                viewport.width() / 8000.0 * 989.0,
+                y - ctx.time_to_y(bpm_list.time_at(event.end_beat)),
+            );
+
+            let center = egui::Pos2::new(x, y - size.y / 2.0);
+
+            Rect::from_center_size(center, size)
+        };
 
         // in viewport, but start value outside bottom
         let mut start_outside_bottom = EventTrackData::splat(None::<Entity>);
@@ -122,25 +153,12 @@ impl Timeline for EventTimeline {
         let mut first_events_outside_top = EventTrackData::splat(None::<Entity>);
         let mut first_events_outside_top_y = EventTrackData::splat(f32::MIN);
 
-        for (event, parent, entity, _, _) in &mut event_query {
+        for (event, parent, entity, _, _) in &event_query {
             if parent.get() != line_entity {
                 continue;
             }
 
-            let track: u8 = event.kind.into();
-
-            let x = viewport.width() / 5.0 * track as f32 - viewport.width() / 5.0 / 2.0
-                + viewport.min.x;
-            let y = ctx.time_to_y(bpm_list.time_at(event.start_beat));
-
-            let size = egui::Vec2::new(
-                viewport.width() / 8000.0 * 989.0,
-                y - ctx.time_to_y(bpm_list.time_at(event.end_beat)),
-            );
-
-            let center = egui::Pos2::new(x, y - size.y / 2.0);
-
-            let rect = Rect::from_center_size(center, size);
+            let rect = get_event_rect(event);
 
             if rect.bottom() >= viewport.bottom() && rect.top() <= viewport.bottom() {
                 // in viewport, but start value outside bottom
@@ -174,19 +192,6 @@ impl Timeline for EventTimeline {
                 continue;
             }
 
-            let track: u8 = event.kind.into();
-
-            let x = viewport.width() / 5.0 * track as f32 - viewport.width() / 5.0 / 2.0
-                + viewport.min.x;
-            let y = ctx.time_to_y(bpm_list.time_at(event.start_beat));
-
-            let size = egui::Vec2::new(
-                viewport.width() / 8000.0 * 989.0,
-                y - ctx.time_to_y(bpm_list.time_at(event.end_beat)),
-            );
-
-            let center = egui::Pos2::new(x, y - size.y / 2.0);
-
             let mut color = if selected.is_some() {
                 Color32::LIGHT_GREEN
             } else {
@@ -203,7 +208,7 @@ impl Timeline for EventTimeline {
                 ))));
             };
 
-            let rect = Rect::from_center_size(center, size);
+            let rect = get_event_rect(&event);
 
             let response = ui.allocate_rect(rect, Sense::click());
             if ui.is_rect_visible(rect)
@@ -298,6 +303,43 @@ impl Timeline for EventTimeline {
 
             if response.clicked() {
                 select_events.send(SelectEvent(vec![entity]));
+            }
+        }
+
+        let mut make_anchor = |kind: LineEventKind, event: Entity, top: bool| {
+            let x = compute_x(kind.into());
+            let size = egui::Vec2::new(viewport.width() / 8000.0 * 989.0, 10.0);
+            let center = egui::Pos2::new(
+                x,
+                if top {
+                    viewport.top() + 10.0 / 2.0
+                } else {
+                    viewport.bottom() - 10.0 / 2.0
+                },
+            );
+
+            if ui
+                .allocate_rect(Rect::from_center_size(center, size), Sense::click())
+                .on_hover_cursor(egui::CursorIcon::PointingHand)
+                .on_hover_text("Jump to this event")
+                .clicked()
+            {
+                if let Ok(event) = event_query.get(event) {
+                    // TODO: refactor logic for navigation
+                    seek_to.send(SeekToEvent(bpm_list.time_at(event.0.start_beat)));
+                }
+            }
+        };
+
+        for (kind, event) in first_events_outside_bottom.iter() {
+            if let Some(event) = event {
+                make_anchor(kind, *event, false);
+            }
+        }
+
+        for (kind, event) in first_events_outside_top.iter() {
+            if let Some(event) = event {
+                make_anchor(kind, *event, true);
             }
         }
 
