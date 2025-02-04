@@ -426,14 +426,5 @@ fn ui_system(world: &mut World) {
 }
 
 fn setup_plugin(mut commands: Commands) {
-    commands.spawn((
-        Camera2dBundle {
-            camera: Camera {
-                order: 0,
-                ..default()
-            },
-            ..default()
-        },
-        GameCamera,
-    ));
+    commands.spawn((Camera2d, GameCamera));
 }

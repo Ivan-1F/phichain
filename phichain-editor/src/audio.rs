@@ -37,7 +37,7 @@ impl Plugin for AudioPlugin {
                 update_volume_system,
                 update_playback_rate_system,
             )
-                .run_if(project_loaded().and_then(resource_exists::<InstanceHandle>)),
+                .run_if(project_loaded().and(resource_exists::<InstanceHandle>)),
         );
     }
 }
