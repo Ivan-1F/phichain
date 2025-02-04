@@ -12,6 +12,9 @@ impl CreateLine {
     pub fn new() -> Self {
         Self(None)
     }
+    pub fn with_target(target: Entity) -> Self {
+        Self(Some(target))
+    }
 }
 
 impl Edit for CreateLine {

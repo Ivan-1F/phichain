@@ -1,6 +1,6 @@
 use crate::action::ActionRegistry;
-use crate::editing::command::line::{MoveLineAsChild, RemoveLine};
-use crate::editing::command::EditorCommand;
+use crate::editing::command::line::{CreateLine, MoveLineAsChild, RemoveLine};
+use crate::editing::command::{CommandSequence, EditorCommand};
 use crate::editing::DoCommandEvent;
 use crate::selection::SelectedLine;
 use crate::settings::EditorSettings;
@@ -140,6 +140,9 @@ impl LineList<'_> {
             editor_settings,
         ) = state.get_mut(self.world);
 
+        let mut add_parent: Option<Option<Entity>> = None;
+        let mut add_child = false;
+
         if let Ok((line, children, parent, position, rotation, opacity, speed)) = query.get(entity)
         {
             let selected = selected_line.0 == entity;
@@ -182,6 +185,18 @@ impl LineList<'_> {
                             )));
                             ui.close_menu();
                         }
+                    }
+                    ui.separator();
+                    if ui
+                        .button(t!("tab.line_list.hierarchy.add_parent"))
+                        .clicked()
+                    {
+                        add_parent.replace(parent.map(|x| x.get()));
+                        ui.close_menu();
+                    }
+                    if ui.button(t!("tab.line_list.hierarchy.add_child")).clicked() {
+                        add_child = true;
+                        ui.close_menu();
                     }
                     ui.separator();
                     ui.add_enabled_ui(!under_selected_node && !selected, |ui| {
@@ -351,6 +366,41 @@ impl LineList<'_> {
             for child in children_lines {
                 self.entity_ui(ui, child, level + 1);
             }
+        }
+
+        if let Some(current_parent) = add_parent {
+            let mut new_line_entity = self.world.spawn_empty();
+
+            if let Some(current_parent) = current_parent {
+                new_line_entity.set_parent(current_parent);
+            }
+
+            let new_line_entity = new_line_entity.id();
+
+            self.world
+                .send_event(DoCommandEvent(EditorCommand::CommandSequence(
+                    CommandSequence(vec![
+                        EditorCommand::CreateLine(CreateLine::with_target(new_line_entity)),
+                        EditorCommand::MoveLineAsChild(MoveLineAsChild::new(
+                            entity,
+                            Some(new_line_entity),
+                        )),
+                    ]),
+                )));
+        }
+
+        if add_child {
+            let new_line_entity = self.world.spawn_empty().id();
+            self.world
+                .send_event(DoCommandEvent(EditorCommand::CommandSequence(
+                    CommandSequence(vec![
+                        EditorCommand::CreateLine(CreateLine::with_target(new_line_entity)),
+                        EditorCommand::MoveLineAsChild(MoveLineAsChild::new(
+                            new_line_entity,
+                            Some(entity),
+                        )),
+                    ]),
+                )));
         }
     }
 }

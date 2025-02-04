@@ -107,6 +107,8 @@ tab:
     hierarchy:
       as_child_of_current_line: As child of current line
       move_to_root: Move to root
+      add_parent: Add Parent
+      add_child: Add Child
   bpm_list:
     title: BPM List
     new: New BPM Point
