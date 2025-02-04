@@ -95,9 +95,11 @@ impl LineList<'_> {
 
         ui.separator();
 
-        for entity in entities {
-            self.entity_ui(ui, entity, 0);
-        }
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            for entity in entities {
+                self.entity_ui(ui, entity, 0);
+            }
+        });
     }
 
     fn entity_ui(&mut self, ui: &mut Ui, entity: Entity, level: u32) {
