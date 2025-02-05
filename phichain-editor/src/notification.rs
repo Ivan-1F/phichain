@@ -9,9 +9,9 @@ pub struct ToastsStorage(Toasts);
 pub struct NotificationPlugin;
 
 impl Plugin for NotificationPlugin {
-    fn build(&self, app: &mut bevy::prelude::App) {
+    fn build(&self, app: &mut App) {
         app.init_resource::<ToastsStorage>()
-            .add_systems(Update, show_egui_notifies);
+            .add_systems(Update, show_egui_notifies_system);
     }
 }
 
@@ -52,7 +52,10 @@ impl Default for ToastsStorage {
     }
 }
 
-fn show_egui_notifies(mut context: Query<&mut EguiContext>, mut toasts: ResMut<ToastsStorage>) {
+fn show_egui_notifies_system(
+    mut context: Query<&mut EguiContext>,
+    mut toasts: ResMut<ToastsStorage>,
+) {
     if let Ok(mut ctx) = context.get_single_mut() {
         toasts.show(ctx.get_mut())
     }

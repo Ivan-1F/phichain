@@ -231,7 +231,7 @@ impl Plugin for ImageCopyPlugin {
         render_app
             .insert_resource(RenderWorldSender(s))
             // Make ImageCopiers accessible in RenderWorld system and plugin
-            .add_systems(ExtractSchedule, image_copy_extract)
+            .add_systems(ExtractSchedule, image_copy_extract_system)
             // Receives image data from buffer to channel
             // so we need to run it after the render graph is done
             .add_systems(
@@ -338,7 +338,7 @@ impl ImageCopier {
 }
 
 /// Extracting `ImageCopier`s into render world, because `ImageCopyDriver` accesses them
-fn image_copy_extract(mut commands: Commands, image_copiers: Extract<Query<&ImageCopier>>) {
+fn image_copy_extract_system(mut commands: Commands, image_copiers: Extract<Query<&ImageCopier>>) {
     commands.insert_resource(ImageCopiers(
         image_copiers.iter().cloned().collect::<Vec<ImageCopier>>(),
     ));

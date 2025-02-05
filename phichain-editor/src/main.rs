@@ -145,7 +145,7 @@ fn main() {
         .add_plugins(ZoomPlugin)
         .add_systems(Startup, setup_egui_image_loader_system)
         .add_systems(Startup, setup_egui_font_system)
-        .add_systems(Startup, setup_plugin)
+        .add_systems(Startup, setup_system)
         .add_systems(Update, ui_system.run_if(project_loaded()))
         .add_systems(
             Startup,
@@ -425,6 +425,6 @@ fn ui_system(world: &mut World) {
         });
 }
 
-fn setup_plugin(mut commands: Commands) {
+fn setup_system(mut commands: Commands) {
     commands.spawn((Camera2d, GameCamera));
 }
