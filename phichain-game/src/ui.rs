@@ -90,10 +90,10 @@ impl ApplyMargin {
 }
 
 fn update_ui_text_margin_system(
-    mut query: Query<(&mut Style, &ApplyMargin)>,
+    mut query: Query<(&mut Node, &ApplyMargin)>,
     scale: Res<BaseTextScale>,
 ) {
-    for (mut style, sides) in &mut query {
+    for (mut node, sides) in &mut query {
         let value = Val::Px(scale.0 * 0.5);
         let mut rect = UiRect::ZERO;
         if sides.left {
@@ -108,71 +108,59 @@ fn update_ui_text_margin_system(
         if sides.bottom {
             rect.bottom = value;
         }
-        style.margin = rect;
+        node.margin = rect;
     }
 }
 
 fn setup_combo_ui_system(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
-        .spawn(NodeBundle {
-            style: Style {
+        .spawn((
+            Node {
                 width: Val::Percent(100.0),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::FlexStart,
                 top: Val::Px(0.0),
                 ..default()
             },
-            ..default()
-        })
+            ApplyMargin {
+                left: false,
+                right: false,
+                top: true,
+                bottom: false,
+            },
+        ))
         .with_children(|parent| {
             parent
                 .spawn((
-                    NodeBundle {
-                        style: Style {
-                            align_self: AlignSelf::Center,
-                            flex_direction: FlexDirection::Column,
-                            align_items: AlignItems::Center,
-                            ..default()
-                        },
+                    Node {
+                        align_self: AlignSelf::Center,
+                        flex_direction: FlexDirection::Column,
+                        align_items: AlignItems::Center,
                         ..default()
                     },
                     Combo,
                 ))
                 .with_children(|parent| {
                     parent.spawn((
-                        TextBundle {
-                            text: Text::from_section(
-                                "COMBO", // this will be replaced every frame at update_combo_system
-                                TextStyle {
-                                    font: asset_server.load("font/phigros.ttf"),
-                                    font_size: 20.0,
-                                    color: Color::WHITE,
-                                },
-                            ),
+                        Text::new("COMBO"), // this will be replaced every frame at update_combo_system
+                        TextFont {
+                            font: asset_server.load("font/phigros.ttf"),
+                            font_size: 20.0,
                             ..default()
                         },
+                        TextColor::WHITE,
                         ComboText,
                         TextScale(1.0),
-                        ApplyMargin {
-                            left: false,
-                            right: false,
-                            top: true,
-                            bottom: false,
-                        },
                     ));
 
                     parent.spawn((
-                        TextBundle {
-                            text: Text::from_section(
-                                "COMBO",
-                                TextStyle {
-                                    font: asset_server.load("font/phigros.ttf"),
-                                    font_size: 10.0,
-                                    color: Color::WHITE,
-                                },
-                            ),
+                        Text::new("COMBO"),
+                        TextFont {
+                            font: asset_server.load("font/phigros.ttf"),
+                            font_size: 10.0,
                             ..default()
                         },
+                        TextColor::WHITE,
                         ComboIndicator,
                         TextScale(0.4),
                         ApplyMargin::none(),
@@ -187,31 +175,26 @@ struct ScoreText;
 
 fn spawn_score_ui_system(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
-        .spawn(NodeBundle {
-            style: Style {
+        .spawn((
+            Node {
                 position_type: PositionType::Absolute,
                 top: Val::Px(0.0),
                 right: Val::Px(0.0),
                 ..default()
             },
-            ..default()
-        })
+            ApplyMargin::all(),
+        ))
         .with_children(|parent| {
             parent.spawn((
-                TextBundle {
-                    text: Text::from_section(
-                        "0000000",
-                        TextStyle {
-                            font: asset_server.load("font/phigros.ttf"),
-                            font_size: 10.0,
-                            color: Color::WHITE,
-                        },
-                    ),
+                Text::new("0000000"),
+                TextFont {
+                    font: asset_server.load("font/phigros.ttf"),
+                    font_size: 10.0,
                     ..default()
                 },
+                TextColor::WHITE,
                 ScoreText,
                 TextScale(0.8),
-                ApplyMargin::all(),
             ));
         });
 }
@@ -222,31 +205,26 @@ struct NameText;
 
 fn spawn_name_ui_system(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
-        .spawn(NodeBundle {
-            style: Style {
+        .spawn((
+            Node {
                 position_type: PositionType::Absolute,
                 left: Val::Px(0.0),
                 bottom: Val::Px(0.0),
                 ..default()
             },
-            ..default()
-        })
+            ApplyMargin::all(),
+        ))
         .with_children(|parent| {
             parent.spawn((
-                TextBundle {
-                    text: Text::from_section(
-                        "Name",
-                        TextStyle {
-                            font: asset_server.load("font/phigros.ttf"),
-                            font_size: 10.0,
-                            color: Color::WHITE,
-                        },
-                    ),
+                Text::new("Name"),
+                TextFont {
+                    font: asset_server.load("font/phigros.ttf"),
+                    font_size: 10.0,
                     ..default()
                 },
+                TextColor::WHITE,
                 NameText,
                 TextScale(0.5),
-                ApplyMargin::all(),
             ));
         });
 }
@@ -257,44 +235,42 @@ struct LevelText;
 
 fn spawn_level_ui_system(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
-        .spawn(NodeBundle {
-            style: Style {
+        .spawn((
+            Node {
                 position_type: PositionType::Absolute,
                 bottom: Val::Px(0.0),
                 right: Val::Px(0.0),
                 ..default()
             },
-            ..default()
-        })
+            ApplyMargin::all(),
+        ))
         .with_children(|parent| {
             parent.spawn((
-                TextBundle {
-                    text: Text::from_section(
-                        "Level",
-                        TextStyle {
-                            font: asset_server.load("font/phigros.ttf"),
-                            font_size: 10.0,
-                            color: Color::WHITE,
-                        },
-                    ),
+                Text::new("Level"),
+                TextFont {
+                    font: asset_server.load("font/phigros.ttf"),
+                    font_size: 10.0,
                     ..default()
                 },
+                TextColor::WHITE,
                 LevelText,
                 TextScale(0.5),
-                ApplyMargin::all(),
             ));
         });
 }
 
-fn update_text_scale_system(scale: Res<BaseTextScale>, mut query: Query<(&mut Text, &TextScale)>) {
+fn update_text_scale_system(
+    scale: Res<BaseTextScale>,
+    mut query: Query<(&mut TextFont, &TextScale)>,
+) {
     for (mut text, text_scale) in &mut query {
-        text.sections[0].style.font_size = scale.0 * 1.32 * text_scale.0;
+        text.font_size = scale.0 * 1.32 * text_scale.0;
     }
 }
 
 fn update_combo_system(mut text_query: Query<&mut Text, With<ComboText>>, score: Res<GameScore>) {
     let mut combo_text = text_query.single_mut();
-    combo_text.sections[0].value = score.combo().to_string();
+    **combo_text = score.combo().to_string();
 }
 
 fn hide_combo_below_3_system(
@@ -314,7 +290,7 @@ fn update_score_system(
     score: Res<GameScore>,
 ) {
     let mut score_text = score_text_query.single_mut();
-    score_text.sections[0].value = score.score_text();
+    **score_text = score.score_text();
 }
 
 fn update_name_system(
@@ -322,7 +298,7 @@ fn update_name_system(
     config: Res<GameConfig>,
 ) {
     let mut name_text = name_text_query.single_mut();
-    name_text.sections[0].value = config.name.replace(' ', "\u{00A0}");
+    **name_text = config.name.replace(' ', "\u{00A0}");
 }
 
 fn update_level_system(
@@ -330,5 +306,5 @@ fn update_level_system(
     config: Res<GameConfig>,
 ) {
     let mut name_text = name_text_query.single_mut();
-    name_text.sections[0].value = config.level.replace(' ', "\u{00A0}");
+    **name_text = config.level.replace(' ', "\u{00A0}");
 }

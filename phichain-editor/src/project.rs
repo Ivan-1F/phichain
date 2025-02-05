@@ -20,12 +20,12 @@ use std::path::PathBuf;
 
 /// A [Condition] represents the project is loaded
 pub fn project_loaded() -> impl Condition<()> {
-    resource_exists::<Project>.and_then(|| true)
+    resource_exists::<Project>.and(|| true)
 }
 
 /// A [Condition] represents the project is not loaded
 pub fn project_not_loaded() -> impl Condition<()> {
-    resource_exists::<Project>.map(|x| !x)
+    IntoSystem::into_system(resource_exists::<Project>.map(|x| !x))
 }
 
 pub struct ProjectPlugin;
@@ -117,7 +117,7 @@ fn load_project_system(
                         project.path.0.clone(),
                     ));
 
-                    commands.add(|world: &mut World| {
+                    commands.queue(|world: &mut World| {
                         let mut query = world.query_filtered::<Entity, With<Line>>();
                         if let Some(first) = query.iter(world).next() {
                             world.insert_resource(crate::selection::SelectedLine(first));
@@ -200,7 +200,7 @@ fn unload_project_system(
         let to_remove = world
             .query::<Entity>()
             .iter(world)
-            .filter(|entity| world.inspect_entity(*entity).iter().map(|x| x.name()).len() == 0)
+            .filter(|entity| world.inspect_entity(*entity).collect::<Vec<_>>().is_empty())
             .collect::<Vec<_>>();
         for entity in to_remove {
             world.entity_mut(entity).despawn_recursive();

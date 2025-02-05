@@ -43,7 +43,7 @@ pub fn bpm_list_tab(
                                         .unwrap_or(Beat::MIN);
                                     let range = start..=next_beat.unwrap_or(Beat::MAX);
                                     let response = ui
-                                        .add(BeatValue::new(&mut beat).clamp_range(range))
+                                        .add(BeatValue::new(&mut beat).range(range))
                                         .on_disabled_hover_text(t!(
                                             "tab.bpm_list.zero_beat_not_editable"
                                         ));
@@ -53,8 +53,7 @@ pub fn bpm_list_tab(
 
                                 ui.label(t!("tab.bpm_list.point.bpm"));
                                 let response = ui.add(
-                                    egui::DragValue::new(&mut point.bpm)
-                                        .clamp_range(0.01..=f32::MAX),
+                                    egui::DragValue::new(&mut point.bpm).range(0.01..=f32::MAX),
                                 );
                                 finished |= response.drag_stopped() || response.lost_focus();
                                 ui.end_row();

@@ -1,6 +1,6 @@
 use bevy::prelude::Deref;
-use bevy::utils::smallvec::SmallVec;
 use serde::{Deserialize, Serialize};
+use smallvec::SmallVec;
 use std::convert::Infallible;
 use std::fmt::{Debug, Display, Formatter};
 use std::str::FromStr;
@@ -69,7 +69,7 @@ impl Identifier {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bevy::utils::smallvec::smallvec;
+    use smallvec::smallvec;
 
     #[test]
     fn test_construction() {

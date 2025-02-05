@@ -100,7 +100,7 @@ pub trait HotkeyExt {
 
 impl HotkeyExt for App {
     fn add_hotkey(&mut self, id: impl IntoIdentifier, default: Hotkey) -> &mut Self {
-        self.world
+        self.world_mut()
             .resource_mut::<HotkeyRegistry>()
             .0
             .insert(id.into_identifier(), default);

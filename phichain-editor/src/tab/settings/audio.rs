@@ -23,7 +23,7 @@ impl SettingCategory for Audio {
                     ui.label(t!("tab.settings.category.audio.music_volume"));
                     let response = ui.add(
                         egui::DragValue::new(&mut settings.audio.music_volume)
-                            .clamp_range(0.00..=1.2)
+                            .range(0.00..=1.2)
                             .speed(0.01),
                     );
                     finished |= response.drag_stopped() || response.lost_focus();
@@ -32,7 +32,7 @@ impl SettingCategory for Audio {
                     ui.label(t!("tab.settings.category.audio.hit_sound_volume"));
                     let response = ui.add(
                         egui::DragValue::new(&mut settings.audio.hit_sound_volume)
-                            .clamp_range(0.00..=1.2)
+                            .range(0.00..=1.2)
                             .speed(0.01),
                     );
                     finished |= response.drag_stopped() || response.lost_focus();
@@ -41,7 +41,7 @@ impl SettingCategory for Audio {
                     ui.label(t!("tab.settings.category.audio.playback_rate"));
                     let response = ui.add(
                         egui::DragValue::new(&mut settings.audio.playback_rate)
-                            .clamp_range(0.01..=2.0)
+                            .range(0.01..=2.0)
                             .speed(0.01),
                     );
                     finished |= response.drag_stopped() || response.lost_focus();

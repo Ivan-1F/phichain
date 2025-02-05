@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_egui::EguiContext;
 use egui::{Align2, WidgetText};
-use egui_toast::{Toast, ToastKind, ToastOptions, Toasts};
+use egui_toast::{Toast, ToastKind, ToastOptions, ToastStyle, Toasts};
 
 #[derive(Resource, Deref, DerefMut)]
 pub struct ToastsStorage(Toasts);
@@ -9,9 +9,9 @@ pub struct ToastsStorage(Toasts);
 pub struct NotificationPlugin;
 
 impl Plugin for NotificationPlugin {
-    fn build(&self, app: &mut bevy::prelude::App) {
+    fn build(&self, app: &mut App) {
         app.init_resource::<ToastsStorage>()
-            .add_systems(Update, show_egui_notifies);
+            .add_systems(Update, show_egui_notifies_system);
     }
 }
 
@@ -21,35 +21,28 @@ pub trait ToastsExt {
     fn success(&mut self, message: impl Into<WidgetText>);
 }
 
+fn create_toast(kind: ToastKind, text: WidgetText) -> Toast {
+    Toast {
+        text,
+        kind,
+        options: ToastOptions::default()
+            .duration_in_seconds(8.0)
+            .show_progress(true),
+        style: ToastStyle::default(),
+    }
+}
+
 impl ToastsExt for Toasts {
     fn info(&mut self, text: impl Into<WidgetText>) {
-        self.add(Toast {
-            text: text.into(),
-            kind: ToastKind::Info,
-            options: ToastOptions::default()
-                .duration_in_seconds(8.0)
-                .show_progress(true),
-        });
+        self.add(create_toast(ToastKind::Info, text.into()));
     }
 
     fn error(&mut self, text: impl Into<WidgetText>) {
-        self.add(Toast {
-            text: text.into(),
-            kind: ToastKind::Error,
-            options: ToastOptions::default()
-                .duration_in_seconds(8.0)
-                .show_progress(true),
-        });
+        self.add(create_toast(ToastKind::Error, text.into()));
     }
 
     fn success(&mut self, text: impl Into<WidgetText>) {
-        self.add(Toast {
-            text: text.into(),
-            kind: ToastKind::Success,
-            options: ToastOptions::default()
-                .duration_in_seconds(8.0)
-                .show_progress(true),
-        });
+        self.add(create_toast(ToastKind::Success, text.into()));
     }
 }
 
@@ -59,7 +52,10 @@ impl Default for ToastsStorage {
     }
 }
 
-fn show_egui_notifies(mut context: Query<&mut EguiContext>, mut toasts: ResMut<ToastsStorage>) {
+fn show_egui_notifies_system(
+    mut context: Query<&mut EguiContext>,
+    mut toasts: ResMut<ToastsStorage>,
+) {
     if let Ok(mut ctx) = context.get_single_mut() {
         toasts.show(ctx.get_mut())
     }

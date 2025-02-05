@@ -41,7 +41,7 @@ impl Plugin for EditingPlugin {
             .add_plugins(CurveNoteTrackPlugin)
             .add_plugins(ClipboardPlugin)
             .add_plugins(LineEditingPlugin)
-            .add_systems(Update, handle_edit_command.in_set(EditorSet::Edit))
+            .add_systems(Update, handle_edit_command_system.in_set(EditorSet::Edit))
             .add_action(
                 "phichain.undo",
                 undo_system,
@@ -73,7 +73,10 @@ fn redo_system(world: &mut World) {
 #[derive(Event, Clone)]
 pub struct DoCommandEvent(pub EditorCommand);
 
-fn handle_edit_command(world: &mut World, state: &mut SystemState<EventReader<DoCommandEvent>>) {
+fn handle_edit_command_system(
+    world: &mut World,
+    state: &mut SystemState<EventReader<DoCommandEvent>>,
+) {
     let events: Vec<_> = {
         let mut event_reader = state.get_mut(world);
         event_reader.read().cloned().collect()

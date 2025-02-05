@@ -4,7 +4,7 @@ version = "1.0.0-beta.1"
 edition = "2021"
 
 [dependencies]
-bevy = { version = "0.13.2", default-features = false, features = [
+bevy = { version = "0.15.1", default-features = false, features = [
     "animation",
     "bevy_asset",
     "bevy_gilrs",
@@ -17,7 +17,7 @@ bevy = { version = "0.13.2", default-features = false, features = [
     "bevy_sprite",
     "bevy_text",
     "bevy_ui",
-    "multi-threaded",
+    "multi_threaded",
     "png",
     "hdr",
     "x11",

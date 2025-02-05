@@ -181,7 +181,7 @@ pub fn update_line_system(
         } else {
             Color::WHITE
         }
-        .with_a(opacity.0);
+        .with_alpha(opacity.0);
     }
 }
 
@@ -250,19 +250,19 @@ pub fn update_note_y_system(
 }
 
 pub fn update_note_texture_system(
-    mut query: Query<(&mut Handle<Image>, &Note, Option<&Highlighted>)>,
+    mut query: Query<(&mut Sprite, &Note, Option<&Highlighted>)>,
     assets: Res<ImageAssets>,
 ) {
-    for (mut image, note, highlighted) in &mut query {
+    for (mut sprite, note, highlighted) in &mut query {
         match (note.kind, highlighted.is_some()) {
-            (NoteKind::Tap, true) => *image = assets.tap_highlight.clone(),
-            (NoteKind::Drag, true) => *image = assets.drag_highlight.clone(),
-            (NoteKind::Hold { .. }, true) => *image = assets.hold_highlight.clone(),
-            (NoteKind::Flick, true) => *image = assets.flick_highlight.clone(),
-            (NoteKind::Tap, false) => *image = assets.tap.clone(),
-            (NoteKind::Drag, false) => *image = assets.drag.clone(),
-            (NoteKind::Hold { .. }, false) => *image = assets.hold.clone(),
-            (NoteKind::Flick, false) => *image = assets.flick.clone(),
+            (NoteKind::Tap, true) => sprite.image = assets.tap_highlight.clone(),
+            (NoteKind::Drag, true) => sprite.image = assets.drag_highlight.clone(),
+            (NoteKind::Hold { .. }, true) => sprite.image = assets.hold_highlight.clone(),
+            (NoteKind::Flick, true) => sprite.image = assets.flick_highlight.clone(),
+            (NoteKind::Tap, false) => sprite.image = assets.tap.clone(),
+            (NoteKind::Drag, false) => sprite.image = assets.drag.clone(),
+            (NoteKind::Hold { .. }, false) => sprite.image = assets.hold.clone(),
+            (NoteKind::Flick, false) => sprite.image = assets.flick.clone(),
         }
     }
 }
@@ -276,7 +276,7 @@ pub struct HoldComponent;
 
 #[derive(Bundle)]
 struct HoldHeadBundle {
-    sprite: SpriteBundle,
+    sprite: Sprite,
     hold_head: HoldHead,
     hold_component: HoldComponent,
 }
@@ -284,11 +284,8 @@ struct HoldHeadBundle {
 impl HoldHeadBundle {
     fn new() -> Self {
         Self {
-            sprite: SpriteBundle {
-                sprite: Sprite {
-                    anchor: Anchor::TopCenter,
-                    ..default()
-                },
+            sprite: Sprite {
+                anchor: Anchor::TopCenter,
                 ..default()
             },
             hold_head: Default::default(),
@@ -299,7 +296,7 @@ impl HoldHeadBundle {
 
 #[derive(Bundle)]
 struct HoldTailBundle {
-    sprite: SpriteBundle,
+    sprite: Sprite,
     hold_tail: HoldTail,
     hold_component: HoldComponent,
 }
@@ -307,11 +304,8 @@ struct HoldTailBundle {
 impl HoldTailBundle {
     fn new() -> Self {
         Self {
-            sprite: SpriteBundle {
-                sprite: Sprite {
-                    anchor: Anchor::BottomCenter,
-                    ..default()
-                },
+            sprite: Sprite {
+                anchor: Anchor::BottomCenter,
                 ..default()
             },
             hold_tail: Default::default(),
@@ -373,22 +367,22 @@ pub fn update_hold_components_scale_system(
 }
 
 pub fn update_hold_component_texture_system(
-    mut head_query: Query<(&mut Handle<Image>, &Parent), (With<HoldHead>, Without<HoldTail>)>,
-    mut tail_query: Query<&mut Handle<Image>, (With<HoldTail>, Without<HoldHead>)>,
+    mut head_query: Query<(&mut Sprite, &Parent), (With<HoldHead>, Without<HoldTail>)>,
+    mut tail_query: Query<&mut Sprite, (With<HoldTail>, Without<HoldHead>)>,
     parent_query: Query<Option<&Highlighted>>,
     assets: Res<ImageAssets>,
 ) {
-    for (mut image, parent) in &mut head_query {
+    for (mut sprite, parent) in &mut head_query {
         if let Ok(highlight) = parent_query.get(parent.get()).map(|x| x.is_some()) {
-            *image = if highlight {
+            sprite.image = if highlight {
                 assets.hold_head_highlight.clone()
             } else {
                 assets.hold_head.clone()
             };
         }
     }
-    for mut image in &mut tail_query {
-        *image = assets.hold_tail.clone();
+    for mut sprite in &mut tail_query {
+        sprite.image = assets.hold_tail.clone();
     }
 }
 
@@ -431,11 +425,11 @@ pub fn despawn_hold_component_system(
 }
 
 pub fn update_line_texture_system(
-    mut query: Query<&mut Handle<Image>, With<Line>>,
+    mut query: Query<&mut Sprite, With<Line>>,
     assets: Res<ImageAssets>,
 ) {
-    for mut image in &mut query {
-        *image = assets.line.clone();
+    for mut sprite in &mut query {
+        sprite.image = assets.line.clone();
     }
 }
 

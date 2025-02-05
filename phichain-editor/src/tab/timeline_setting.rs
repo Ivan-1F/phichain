@@ -21,7 +21,7 @@ pub fn timeline_setting_tab(
             ui.label(t!("tab.timeline_setting.zoom"));
             ui.add(
                 egui::DragValue::new(&mut timeline_settings.zoom)
-                    .clamp_range(0.1..=f32::MAX)
+                    .range(0.1..=f32::MAX)
                     .speed(0.01),
             );
             ui.end_row();
@@ -29,7 +29,7 @@ pub fn timeline_setting_tab(
             ui.label(t!("tab.timeline_setting.density"));
             ui.add(
                 egui::DragValue::new(&mut timeline_settings.density)
-                    .clamp_range(1..=32)
+                    .range(1..=32)
                     .speed(1),
             );
             ui.end_row();
@@ -37,7 +37,7 @@ pub fn timeline_setting_tab(
             ui.label(t!("tab.timeline_setting.lane"));
             ui.add(
                 egui::DragValue::new(&mut timeline_settings.lanes)
-                    .clamp_range(1..=64)
+                    .range(1..=64)
                     .speed(1),
             );
             ui.end_row();

@@ -83,12 +83,12 @@ impl Plugin for AssetsPlugin {
             .init_collection::<AudioAssets>();
 
         #[cfg(feature = "egui")]
-        app.add_systems(Startup, load_assets);
+        app.add_systems(Startup, load_assets_system);
     }
 }
 
 #[cfg(feature = "egui")]
-fn load_assets(mut egui_context: bevy_egui::EguiContexts, image_assets: Res<ImageAssets>) {
+fn load_assets_system(mut egui_context: bevy_egui::EguiContexts, image_assets: Res<ImageAssets>) {
     egui_context.add_image(image_assets.tap.clone());
     egui_context.add_image(image_assets.drag.clone());
     egui_context.add_image(image_assets.hold.clone());

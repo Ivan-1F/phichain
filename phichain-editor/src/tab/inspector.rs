@@ -87,7 +87,7 @@ fn curve_note_track_inspector(ui: &mut Ui, track: &mut CurveNoteTrack) {
             ui.label(t!("tab.inspector.curve_note_track.density"));
             ui.add(
                 DragValue::new(&mut track.options.density)
-                    .clamp_range(1..=32)
+                    .range(1..=32)
                     .speed(1),
             );
             ui.end_row();
@@ -174,20 +174,14 @@ fn single_event_inspector(
                             LineEventKind::Opacity => 0.0..=255.0,
                             _ => f32::MIN..=f32::MAX,
                         };
-                        let response = ui.add(
-                            egui::DragValue::new(start)
-                                .clamp_range(range.clone())
-                                .speed(1.0),
-                        );
+                        let response =
+                            ui.add(egui::DragValue::new(start).range(range.clone()).speed(1.0));
                         finished |= response.drag_stopped() || response.lost_focus();
                         ui.end_row();
 
                         ui.label(t!("tab.inspector.single_event.end_value"));
-                        let response = ui.add(
-                            egui::DragValue::new(end)
-                                .clamp_range(range.clone())
-                                .speed(1.0),
-                        );
+                        let response =
+                            ui.add(egui::DragValue::new(end).range(range.clone()).speed(1.0));
                         finished |= response.drag_stopped() || response.lost_focus();
                         ui.end_row();
 
@@ -204,11 +198,8 @@ fn single_event_inspector(
                             LineEventKind::Opacity => 0.0..=255.0,
                             _ => f32::MIN..=f32::MAX,
                         };
-                        let response = ui.add(
-                            egui::DragValue::new(value)
-                                .clamp_range(range.clone())
-                                .speed(1.0),
-                        );
+                        let response =
+                            ui.add(egui::DragValue::new(value).range(range.clone()).speed(1.0));
                         finished |= response.drag_stopped() || response.lost_focus();
                         ui.end_row();
                     }

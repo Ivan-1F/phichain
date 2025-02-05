@@ -26,7 +26,7 @@ pub fn quick_action(ui: &mut Ui, world: &mut World) {
         ui.add(
             egui::DragValue::new(&mut editor_settings.audio.playback_rate)
                 .suffix("x")
-                .clamp_range(0.01..=1.0)
+                .range(0.01..=1.0)
                 .speed(0.01),
         );
 
@@ -109,7 +109,7 @@ pub fn quick_action(ui: &mut Ui, world: &mut World) {
                 egui::DragValue::new(&mut second_binding)
                     .speed(0.05)
                     .custom_formatter(|x, _| format!("{:.2}", x))
-                    .clamp_range(0.0..=duration.0.as_secs_f32()),
+                    .range(0.0..=duration.0.as_secs_f32()),
             );
             let max_beat = bpm_list.beat_at(duration.0.as_secs_f32());
             ui.add_sized(
@@ -117,7 +117,7 @@ pub fn quick_action(ui: &mut Ui, world: &mut World) {
                 egui::DragValue::new(&mut beat_binding)
                     .speed(0.05)
                     .custom_formatter(|x, _| format!("{:.2}", x))
-                    .clamp_range(0.0..=max_beat.value()),
+                    .range(0.0..=max_beat.value()),
             );
         });
 

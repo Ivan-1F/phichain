@@ -37,7 +37,7 @@ impl Plugin for AudioPlugin {
                 update_volume_system,
                 update_playback_rate_system,
             )
-                .run_if(project_loaded().and_then(resource_exists::<InstanceHandle>)),
+                .run_if(project_loaded().and(resource_exists::<InstanceHandle>)),
         );
     }
 }
@@ -45,13 +45,9 @@ impl Plugin for AudioPlugin {
 pub fn load_audio(path: PathBuf, commands: &mut Commands) {
     let sound_data = std::fs::read(path).unwrap();
     let source = AudioSource {
-        sound: StaticSoundData::from_cursor(
-            Cursor::new(sound_data),
-            StaticSoundSettings::default(),
-        )
-        .unwrap(),
+        sound: StaticSoundData::from_cursor(Cursor::new(sound_data)).unwrap(),
     };
-    commands.add(|world: &mut World| {
+    commands.queue(|world: &mut World| {
         world.insert_resource(AudioDuration(source.sound.duration()));
         world.resource_scope(|world, mut audios: Mut<Assets<AudioSource>>| {
             world.resource_scope(|world, audio: Mut<Audio>| {

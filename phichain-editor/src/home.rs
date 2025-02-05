@@ -40,7 +40,7 @@ impl Plugin for HomePlugin {
                     handle_select_music_system,
                     handle_create_project_system,
                 )
-                    .run_if(project_not_loaded().and_then(resource_exists::<CreateProjectForm>)),
+                    .run_if(project_not_loaded().and(resource_exists::<CreateProjectForm>)),
             );
     }
 }

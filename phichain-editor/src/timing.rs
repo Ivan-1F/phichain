@@ -71,8 +71,7 @@ impl Plugin for TimingPlugin {
             .add_systems(Update, progress_control_system.run_if(project_loaded()))
             .add_systems(
                 Update,
-                compute_bpm_list_system
-                    .run_if(project_loaded().and_then(resource_changed::<BpmList>)),
+                compute_bpm_list_system.run_if(project_loaded().and(resource_changed::<BpmList>)),
             )
             .add_systems(
                 Update,
@@ -81,8 +80,7 @@ impl Plugin for TimingPlugin {
             .insert_resource(Timing::new())
             .add_systems(
                 PreUpdate,
-                update_time_system
-                    .run_if(project_loaded().and_then(resource_exists::<InstanceHandle>)),
+                update_time_system.run_if(project_loaded().and(resource_exists::<InstanceHandle>)),
             )
             .add_action(
                 "phichain.pause_resume",
@@ -227,7 +225,7 @@ pub fn update_time_system(
 ) {
     if let Some(instance) = audio_instances.get_mut(&handle.0) {
         let value = instance.state().position().unwrap_or_default() as f32;
-        timing.update(time.elapsed_seconds(), value);
+        timing.update(time.elapsed_secs(), value);
 
         let now = timing.now() - offset.0 / 1000.0;
 

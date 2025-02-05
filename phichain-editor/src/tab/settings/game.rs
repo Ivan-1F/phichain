@@ -33,7 +33,7 @@ impl SettingCategory for Game {
                     ui.label(t!("tab.settings.category.game.note_scale"));
                     let response = ui.add(
                         egui::DragValue::new(&mut settings.game.note_scale)
-                            .clamp_range(0.50..=1.5)
+                            .range(0.50..=1.5)
                             .speed(0.01),
                     );
                     finished |= response.drag_stopped() || response.lost_focus();
