@@ -16,7 +16,7 @@ tab:
   timeline:
     title: 时间线
     event:
-      jump_to_event: 跳转至改事件
+      jump_to_event: 跳转至该事件
   inspector:
     title: 检查器
     curve_note_track:
