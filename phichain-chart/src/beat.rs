@@ -6,11 +6,8 @@ use std::{
     ops::{Add, Sub},
 };
 
-#[cfg(feature = "bevy")]
-use bevy::log::warn;
 use num::{CheckedAdd, FromPrimitive, Rational32, Signed, Zero};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-#[cfg(not(feature = "bevy"))]
 use tracing::warn;
 
 #[macro_export]
