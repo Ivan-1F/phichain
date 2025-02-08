@@ -53,4 +53,7 @@ impl WorkingDirectory {
     pub fn config(&self) -> anyhow::Result<PathBuf> {
         self.directory("config")
     }
+    pub fn log(&self) -> anyhow::Result<PathBuf> {
+        self.directory("logs")
+    }
 }
