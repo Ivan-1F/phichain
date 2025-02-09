@@ -1,3 +1,4 @@
+use crate::constants;
 use crate::settings::EditorSettings;
 use bevy::app::App;
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin, SystemInfo};
@@ -9,7 +10,6 @@ use bevy::render::renderer::RenderAdapterInfo;
 use bevy_persistent::Persistent;
 use serde_json::{json, Value};
 use uuid::Uuid;
-use crate::constants;
 
 #[derive(Debug, Clone, Resource)]
 pub struct TelemetryManager {
