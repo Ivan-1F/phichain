@@ -2,11 +2,14 @@ use crate::settings::EditorSettings;
 use bevy::app::App;
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin, SystemInfo};
 use bevy::ecs::entity::Entities;
-use bevy::prelude::{Event, EventReader, EventWriter, Plugin, Res, Resource, Startup, Update};
+use bevy::prelude::{
+    Event, EventReader, EventWriter, Plugin, Res, Resource, Startup, Time, Update,
+};
 use bevy::render::renderer::RenderAdapterInfo;
 use bevy_persistent::Persistent;
 use serde_json::{json, Value};
 use uuid::Uuid;
+use crate::constants;
 
 #[derive(Debug, Clone, Resource)]
 pub struct TelemetryManager {
@@ -33,7 +36,7 @@ impl Plugin for TelemetryPlugin {
 }
 
 #[derive(Debug, Clone, Event)]
-struct PushTelemetryEvent {
+pub struct PushTelemetryEvent {
     event_type: &'static str,
     metadata: Value,
 }
@@ -47,9 +50,6 @@ impl PushTelemetryEvent {
     }
 }
 
-// AdapterInfo { name: "Apple M3 Pro", vendor: 0, device: 0, device_type: IntegratedGpu, driver: "", driver_info: "", backend: Metal }
-// AdapterInfo { name: "Apple M3 Pro", vendor: 0, device: 0, device_type: IntegratedGpu, driver: "", driver_info: "", backend: Metal }
-
 fn handle_push_telemetry_event_system(
     mut events: EventReader<PushTelemetryEvent>,
     diagnostics: Res<DiagnosticsStore>,
@@ -57,6 +57,7 @@ fn handle_push_telemetry_event_system(
     adapter_info: Res<RenderAdapterInfo>,
     editor_settings: Res<Persistent<EditorSettings>>,
     entities: &Entities,
+    time: Res<Time>,
     telemetry_manager: Res<TelemetryManager>,
 ) {
     for event in events.read() {
@@ -86,7 +87,7 @@ fn handle_push_telemetry_event_system(
                 "ci": false,  // TODO
             },
             "phichain": {
-                "beta": true,  // TODO
+                "beta": constants::IS_BETA,
                 "version": env!("CARGO_PKG_VERSION"),
                 "debug": cfg!(debug_assertions),
             },
@@ -97,7 +98,7 @@ fn handle_push_telemetry_event_system(
                 "memory": 1024,  // TODO
             },
             "config": **editor_settings,
-            "uptime": 10.0,  // TODO
+            "uptime": time.elapsed().as_secs_f32(),
 
             "metadata": event.metadata,
         });
