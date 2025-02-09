@@ -24,13 +24,13 @@ mod selection;
 mod serialization;
 mod settings;
 mod tab;
+mod telemetry;
 mod timeline;
 mod timing;
 mod translation;
 mod ui;
 mod utils;
 mod zoom;
-mod telemetry;
 
 use crate::action::{ActionPlugin, ActionRegistry};
 use crate::audio::AudioPlugin;
@@ -59,6 +59,7 @@ use crate::tab::game::GameTabPlugin;
 use crate::tab::quick_action::quick_action;
 use crate::tab::TabPlugin;
 use crate::tab::{EditorTab, TabRegistry};
+use crate::telemetry::TelemetryPlugin;
 use crate::timeline::TimelinePlugin;
 use crate::timing::TimingPlugin;
 use crate::translation::TranslationPlugin;
@@ -82,7 +83,6 @@ use phichain_game::{GamePlugin, GameSet};
 use rust_i18n::set_locale;
 use std::env;
 use std::sync::Arc;
-use crate::telemetry::TelemetryPlugin;
 
 i18n!("lang", fallback = "en_us");
 

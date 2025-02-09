@@ -4774,6 +4774,7 @@ dependencies = [
  "undo",
  "url",
  "uuid",
+ "wgpu-types",
  "zip",
 ]
 
@@ -7156,6 +7157,7 @@ checksum = "610f6ff27778148c31093f3b03abc4840f9636d58d597ca2f5977433acfe0068"
 dependencies = [
  "bitflags 2.8.0",
  "js-sys",
+ "serde",
  "web-sys",
 ]
 

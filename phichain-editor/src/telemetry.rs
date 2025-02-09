@@ -3,7 +3,6 @@ use bevy::app::App;
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin, SystemInfo};
 use bevy::ecs::entity::Entities;
 use bevy::prelude::{Event, EventReader, EventWriter, Plugin, Res, Resource, Startup, Update};
-use bevy::render::render_resource::WgpuAdapterInfo;
 use bevy::render::renderer::RenderAdapterInfo;
 use bevy_persistent::Persistent;
 use serde_json::{json, Value};
@@ -55,7 +54,7 @@ fn handle_push_telemetry_event_system(
     mut events: EventReader<PushTelemetryEvent>,
     diagnostics: Res<DiagnosticsStore>,
     system_info: Res<SystemInfo>,
-    _adapter_info: Res<RenderAdapterInfo>,
+    adapter_info: Res<RenderAdapterInfo>,
     editor_settings: Res<Persistent<EditorSettings>>,
     entities: &Entities,
     telemetry_manager: Res<TelemetryManager>,
@@ -81,7 +80,7 @@ fn handle_push_telemetry_event_system(
                 "core_count": system_info.core_count.trim(),
                 "memory": system_info.memory.trim(),
             },
-            "adapter": {},  // TODO
+            "adapter": &***adapter_info,
             "environment": {
                 "container": "none",  // TODO
                 "ci": false,  // TODO
