@@ -30,6 +30,7 @@ mod translation;
 mod ui;
 mod utils;
 mod zoom;
+mod telemetry;
 
 use crate::action::{ActionPlugin, ActionRegistry};
 use crate::audio::AudioPlugin;
@@ -81,6 +82,7 @@ use phichain_game::{GamePlugin, GameSet};
 use rust_i18n::set_locale;
 use std::env;
 use std::sync::Arc;
+use crate::telemetry::TelemetryPlugin;
 
 i18n!("lang", fallback = "en_us");
 
@@ -110,6 +112,7 @@ fn main() {
         .add_plugins(TranslationPlugin)
         .add_plugins(RecentProjectsPlugin)
         .add_plugins(HomePlugin)
+        .add_plugins(TelemetryPlugin)
         .add_plugins(
             DefaultPlugins
                 .set(RenderPlugin {
