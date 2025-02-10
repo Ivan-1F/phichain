@@ -9,6 +9,8 @@ use bevy::prelude::{
 use bevy::render::renderer::RenderAdapterInfo;
 use bevy_persistent::Persistent;
 use serde_json::{json, Value};
+use std::env;
+use std::path::Path;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Resource)]
@@ -50,6 +52,42 @@ impl PushTelemetryEvent {
     }
 }
 
+fn is_ci() -> bool {
+    env::var("CI").is_ok()
+}
+
+fn container_environment() -> Option<&'static str> {
+    // check for Kubernetes
+    if env::var("KUBERNETES_SERVICE_HOST").is_ok() {
+        return Some("kubernetes");
+    }
+
+    // check for Docker by detecting the presence of known files
+    if Path::new("/.dockerenv").exists() || Path::new("/run/.dockerenv").exists() {
+        return Some("docker");
+    }
+
+    // alternatively, check for the "container" environment variable set to "docker"
+    if let Ok(container) = env::var("container") {
+        if container.to_lowercase() == "docker" {
+            return Some("docker");
+        }
+    }
+
+    // check for Podman by detecting the presence of a Podman-specific file
+    if Path::new("/run/.containerenv").exists() {
+        return Some("podman");
+    }
+    // alternatively, check if the "container" environment variable indicates Podman
+    if let Ok(container) = env::var("container") {
+        if container.to_lowercase() == "podman" {
+            return Some("podman");
+        }
+    }
+
+    None
+}
+
 fn handle_push_telemetry_event_system(
     mut events: EventReader<PushTelemetryEvent>,
     diagnostics: Res<DiagnosticsStore>,
@@ -83,8 +121,8 @@ fn handle_push_telemetry_event_system(
             },
             "adapter": &***adapter_info,
             "environment": {
-                "container": "none",  // TODO
-                "ci": false,  // TODO
+                "container": container_environment().unwrap_or("none"),
+                "ci": is_ci(),
             },
             "phichain": {
                 "beta": constants::IS_BETA,
