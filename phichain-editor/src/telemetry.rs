@@ -12,7 +12,6 @@ use bevy_persistent::Persistent;
 use serde_json::{json, Value};
 use std::env;
 use std::path::Path;
-use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use uuid::Uuid;
 
@@ -23,14 +22,14 @@ const TELEMETRY_REPORT_INTERVAL: Duration = Duration::from_secs(60);
 #[derive(Debug, Clone, Resource)]
 pub struct TelemetryManager {
     uuid: Uuid,
-    queue: Arc<Mutex<Vec<Value>>>,
+    queue: Vec<Value>,
 }
 
 impl TelemetryManager {
     pub fn new() -> Self {
         Self {
             uuid: Uuid::new_v4(),
-            queue: Arc::new(Mutex::new(Vec::new())),
+            queue: vec![],
         }
     }
 }
@@ -135,7 +134,7 @@ fn handle_push_telemetry_event_system(
     editor_settings: Res<Persistent<EditorSettings>>,
     entities: &Entities,
     time: Res<Time>,
-    telemetry_manager: Res<TelemetryManager>,
+    mut telemetry_manager: ResMut<TelemetryManager>,
 ) {
     for event in events.read() {
         let mut fps = 0.0;
@@ -188,12 +187,15 @@ fn handle_push_telemetry_event_system(
             );
         }
 
-        telemetry_manager.queue.lock().unwrap().push(payload);
+        telemetry_manager.queue.push(payload);
     }
 }
 
 fn startup_system(mut events: EventWriter<PushTelemetryEvent>) {
-    events.send(PushTelemetryEvent::new("start", json!({})));
+    events.send(PushTelemetryEvent::new(
+        "phichain.editor.started",
+        json!({}),
+    ));
 }
 
 fn flush_telemetry_queue_system(
@@ -204,7 +206,7 @@ fn flush_telemetry_queue_system(
         return;
     }
 
-    let data = telemetry_manager.queue.lock().unwrap().clone();
+    let data = telemetry_manager.queue.clone();
     if data.is_empty() {
         return;
     }
@@ -221,14 +223,15 @@ fn flush_telemetry_queue_system(
     reqwest
         .send(request)
         .on_response(
-            |trigger: Trigger<ReqwestResponseEvent>, telemetry_manager: Res<TelemetryManager>| {
+            |trigger: Trigger<ReqwestResponseEvent>,
+             mut telemetry_manager: ResMut<TelemetryManager>| {
                 let response = trigger.event();
                 if response.status().is_success() {
                     info!(
                         "Successfully sent telemetry event, response: {}",
                         response.as_str().unwrap_or("<unknown>")
                     );
-                    telemetry_manager.queue.lock().unwrap().clear();
+                    telemetry_manager.queue.clear();
                 } else {
                     error!(
                         "Failed to send telemetry data, bad response, status code: {}",
