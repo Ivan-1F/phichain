@@ -97,3 +97,5 @@ smallvec = "1.13.2"
 uuid = { version = "1.13.1", features = ["v4"] }
 
 bevy_mod_reqwest = "0.18.0"
+os_info = "3.10.0"
+sysinfo = "0.33.1"

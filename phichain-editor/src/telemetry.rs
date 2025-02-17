@@ -10,9 +10,10 @@ use bevy::time::common_conditions::on_timer;
 use bevy_mod_reqwest::{BevyReqwest, ReqwestErrorEvent, ReqwestResponseEvent};
 use bevy_persistent::Persistent;
 use serde_json::{json, Value};
-use std::env;
 use std::path::Path;
 use std::time::Duration;
+use std::{env, process};
+use sysinfo::Pid;
 use uuid::Uuid;
 
 const TELEMETRY_URL: &str = "https://telemetry.phichain.rs/report";
@@ -145,17 +146,33 @@ fn handle_push_telemetry_event_system(
             fps = value;
         }
 
+        let mut system = sysinfo::System::new_all();
+        system.refresh_all();
+
+        let pid = process::id();
+        let process = system.process(Pid::from_u32(pid)).unwrap();
+
+        let info = os_info::get();
+
         let payload = json!({
             "timestamp": chrono::Utc::now().to_rfc3339(),
             "reporter": "phichain-editor",
             "uuid": telemetry_manager.uuid,
             "type": event.event_type,
             "system": {
-                "os": system_info.os.trim(),
+                "arch": env::consts::ARCH,
+                "os": env::consts::OS,
+                "name": &info.os_type().to_string(),
+                "version": &info.version().to_string(),
+                "family": env::consts::FAMILY,
+                "bitness": info.bitness().to_string(),
                 "kernel": system_info.kernel.trim(),
-                "cpu": system_info.cpu.trim(),
-                "core_count": system_info.core_count.trim(),
-                "memory": system_info.memory.trim(),
+            },
+            "hardware": {
+                "cpu": system.cpus().first().unwrap().brand(),
+                "core_count": system.cpus().len(),
+                "memory": system.total_memory(),
+                "memory_formatted": format!("{:.1} GiB", system.total_memory() as f64 / 1024.0 / 1024.0 / 1024.0),
             },
             "adapter": &***adapter_info,
             "environment": {
@@ -171,8 +188,8 @@ fn handle_push_telemetry_event_system(
             "performance": {
                 "fps": fps,
                 "entities": entities.len(),
-                "cpu": 0.5,  // TODO
-                "memory": 1024,  // TODO
+                "cpu": process.cpu_usage(),
+                "memory": process.memory(),
             },
             "config": **editor_settings,
             "uptime": time.elapsed().as_secs_f32(),
