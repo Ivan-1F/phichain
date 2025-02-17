@@ -10,6 +10,7 @@ use bevy::time::common_conditions::on_timer;
 use bevy_mod_reqwest::{BevyReqwest, ReqwestErrorEvent, ReqwestResponseEvent};
 use bevy_persistent::Persistent;
 use serde_json::{json, Value};
+use sha2::{Digest, Sha256};
 use std::path::Path;
 use std::time::Duration;
 use std::{env, process};
@@ -20,9 +21,18 @@ const TELEMETRY_URL: &str = "https://telemetry.phichain.rs/report";
 const TELEMETRY_REPORT_TIMEOUT: Duration = Duration::from_secs(15);
 const TELEMETRY_REPORT_INTERVAL: Duration = Duration::from_secs(60);
 
+fn get_device_id() -> String {
+    let machine_id = machine_uid::get().unwrap_or_else(|_| Uuid::new_v4().to_string());
+    let mut hasher = Sha256::new();
+    hasher.update(machine_id.as_bytes());
+    let hash_result = hasher.finalize();
+    format!("{:x}", hash_result)
+}
+
 #[derive(Debug, Clone, Resource)]
 pub struct TelemetryManager {
     uuid: Uuid,
+    device_id: String,
     queue: Vec<Value>,
 }
 
@@ -30,6 +40,7 @@ impl TelemetryManager {
     pub fn new() -> Self {
         Self {
             uuid: Uuid::new_v4(),
+            device_id: get_device_id(),
             queue: vec![],
         }
     }
@@ -157,7 +168,8 @@ fn handle_push_telemetry_event_system(
         let payload = json!({
             "timestamp": chrono::Utc::now().to_rfc3339(),
             "reporter": "phichain-editor",
-            "uuid": telemetry_manager.uuid,
+            "session_id": telemetry_manager.uuid,
+            "device_id": telemetry_manager.device_id,
             "type": event.event_type,
             "system": {
                 "arch": env::consts::ARCH,
