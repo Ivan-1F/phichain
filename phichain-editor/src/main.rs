@@ -83,6 +83,7 @@ use phichain_game::{GamePlugin, GameSet};
 use rust_i18n::set_locale;
 use std::env;
 use std::sync::Arc;
+use bevy_mod_reqwest::ReqwestPlugin;
 
 i18n!("lang", fallback = "en_us");
 
@@ -105,6 +106,7 @@ fn main() {
         )
         .insert_resource(ClearColor(Color::BLACK))
         .insert_resource(UiState::new())
+        .add_plugins(ReqwestPlugin::default())
         .add_plugins(HotkeyPlugin)
         .add_plugins(CliPlugin)
         .add_plugins(MiscPlugin)
