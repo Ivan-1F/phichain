@@ -200,7 +200,6 @@ fn handle_push_telemetry_event_system(
             "performance": {
                 "fps": fps,
                 "entities": entities.len(),
-                "cpu": process.cpu_usage(),
                 "memory": process.memory(),
             },
             "config": **editor_settings,
