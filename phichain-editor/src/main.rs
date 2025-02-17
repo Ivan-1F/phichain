@@ -74,6 +74,7 @@ use bevy::render::settings::WgpuSettings;
 use bevy::render::RenderPlugin;
 use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{EguiContext, EguiPlugin};
+use bevy_mod_reqwest::ReqwestPlugin;
 use bevy_persistent::Persistent;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use phichain_assets::AssetsPlugin;
@@ -83,7 +84,6 @@ use phichain_game::{GamePlugin, GameSet};
 use rust_i18n::set_locale;
 use std::env;
 use std::sync::Arc;
-use bevy_mod_reqwest::ReqwestPlugin;
 
 i18n!("lang", fallback = "en_us");
 
