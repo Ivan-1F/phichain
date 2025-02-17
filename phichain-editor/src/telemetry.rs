@@ -117,6 +117,16 @@ fn telemetry_enabled() -> bool {
     )
 }
 
+fn telemetry_debug() -> bool {
+    matches!(
+        env::var("PHICHAIN_TELEMETRY_DEBUG")
+            .unwrap_or_default()
+            .to_lowercase()
+            .as_str(),
+        "true" | "yes" | "1"
+    )
+}
+
 fn handle_push_telemetry_event_system(
     mut events: EventReader<PushTelemetryEvent>,
     diagnostics: Res<DiagnosticsStore>,
@@ -171,7 +181,12 @@ fn handle_push_telemetry_event_system(
             "metadata": event.metadata,
         });
 
-        println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+        if telemetry_debug() {
+            info!(
+                "[telemetry] {}",
+                serde_json::to_string_pretty(&payload).unwrap()
+            );
+        }
 
         telemetry_manager.queue.lock().unwrap().push(payload);
     }
