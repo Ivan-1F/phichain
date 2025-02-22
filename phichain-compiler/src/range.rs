@@ -1,5 +1,6 @@
+use crate::state::LineState;
 use crate::utils;
-use crate::utils::{EventSequence, LineState};
+use crate::utils::EventSequence;
 use itertools::Itertools;
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
