@@ -42,10 +42,7 @@ pub fn remove_unit_lines(chart: PhichainChart) -> PhichainChart {
         .filter(|x| !is_unit_line(x))
         .collect();
 
-    tracing::info!(
-        "Removed {} unit lines",
-        chart.lines.len() - lines.len()
-    );
+    tracing::info!("Removed {} unit lines", chart.lines.len() - lines.len());
 
     PhichainChart { lines, ..chart }
 }

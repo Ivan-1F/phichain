@@ -7,8 +7,14 @@ use phichain_chart::serialization::{PhichainChart, SerializedLine};
 
 fn merge(parent: SerializedLine) -> Vec<SerializedLine> {
     if parent.children.is_empty() {
+        tracing::debug!("Skipping `{}` without any children", parent.line.name);
         vec![parent]
     } else {
+        tracing::debug!(
+            "Merging `{}` with {} children",
+            parent.line.name,
+            parent.children.len()
+        );
         let children = parent
             .children
             .iter()
