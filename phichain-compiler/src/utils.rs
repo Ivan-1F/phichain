@@ -1,10 +1,7 @@
-use itertools::Itertools;
 use nalgebra::{Isometry2, Rotation2, Vector2};
-use phichain_chart::beat;
 use phichain_chart::beat::Beat;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::event::LineEvent;
-use std::ops::Range;
 
 /// Represents the state of a line
 #[derive(Debug, Copy, Clone)]
@@ -115,8 +112,6 @@ impl EventSequence for Vec<LineEvent> {
     }
 }
 
-pub type BeatRange = Range<Beat>;
-
 pub fn event_split_points(events: &Vec<LineEvent>) -> Vec<Beat> {
     let mut splits = vec![];
     for event in events {
@@ -128,38 +123,4 @@ pub fn event_split_points(events: &Vec<LineEvent>) -> Vec<Beat> {
     splits.dedup();
 
     splits
-}
-
-pub fn find_ranges<F>(events: &Vec<LineEvent>, predicate: F) -> Vec<BeatRange>
-where
-    F: Fn(LineState) -> bool,
-{
-    let mut ranges: Vec<BeatRange> = vec![];
-    let splits = event_split_points(events);
-
-    let minimum = beat!(1, 32);
-
-    let mut current_range_start = None;
-
-    for (from, to) in splits.iter().copied().tuple_windows() {
-        let mut current = from;
-        while current <= to {
-            let state = events.evaluate_state(current);
-            if predicate(state) {
-                if current_range_start.is_none() {
-                    current_range_start = Some(current);
-                }
-            } else if let Some(current_range_start) = current_range_start.take() {
-                ranges.push(current_range_start..current);
-            }
-
-            current += minimum;
-        }
-    }
-
-    if let Some(current_range_start) = current_range_start {
-        ranges.push(current_range_start..Beat::MAX);
-    }
-
-    ranges
 }
