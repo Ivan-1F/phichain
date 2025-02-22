@@ -4,12 +4,12 @@ use phichain_chart::serialization::{PhichainChart, SerializedLine};
 
 fn is_unit_line(line: &SerializedLine) -> bool {
     // if the line has any notes, it is not a unit line
-    if line.notes.len() > 0 {
+    if !line.notes.is_empty() {
         return false;
     }
 
     // if the line does not have any events, it is a unit line
-    if line.events.len() == 0 {
+    if line.events.is_empty() {
         return true;
     }
 
