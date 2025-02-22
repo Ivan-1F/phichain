@@ -3750,6 +3750,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "itertools"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4798,9 +4807,11 @@ name = "phichain-compiler"
 version = "1.0.0-beta.2"
 dependencies = [
  "anyhow",
+ "itertools 0.14.0",
  "nalgebra",
  "num",
  "phichain-chart",
+ "tracing",
 ]
 
 [[package]]
@@ -4813,6 +4824,7 @@ dependencies = [
  "phichain-compiler",
  "serde_json",
  "strum",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -6455,9 +6467,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-subscriber"
-version = "0.3.18"
+version = "0.3.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad0f048c97dbd9faa9b7df56362b8ebcaa52adb06b498c050d2f4e32f90a7a8b"
+checksum = "e8189decb5ac0fa7bc8b96b7cb9b2701d60d48805aca84a238004d665fcc4008"
 dependencies = [
  "matchers",
  "nu-ansi-term",
