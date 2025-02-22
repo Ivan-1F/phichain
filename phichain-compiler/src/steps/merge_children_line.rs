@@ -155,9 +155,11 @@ fn merge(parent: SerializedLine) -> Vec<SerializedLine> {
 pub fn merge_children_line(chart: PhichainChart) -> PhichainChart {
     let mut lines = vec![];
 
-    for line in chart.lines {
+    for line in chart.lines.clone() {
         lines.append(&mut merge(line));
     }
+
+    tracing::info!("Merged {} child lines", lines.len() - chart.lines.len());
 
     PhichainChart { lines, ..chart }
 }
