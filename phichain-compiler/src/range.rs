@@ -50,10 +50,10 @@ where
             let state = events.evaluate_state(current);
             if predicate(state) {
                 if current_range_start.is_none() {
-                    current_range_start = Some(current);
+                    current_range_start = Some(from);
                 }
             } else if let Some(current_range_start) = current_range_start.take() {
-                ranges.push(current_range_start..current);
+                ranges.push(current_range_start..to);
             }
 
             current += minimum;
