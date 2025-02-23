@@ -9,6 +9,7 @@ pub fn remove_unit_lines(chart: PhichainChart) -> PhichainChart {
         .lines
         .clone()
         .into_iter()
+        .inspect(|x| tracing::debug!("Lifetime for `{}`: {:?}", x.line.name, find_lifetime(x)))
         .filter(|x| !find_lifetime(x).is_unit())
         .collect();
 
