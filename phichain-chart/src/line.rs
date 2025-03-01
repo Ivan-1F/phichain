@@ -1,3 +1,4 @@
+use crate::id::Id;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -40,6 +41,7 @@ pub struct LineBundle {
     rotation: LineRotation,
     opacity: LineOpacity,
     speed: LineSpeed,
+    id: Id,
 }
 
 #[cfg(feature = "bevy")]

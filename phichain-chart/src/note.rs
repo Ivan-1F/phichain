@@ -1,4 +1,5 @@
 use crate::beat::Beat;
+use crate::id::Id;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::fmt;
@@ -125,6 +126,7 @@ impl Note {
 pub struct NoteBundle {
     sprite: bevy::prelude::Sprite,
     note: Note,
+    id: Id,
 }
 
 #[cfg(feature = "bevy")]
@@ -133,6 +135,7 @@ impl NoteBundle {
         Self {
             sprite: bevy::prelude::Sprite::default(),
             note,
+            id: Id::default(),
         }
     }
 }
