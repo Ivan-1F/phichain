@@ -128,6 +128,7 @@ tab:
           never: Never
           always: Always
           visible: Visible Lines Only
+        send_telemetry: Send Telemetry
       audio:
         title: Audio
         music_volume: Music Volume

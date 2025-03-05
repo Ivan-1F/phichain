@@ -41,6 +41,8 @@ pub struct GeneralSettings {
     pub timeline_scroll_sensitivity: f32,
     pub highlight_selected_line: bool,
     pub show_line_anchor: ShowLineAnchorOption,
+
+    pub send_telemetry: bool,
 }
 
 impl Default for GeneralSettings {
@@ -50,6 +52,8 @@ impl Default for GeneralSettings {
             timeline_scroll_sensitivity: 10.0,
             highlight_selected_line: true,
             show_line_anchor: ShowLineAnchorOption::Always,
+
+            send_telemetry: true,
         }
     }
 }

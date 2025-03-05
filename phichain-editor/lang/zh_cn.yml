@@ -128,6 +128,7 @@ tab:
           never: 从不
           always: 总是
           visible: 仅可见判定线
+        send_telemetry: 发送遥测
       audio:
         title: 音频
         music_volume: 音乐音量

@@ -89,6 +89,12 @@ impl SettingCategory for General {
                                     .clicked()
                         })
                         .inner;
+                    ui.end_row();
+
+                    ui.label(t!("tab.settings.category.general.send_telemetry"));
+                    let response = ui.checkbox(&mut settings.general.send_telemetry, "");
+                    finished |= response.changed();
+                    ui.end_row();
 
                     finished |= changed;
                     ui.end_row();

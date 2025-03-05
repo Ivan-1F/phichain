@@ -112,14 +112,14 @@ fn container_environment() -> Option<&'static str> {
     None
 }
 
-fn telemetry_enabled() -> bool {
-    !matches!(
+fn telemetry_disabled_by_env_var() -> bool {
+    matches!(
         env::var("PHICHAIN_TELEMETRY_DISABLED")
             .unwrap_or_default()
             .to_lowercase()
             .as_str(),
         "true" | "yes" | "1"
-    ) && !matches!(
+    ) || matches!(
         env::var("DO_NOT_TRACK")
             .unwrap_or_default()
             .to_lowercase()
@@ -228,9 +228,11 @@ fn startup_system(mut events: EventWriter<PushTelemetryEvent>) {
 
 fn flush_telemetry_queue_system(
     mut reqwest: BevyReqwest,
+    settings: Res<Persistent<EditorSettings>>,
     telemetry_manager: Res<TelemetryManager>,
 ) {
-    if !telemetry_enabled() {
+    if telemetry_disabled_by_env_var() || !settings.general.send_telemetry {
+        debug!("Telemetry disabled, skipping...");
         return;
     }
 
