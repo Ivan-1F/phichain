@@ -35,7 +35,7 @@ impl SettingUi for &mut Ui {
         Flex::horizontal()
             .w_full()
             .show(self, |flex| {
-                flex.add_ui(item(), |ui| {
+                flex.add_ui(item().shrink(), |ui| {
                     ui.vertical(|ui| {
                         ui.label(name);
                         if let Some(description) = description {
