@@ -1,5 +1,5 @@
 use crate::settings::EditorSettings;
-use crate::tab::settings::SettingCategory;
+use crate::tab::settings::{SettingCategory, SettingUi};
 use crate::ui::latch;
 use bevy::prelude::World;
 use egui::Ui;
@@ -13,50 +13,71 @@ impl SettingCategory for Game {
     }
 
     fn ui(&self, ui: &mut Ui, settings: &mut EditorSettings, _world: &mut World) -> bool {
-        egui::Grid::new("game-settings-grid")
-            .num_columns(2)
-            .spacing([20.0, 2.0])
-            .striped(true)
-            .show(ui, |ui| {
-                latch::latch(ui, "game-settings", settings.game.clone(), |ui| {
-                    let mut finished = false;
-                    ui.label(t!("tab.settings.category.game.fc_ap_indicator"));
+        latch::latch(ui, "game-settings", settings.game.clone(), |ui| {
+            let mut finished = false;
+
+            finished |= ui.item(
+                t!("tab.settings.category.game.fc_ap_indicator"),
+                Some("是否启用 FC/AP 指示器。编辑器不含判定，即勾选后判定线恒定为黄色，不勾选则恒定为白色"),
+                |ui| {
                     let response = ui.checkbox(&mut settings.game.fc_ap_indicator, "");
-                    finished |= response.changed();
-                    ui.end_row();
+                    response.changed()
+                },
+            );
 
-                    ui.label(t!("tab.settings.category.game.hide_hit_effect"));
+            ui.separator();
+
+            finished |= ui.item(
+                t!("tab.settings.category.game.hide_hit_effect"),
+                Some("是否隐藏打击特效"),
+                |ui| {
                     let response = ui.checkbox(&mut settings.game.hide_hit_effect, "");
-                    finished |= response.changed();
-                    ui.end_row();
+                    response.changed()
+                },
+            );
 
-                    ui.label(t!("tab.settings.category.game.note_scale"));
+            ui.separator();
+
+            finished |= ui.item(
+                t!("tab.settings.category.game.note_scale"),
+                Some("音符的缩放比例"),
+                |ui| {
                     let response = ui.add(
                         egui::DragValue::new(&mut settings.game.note_scale)
                             .range(0.50..=1.5)
                             .speed(0.01),
                     );
-                    finished |= response.drag_stopped() || response.lost_focus();
-                    ui.end_row();
+                    response.drag_stopped() || response.lost_focus()
+                },
+            );
 
-                    ui.label(t!("tab.settings.category.game.multi_highlight"));
+            ui.separator();
+
+            finished |= ui.item(
+                t!("tab.settings.category.game.multi_highlight"),
+                Some("是否开启多押高亮，即高亮所有等时音符"),
+                |ui| {
                     let response = ui.checkbox(&mut settings.game.multi_highlight, "");
-                    finished |= response.changed();
-                    ui.end_row();
+                    response.changed()
+                },
+            );
 
-                    #[cfg(debug_assertions)]
-                    {
-                        ui.label(t!("tab.settings.category.game.hit_effect_follow_game_time"));
-                        let response =
-                            ui.checkbox(&mut settings.game.hit_effect_follow_game_time, "");
-                        finished |= response.changed();
-                        ui.end_row();
-                    }
+            #[cfg(debug_assertions)]
+            {
+                ui.separator();
 
-                    finished
-                })
-                .is_some()
-            })
-            .inner
+                finished |= ui.item(
+                    t!("tab.settings.category.game.hit_effect_follow_game_time"),
+                    Some("打击特效是否跟随游戏时间。启用后，打击特效的渲染将不再基于游戏全局时间，而是基于谱面时间。仅在调试环境中存在"),
+                    |ui| {
+                        let response = ui.checkbox(&mut settings.game.hit_effect_follow_game_time, "");
+                        response.changed()
+                    },
+                );
+            }
+
+            finished
+        })
+        .is_some()
     }
 }
