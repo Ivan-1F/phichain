@@ -11,9 +11,39 @@ use crate::tab::settings::general::General;
 use crate::tab::settings::hotkey::Hotkey;
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
-use egui::{Layout, Ui};
+use egui::{Layout, RichText, Ui, WidgetText};
 use enum_dispatch::enum_dispatch;
 use strum::{EnumIter, IntoEnumIterator};
+
+pub trait SettingUi {
+    fn item(
+        self,
+        name: impl Into<WidgetText>,
+        description: impl Into<RichText>,
+        widget_width: f32,
+        widget: impl FnOnce(&mut Ui) -> bool,
+    ) -> bool;
+}
+
+impl SettingUi for &mut Ui {
+    fn item(
+        self,
+        name: impl Into<WidgetText>,
+        description: impl Into<RichText>,
+        widget_width: f32,
+        widget: impl FnOnce(&mut Ui) -> bool,
+    ) -> bool {
+        self.horizontal(|ui| {
+            ui.vertical(|ui| {
+                ui.label(name);
+                ui.small(description);
+            });
+            ui.add_space(ui.available_width() - widget_width);
+            widget(ui)
+        })
+        .inner
+    }
+}
 
 #[enum_dispatch(SettingCategories)]
 pub trait SettingCategory {
@@ -64,6 +94,7 @@ pub fn settings_tab(In(mut ui): In<Ui>, world: &mut World) {
 
                     ui.vertical(|ui| {
                         ui.heading(t!(category.name()));
+                        ui.separator();
                         if category.ui(ui, &mut editor_settings, world) {
                             match editor_settings.persist() {
                                 Ok(_) => {}
