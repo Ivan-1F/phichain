@@ -12,6 +12,7 @@ use crate::tab::settings::hotkey::Hotkey;
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
 use egui::{Layout, RichText, Ui, WidgetText};
+use egui_flex::{item, Flex};
 use enum_dispatch::enum_dispatch;
 use strum::{EnumIter, IntoEnumIterator};
 
@@ -20,7 +21,6 @@ pub trait SettingUi {
         self,
         name: impl Into<WidgetText>,
         description: impl Into<RichText>,
-        widget_width: f32,
         widget: impl FnOnce(&mut Ui) -> bool,
     ) -> bool;
 }
@@ -30,18 +30,21 @@ impl SettingUi for &mut Ui {
         self,
         name: impl Into<WidgetText>,
         description: impl Into<RichText>,
-        widget_width: f32,
         widget: impl FnOnce(&mut Ui) -> bool,
     ) -> bool {
-        self.horizontal(|ui| {
-            ui.vertical(|ui| {
-                ui.label(name);
-                ui.small(description);
-            });
-            ui.add_space(ui.available_width() - widget_width);
-            widget(ui)
-        })
-        .inner
+        Flex::horizontal()
+            .w_full()
+            .show(self, |flex| {
+                flex.add_ui(item(), |ui| {
+                    ui.vertical(|ui| {
+                        ui.label(name);
+                        ui.small(description);
+                    });
+                });
+                flex.grow();
+                flex.add_ui(item(), widget).inner
+            })
+            .inner
     }
 }
 

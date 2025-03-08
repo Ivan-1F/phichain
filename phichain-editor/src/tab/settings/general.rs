@@ -20,7 +20,7 @@ impl SettingCategory for General {
 
             let languages = world.resource::<Languages>();
 
-            finished |= ui.item("Language", "", 120.0, |ui| {
+            finished |= ui.item("Language", "", |ui| {
                 let mut combobox_changed = false;
                 egui::ComboBox::from_label("")
                     .selected_text(
@@ -50,7 +50,6 @@ impl SettingCategory for General {
             finished |= ui.item(
                 t!("tab.settings.category.general.timeline_scroll_sensitivity"),
                 "使用鼠标滚轮或触控板滚动时间线时的灵明度。数值越大滚动越快",
-                40.0,
                 |ui| {
                     let response = ui.add(
                         egui::DragValue::new(&mut settings.general.timeline_scroll_sensitivity)
@@ -67,7 +66,6 @@ impl SettingCategory for General {
             finished |= ui.item(
                 t!("tab.settings.category.general.highlight_selected_line"),
                 "是否高亮选中的判定线",
-                14.0,
                 |ui| {
                     let response = ui.checkbox(&mut settings.general.highlight_selected_line, "");
                     response.changed()
@@ -79,7 +77,6 @@ impl SettingCategory for General {
             finished |= ui.item(
                 t!("tab.settings.category.general.show_line_anchor.label"),
                 "以什么规则显示判定线的锚点",
-                200.0,
                 |ui| {
                     ui.horizontal(|ui| {
                         ui.selectable_value(
