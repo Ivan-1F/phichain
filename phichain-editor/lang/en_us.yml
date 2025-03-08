@@ -121,25 +121,49 @@ tab:
     category:
       general:
         title: General
-        timeline_scroll_sensitivity: Timeline Scroll Sensitivity
-        highlight_selected_line: Highlight Selected Line
+        timeline_scroll_sensitivity: 
+          label: Timeline Scroll Sensitivity
+          description: Sensitivity when scrolling the timeline with mouse wheel or touchpad. Higher values make scrolling faster
+        highlight_selected_line: 
+          label: Highlight Selected Line
+          description: Whether to highlight the selected line
         show_line_anchor:
           label: Show Line Anchor
+          description: How to displaying line anchors
           never: Never
           always: Always
           visible: Visible Lines Only
+        language:
+          label: Language
+          description: The language used by the editor
       audio:
         title: Audio
-        music_volume: Music Volume
-        hit_sound_volume: Hit Sound Volume
-        playback_rate: Playback Rate
+        music_volume: 
+          label: Music Volume
+          description: Volume of the music
+        hit_sound_volume: 
+          label: Hit Sound Volume
+          description: Volume of the hit sound effects
+        playback_rate:
+          label: Playback Rate
+          description: Controls the playback rate of music, which affects the global speed of the editor
       game:
         title: Game
-        fc_ap_indicator: FC/AP Indicator
-        hide_hit_effect: Hide Hit Effect
-        note_scale: Note Scale
-        multi_highlight: Multi Highlight
-        hit_effect_follow_game_time: Hit Effect Follow Game Time (DEBUG)
+        fc_ap_indicator: 
+          label: FC/AP Indicator
+          description: Whether to enable FC/AP indicator. The editor doesn't include judgment, so enabling this will make judgment lines always yellow, and disabling will make them always white
+        hide_hit_effect: 
+          label: Hide Hit Effect
+          description: Whether to hide hit effects
+        note_scale: 
+          label: Note Scale
+          description: Scaling factor for notes
+        multi_highlight: 
+          label: Multi Highlight
+          description: Whether to enable multi-note highlighting for notes at the same time
+        hit_effect_follow_game_time: 
+          label: Hit Effect Follow Game Time (DEBUG)
+          description: Whether hit effects follow game time. When enabled, hit effect rendering will be based on chart time instead of global time. DEBUG ONLY
       hotkey:
         title: Hotkey
         record: Record

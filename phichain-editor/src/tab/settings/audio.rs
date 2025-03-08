@@ -17,8 +17,8 @@ impl SettingCategory for Audio {
             let mut finished = false;
 
             finished |= ui.item(
-                t!("tab.settings.category.audio.music_volume"),
-                Some("音乐的音量"),
+                t!("tab.settings.category.audio.music_volume.label"),
+                Some(t!("tab.settings.category.audio.music_volume.description")),
                 |ui| {
                     let response = ui.add(
                         egui::DragValue::new(&mut settings.audio.music_volume)
@@ -32,8 +32,10 @@ impl SettingCategory for Audio {
             ui.separator();
 
             finished |= ui.item(
-                t!("tab.settings.category.audio.hit_sound_volume"),
-                Some("打击音效的音量"),
+                t!("tab.settings.category.audio.hit_sound_volume.label"),
+                Some(t!(
+                    "tab.settings.category.audio.hit_sound_volume.description"
+                )),
                 |ui| {
                     let response = ui.add(
                         egui::DragValue::new(&mut settings.audio.hit_sound_volume)
@@ -47,8 +49,8 @@ impl SettingCategory for Audio {
             ui.separator();
 
             finished |= ui.item(
-                t!("tab.settings.category.audio.playback_rate"),
-                Some("控制音乐的播放速率，这将影响编辑器的全局速度"),
+                t!("tab.settings.category.audio.playback_rate.label"),
+                Some(t!("tab.settings.category.audio.playback_rate.description")),
                 |ui| {
                     let response = ui.add(
                         egui::DragValue::new(&mut settings.audio.playback_rate)

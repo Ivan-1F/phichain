@@ -22,7 +22,7 @@ pub fn quick_action(ui: &mut Ui, world: &mut World) {
         state.get_mut(world);
 
     ui.horizontal(|ui| {
-        ui.label(t!("tab.settings.category.audio.playback_rate"));
+        ui.label(t!("tab.settings.category.audio.playback_rate.label"));
         ui.add(
             egui::DragValue::new(&mut editor_settings.audio.playback_rate)
                 .suffix("x")
