@@ -100,13 +100,17 @@ pub fn settings_tab(In(mut ui): In<Ui>, world: &mut World) {
                     ui.vertical(|ui| {
                         ui.heading(t!(category.name()));
                         ui.separator();
-                        if category.ui(ui, &mut editor_settings, world) {
-                            match editor_settings.persist() {
-                                Ok(_) => {}
-                                Err(error) => toasts
-                                    .error(format!("Failed to persist editor settings: {}", error)),
+                        egui::ScrollArea::vertical().show(ui, |ui| {
+                            if category.ui(ui, &mut editor_settings, world) {
+                                match editor_settings.persist() {
+                                    Ok(_) => {}
+                                    Err(error) => toasts.error(format!(
+                                        "Failed to persist editor settings: {}",
+                                        error
+                                    )),
+                                }
                             }
-                        }
+                        });
                     });
                 });
             });
