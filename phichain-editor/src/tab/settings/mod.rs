@@ -20,7 +20,7 @@ pub trait SettingUi {
     fn item(
         self,
         name: impl Into<WidgetText>,
-        description: impl Into<RichText>,
+        description: Option<impl Into<RichText>>,
         widget: impl FnOnce(&mut Ui) -> bool,
     ) -> bool;
 }
@@ -29,7 +29,7 @@ impl SettingUi for &mut Ui {
     fn item(
         self,
         name: impl Into<WidgetText>,
-        description: impl Into<RichText>,
+        description: Option<impl Into<RichText>>,
         widget: impl FnOnce(&mut Ui) -> bool,
     ) -> bool {
         Flex::horizontal()
@@ -38,7 +38,9 @@ impl SettingUi for &mut Ui {
                 flex.add_ui(item(), |ui| {
                     ui.vertical(|ui| {
                         ui.label(name);
-                        ui.small(description);
+                        if let Some(description) = description {
+                            ui.small(description);
+                        }
                     });
                 });
                 flex.grow();

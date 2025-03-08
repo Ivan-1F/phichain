@@ -3,7 +3,7 @@ use crate::tab::settings::{SettingCategory, SettingUi};
 use crate::translation::Languages;
 use crate::ui::latch;
 use bevy::prelude::World;
-use egui::Ui;
+use egui::{Color32, RichText, Ui};
 use rust_i18n::set_locale;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
@@ -20,36 +20,41 @@ impl SettingCategory for General {
 
             let languages = world.resource::<Languages>();
 
-            finished |= ui.item("Language", "", |ui| {
-                let mut combobox_changed = false;
-                egui::ComboBox::from_label("")
-                    .selected_text(
-                        languages
-                            .0
-                            .get(&settings.general.language)
-                            .unwrap_or(&settings.general.language),
-                    )
-                    .show_ui(ui, |ui| {
-                        for (id, name) in &languages.0 {
-                            if ui
-                                .selectable_label(settings.general.language == *id, name)
-                                .clicked()
-                            {
-                                settings.general.language.clone_from(id);
-                                set_locale(id);
-                                combobox_changed = true;
+            finished |= ui.item(
+                RichText::new(format!("{} Language", egui_phosphor::regular::GLOBE))
+                    .color(Color32::LIGHT_BLUE),
+                Some("编辑器使用的语言"),
+                |ui| {
+                    let mut combobox_changed = false;
+                    egui::ComboBox::from_label("")
+                        .selected_text(
+                            languages
+                                .0
+                                .get(&settings.general.language)
+                                .unwrap_or(&settings.general.language),
+                        )
+                        .show_ui(ui, |ui| {
+                            for (id, name) in &languages.0 {
+                                if ui
+                                    .selectable_label(settings.general.language == *id, name)
+                                    .clicked()
+                                {
+                                    settings.general.language.clone_from(id);
+                                    set_locale(id);
+                                    combobox_changed = true;
+                                }
                             }
-                        }
-                    });
+                        });
 
-                combobox_changed
-            });
+                    combobox_changed
+                },
+            );
 
             ui.separator();
 
             finished |= ui.item(
                 t!("tab.settings.category.general.timeline_scroll_sensitivity"),
-                "使用鼠标滚轮或触控板滚动时间线时的灵明度。数值越大滚动越快",
+                Some("使用鼠标滚轮或触控板滚动时间线时的灵明度。数值越大滚动越快"),
                 |ui| {
                     let response = ui.add(
                         egui::DragValue::new(&mut settings.general.timeline_scroll_sensitivity)
@@ -65,7 +70,7 @@ impl SettingCategory for General {
 
             finished |= ui.item(
                 t!("tab.settings.category.general.highlight_selected_line"),
-                "是否高亮选中的判定线",
+                Some("是否高亮选中的判定线"),
                 |ui| {
                     let response = ui.checkbox(&mut settings.general.highlight_selected_line, "");
                     response.changed()
@@ -76,7 +81,7 @@ impl SettingCategory for General {
 
             finished |= ui.item(
                 t!("tab.settings.category.general.show_line_anchor.label"),
-                "以什么规则显示判定线的锚点",
+                Some("以什么规则显示判定线的锚点"),
                 |ui| {
                     ui.horizontal(|ui| {
                         ui.selectable_value(
