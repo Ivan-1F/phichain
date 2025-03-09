@@ -99,11 +99,9 @@ tab:
     event: 事件
     position: 位置
     rotation: 旋转
-    opacity: 透明度
+    opacity: 透明
     speed: 速度
     remove: 移除
-    show_states: 状态
-    show_previews: 预览
     hierarchy:
       as_child_of_current_line: 作为当前判定线的子线
       move_to_root: 移动至根部
