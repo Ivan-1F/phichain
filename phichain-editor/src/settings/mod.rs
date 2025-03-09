@@ -120,33 +120,10 @@ impl Default for GameSettings {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(default)]
-pub struct LineListSettings {
-    pub show_states: bool,
-    pub show_previews: bool,
-}
-
-impl Default for LineListSettings {
-    fn default() -> Self {
-        Self {
-            show_states: true,
-            show_previews: true,
-        }
-    }
-}
-
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
-#[serde(default)]
-pub struct UiSettings {
-    pub line_list: LineListSettings,
-}
-
 #[derive(Resource, Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct EditorSettings {
     pub general: GeneralSettings,
     pub audio: AudioSettings,
     pub game: GameSettings,
-    pub ui: UiSettings,
 }
