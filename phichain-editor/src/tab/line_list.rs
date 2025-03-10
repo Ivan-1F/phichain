@@ -119,7 +119,7 @@ impl LineList<'_> {
                 ui.horizontal(|ui| {
                     ui.add_space(level as f32 * 10.0);
 
-                    let mut text = egui::RichText::new(&line.name);
+                    let mut text = RichText::new(&line.name);
                     if selected {
                         text = text.color(Color32::LIGHT_GREEN);
                     }
