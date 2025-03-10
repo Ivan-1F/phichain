@@ -21,7 +21,7 @@ impl Plugin for EditorSettingsPlugin {
                 .path(config_dir.join("settings.yml"))
                 .default(EditorSettings::default())
                 .build()
-                .expect("Failed to initialize editor settings"),
+                .expect("Failed to initialize editor settings"), // TODO: handle this
         );
     }
 }
@@ -78,6 +78,7 @@ impl Default for AudioSettings {
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum AspectRatio {
     #[default]
     Free,
