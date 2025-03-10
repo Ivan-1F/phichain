@@ -18,7 +18,7 @@ struct LineList<'w> {
 
 macro_rules! trunc_label {
     ($text: expr) => {
-        egui::Label::new($text).truncate()
+        egui::Label::new(egui::RichText::new($text).small()).truncate()
     };
 }
 
@@ -42,27 +42,19 @@ impl LineList<'_> {
             ui.add_space(ui.available_width() - LINE_STATE_COLUMN_WIDTH);
             ui.columns_const(|[note_event, x_y, op_rot, spd]| {
                 note_event.vertical_centered(|ui| {
-                    ui.add(trunc_label!(RichText::new(t!("tab.line_list.note")).small()));
-                    ui.add(trunc_label!(
-                        RichText::new(t!("tab.line_list.event")).small()
-                    ));
+                    ui.add(trunc_label!(t!("tab.line_list.note")));
+                    ui.add(trunc_label!(t!("tab.line_list.event")));
                 });
                 x_y.vertical_centered(|ui| {
-                    ui.add(trunc_label!(RichText::new("X").small()));
-                    ui.add(trunc_label!(RichText::new("Y").small()));
+                    ui.add(trunc_label!("X"));
+                    ui.add(trunc_label!("Y"));
                 });
                 op_rot.vertical_centered(|ui| {
-                    ui.add(trunc_label!(
-                        RichText::new(t!("tab.line_list.opacity")).small()
-                    ));
-                    ui.add(trunc_label!(
-                        RichText::new(t!("tab.line_list.rotation")).small()
-                    ));
+                    ui.add(trunc_label!(t!("tab.line_list.opacity")));
+                    ui.add(trunc_label!(t!("tab.line_list.rotation")));
                 });
                 spd.vertical_centered(|ui| {
-                    ui.add(trunc_label!(
-                        RichText::new(t!("tab.line_list.speed")).small()
-                    ));
+                    ui.add(trunc_label!(t!("tab.line_list.speed")));
                 });
             });
         });
@@ -203,29 +195,19 @@ impl LineList<'_> {
 
                 ui.columns_const(|[note_event, x_y, op_rot, spd]| {
                     note_event.vertical_centered(|ui| {
-                        ui.add(trunc_label!(RichText::new(format!("{:.2}", notes)).small()));
-                        ui.add(trunc_label!(RichText::new(format!("{:.2}", events)).small()));
+                        ui.add(trunc_label!(format!("{:.2}", notes)));
+                        ui.add(trunc_label!(format!("{:.2}", events)));
                     });
                     x_y.vertical_centered(|ui| {
-                        ui.add(trunc_label!(
-                            RichText::new(format!("{:.2}", position.0.x)).small()
-                        ));
-                        ui.add(trunc_label!(
-                            RichText::new(format!("{:.2}", position.0.y)).small()
-                        ));
+                        ui.add(trunc_label!(format!("{:.2}", position.0.x)));
+                        ui.add(trunc_label!(format!("{:.2}", position.0.y)));
                     });
                     op_rot.vertical_centered(|ui| {
-                        ui.add(trunc_label!(
-                            RichText::new(format!("{:.2}", opacity.0)).small()
-                        ));
-                        ui.add(trunc_label!(
-                            RichText::new(format!("{:.2}", rotation.0)).small()
-                        ));
+                        ui.add(trunc_label!(format!("{:.2}", opacity.0)));
+                        ui.add(trunc_label!(format!("{:.2}", rotation.0)));
                     });
                     spd.vertical_centered(|ui| {
-                        ui.add(trunc_label!(
-                            RichText::new(format!("{:.2}", speed.0)).small()
-                        ));
+                        ui.add(trunc_label!(format!("{:.2}", speed.0)));
                     });
                 });
 
