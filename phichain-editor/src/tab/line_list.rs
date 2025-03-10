@@ -10,6 +10,8 @@ use phichain_chart::event::LineEvent;
 use phichain_chart::line::{Line, LineOpacity, LinePosition, LineRotation, LineSpeed};
 use phichain_chart::note::Note;
 
+const LINE_STATE_COLUMN_WIDTH: f32 = 140.0;
+
 struct LineList<'w> {
     world: &'w mut World,
 }
@@ -36,10 +38,9 @@ impl LineList<'_> {
             }
         });
 
-        ui.columns_const(|[_, state]| {
-            state.style_mut().spacing.item_spacing = egui::Vec2::ZERO;
-
-            state.columns_const(|[note_event, x_y, op_rot, spd]| {
+        ui.horizontal(|ui| {
+            ui.add_space(ui.available_width() - LINE_STATE_COLUMN_WIDTH);
+            ui.columns_const(|[note_event, x_y, op_rot, spd]| {
                 note_event.vertical_centered(|ui| {
                     ui.add(trunc_label!(RichText::new(t!("tab.line_list.note")).small()));
                     ui.add(trunc_label!(
@@ -114,8 +115,8 @@ impl LineList<'_> {
                 .iter_ancestors(entity)
                 .any(|ancestor| ancestor == selected_line.0);
 
-            ui.columns_const(|[name, state]| {
-                name.horizontal(|ui| {
+            ui.horizontal(|ui| {
+                ui.horizontal(|ui| {
                     ui.add_space(level as f32 * 10.0);
 
                     let mut text = egui::RichText::new(&line.name);
@@ -194,9 +195,13 @@ impl LineList<'_> {
                     .collect::<Vec<_>>()
                     .len();
 
-                state.style_mut().spacing.item_spacing = egui::Vec2::ZERO;
+                ui.add_space(ui.available_width() - LINE_STATE_COLUMN_WIDTH);
 
-                state.columns_const(|[note_event, x_y, op_rot, spd]| {
+                let prev_item_spacing = ui.style().spacing.item_spacing;
+
+                ui.style_mut().spacing.item_spacing = egui::Vec2::ZERO;
+
+                ui.columns_const(|[note_event, x_y, op_rot, spd]| {
                     note_event.vertical_centered(|ui| {
                         ui.add(trunc_label!(RichText::new(format!("{:.2}", notes)).small()));
                         ui.add(trunc_label!(RichText::new(format!("{:.2}", events)).small()));
@@ -223,6 +228,8 @@ impl LineList<'_> {
                         ));
                     });
                 });
+
+                ui.style_mut().spacing.item_spacing = prev_item_spacing;
             });
 
             ui.separator();
