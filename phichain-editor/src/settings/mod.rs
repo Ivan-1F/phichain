@@ -20,8 +20,10 @@ impl Plugin for EditorSettingsPlugin {
                 .format(StorageFormat::Yaml)
                 .path(config_dir.join("settings.yml"))
                 .default(EditorSettings::default())
+                .revertible(true)
+                .revert_to_default_on_deserialization_errors(true) // TODO: better error handling, fix instead of revert
                 .build()
-                .expect("Failed to initialize editor settings"), // TODO: handle this
+                .expect("Failed to initialize editor settings"),
         );
     }
 }
