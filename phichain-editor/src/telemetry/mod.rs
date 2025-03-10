@@ -176,9 +176,6 @@ fn handle_push_telemetry_event_system(
                 "os": env::consts::OS,
                 "name": &info.os_type().to_string(),
                 "version": &info.version().to_string(),
-                "family": env::consts::FAMILY,
-                "bitness": info.bitness().to_string(),
-                "kernel": system_info.kernel.trim(),
             },
             "hardware": {
                 "cpu": system.cpus().first().unwrap().brand(),
