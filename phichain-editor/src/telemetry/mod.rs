@@ -1,7 +1,7 @@
 use crate::constants;
 use crate::settings::EditorSettings;
 use bevy::app::App;
-use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin, SystemInfo};
+use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::ecs::entity::Entities;
 use bevy::log::{debug, error, info};
 use bevy::prelude::*;
@@ -57,7 +57,8 @@ impl Plugin for TelemetryPlugin {
                 Update,
                 flush_telemetry_queue_system.run_if(on_timer(TELEMETRY_REPORT_INTERVAL)),
             )
-            .add_systems(Startup, startup_system);
+            .add_systems(Startup, send_startup_event_system)
+            .add_systems(Startup, log_telemetry_hint_system);
     }
 }
 
@@ -141,7 +142,6 @@ fn telemetry_debug() -> bool {
 fn handle_push_telemetry_event_system(
     mut events: EventReader<PushTelemetryEvent>,
     diagnostics: Res<DiagnosticsStore>,
-    system_info: Res<SystemInfo>,
     adapter_info: Res<RenderAdapterInfo>,
     editor_settings: Res<Persistent<EditorSettings>>,
     entities: &Entities,
@@ -216,11 +216,21 @@ fn handle_push_telemetry_event_system(
     }
 }
 
-fn startup_system(mut events: EventWriter<PushTelemetryEvent>) {
+fn send_startup_event_system(mut events: EventWriter<PushTelemetryEvent>) {
     events.send(PushTelemetryEvent::new(
         "phichain.editor.started",
         json!({}),
     ));
+}
+
+fn log_telemetry_hint_system() {
+    if telemetry_disabled_by_env_var() {
+        info!("Telemetry disabled by environment variable");
+    } else {
+        info!("Phichain now collects completely anonymous telemetry regarding usage.");
+        info!("This information is used to shape the Phichain roadmap, prioritize features and improve performance.");
+        info!("You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting https://phicha.in/telemetry");
+    }
 }
 
 fn flush_telemetry_queue_system(
