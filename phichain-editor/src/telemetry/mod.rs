@@ -210,9 +210,9 @@ fn handle_push_telemetry_event_system(
                 "[telemetry] {}",
                 serde_json::to_string_pretty(&payload).unwrap()
             );
+        } else {
+            telemetry_manager.queue.push(payload);
         }
-
-        telemetry_manager.queue.push(payload);
     }
 }
 
