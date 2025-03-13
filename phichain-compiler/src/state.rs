@@ -1,4 +1,3 @@
-use nalgebra::{Isometry2, Rotation2, Vector2};
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 
 /// Represents the state of a line
@@ -6,6 +5,7 @@ use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 pub struct LineState {
     pub x: f32,
     pub y: f32,
+    #[allow(dead_code)]
     pub rotation: f32,
     pub opacity: f32,
     #[allow(dead_code)]
@@ -17,19 +17,8 @@ impl LineState {
     pub fn is_visible(&self) -> bool {
         if self.opacity <= 0.0 {
             false
-        } else if self.x >= 0.0
-            && self.x <= CANVAS_WIDTH
-            && self.y >= 0.0
-            && self.y <= CANVAS_HEIGHT
-        {
-            true
         } else {
-            Isometry2::new(
-                Vector2::new(self.x, self.y),
-                Rotation2::new(self.rotation.to_radians()).angle(),
-            );
-
-            true
+            self.x >= 0.0 && self.x <= CANVAS_WIDTH && self.y >= 0.0 && self.y <= CANVAS_HEIGHT
         }
     }
 }
