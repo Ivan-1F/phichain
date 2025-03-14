@@ -31,7 +31,5 @@ pub fn reuse_lines(chart: PhichainChart) -> PhichainChart {
         }
     }
 
-    dbg!(&groups);
-
     chart
 }
