@@ -1,6 +1,7 @@
 use crate::state::LineState;
 use phichain_chart::beat::Beat;
-use phichain_chart::event::LineEvent;
+use phichain_chart::easing::Easing;
+use phichain_chart::event::{LineEvent, LineEventValue};
 
 pub trait EventSequence {
     fn evaluate(&self, beat: Beat) -> f32;
@@ -89,4 +90,39 @@ pub fn event_split_points(events: &Vec<LineEvent>) -> Vec<Beat> {
     splits.dedup();
 
     splits
+}
+
+pub fn split_event_with_range(
+    event: &LineEvent,
+    from: Beat,
+    to: Beat,
+    interval: Beat,
+) -> Vec<LineEvent> {
+    let mut events = vec![];
+
+    let from = from.clamp(event.start_beat, event.end_beat);
+    let to = to.clamp(event.start_beat, event.end_beat);
+
+    let mut current_beat = from;
+
+    while current_beat <= to {
+        let start_value = event.evaluate(current_beat.value()).value().unwrap();
+        let end_value = event
+            .evaluate(current_beat.value() + interval.value())
+            .value()
+            .unwrap();
+        events.push(LineEvent {
+            kind: event.kind,
+            start_beat: current_beat,
+            end_beat: current_beat + interval,
+            value: LineEventValue::transition(start_value, end_value, Easing::Linear),
+        });
+        current_beat += interval;
+    }
+
+    events
+}
+
+pub fn split_event(event: &LineEvent, interval: Beat) -> Vec<LineEvent> {
+    split_event_with_range(event, event.start_beat, event.end_beat, interval)
 }
