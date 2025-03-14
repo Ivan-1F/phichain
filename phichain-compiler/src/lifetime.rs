@@ -24,6 +24,18 @@ impl LineLifetime {
     pub fn is_valid(&self, beat: Beat) -> bool {
         self.0.iter().any(|range| range.contains(&beat))
     }
+
+    pub fn overlaps(&self, other: &LineLifetime) -> bool {
+        for range1 in &self.0 {
+            for range2 in &other.0 {
+                if range1.end > range2.start && range2.end > range1.start {
+                    return true;
+                }
+            }
+        }
+
+        false
+    }
 }
 
 pub fn find_lifetime(line: &SerializedLine) -> LineLifetime {
@@ -39,4 +51,13 @@ pub fn find_lifetime(line: &SerializedLine) -> LineLifetime {
     ranges.extend(visible_ranges);
 
     LineLifetime(merge_ranges(&ranges))
+}
+
+pub fn merge_lifetimes(lifetimes: Vec<LineLifetime>) -> LineLifetime {
+    LineLifetime(merge_ranges(
+        &lifetimes
+            .iter()
+            .flat_map(|l| l.0.clone())
+            .collect::<Vec<_>>(),
+    ))
 }
