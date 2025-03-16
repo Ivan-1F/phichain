@@ -32,7 +32,10 @@ impl LineState {
             let half_length = 1.5 * CANVAS_WIDTH;
 
             let center = Point2::new(self.x, self.y);
-            let direction = Vector2::new(self.rotation.cos(), self.rotation.sin()) * half_length;
+            let direction = Vector2::new(
+                self.rotation.to_radians().cos(),
+                self.rotation.to_radians().sin(),
+            ) * half_length;
 
             let p1 = center + direction;
             let p2 = center - direction;
@@ -134,4 +137,22 @@ fn direction(p1: Point2<f32>, p2: Point2<f32>, p3: Point2<f32>) -> f32 {
 /// Check if point p is on line segment p1-p2
 fn on_segment(p1: Point2<f32>, p2: Point2<f32>, p: Point2<f32>) -> bool {
     p.x >= p1.x.min(p2.x) && p.x <= p1.x.max(p2.x) && p.y >= p1.y.min(p2.y) && p.y <= p1.y.max(p2.y)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_visible() {
+        let state = LineState {
+            x: -1958.3334,
+            y: 979.1667,
+            rotation: 106.40625,
+            opacity: 255.0,
+            speed: 10.0,
+        };
+
+        assert!(!state.is_visible());
+    }
 }
