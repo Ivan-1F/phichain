@@ -34,6 +34,7 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
     timeline::common::indicator_ui(&mut ui, world);
     timeline::common::separator_ui(&mut ui, world);
     timeline::common::bpm_change_ui(&mut ui, world);
+    timeline::common::range_annotation_ui(&mut ui, world);
 }
 
 #[derive(Resource, Debug)]

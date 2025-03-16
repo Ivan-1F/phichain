@@ -22,6 +22,7 @@ use phichain_chart::beat;
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::line::Line;
+use phichain_compiler::range::BeatRange;
 
 pub struct TimelinePlugin;
 
@@ -130,13 +131,49 @@ impl TimelineItem {
     }
 }
 
+/// A range annotation on the timeline
+#[derive(Debug, Clone, Component)]
+pub struct RangeAnnotation {
+    pub range: BeatRange,
+    // TODO
+    /// The line entity of this annotation
+    #[allow(dead_code)]
+    pub target: Entity,
+}
+
+impl RangeAnnotation {
+    pub fn new(range: BeatRange, target: Entity) -> Self {
+        Self { range, target }
+    }
+}
+
 pub mod common {
     use crate::constants::INDICATOR_POSITION;
-    use crate::timeline::TimelineContext;
+    use crate::timeline::{RangeAnnotation, TimelineContext};
     use bevy::ecs::system::SystemState;
     use bevy::prelude::*;
-    use egui::{Align2, Color32, FontId, Sense, Ui};
+    use egui::{Align2, Color32, FontId, Pos2, Sense, Stroke, Ui};
     use phichain_chart::bpm_list::BpmList;
+
+    pub fn range_annotation_ui(ui: &mut Ui, world: &mut World) {
+        let mut state: SystemState<(TimelineContext, Query<&RangeAnnotation>)> =
+            SystemState::new(world);
+        let (ctx, query) = state.get_mut(world);
+
+        for annotation in &query {
+            let rect = egui::Rect::from_min_max(
+                Pos2::new(ctx.viewport.0.min.x, ctx.beat_to_y(annotation.range.end)),
+                Pos2::new(ctx.viewport.0.max.x, ctx.beat_to_y(annotation.range.start)),
+            );
+
+            ui.painter().rect(
+                rect,
+                0.0,
+                Color32::from_rgba_unmultiplied(0, 255, 0, 10),
+                Stroke::new(2.0, Color32::from_rgba_unmultiplied(0, 255, 0, 255)),
+            );
+        }
+    }
 
     pub fn beat_line_ui(ui: &mut Ui, world: &mut World) {
         let mut state: SystemState<TimelineContext> = SystemState::new(world);

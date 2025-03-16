@@ -2,8 +2,11 @@ use crate::action::ActionRegistry;
 use crate::editing::command::line::{CreateLine, MoveLineAsChild, RemoveLine};
 use crate::editing::command::{CommandSequence, EditorCommand};
 use crate::editing::DoCommandEvent;
+use crate::exporter::phichain::PhichainExporter;
+use crate::exporter::Exporter;
 use crate::selection::SelectedLine;
 use crate::settings::EditorSettings;
+use crate::timeline::RangeAnnotation;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
@@ -12,6 +15,8 @@ use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::event::LineEvent;
 use phichain_chart::line::{Line, LineOpacity, LinePosition, LineRotation, LineSpeed};
 use phichain_chart::note::Note;
+use phichain_chart::serialization::PhichainChart;
+use phichain_compiler::lifetime::find_lifetime;
 
 struct LineList<'w> {
     world: &'w mut World,
@@ -142,6 +147,7 @@ impl LineList<'_> {
 
         let mut add_parent: Option<Option<Entity>> = None;
         let mut add_child = false;
+        let mut show_lifetime = None;
 
         if let Ok((line, children, parent, position, rotation, opacity, speed)) = query.get(entity)
         {
@@ -196,6 +202,11 @@ impl LineList<'_> {
                     }
                     if ui.button(t!("tab.line_list.hierarchy.add_child")).clicked() {
                         add_child = true;
+                        ui.close_menu();
+                    }
+                    ui.separator();
+                    if ui.button("Show Lifetime").clicked() {
+                        show_lifetime = Some(line.name.clone());
                         ui.close_menu();
                     }
                     ui.separator();
@@ -401,6 +412,34 @@ impl LineList<'_> {
                         )),
                     ]),
                 )));
+        }
+
+        if let Some(line) = show_lifetime {
+            let existing_annotations = self
+                .world
+                .query_filtered::<Entity, With<RangeAnnotation>>()
+                .iter(self.world)
+                .collect::<Vec<_>>();
+            for existing in existing_annotations {
+                self.world.despawn(existing);
+            }
+
+            // idk why export() returns a String
+            if let Ok(chart) = PhichainExporter::export(self.world) {
+                let chart: PhichainChart = serde_json::from_str(&chart).unwrap();
+
+                let compiled = phichain_compiler::compile_only(chart);
+
+                if let Some(line) = compiled.lines.iter().find(|x| x.line.name == line) {
+                    let lifetime = find_lifetime(line);
+                    for range in lifetime.entries() {
+                        self.world.spawn(RangeAnnotation::new(
+                            range.clone(),
+                            entity, // FIXME
+                        ));
+                    }
+                }
+            }
         }
     }
 }

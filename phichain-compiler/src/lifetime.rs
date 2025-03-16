@@ -20,6 +20,10 @@ impl LineLifetime {
         self.0.is_empty()
     }
 
+    pub fn entries(&self) -> &Vec<BeatRange> {
+        &self.0
+    }
+
     #[allow(dead_code)]
     pub fn is_valid(&self, beat: Beat) -> bool {
         self.0.iter().any(|range| range.contains(&beat))
