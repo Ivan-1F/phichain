@@ -125,7 +125,7 @@ impl TimelineItem {
     pub fn line_entity(&self) -> Option<Entity> {
         match self {
             TimelineItem::Note(timeline) => timeline.0,
-            TimelineItem::Event(timeline) => timeline.0,
+            TimelineItem::Event(timeline) => timeline.0.inner(),
         }
     }
 }
@@ -269,7 +269,7 @@ fn clean_dangle_timelines_system(
                 .iter()
                 .position(|x| match &x.timeline {
                     TimelineItem::Note(timeline) => timeline.0 == Some(entity),
-                    TimelineItem::Event(timeline) => timeline.0 == Some(entity),
+                    TimelineItem::Event(timeline) => timeline.0.inner() == Some(entity),
                 })
         {
             info!("Removed timeline due to removal of line");

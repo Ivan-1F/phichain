@@ -5,7 +5,8 @@ use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
 use crate::selection::{SelectEvent, Selected, SelectedLine};
 use crate::tab::timeline::TimelineFilter;
-use crate::timeline::{Timeline, TimelineContext};
+use crate::timeline::event::{EventTimeline, EventTimelineTarget};
+use crate::timeline::{Timeline, TimelineContext, TimelineItem};
 use crate::ui::widgets::easing::EasingGraph;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
@@ -66,7 +67,7 @@ impl Timeline for NoteTimeline {
         )> = SystemState::new(world);
 
         let (
-            ctx,
+            mut ctx,
             mut note_query,
             selected_query,
             mut track_query,
@@ -186,8 +187,8 @@ impl Timeline for NoteTimeline {
                 }
             );
 
-            if curve_note.is_none() {
-                response.context_menu(|ui| {
+            response.context_menu(|ui| {
+                ui.add_enabled_ui(curve_note.is_none(), |ui| {
                     if ui
                         .button(t!("tab.inspector.curve_note_track.start")) // TODO: this should not be under `tab.inspector`
                         .clicked()
@@ -196,7 +197,16 @@ impl Timeline for NoteTimeline {
                         ui.close_menu();
                     }
                 });
-            }
+
+                if ui.button("Open Event Timeline").clicked() {
+                    ctx.settings
+                        .container
+                        .push_right(TimelineItem::Event(EventTimeline::new(
+                            EventTimelineTarget::Note(entity),
+                        )));
+                    ui.close_menu()
+                }
+            });
 
             if let NoteKind::Hold { .. } = note.kind {
                 let mut make_drag_zone = |start: bool| {

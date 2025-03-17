@@ -1,4 +1,4 @@
-use crate::timeline::event::EventTimeline;
+use crate::timeline::event::{EventTimeline, EventTimelineTarget};
 use crate::timeline::note::NoteTimeline;
 use crate::timeline::settings::TimelineSettings;
 use crate::timeline::TimelineItem;
@@ -109,9 +109,9 @@ pub fn timeline_setting_tab(
                     ui.separator();
                     for (line, entity) in line_query.iter() {
                         if ui.button(&line.name).clicked() {
-                            timeline_settings
-                                .container
-                                .push_right(TimelineItem::Event(EventTimeline::new(entity)));
+                            timeline_settings.container.push_right(TimelineItem::Event(
+                                EventTimeline::new(EventTimelineTarget::Line(entity)),
+                            ));
                             ui.close_menu();
                         }
                     }
@@ -151,11 +151,16 @@ pub fn timeline_setting_tab(
                             ),
                         },
                         TimelineItem::Event(timeline) => match timeline.0 {
-                            None => t!("tab.timeline_setting.timelines.event_timeline.binding"),
-                            Some(entity) => t!(
+                            EventTimelineTarget::LineBinding => {
+                                t!("tab.timeline_setting.timelines.event_timeline.binding")
+                            }
+                            EventTimelineTarget::Line(entity) => t!(
                                 "tab.timeline_setting.timelines.event_timeline.for_line",
                                 line = line_query.get(entity).unwrap().0.name,
                             ),
+                            EventTimelineTarget::Note(entity) => {
+                                format!("Event Timeline for Note {:?}", entity).into()
+                            }
                         },
                     };
                     ui.label(label);

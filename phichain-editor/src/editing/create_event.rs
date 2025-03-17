@@ -73,7 +73,7 @@ fn create_event_system(
     for item in &ctx.settings.container.allocate(rect) {
         if let TimelineItem::Event(timeline) = &item.timeline {
             let viewport = item.viewport;
-            let line_entity = timeline.line_entity_from_fallback(selected_line.0);
+            let target_entity = timeline.target_entity_from_fallback(selected_line.0);
 
             if !viewport.contains(cursor_position.into_egui().to_pos2()) {
                 continue;
@@ -108,7 +108,7 @@ fn create_event_system(
                     if let Some(last_event) = events
                         .iter()
                         .filter(|(e, _)| e.kind == pending_event.kind)
-                        .filter(|(_, p)| p.get() == line_entity)
+                        .filter(|(_, p)| p.get() == target_entity)
                         .take_while(|(e, _)| e.end_beat <= pending_event.start_beat)
                         .map(|x| x.0)
                         .last()
@@ -126,7 +126,7 @@ fn create_event_system(
                     if let Some(next_event) = events
                         .iter()
                         .filter(|(e, _)| e.kind == pending_event.kind)
-                        .filter(|(_, p)| p.get() == line_entity)
+                        .filter(|(_, p)| p.get() == target_entity)
                         .take_while(|(e, _)| e.start_beat >= pending_event.end_beat)
                         .map(|x| x.0)
                         .last()
@@ -142,12 +142,12 @@ fn create_event_system(
                     }
                     commands.entity(entity).despawn();
                     event.send(DoCommandEvent(EditorCommand::CreateEvent(
-                        CreateEvent::new(line_entity, new_event),
+                        CreateEvent::new(target_entity, new_event),
                     )));
                 } else {
                     let (track, beat) = calc_event_attrs();
                     let kind = LineEventKind::try_from(track).expect("Unknown event track");
-                    commands.entity(line_entity).with_children(|parent| {
+                    commands.entity(target_entity).with_children(|parent| {
                         let value = if hotkey.just_pressed(CreateEventHotkeys::PlaceTransitionEvent)
                         {
                             LineEventValue::transition(0.0, 0.0, Easing::Linear)

@@ -14,24 +14,45 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{LineEvent, LineEventKind};
 use std::iter;
 
+#[derive(Debug, Clone, Copy)]
+pub enum EventTimelineTarget {
+    LineBinding,
+    Line(Entity),
+    Note(Entity),
+}
+
+impl EventTimelineTarget {
+    pub fn inner(&self) -> Option<Entity> {
+        match self {
+            EventTimelineTarget::LineBinding => None,
+            EventTimelineTarget::Line(entity) => Some(*entity),
+            EventTimelineTarget::Note(entity) => Some(*entity),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
-pub struct EventTimeline(pub Option<Entity>);
+pub struct EventTimeline(pub EventTimelineTarget);
 
 impl EventTimeline {
-    pub fn new(line: Entity) -> Self {
-        Self(Some(line))
+    pub fn new(target: EventTimelineTarget) -> Self {
+        Self(target)
     }
 
     pub fn new_binding() -> Self {
-        Self(None)
+        Self(EventTimelineTarget::LineBinding)
     }
 
-    pub fn line_entity(&self, world: &mut World) -> Entity {
-        self.line_entity_from_fallback(world.resource::<SelectedLine>().0)
+    pub fn target_entity(&self, world: &mut World) -> Entity {
+        self.target_entity_from_fallback(world.resource::<SelectedLine>().0)
     }
 
-    pub fn line_entity_from_fallback(&self, fallback: Entity) -> Entity {
-        self.0.unwrap_or(fallback)
+    pub fn target_entity_from_fallback(&self, fallback: Entity) -> Entity {
+        match self.0 {
+            EventTimelineTarget::LineBinding => fallback,
+            EventTimelineTarget::Line(entity) => entity,
+            EventTimelineTarget::Note(entity) => entity,
+        }
     }
 }
 
@@ -101,7 +122,7 @@ impl<T: PartialEq> EventTrackData<T> {
 
 impl Timeline for EventTimeline {
     fn ui(&self, ui: &mut Ui, world: &mut World, viewport: Rect) {
-        let line_entity = self.line_entity(world);
+        let target_entity = self.target_entity(world);
 
         let mut state: SystemState<(
             TimelineContext,
@@ -154,7 +175,7 @@ impl Timeline for EventTimeline {
         let mut first_events_outside_top_y = EventTrackData::splat(f32::MIN);
 
         for (event, parent, entity, _, _) in &event_query {
-            if parent.get() != line_entity {
+            if parent.get() != target_entity {
                 continue;
             }
 
@@ -188,7 +209,7 @@ impl Timeline for EventTimeline {
         }
 
         for (mut event, parent, entity, selected, pending) in &mut event_query {
-            if parent.get() != line_entity {
+            if parent.get() != target_entity {
                 continue;
             }
 
@@ -404,7 +425,7 @@ impl Timeline for EventTimeline {
     }
 
     fn on_drag_selection(&self, world: &mut World, viewport: Rect, selection: Rect) -> Vec<Entity> {
-        let line_entity = self.line_entity(world);
+        let target_entity = self.target_entity(world);
 
         let x_range = selection.x_range();
         let time_range = selection.y_range();
@@ -415,7 +436,7 @@ impl Timeline for EventTimeline {
 
         event_query
             .iter()
-            .filter(|x| x.1.get() == line_entity)
+            .filter(|x| x.1.get() == target_entity)
             .filter(|x| {
                 let event = x.0;
                 let track: u8 = event.kind.into();
