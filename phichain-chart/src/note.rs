@@ -1,4 +1,5 @@
 use crate::beat::Beat;
+use crate::event::LineEvent;
 use crate::line::{Line, LineOpacity, LinePosition, LineRotation, LineSpeed};
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
@@ -148,5 +149,18 @@ impl NoteBundle {
             opacity: Default::default(),
             speed: Default::default(),
         }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SerializedNote {
+    #[serde(flatten)]
+    pub note: Note,
+    pub events: Vec<LineEvent>,
+}
+
+impl SerializedNote {
+    pub fn new(note: Note, events: Vec<LineEvent>) -> Self {
+        Self { note, events }
     }
 }
