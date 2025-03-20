@@ -1,4 +1,5 @@
 use crate::beat::Beat;
+use crate::line::{Line, LineOpacity, LinePosition, LineRotation, LineSpeed};
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::fmt;
@@ -125,6 +126,13 @@ impl Note {
 pub struct NoteBundle {
     sprite: bevy::prelude::Sprite,
     note: Note,
+
+    // below is all the necessary components for lines
+    line: Line,
+    position: LinePosition,
+    rotation: LineRotation,
+    opacity: LineOpacity,
+    speed: LineSpeed,
 }
 
 #[cfg(feature = "bevy")]
@@ -133,6 +141,12 @@ impl NoteBundle {
         Self {
             sprite: bevy::prelude::Sprite::default(),
             note,
+
+            line: Default::default(),
+            position: Default::default(),
+            rotation: Default::default(),
+            opacity: Default::default(),
+            speed: Default::default(),
         }
     }
 }

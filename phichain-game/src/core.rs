@@ -22,9 +22,9 @@ impl Plugin for CoreGamePlugin {
             // note placement runs on Update, we need to edit them after they are being spawned into the world
             Update,
             (
-                update_note_scale_system,
+                update_note_scale_system.after(update_line_system),
                 update_note_system,
-                update_note_y_system,
+                update_note_y_system.after(update_line_system),
                 update_note_texture_system,
             )
                 .chain()
@@ -35,6 +35,15 @@ impl Plugin for CoreGamePlugin {
             (compute_line_system, update_line_system)
                 .chain()
                 .in_set(GameSet),
+        )
+        .add_systems(Update, spawn_note_line_sprite_system.in_set(GameSet))
+        .add_systems(
+            Update,
+            (
+                restore_note_sprite_color_system,
+                apply_note_line_opacity_system,
+            )
+                .after(update_line_system),
         )
         .add_systems(
             Update,
@@ -69,15 +78,16 @@ pub fn update_note_scale_system(
 }
 
 pub fn update_note_system(
-    mut query: Query<(&mut Transform, &mut Visibility, &Note)>,
+    mut query: Query<(&mut Transform, &mut Visibility, &Note, &LinePosition)>,
     game_viewport: Res<GameViewport>,
     time: Res<ChartTime>,
     bpm_list: Res<BpmList>,
 ) {
     let beat = bpm_list.beat_at(time.0);
-    for (mut transform, mut visibility, note) in &mut query {
+    for (mut transform, mut visibility, note, position) in &mut query {
         transform.translation.x = (note.x / CANVAS_WIDTH) * game_viewport.0.width()
-            / (game_viewport.0.width() * 3.0 / 1920.0);
+            / (game_viewport.0.width() * 3.0 / 1920.0)
+            + position.0.x;
 
         transform.translation.z = match note.kind {
             NoteKind::Hold { .. } => HOLD_LAYER,
@@ -151,6 +161,51 @@ pub fn compute_line_system(
     }
 }
 
+/// Marker component to indicate the actual [`Sprite`] of the note line. This should be a child of the entity holding [`Note`]
+#[derive(Debug, Copy, Clone, Component)]
+pub struct LineSprite;
+
+/// Spawn the child [`LineSprite`] for new [`Note`]s
+pub fn spawn_note_line_sprite_system(mut commands: Commands, query: Query<Entity, Added<Note>>) {
+    for entity in &query {
+        commands
+            .entity(entity)
+            .with_child((Sprite::default(), LineSprite));
+    }
+}
+
+/// Apply the [`LineOpacity`] component on note to the child [`LineSprite`]'s [`Sprite`]
+pub fn apply_note_line_opacity_system(
+    mut note_line_query: Query<(&Parent, &mut Sprite, &mut Transform), With<LineSprite>>,
+    opacity_query: Query<&LineOpacity>,
+    game_viewport: Res<GameViewport>,
+    config: Res<GameConfig>,
+    note_scale: Res<NoteScale>,
+) {
+    for (parent, mut sprite, mut transform) in &mut note_line_query {
+        if let Ok(opacity) = opacity_query.get(parent.get()) {
+            sprite.color = if config.fc_ap_indicator {
+                PERFECT_COLOR
+            } else {
+                Color::WHITE
+            }
+            .with_alpha(opacity.0);
+        }
+
+        transform.scale =
+            Vec3::splat(1.0 / (note_scale.0 / (game_viewport.0.width() * 3.0 / 1920.0)))
+    }
+}
+
+/// Prevent [`update_line_system`] updating the note's sprite. The note's sprite is always WHITE with alpha 1.0
+///
+/// This system runs after [`update_line_system`]
+pub fn restore_note_sprite_color_system(mut query: Query<&mut Sprite, With<Note>>) {
+    for mut sprite in &mut query {
+        sprite.color = Color::WHITE;
+    }
+}
+
 pub fn update_line_system(
     mut line_query: Query<
         (
@@ -189,7 +244,14 @@ pub fn update_note_y_system(
     query: Query<(&Children, Entity), With<Line>>,
     game_viewport: Res<GameViewport>,
     speed_event_query: Query<(&SpeedEvent, &LineEvent, &Parent)>,
-    mut note_query: Query<(&mut Transform, &mut Sprite, &mut Visibility, &Note)>,
+    mut note_query: Query<(
+        &mut Transform,
+        &mut Sprite,
+        &mut Visibility,
+        &Note,
+        &LinePosition,
+        &LineRotation,
+    )>,
     time: Res<ChartTime>,
     bpm_list: Res<BpmList>,
 ) {
@@ -210,7 +272,7 @@ pub fn update_note_y_system(
         };
         let current_distance = distance(time.0);
         for child in children {
-            if let Ok((mut transform, mut sprite, mut visibility, note)) =
+            if let Ok((mut transform, mut sprite, mut visibility, note, position, rotation)) =
                 note_query.get_mut(*child)
             {
                 let mut y = (distance(bpm_list.time_at(note.beat)) - current_distance) * note.speed;
@@ -223,7 +285,7 @@ pub fn update_note_y_system(
                             - y;
                         sprite.anchor = Anchor::BottomCenter;
                         transform.rotation = Quat::from_rotation_z(
-                            if note.above { 0.0_f32 } else { 180.0_f32 }.to_radians(),
+                            if note.above { 0.0_f32 } else { 180.0_f32 }.to_radians() + rotation.0,
                         );
                         transform.scale.y = height / 1900.0;
 
@@ -234,7 +296,8 @@ pub fn update_note_y_system(
                     }
                     _ => {
                         sprite.anchor = Anchor::Center;
-                        transform.rotation = Quat::from_rotation_z(0.0_f32.to_radians());
+                        transform.rotation =
+                            Quat::from_rotation_z(0.0_f32.to_radians() + rotation.0);
 
                         // hide notes behind line (cover)
                         if y < 0.0 {
@@ -243,7 +306,7 @@ pub fn update_note_y_system(
                     }
                 }
 
-                transform.translation.y = y * if note.above { 1.0 } else { -1.0 };
+                transform.translation.y = y * if note.above { 1.0 } else { -1.0 } + position.0.y;
             }
         }
     }
@@ -425,7 +488,7 @@ pub fn despawn_hold_component_system(
 }
 
 pub fn update_line_texture_system(
-    mut query: Query<&mut Sprite, With<Line>>,
+    mut query: Query<&mut Sprite, Or<(With<Line>, With<LineSprite>)>>,
     assets: Res<ImageAssets>,
 ) {
     for mut sprite in &mut query {

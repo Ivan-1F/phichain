@@ -59,7 +59,7 @@ impl SerializeLine for SerializedLine {
 
         if let Some(children) = children {
             for child in children.iter() {
-                if world.get::<Line>(*child).is_some() {
+                if world.get::<Line>(*child).is_some() && world.get::<Note>(*child).is_none() {
                     child_lines.push(SerializedLine::serialize_line(world, *child));
                 }
             }
