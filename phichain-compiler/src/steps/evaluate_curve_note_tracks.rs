@@ -1,4 +1,5 @@
 use phichain_chart::curve_note_track::generate_notes;
+use phichain_chart::note::SerializedNote;
 use phichain_chart::serialization::PhichainChart;
 
 /// Evaluate all curve note tracks and transform them into real notes
@@ -13,8 +14,10 @@ pub fn evaluate_curve_note_tracks(chart: PhichainChart) -> PhichainChart {
                 if let (Some(from), Some(to)) =
                     (line.notes.get(track.from), line.notes.get(track.to))
                 {
-                    let mut notes = generate_notes(*from, *to, &track.options);
-                    line.notes.append(&mut notes);
+                    let notes = generate_notes(from.note, to.note, &track.options);
+                    for note in notes {
+                        line.notes.push(SerializedNote::from_note(note))
+                    }
                 }
             }
 

@@ -40,7 +40,14 @@ fn load_line(line: SerializedLine, commands: &mut Commands, parent: Option<Entit
             let mut note_entity_order = vec![];
 
             for note in line.notes {
-                let id = parent.spawn(NoteBundle::new(note)).id();
+                let id = parent
+                    .spawn(NoteBundle::new(note.note))
+                    .with_children(|parent| {
+                        for event in note.events {
+                            parent.spawn(LineEventBundle::new(event));
+                        }
+                    })
+                    .id();
                 note_entity_order.push(id);
             }
             for event in line.events {

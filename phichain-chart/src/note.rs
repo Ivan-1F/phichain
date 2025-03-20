@@ -163,4 +163,8 @@ impl SerializedNote {
     pub fn new(note: Note, events: Vec<LineEvent>) -> Self {
         Self { note, events }
     }
+
+    pub fn from_note(note: Note) -> Self {
+        Self::new(note, vec![])
+    }
 }

@@ -17,7 +17,7 @@ impl SerializeLine for SerializedLine {
         let children = world.get::<Children>(entity);
         let line = world.get::<Line>(entity).expect("Entity is not a line");
 
-        let mut notes: Vec<Note> = vec![];
+        let mut notes: Vec<SerializedNote> = vec![];
         let mut events: Vec<LineEvent> = vec![];
         let mut cnts = vec![];
 
@@ -25,13 +25,10 @@ impl SerializeLine for SerializedLine {
 
         if let Some(children) = children {
             for child in children.iter() {
-                if let Some(note) = world.get::<Note>(*child) {
-                    if world.get::<CurveNote>(*child).is_some() {
-                        // skip curve notes
-                        continue;
-                    }
+                if world.get::<Note>(*child).is_some() && world.get::<CurveNote>(*child).is_none() {
                     note_entity_order.push(*child);
-                    notes.push(*note);
+                    let note = SerializedNote::serialize_note(world, *child);
+                    notes.push(note);
                 }
                 if let Some(event) = world.get::<LineEvent>(*child) {
                     events.push(*event);
@@ -91,6 +88,6 @@ impl SerializeNote for SerializedNote {
             }
         }
 
-        SerializedNote::new(note.clone(), events)
+        SerializedNote::new(*note, events)
     }
 }

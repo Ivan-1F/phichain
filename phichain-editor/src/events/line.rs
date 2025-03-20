@@ -107,7 +107,7 @@ impl EditorEvent for SpawnLineEvent {
 
         world.entity_mut(id).with_children(|parent| {
             for note in self.line.notes {
-                parent.spawn(NoteBundle::new(note));
+                parent.spawn(NoteBundle::new(note.note));
             }
             for event in self.line.events {
                 parent.spawn(LineEventBundle::new(event));

@@ -6,7 +6,7 @@ use crate::curve_note_track::CurveNoteTrack;
 use crate::event::{LineEvent, LineEventKind, LineEventValue};
 use crate::line::Line;
 use crate::migration::CURRENT_FORMAT;
-use crate::note::Note;
+use crate::note::SerializedNote;
 use crate::offset::Offset;
 use crate::primitive;
 use crate::primitive::{Format, PrimitiveChart};
@@ -30,7 +30,7 @@ impl Format for PhichainChart {
                 .lines
                 .iter()
                 .map(|line| primitive::line::Line {
-                    notes: line.notes.clone(),
+                    notes: line.notes.iter().map(|x| x.note).collect(),
                     events: line.events.iter().map(|x| (*x).into()).collect(),
                 })
                 .collect(),
@@ -51,7 +51,10 @@ impl Format for PhichainChart {
                 .map(|line| {
                     SerializedLine::new(
                         Line::default(),
-                        line.notes.clone(),
+                        line.notes
+                            .iter()
+                            .map(|x| SerializedNote::from_note(*x))
+                            .collect(),
                         line.events.iter().map(|x| (*x).into()).collect(),
                         vec![],
                         vec![],
@@ -90,7 +93,7 @@ impl Default for PhichainChart {
 pub struct SerializedLine {
     #[serde(flatten)]
     pub line: Line,
-    pub notes: Vec<Note>,
+    pub notes: Vec<SerializedNote>,
     pub events: Vec<LineEvent>,
     pub children: Vec<SerializedLine>,
     pub curve_note_tracks: Vec<CurveNoteTrack>,
@@ -99,7 +102,7 @@ pub struct SerializedLine {
 impl SerializedLine {
     pub fn new(
         line: Line,
-        notes: Vec<Note>,
+        notes: Vec<SerializedNote>,
         events: Vec<LineEvent>,
         children: Vec<SerializedLine>,
         curve_note_tracks: Vec<CurveNoteTrack>,
