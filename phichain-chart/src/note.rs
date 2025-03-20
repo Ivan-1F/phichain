@@ -1,6 +1,6 @@
 use crate::beat::Beat;
 use crate::event::LineEvent;
-use crate::line::{Line, LineOpacity, LinePosition, LineRotation, LineSpeed};
+use crate::line::Line;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::fmt;
@@ -130,10 +130,10 @@ pub struct NoteBundle {
 
     // below is all the necessary components for lines
     line: Line,
-    position: LinePosition,
-    rotation: LineRotation,
-    opacity: LineOpacity,
-    speed: LineSpeed,
+    position: crate::line::LinePosition,
+    rotation: crate::line::LineRotation,
+    opacity: crate::line::LineOpacity,
+    speed: crate::line::LineSpeed,
 }
 
 #[cfg(feature = "bevy")]
