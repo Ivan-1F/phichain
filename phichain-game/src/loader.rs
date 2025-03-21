@@ -91,12 +91,8 @@ fn load(file: File, commands: &mut Commands) -> anyhow::Result<()> {
     commands.insert_resource(chart.offset);
     commands.insert_resource(chart.bpm_list);
 
-    let mut first_line_id: Option<Entity> = None;
     for line in chart.lines {
-        let id = load_line(line, commands, None);
-        if first_line_id.is_none() {
-            first_line_id = Some(id)
-        }
+        load_line(line, commands, None);
     }
 
     Ok(())

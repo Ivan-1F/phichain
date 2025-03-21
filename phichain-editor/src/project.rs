@@ -14,6 +14,7 @@ use bevy::ecs::system::SystemState;
 use bevy_kira_audio::{Audio, AudioControl, AudioSource};
 use bevy_persistent::Persistent;
 use phichain_chart::line::Line;
+use phichain_chart::note::Note;
 pub use phichain_chart::project::{Project, ProjectMeta, ProjectPath};
 use phichain_chart::serialization::PhichainChart;
 use std::path::PathBuf;
@@ -118,7 +119,8 @@ fn load_project_system(
                     ));
 
                     commands.queue(|world: &mut World| {
-                        let mut query = world.query_filtered::<Entity, With<Line>>();
+                        let mut query =
+                            world.query_filtered::<Entity, (With<Line>, Without<Note>)>();
                         if let Some(first) = query.iter(world).next() {
                             world.insert_resource(crate::selection::SelectedLine(first));
                         }
