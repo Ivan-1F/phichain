@@ -115,15 +115,18 @@ impl LineList<'_> {
         let mut state: SystemState<(
             Query<&Note>,
             Query<&LineEvent>,
-            Query<(
-                &Line,
-                &Children,
-                Option<&Parent>,
-                &LinePosition,
-                &LineRotation,
-                &LineOpacity,
-                &LineSpeed,
-            )>,
+            Query<
+                (
+                    &Line,
+                    &Children,
+                    Option<&Parent>,
+                    &LinePosition,
+                    &LineRotation,
+                    &LineOpacity,
+                    &LineSpeed,
+                ),
+                Without<Note>,
+            >,
             Query<&Parent>,
             ResMut<SelectedLine>,
             EventWriter<DoCommandEvent>,
