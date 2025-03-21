@@ -64,7 +64,7 @@ pub enum EventSequenceError {
     DifferentKind,
 }
 
-pub fn sorted(events: &Vec<LineEvent>) -> Vec<LineEvent> {
+pub fn sorted(events: &[LineEvent]) -> Vec<LineEvent> {
     events
         .iter()
         .sorted_by_key(|x| x.start_beat)
@@ -83,7 +83,7 @@ pub fn sorted(events: &Vec<LineEvent>) -> Vec<LineEvent> {
 /// |   |=====|        |===============|       |=====|                      false
 /// |                           |=================|
 /// ```
-pub fn check_overlap(events: &Vec<LineEvent>) -> Result<(), EventSequenceError> {
+pub fn check_overlap(events: &[LineEvent]) -> Result<(), EventSequenceError> {
     match sorted(events)
         .iter()
         .tuple_windows()
@@ -105,9 +105,7 @@ pub enum EnsureSameKindResult {
 /// - If the sequence is empty, it returns `Ok(EnsureSameKindResult::Empty)`
 /// - If all events in the sequence have the same kind, it returns `Ok(EnsureSameKindResult::Kind(LineEventKind))`
 /// - If the events differ, it returns `Err(EventSequenceError::DifferentKind)`
-pub fn ensure_same_kind(
-    events: &Vec<LineEvent>,
-) -> Result<EnsureSameKindResult, EventSequenceError> {
+pub fn ensure_same_kind(events: &[LineEvent]) -> Result<EnsureSameKindResult, EventSequenceError> {
     if events.is_empty() {
         Ok(EnsureSameKindResult::Empty)
     } else {
@@ -130,7 +128,7 @@ pub fn ensure_same_kind(
 /// |------|=====|------|=====|-------|===============|-------|=====|------|
 /// ```
 pub fn fill_gap_until(
-    events: &Vec<LineEvent>,
+    events: &[LineEvent],
     until: Beat,
     default: f32,
 ) -> Result<Vec<LineEvent>, EventSequenceError> {
@@ -182,10 +180,7 @@ pub fn fill_gap_until(
 /// |--------------|=====|------|=====|-------|===============|-------|=====|
 /// ```
 #[allow(dead_code)]
-pub fn fill_gap(
-    events: &Vec<LineEvent>,
-    default: f32,
-) -> Result<Vec<LineEvent>, EventSequenceError> {
+pub fn fill_gap(events: &[LineEvent], default: f32) -> Result<Vec<LineEvent>, EventSequenceError> {
     fill_gap_until(
         events,
         events.last().map(|x| x.end_beat).unwrap_or(beat!(0)),
@@ -274,12 +269,12 @@ pub fn cut(event: LineEvent) -> Vec<LineEvent> {
 /// - for linear, clamp it to a shorter linear event
 /// - otherwise cut it first and then clamp
 pub fn clamp(
-    events: &Vec<LineEvent>,
+    events: &[LineEvent],
     min: Beat,
     max: Beat,
 ) -> Result<Vec<LineEvent>, EventSequenceError> {
-    check_overlap(&events)?;
-    let events = sorted(&events);
+    check_overlap(events)?;
+    let events = sorted(events);
 
     if events.is_empty() {
         return Ok(vec![]);
@@ -331,7 +326,10 @@ pub fn clamp(
             }
         }
 
-        println!("pushed event: {event:?}");
+        if event.start_beat == event.end_beat {
+            continue;
+        }
+
         clamped.push(event);
     }
 
@@ -339,13 +337,13 @@ pub fn clamp(
 }
 
 /// [`clamp`] from 0 to [`max`]
-pub fn max(events: &Vec<LineEvent>, max: Beat) -> Result<Vec<LineEvent>, EventSequenceError> {
+pub fn max(events: &[LineEvent], max: Beat) -> Result<Vec<LineEvent>, EventSequenceError> {
     clamp(events, beat!(0), max)
 }
 
 /// [`clamp`] from [`min`] to the end_beat of the last event
 #[allow(dead_code)]
-pub fn min(events: &Vec<LineEvent>, min: Beat) -> Result<Vec<LineEvent>, EventSequenceError> {
+pub fn min(events: &[LineEvent], min: Beat) -> Result<Vec<LineEvent>, EventSequenceError> {
     clamp(
         events,
         min,

@@ -17,6 +17,7 @@ pub fn compile(chart: PhichainChart) -> anyhow::Result<PrimitiveChart> {
     chart.into_primitive()
 }
 
+#[allow(clippy::let_and_return)] // for better readability
 pub fn compile_only(chart: PhichainChart) -> PhichainChart {
     let chart = merge_children_line(chart);
     let chart = evaluate_curve_note_tracks(chart);

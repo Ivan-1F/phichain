@@ -191,15 +191,16 @@ pub fn apply_note_level_events(chart: PhichainChart) -> PhichainChart {
                 continue;
             }
 
-            let mut note_line = SerializedLine::default();
-
-            // move all events except speed events to line
-            note_line.events = note
-                .events
-                .iter()
-                .filter(|x| !x.kind.is_speed())
-                .copied()
-                .collect();
+            let mut note_line = SerializedLine {
+                // move all events except speed events to line first
+                events: note
+                    .events
+                    .iter()
+                    .filter(|x| !x.kind.is_speed())
+                    .copied()
+                    .collect(),
+                ..Default::default()
+            };
 
             // speed is constantly 0
             note_line
