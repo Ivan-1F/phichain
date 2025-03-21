@@ -36,6 +36,19 @@ struct Args {
 fn convert(args: Args) -> anyhow::Result<()> {
     let file = std::fs::File::open(&args.path)?;
 
+    if matches!(args.input, Formats::Phichain) && matches!(args.output, Formats::Phichain) {
+        let chart: PhichainChart = serde_json::from_reader(file)?;
+
+        let compiled = phichain_compiler::compile_only(chart);
+
+        let output_path = args.path.with_extension(format!("{}.json", args.output));
+
+        let mut output_file = std::fs::File::create(output_path)?;
+        output_file.write_all(serde_json::to_string(&compiled)?.as_bytes())?;
+
+        return Ok(());
+    }
+
     println!("Converting chart into primitive chart...");
 
     let primitive = match args.input {
