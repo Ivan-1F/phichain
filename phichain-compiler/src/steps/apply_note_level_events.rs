@@ -71,12 +71,6 @@ fn convert_to_y_event(end_y: f32, bpm_list: &BpmList, speed_event: LineEvent) ->
 
                 let segment_time = bpm_list.time_at(end_beat) - bpm_list.time_at(start_beat);
 
-                // println!(
-                //     "[{}] {:?} -> {:?} ({}s): {}",
-                //     current_y, start_beat, end_beat, segment_time, avg_speed
-                // );
-                // println!("delta: {}", avg_speed * segment_time * 120.0);
-
                 let start_y = current_y + avg_speed * segment_time * 120.0;
 
                 events.push(LineEvent {
@@ -89,23 +83,17 @@ fn convert_to_y_event(end_y: f32, bpm_list: &BpmList, speed_event: LineEvent) ->
                 current_y = start_y;
             }
 
-            println!("events: {speed_event:?} {events:?}");
             events
         }
     }
 }
 
-/// Generate a Y event sequence up to a specified beat with a given speed event sequence.
-///
-/// The `end_beat` of the last event will be the same as `until`. The end value of the last event will be 0
-///
-/// Speed of 1 mean moving 120 units per second. Speed events will only be linear. Top of the canvas is larger.
+/// Generate a Y event sequence up to a specified beat with a given speed event sequence
 pub fn create_y_events(
     bpm_list: &BpmList,
     speed_events: Vec<LineEvent>,
     until: Beat,
 ) -> Result<Vec<LineEvent>, EventSequenceError> {
-    dbg!(&speed_events, until);
     if speed_events.is_empty() {
         let duration = bpm_list.time_at(until);
         return Ok(vec![LineEvent {
@@ -123,29 +111,6 @@ pub fn create_y_events(
     let mut speed_events = speed_events.clone();
     speed_events.sort_by_key(|x| x.start_beat);
 
-    // # merge
-    //
-    // Merge with another event sequence. In the case of overlap, combine the values by summing them
-    //
-    // |              |-----|      |~~~~~|       |~~~~~~~~~~~~~~~|       |=====|
-    // |     |=====|      |-----|     |~~~~~~~~~~~~~~~|
-    //
-    // |     |=====|  |---|-|---|  |||||||||||||||||||||||||||||||       |=====|
-
-    // 0                                                end
-    // v                                                 v
-    // v                                                 v
-    // v                                                 v
-    //
-    // |              |==A==|      |==B==|       |=======C=======|       |==D==|
-    // |==============|=====|======|=====|=======|===============|=======|=====|      fill the gap
-    // |==============|=====|======|=====|=======|=======|                            if C is linear or start == end, cut C until `end`
-    // |==============|=====|======|=====|=======|||||||||                            if C is not linear, and start != end, cut to C and trim to `end`
-
-    // speed_events.speed().fill_gap().max(until)
-
-    // fill_gap(&speed_events.speed(), 10.0);
-
     let mut y_events = vec![];
 
     let mut current = 0.0;
@@ -154,8 +119,6 @@ pub fn create_y_events(
         &fill_gap_until(&sorted(&speed_events.speed()), until, 10.0)?,
         until,
     )?;
-
-    dbg!(&processed_sequence);
 
     for event in processed_sequence.iter().rev() {
         let start_time = bpm_list.time_at(event.start_beat);
@@ -220,7 +183,6 @@ pub fn apply_note_level_events(chart: PhichainChart) -> PhichainChart {
             // push to note to the attached line, removing all the events
             note_line.notes.push(SerializedNote::from_note(note.note));
 
-            dbg!(&note_line);
             new_line.children.push(note_line);
         }
 
@@ -229,30 +191,3 @@ pub fn apply_note_level_events(chart: PhichainChart) -> PhichainChart {
 
     PhichainChart { lines, ..chart }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use phichain_chart::bpm_list::BpmPoint;
-//
-//     #[test]
-//     fn test() {
-//         let bpm_list = BpmList::new(vec![BpmPoint::new(beat!(0.0), 176.0)]);
-//
-//         let y = convert_to_y_event(
-//             0.0,
-//             bpm_list,
-//             LineEvent {
-//                 kind: LineEventKind::Speed,
-//                 start_beat: beat!(2.0),
-//                 end_beat: beat!(5.0),
-//                 value: LineEventValue::transition(10.0, 10.0, Easing::Linear),
-//                 // value: LineEventValue::transition(10.0, 2.0, Easing::Linear),
-//             },
-//         );
-//
-//         // dbg!(&y);
-//
-//         panic!()
-//     }
-// }

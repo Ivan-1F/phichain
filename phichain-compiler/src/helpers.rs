@@ -354,6 +354,18 @@ pub fn min(events: &[LineEvent], min: Beat) -> Result<Vec<LineEvent>, EventSeque
     )
 }
 
+/// Merge with another event sequence. In the case of overlap, combine the values by summing them
+///
+/// Input:
+/// |              |-----|      |~~~~~|       |~~~~~~~~~~~~~~~|       |=====|
+/// |     |=====|      |-----|     |~~~~~~~~~~~~~~~|
+/// Output:
+/// |     |=====|  |---|-|---|  |||||||||||||||||||||||||||||||       |=====|
+#[allow(dead_code)]
+pub fn merge(_: &[LineEvent], _: &[LineEvent]) -> Vec<LineEvent> {
+    todo!()
+}
+
 #[cfg(test)]
 mod tests {
     use crate::helpers::{
