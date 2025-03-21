@@ -1,3 +1,4 @@
+use crate::helpers::sorted;
 use crate::utils::EventSequence;
 use nalgebra::{Isometry2, Rotation2, Vector2};
 use phichain_chart::beat;
@@ -9,6 +10,8 @@ fn merge(parent: SerializedLine) -> Vec<SerializedLine> {
     if parent.children.is_empty() {
         vec![parent]
     } else {
+        let sorted_parent_events = sorted(&parent.events);
+
         let children = parent
             .children
             .iter()
@@ -40,10 +43,12 @@ fn merge(parent: SerializedLine) -> Vec<SerializedLine> {
                 splits.push(event.end_beat);
             }
 
-            splits.dedup();
             splits.sort();
+            splits.dedup();
 
             let minimum = beat!(1, 32);
+
+            let sorted_child_events = sorted(&child.events);
 
             if let (Some(first), Some(last)) = (splits.first().copied(), splits.last().copied()) {
                 let mut current = first;
@@ -54,11 +59,8 @@ fn merge(parent: SerializedLine) -> Vec<SerializedLine> {
                     macro_rules! evaluate {
                         ($target:ident, $filter:ident) => {
                             (
-                                $target
-                                    .events
-                                    .$filter()
-                                    .evaluate_start_no_effect(start_beat),
-                                $target.events.$filter().evaluate(end_beat),
+                                $target.$filter().evaluate_start_no_effect(start_beat),
+                                $target.$filter().evaluate(end_beat),
                             )
                         };
                     }
@@ -82,8 +84,8 @@ fn merge(parent: SerializedLine) -> Vec<SerializedLine> {
                         }};
                     }
 
-                    let (parent_start, parent_end) = evaluate_line!(parent);
-                    let (child_start, child_end) = evaluate_line!(child);
+                    let (parent_start, parent_end) = evaluate_line!(sorted_parent_events);
+                    let (child_start, child_end) = evaluate_line!(sorted_child_events);
 
                     let start = parent_start * child_start;
                     let end = parent_end * child_end;
@@ -127,7 +129,7 @@ fn merge(parent: SerializedLine) -> Vec<SerializedLine> {
                 .events
                 .iter()
                 .filter(|x| !x.kind.is_x() && !x.kind.is_y() && !x.kind.is_rotation())
-                .cloned()
+                .copied()
                 .collect::<Vec<_>>();
 
             let merged = SerializedLine {
@@ -139,7 +141,10 @@ fn merge(parent: SerializedLine) -> Vec<SerializedLine> {
             merged_children.push(merged);
         }
 
-        merged_children.push(parent);
+        merged_children.push(SerializedLine {
+            children: vec![],
+            ..parent
+        });
 
         merged_children
     }
