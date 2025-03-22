@@ -95,15 +95,13 @@ tab:
   line_list:
     title: Line List
     create_line: Create Line
-    note: Note
-    event: Event
-    position: Position
-    rotation: Rotation
-    opacity: Opacity
-    speed: Speed
+    note: Not
+    event: Evt
+    position: Pos
+    rotation: Rot
+    opacity: Opa
+    speed: Spd
     remove: Remove
-    show_states: States
-    show_previews: Previews
     hierarchy:
       as_child_of_current_line: As child of current line
       move_to_root: Move to root
