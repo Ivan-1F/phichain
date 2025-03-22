@@ -2651,8 +2651,7 @@ dependencies = [
 [[package]]
 name = "egui_flex"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71f36fd95c0943cf6a6ac53769195352bcfb0249d7b1b37d2dbed3c033c60fd0"
+source = "git+https://github.com/Ivan-1F/hello_egui.git?branch=no-repaint-0.30#084f3878af8848b0684eabf2709c96607547681b"
 dependencies = [
  "egui",
  "log",
