@@ -87,7 +87,7 @@ pub fn update_note_system(
     for (mut transform, mut visibility, note, position) in &mut query {
         transform.translation.x = (note.x / CANVAS_WIDTH) * game_viewport.0.width()
             / (game_viewport.0.width() * 3.0 / 1920.0)
-            + position.0.x;
+            + position.0.x / CANVAS_WIDTH / 3.0 * 1920.0;
 
         transform.translation.z = match note.kind {
             NoteKind::Hold { .. } => HOLD_LAYER,
@@ -306,7 +306,8 @@ pub fn update_note_y_system(
                     }
                 }
 
-                transform.translation.y = y * if note.above { 1.0 } else { -1.0 } + position.0.y;
+                transform.translation.y = y * if note.above { 1.0 } else { -1.0 }
+                    + position.0.y / CANVAS_HEIGHT / 3.0 * 1920.0;
             }
         }
     }
