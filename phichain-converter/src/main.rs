@@ -100,6 +100,7 @@ fn convert(args: Args) -> anyhow::Result<()> {
 }
 
 fn main() {
+    tracing_subscriber::fmt::init();
     let args = Args::parse();
     if let Err(err) = convert(args) {
         eprintln!("Error: {}", err);

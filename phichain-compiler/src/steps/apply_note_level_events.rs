@@ -1,5 +1,5 @@
 use crate::event;
-use crate::helpers::{fill_gap_until, max, sorted, EventSequenceError};
+use crate::helpers::{fill_gap_until, max, merge, sorted, EventSequenceError};
 use crate::utils::EventSequence;
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
@@ -8,6 +8,7 @@ use phichain_chart::easing::Easing;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use phichain_chart::note::SerializedNote;
 use phichain_chart::serialization::{PhichainChart, SerializedLine};
+use tracing::debug;
 
 fn convert_to_y_event(end_y: f32, bpm_list: &BpmList, speed_event: LineEvent) -> Vec<LineEvent> {
     match speed_event.value {
@@ -154,12 +155,14 @@ pub fn apply_note_level_events(chart: PhichainChart) -> PhichainChart {
                 continue;
             }
 
+            debug!("Processing note with note level events: {:?}", note);
+
             let mut note_line = SerializedLine {
                 // move all events except speed events to line first
                 events: note
                     .events
                     .iter()
-                    .filter(|x| !x.kind.is_speed())
+                    .filter(|x| !x.kind.is_speed() && !x.kind.is_y())
                     .copied()
                     .collect(),
                 ..Default::default()
@@ -183,15 +186,14 @@ pub fn apply_note_level_events(chart: PhichainChart) -> PhichainChart {
                 });
             }
 
-            // TODO: merge note's Y events
-            note_line.events.append(
-                &mut create_y_events(
-                    &chart.bpm_list,
-                    line.events.speed(), // TODO: merge note's speed events
-                    note.note.beat,
-                )
-                .unwrap(), // TODO: handle error
-            );
+            let y_events = create_y_events(
+                &chart.bpm_list,
+                line.events.speed(), // TODO: merge note's speed events
+                note.note.beat,
+            )
+            .unwrap(); // TODO: handle error
+
+            note_line.events.extend(merge(&note.events.y(), &y_events));
 
             // push to note to the attached line, removing all the events
             note_line.notes.push(SerializedNote::from_note(note.note));

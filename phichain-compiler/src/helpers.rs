@@ -7,11 +7,13 @@
 //! ||||||||||: many 1/32 events
 //! ```
 
+use crate::utils::EventSequence;
 use itertools::Itertools;
 use phichain_chart::beat::Beat;
 use phichain_chart::easing::Easing;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use thiserror::Error;
+use tracing::{debug, info};
 
 #[macro_export]
 macro_rules! beat {
@@ -354,6 +356,46 @@ pub fn min(events: &[LineEvent], min: Beat) -> Result<Vec<LineEvent>, EventSeque
     )
 }
 
+/// Find groups of overlapping events from two slices
+fn find_overlapping_groups(a: &[LineEvent], b: &[LineEvent]) -> Vec<Vec<LineEvent>> {
+    let all_events: Vec<LineEvent> = [a, b].concat();
+
+    if all_events.is_empty() {
+        return vec![];
+    }
+
+    let sorted_events = sorted(&all_events);
+    let mut groups: Vec<Vec<LineEvent>> = vec![];
+    let mut current_group: Vec<LineEvent> = vec![];
+    let mut latest_end = sorted_events[0].end_beat;
+
+    current_group.push(sorted_events[0]);
+
+    for event in sorted_events.iter().skip(1) {
+        if event.start_beat < latest_end {
+            current_group.push(*event);
+            // 更新当前组的最晚结束时间
+            if event.end_beat > latest_end {
+                latest_end = event.end_beat;
+            }
+        } else {
+            if !current_group.is_empty() {
+                groups.push(current_group);
+                current_group = vec![];
+            }
+            current_group.push(*event);
+            latest_end = event.end_beat;
+        }
+    }
+
+    if !current_group.is_empty() {
+        groups.push(current_group);
+    }
+
+    groups
+}
+
+// TODO: currently all overlapping ranges are cut
 /// Merge with another event sequence. In the case of overlap, combine the values by summing them
 ///
 /// Input:
@@ -362,8 +404,71 @@ pub fn min(events: &[LineEvent], min: Beat) -> Result<Vec<LineEvent>, EventSeque
 /// Output:
 /// |     |=====|  |---|-|---|  |||||||||||||||||||||||||||||||       |=====|
 #[allow(dead_code)]
-pub fn merge(_: &[LineEvent], _: &[LineEvent]) -> Vec<LineEvent> {
-    todo!()
+pub fn merge(a: &[LineEvent], b: &[LineEvent]) -> Vec<LineEvent> {
+    match (a.is_empty(), b.is_empty()) {
+        (true, true) => return vec![],
+        (true, false) => return b.to_vec(),
+        (false, true) => return a.to_vec(),
+        _ => {}
+    }
+
+    let a = sorted(a);
+    let b = sorted(b);
+
+    let overlapping_groups = find_overlapping_groups(&a, &b);
+
+    let mut merged = vec![];
+
+    for group in overlapping_groups {
+        if group.len() == 1 {
+            debug!("Skipping non-overlapping group: {:?}", group);
+            merged.push(group[0]);
+            continue;
+        }
+
+        let group = sorted(&group);
+
+        // TODO: optimize for linear/constant/same-start-end events. do not always cut
+
+        let start = group
+            .iter()
+            .min_by_key(|x| x.start_beat)
+            .unwrap()
+            .start_beat;
+        let end = group.iter().max_by_key(|x| x.end_beat).unwrap().end_beat;
+
+        debug!("Merging group: {:?}", group);
+        debug!("Overlapping range: {:?} ~ {:?}", start, end);
+
+        let mut current = start;
+        let minimum = beat!(1 / 32);
+
+        while current + minimum <= end {
+            let start_beat = current;
+            let end_beat = current + minimum;
+
+            info!(
+                "[{:?}] A: {}, B: {}",
+                start_beat,
+                a.evaluate(start_beat),
+                b.evaluate(start_beat)
+            );
+
+            let start_value = a.to_vec().evaluate(start_beat) + b.evaluate(start_beat);
+            let end_value = a.to_vec().evaluate(end_beat) + b.evaluate(end_beat);
+
+            merged.push(LineEvent {
+                kind: group[0].kind,
+                start_beat,
+                end_beat,
+                value: LineEventValue::transition(start_value, end_value, Easing::Linear),
+            });
+
+            current += minimum;
+        }
+    }
+
+    merged
 }
 
 #[cfg(test)]

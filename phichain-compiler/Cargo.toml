@@ -10,3 +10,5 @@ anyhow = "1.0.89"
 thiserror = "2.0.12"
 itertools = "0.14.0"
 nalgebra = "0.33.1"
+
+tracing = "0.1.41"
