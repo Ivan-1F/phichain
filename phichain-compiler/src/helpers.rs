@@ -447,13 +447,6 @@ pub fn merge(a: &[LineEvent], b: &[LineEvent]) -> Vec<LineEvent> {
             let start_beat = current;
             let end_beat = current + minimum;
 
-            info!(
-                "[{:?}] A: {}, B: {}",
-                start_beat,
-                a.evaluate(start_beat),
-                b.evaluate(start_beat)
-            );
-
             let start_value = a.to_vec().evaluate(start_beat) + b.evaluate(start_beat);
             let end_value = a.to_vec().evaluate(end_beat) + b.evaluate(end_beat);
 
