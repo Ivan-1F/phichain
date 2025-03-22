@@ -6,7 +6,7 @@ use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::easing::Easing;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
-use phichain_chart::note::SerializedNote;
+use phichain_chart::note::{Note, SerializedNote};
 use phichain_chart::serialization::{PhichainChart, SerializedLine};
 use tracing::debug;
 
@@ -162,11 +162,14 @@ pub fn apply_note_level_events(chart: PhichainChart) -> PhichainChart {
                 events: note
                     .events
                     .iter()
-                    .filter(|x| !x.kind.is_speed() && !x.kind.is_y())
+                    .filter(|x| !x.kind.is_speed() && !x.kind.is_y() && !x.kind.is_x())
                     .copied()
                     .collect(),
                 // add note to the attached line, ignoring all events
-                notes: vec![SerializedNote::from_note(note.note)],
+                notes: vec![SerializedNote::from_note(Note {
+                    x: 0.0,
+                    ..note.note
+                })],
                 ..Default::default()
             };
 
@@ -196,6 +199,15 @@ pub fn apply_note_level_events(chart: PhichainChart) -> PhichainChart {
             .unwrap(); // TODO: handle error
 
             note_line.events.extend(merge(&note.events.y(), &y_events));
+            note_line.events.extend(merge(
+                &note.events.x(),
+                &fill_gap_until(
+                    &[event!(LineEventKind::X, 0 => 1 / 32, note.note.x)],
+                    note.note.beat,
+                    0.0,
+                )
+                .unwrap(), // TODO: handle error
+            ));
 
             new_line.children.push(note_line);
         }
