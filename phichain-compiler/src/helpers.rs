@@ -13,7 +13,7 @@ use phichain_chart::beat::Beat;
 use phichain_chart::easing::Easing;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use thiserror::Error;
-use tracing::{debug, info};
+use tracing::debug;
 
 #[macro_export]
 macro_rules! beat {
