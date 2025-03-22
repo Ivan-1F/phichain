@@ -168,7 +168,20 @@ pub fn apply_note_level_events(chart: PhichainChart) -> PhichainChart {
             // speed is constantly 0
             note_line
                 .events
-                .push(event!(LineEventKind::Speed, 0 => 1, 0.0));
+                .push(event!(LineEventKind::Speed, 0 => 1 / 32, 0.0));
+
+            let judge_speed = line.events.evaluate(note.note.beat);
+            // for holds, add a speed event of it's judge speed
+            // TODO: event! does not support beat values now
+            // TODO: transition speed event
+            if note.note.kind.is_hold() {
+                note_line.events.push(LineEvent {
+                    kind: LineEventKind::Speed,
+                    start_beat: note.note.beat,
+                    end_beat: note.note.beat + beat!(1 / 32),
+                    value: LineEventValue::constant(judge_speed),
+                });
+            }
 
             // TODO: merge note's Y events
             note_line.events.append(
