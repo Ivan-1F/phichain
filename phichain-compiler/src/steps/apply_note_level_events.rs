@@ -165,6 +165,8 @@ pub fn apply_note_level_events(chart: PhichainChart) -> PhichainChart {
                     .filter(|x| !x.kind.is_speed() && !x.kind.is_y())
                     .copied()
                     .collect(),
+                // add note to the attached line, ignoring all events
+                notes: vec![SerializedNote::from_note(note.note)],
                 ..Default::default()
             };
 
@@ -194,9 +196,6 @@ pub fn apply_note_level_events(chart: PhichainChart) -> PhichainChart {
             .unwrap(); // TODO: handle error
 
             note_line.events.extend(merge(&note.events.y(), &y_events));
-
-            // push to note to the attached line, removing all the events
-            note_line.notes.push(SerializedNote::from_note(note.note));
 
             new_line.children.push(note_line);
         }
