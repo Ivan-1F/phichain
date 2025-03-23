@@ -1,5 +1,5 @@
 use crate::settings::EditorSettings;
-use crate::tab::settings::SettingCategory;
+use crate::tab::settings::{SettingCategory, SettingUi};
 use crate::ui::latch;
 use bevy::prelude::World;
 use egui::Ui;
@@ -13,44 +13,56 @@ impl SettingCategory for Audio {
     }
 
     fn ui(&self, ui: &mut Ui, settings: &mut EditorSettings, _world: &mut World) -> bool {
-        egui::Grid::new("audio-settings-grid")
-            .num_columns(2)
-            .spacing([20.0, 2.0])
-            .striped(true)
-            .show(ui, |ui| {
-                latch::latch(ui, "audio-settings", settings.audio.clone(), |ui| {
-                    let mut finished = false;
-                    ui.label(t!("tab.settings.category.audio.music_volume"));
+        latch::latch(ui, "audio-settings", settings.audio.clone(), |ui| {
+            let mut finished = false;
+
+            finished |= ui.item(
+                t!("tab.settings.category.audio.music_volume.label"),
+                Some(t!("tab.settings.category.audio.music_volume.description")),
+                |ui| {
                     let response = ui.add(
                         egui::DragValue::new(&mut settings.audio.music_volume)
                             .range(0.00..=1.2)
                             .speed(0.01),
                     );
-                    finished |= response.drag_stopped() || response.lost_focus();
-                    ui.end_row();
+                    response.drag_stopped() || response.lost_focus()
+                },
+            );
 
-                    ui.label(t!("tab.settings.category.audio.hit_sound_volume"));
+            ui.separator();
+
+            finished |= ui.item(
+                t!("tab.settings.category.audio.hit_sound_volume.label"),
+                Some(t!(
+                    "tab.settings.category.audio.hit_sound_volume.description"
+                )),
+                |ui| {
                     let response = ui.add(
                         egui::DragValue::new(&mut settings.audio.hit_sound_volume)
                             .range(0.00..=1.2)
                             .speed(0.01),
                     );
-                    finished |= response.drag_stopped() || response.lost_focus();
-                    ui.end_row();
+                    response.drag_stopped() || response.lost_focus()
+                },
+            );
 
-                    ui.label(t!("tab.settings.category.audio.playback_rate"));
+            ui.separator();
+
+            finished |= ui.item(
+                t!("tab.settings.category.audio.playback_rate.label"),
+                Some(t!("tab.settings.category.audio.playback_rate.description")),
+                |ui| {
                     let response = ui.add(
                         egui::DragValue::new(&mut settings.audio.playback_rate)
                             .range(0.01..=2.0)
                             .speed(0.01),
                     );
-                    finished |= response.drag_stopped() || response.lost_focus();
-                    ui.end_row();
+                    response.drag_stopped() || response.lost_focus()
+                },
+            );
 
-                    finished
-                })
-                .is_some()
-            })
-            .inner
+            finished
+        })
+        .is_some()
     }
 }

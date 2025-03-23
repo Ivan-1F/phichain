@@ -119,25 +119,49 @@ tab:
     category:
       general:
         title: 常规
-        timeline_scroll_sensitivity: 时间线滚动灵敏度
-        highlight_selected_line: 高亮选中判定线
+        timeline_scroll_sensitivity: 
+          label: 时间线滚动灵敏度
+          description: 使用鼠标滚轮或触控板滚动时间线时的灵明度。数值越大滚动越快
+        highlight_selected_line: 
+          label: 高亮选中判定线
+          description: 是否高亮选中的判定线
         show_line_anchor:
           label: 显示判定线锚点
+          description: 以什么规则显示判定线的锚点
           never: 从不
           always: 总是
           visible: 仅可见判定线
+        language:
+          label: 语言
+          description: 编辑器使用的语言
       audio:
         title: 音频
-        music_volume: 音乐音量
-        hit_sound_volume: 打击音效音量
-        playback_rate: 播放速率
+        music_volume: 
+          label: 音乐音量
+          description: 音乐的音量
+        hit_sound_volume: 
+          label: 打击音效音量
+          description: 打击音效的音量
+        playback_rate:
+          label: 播放速率
+          description: 控制音乐的播放速率，这将影响编辑器的全局速度
       game:
         title: 游戏
-        fc_ap_indicator: FC/AP 指示器
-        hide_hit_effect: 隐藏打击特效
-        note_scale: 音符缩放
-        multi_highlight: 多押高亮
-        hit_effect_follow_game_time: 打击特效使用游戏时间 (调试)
+        fc_ap_indicator: 
+          label: FC/AP 指示器
+          description: 是否启用 FC/AP 指示器。编辑器不含判定，即勾选后判定线恒定为黄色，不勾选则恒定为白色
+        hide_hit_effect: 
+          label: 隐藏打击特效
+          description: 是否隐藏打击特效
+        note_scale: 
+          label: 音符缩放
+          description: 音符的缩放比例
+        multi_highlight: 
+          label: 多押高亮
+          description: 是否开启多押高亮，即高亮所有等时音符
+        hit_effect_follow_game_time: 
+          label: 打击特效使用游戏时间 (调试)
+          description: 打击特效是否跟随游戏时间。启用后，打击特效的渲染将不再基于游戏全局时间，而是基于谱面时间。仅在调试环境中存在
       hotkey:
         title: 快捷键
         record: 录制

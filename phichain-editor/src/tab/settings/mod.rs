@@ -11,9 +11,44 @@ use crate::tab::settings::general::General;
 use crate::tab::settings::hotkey::Hotkey;
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
-use egui::{Layout, Ui};
+use egui::{Layout, RichText, Ui, WidgetText};
+use egui_flex::{item, Flex};
 use enum_dispatch::enum_dispatch;
 use strum::{EnumIter, IntoEnumIterator};
+
+pub trait SettingUi {
+    fn item(
+        self,
+        name: impl Into<WidgetText>,
+        description: Option<impl Into<RichText>>,
+        widget: impl FnOnce(&mut Ui) -> bool,
+    ) -> bool;
+}
+
+impl SettingUi for &mut Ui {
+    fn item(
+        self,
+        name: impl Into<WidgetText>,
+        description: Option<impl Into<RichText>>,
+        widget: impl FnOnce(&mut Ui) -> bool,
+    ) -> bool {
+        Flex::horizontal()
+            .w_full()
+            .show(self, |flex| {
+                flex.add_ui(item().shrink(), |ui| {
+                    ui.vertical(|ui| {
+                        ui.label(name);
+                        if let Some(description) = description {
+                            ui.small(description);
+                        }
+                    });
+                });
+                flex.grow();
+                flex.add_ui(item(), widget).inner
+            })
+            .inner
+    }
+}
 
 #[enum_dispatch(SettingCategories)]
 pub trait SettingCategory {
@@ -64,13 +99,18 @@ pub fn settings_tab(In(mut ui): In<Ui>, world: &mut World) {
 
                     ui.vertical(|ui| {
                         ui.heading(t!(category.name()));
-                        if category.ui(ui, &mut editor_settings, world) {
-                            match editor_settings.persist() {
-                                Ok(_) => {}
-                                Err(error) => toasts
-                                    .error(format!("Failed to persist editor settings: {}", error)),
+                        ui.separator();
+                        egui::ScrollArea::vertical().show(ui, |ui| {
+                            if category.ui(ui, &mut editor_settings, world) {
+                                match editor_settings.persist() {
+                                    Ok(_) => {}
+                                    Err(error) => toasts.error(format!(
+                                        "Failed to persist editor settings: {}",
+                                        error
+                                    )),
+                                }
                             }
-                        }
+                        });
                     });
                 });
             });
