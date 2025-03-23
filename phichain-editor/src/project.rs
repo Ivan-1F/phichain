@@ -208,6 +208,11 @@ fn unload_project_system(
 
         // clear editor history
         world.resource_mut::<EditorHistory>().0.clear();
+
+        // reset editor timing
+        use crate::timing::{ChartTime, Timing};
+        world.resource_mut::<ChartTime>().0 = 0.0;
+        world.resource_mut::<Timing>().seek_to(0.0);
     }
 }
 
