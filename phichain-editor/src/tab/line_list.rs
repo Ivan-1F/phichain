@@ -7,7 +7,9 @@ use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use egui::{Color32, Layout, RichText, Sense, Ui};
 use phichain_chart::event::LineEvent;
-use phichain_chart::line::{Line, LineOpacity, LinePosition, LineRotation, LineSpeed};
+use phichain_chart::line::{
+    Line, LineOpacity, LinePosition, LineRotation, LineSpeed, LineTimestamp,
+};
 use phichain_chart::note::Note;
 
 const LINE_STATE_COLUMN_WIDTH: f32 = 140.0;
@@ -26,9 +28,13 @@ impl LineList<'_> {
     fn show(&mut self, ui: &mut Ui) {
         let mut query = self
             .world
-            .query_filtered::<Entity, (Without<Parent>, With<Line>)>();
+            .query_filtered::<(Entity, &LineTimestamp), (Without<Parent>, With<Line>)>();
         let mut entities = query.iter(self.world).collect::<Vec<_>>();
-        entities.sort();
+        entities.sort_by_key(|(_, timestamp)| **timestamp);
+        let entities = entities
+            .iter()
+            .map(|(entity, _)| *entity)
+            .collect::<Vec<_>>();
 
         let mut create_line = false;
 
