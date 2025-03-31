@@ -143,7 +143,6 @@ fn handle_push_telemetry_event_system(
     mut events: EventReader<PushTelemetryEvent>,
     diagnostics: Res<DiagnosticsStore>,
     adapter_info: Res<RenderAdapterInfo>,
-    editor_settings: Res<Persistent<EditorSettings>>,
     entities: &Entities,
     time: Res<Time>,
     mut telemetry_manager: ResMut<TelemetryManager>,
@@ -198,7 +197,6 @@ fn handle_push_telemetry_event_system(
                 "entities": entities.len(),
                 "memory": process.memory(),
             },
-            "config": **editor_settings,
             "uptime": time.elapsed().as_secs_f32(),
 
             "metadata": event.metadata,
