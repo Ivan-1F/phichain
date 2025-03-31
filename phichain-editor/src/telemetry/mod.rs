@@ -9,6 +9,10 @@ use bevy::render::renderer::RenderAdapterInfo;
 use bevy::time::common_conditions::on_timer;
 use bevy_mod_reqwest::{BevyReqwest, ReqwestErrorEvent, ReqwestResponseEvent};
 use bevy_persistent::Persistent;
+use phichain_chart::event::LineEvent;
+use phichain_chart::line::Line;
+use phichain_chart::note::Note;
+use phichain_chart::project::Project;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::path::Path;
@@ -146,8 +150,23 @@ fn handle_push_telemetry_event_system(
     entities: &Entities,
     time: Res<Time>,
     mut telemetry_manager: ResMut<TelemetryManager>,
+
+    project: Option<Res<Project>>,
+    note_query: Query<&Note>,
+    line_query: Query<&Line>,
+    event_query: Query<&LineEvent>,
 ) {
     for event in events.read() {
+        let project_info = if project.is_some() {
+            json!({
+                "notes": note_query.iter().len(),
+                "lines": line_query.iter().len(),
+                "events": event_query.iter().len(),
+            })
+        } else {
+            json!(null)
+        };
+
         let diagnostic = diagnostics.get(&FrameTimeDiagnosticsPlugin::FPS);
         let fps_samples = diagnostic
             .map(|x| x.values().take(5).collect::<Vec<_>>())
@@ -186,6 +205,7 @@ fn handle_push_telemetry_event_system(
                 "ci": is_ci(),
                 "test": cfg!(test),
             },
+            "project": project_info,
             "phichain": {
                 "beta": constants::IS_BETA,
                 "version": env!("CARGO_PKG_VERSION"),
