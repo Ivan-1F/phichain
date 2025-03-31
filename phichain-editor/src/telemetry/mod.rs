@@ -149,13 +149,11 @@ fn handle_push_telemetry_event_system(
     mut telemetry_manager: ResMut<TelemetryManager>,
 ) {
     for event in events.read() {
-        let mut fps = 0.0;
-        if let Some(value) = diagnostics
-            .get(&FrameTimeDiagnosticsPlugin::FPS)
-            .and_then(|d| d.value())
-        {
-            fps = value;
-        }
+        let diagnostic = diagnostics.get(&FrameTimeDiagnosticsPlugin::FPS);
+        let fps_samples = diagnostic
+            .map(|x| x.values().take(5).collect::<Vec<_>>())
+            .unwrap_or_default();
+        let average_fps = diagnostic.and_then(|x| x.average()).unwrap_or_default();
 
         let mut system = sysinfo::System::new_all();
         system.refresh_all();
@@ -195,7 +193,8 @@ fn handle_push_telemetry_event_system(
                 "debug": cfg!(debug_assertions),
             },
             "performance": {
-                "fps": fps,
+                "fps_samples": fps_samples,
+                "fps": average_fps,
                 "entities": entities.len(),
                 "memory": process.memory(),
             },
