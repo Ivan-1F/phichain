@@ -1,8 +1,10 @@
 use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
 use crate::identifier::Identifier;
+use crate::telemetry::PushTelemetryEvent;
 use bevy::ecs::system::SystemState;
 use bevy::{prelude::*, utils::HashMap};
 use phichain_game::GameSet;
+use serde_json::json;
 
 pub type ActionIdentifier = Identifier;
 
@@ -24,6 +26,10 @@ impl ActionRegistry {
     pub fn run_action(&mut self, world: &mut World, id: impl Into<ActionIdentifier>) {
         let id = id.into();
         if let Some(action) = self.0.get_mut(&id) {
+            world.send_event(PushTelemetryEvent::new(
+                "phichain.editor.action.invoked",
+                json!({ "action": id }),
+            ));
             action.run(world);
         } else {
             error!("Failed to find action with id {}", id);
