@@ -175,8 +175,7 @@ pub fn draw_easing(
     let to_screen =
         emath::RectTransform::from_to(Rect::from_min_size(Pos2::ZERO, Vec2::new(1.0, 1.0)), rect);
 
-    let points: Vec<_> = std::iter::repeat(0.0)
-        .take(40)
+    let points: Vec<_> = std::iter::repeat_n(0.0, 40)
         .enumerate()
         .map(|(i, _)| {
             let x = i as f32 / 40.0;
