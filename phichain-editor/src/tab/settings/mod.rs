@@ -11,7 +11,7 @@ use crate::tab::settings::general::General;
 use crate::tab::settings::hotkey::Hotkey;
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
-use egui::{Color32, Layout, RichText, Ui, WidgetText};
+use egui::{Layout, RichText, Ui, WidgetText};
 use egui_flex::{item, Flex};
 use enum_dispatch::enum_dispatch;
 use strum::{EnumIter, IntoEnumIterator};
