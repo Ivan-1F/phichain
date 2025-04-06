@@ -131,6 +131,12 @@ jobs:
 
           mv LICENSE README.md README_en.md assets phichain-editor/lang ./build
 
+      - name: Move Windows files
+        if: matrix.platform == 'windows'
+        shell: bash
+        run: |
+          mv start.bat ./build
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
