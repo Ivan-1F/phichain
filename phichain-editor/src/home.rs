@@ -76,7 +76,7 @@ fn ui_system(world: &mut World) {
                 {
                     world.remove_resource::<OpenSettings>();
                 }
-                ui.heading("编辑器设置");
+                ui.heading(t!("home.settings"));
             });
             ui.separator();
             settings_ui(ui, world);
