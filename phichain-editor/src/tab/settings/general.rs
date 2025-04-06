@@ -85,6 +85,8 @@ impl SettingCategory for General {
                 },
             );
 
+            ui.separator();
+
             finished |= ui.item(
                 t!("tab.settings.category.general.show_line_anchor.label"),
                 Some(t!(
@@ -119,27 +121,16 @@ impl SettingCategory for General {
 
             ui.separator();
 
-            ui.vertical(|ui| {
-                ui.label(t!("tab.settings.category.general.send_telemetry.label"));
-                if crate::telemetry::telemetry_disabled_by_env_var() {
-                    ui.small(
-                        RichText::new(t!(
-                            "tab.settings.category.general.send_telemetry.disabled_by_env_var"
-                        ))
-                        .color(Color32::LIGHT_RED),
-                    );
-                } else if crate::telemetry::telemetry_debug() {
-                    ui.small(
-                        RichText::new(t!(
-                            "tab.settings.category.general.send_telemetry.debug_enabled"
-                        ))
-                        .color(Color32::LIGHT_RED),
-                    );
-                }
-            });
-            let response = ui.checkbox(&mut settings.general.send_telemetry, "");
-            finished |= response.changed();
-            ui.end_row();
+            finished |= ui.item(
+                t!("tab.settings.category.general.send_telemetry.label"),
+                Some(t!(
+                    "tab.settings.category.general.send_telemetry.description"
+                )),
+                |ui| {
+                    let response = ui.checkbox(&mut settings.general.send_telemetry, "");
+                    response.changed()
+                },
+            );
 
             finished
         })

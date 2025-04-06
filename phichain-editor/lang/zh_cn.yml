@@ -133,6 +133,7 @@ tab:
           visible: 仅可见判定线
         send_telemetry:
           label: 发送遥测
+          description: Phichain 收集有关 Phichain 和运行环境的一些基本信息的匿名遥测数据，以改进 Phichain。收集的遥测数据不包含任何个人信息，也不会被售卖或用于广告目的。了解更多关于遥测的信息，请访问 https://phicha.in/telemetry
           disabled_by_env_var: 遥测被环境变量禁用
           debug_enabled: 遥测调试启用
         language:

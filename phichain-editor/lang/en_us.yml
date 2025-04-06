@@ -133,6 +133,7 @@ tab:
           visible: Visible Lines Only
         send_telemetry:
           label: Send Telemetry
+          description: Phichain collects anonymous telemetry data on some basic information about Phichain and the runtime environment, for the purpose of improving Phichain. The collected telemetry data do not contain any personal information, and are not sold or used for advertising purposes. Learn more about telemetry by visiting https://phicha.in/telemetry
           disabled_by_env_var: Telemetry disabled by environment variable
           debug_enabled: Telemetry debug enabled
         language:
