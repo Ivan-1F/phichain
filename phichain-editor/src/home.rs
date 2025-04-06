@@ -1,17 +1,17 @@
-use std::path::PathBuf;
-
-use bevy::prelude::*;
-use bevy_egui::EguiContext;
-use bevy_persistent::Persistent;
-use egui::{Align2, RichText, ScrollArea, Sense};
-use rfd::FileDialog;
-
 use crate::recent_projects::{PersistentRecentProjectsExt, RecentProjects};
+use crate::tab::settings::settings_ui;
 use crate::{
     file::{pick_file, pick_folder, PickingEvent, PickingKind},
     notification::{ToastsExt, ToastsStorage},
     project::{create_project, project_not_loaded, LoadProjectEvent, ProjectMeta},
 };
+use bevy::prelude::*;
+use bevy_egui::EguiContext;
+use bevy_persistent::Persistent;
+use egui::{Align2, CursorIcon, RichText, ScrollArea, Sense};
+use egui_flex::{item, Flex};
+use rfd::FileDialog;
+use std::path::PathBuf;
 
 #[derive(Resource, Debug, Default)]
 pub struct CreateProjectForm {
@@ -25,6 +25,10 @@ pub struct CreateProjectForm {
 /// This should always be removed after sending [`LoadProjectEvent`]
 #[derive(Resource, Debug, Default)]
 pub struct CreatingProject;
+
+/// Marker resource to control the visibility of the settings screen
+#[derive(Resource, Debug, Default)]
+pub struct OpenSettings;
 
 pub struct HomePlugin;
 
@@ -57,6 +61,28 @@ fn ui_system(world: &mut World) {
     ctx.options_mut(|options| options.zoom_with_keyboard = false);
 
     egui::CentralPanel::default().show(ctx, |ui| {
+        let frame_time = ui.ctx().input(|i| i.time);
+        if frame_time == 0.0 {
+            return;
+        }
+
+        if world.get_resource::<OpenSettings>().is_some() {
+            ui.horizontal(|ui| {
+                if ui
+                    .heading(egui_phosphor::regular::ARROW_LEFT)
+                    .on_hover_cursor(CursorIcon::PointingHand)
+                    .clicked()
+                {
+                    world.remove_resource::<OpenSettings>();
+                }
+                ui.heading("编辑器设置");
+            });
+            ui.separator();
+            settings_ui(ui, world);
+
+            return;
+        }
+
         ui.heading(format!("Phichain v{}", env!("CARGO_PKG_VERSION")));
 
         ui.separator();
@@ -147,13 +173,28 @@ fn ui_system(world: &mut World) {
             world.remove_resource::<CreatingProject>();
         }
 
-        ui.horizontal(|ui| {
-            if ui.button(t!("home.open_project.load")).clicked() {
-                pick_folder(world, PickingKind::OpenProject, FileDialog::new());
-            }
-            if ui.button(t!("home.create_project.create")).clicked() {
-                world.insert_resource(CreatingProject);
-            }
+        Flex::horizontal().w_full().show(ui, |flex| {
+            flex.add_ui(item().shrink(), |ui| {
+                ui.horizontal(|ui| {
+                    if ui.button(t!("home.open_project.load")).clicked() {
+                        pick_folder(world, PickingKind::OpenProject, FileDialog::new());
+                    }
+                    if ui.button(t!("home.create_project.create")).clicked() {
+                        world.insert_resource(CreatingProject);
+                    }
+                });
+            });
+            flex.grow();
+            flex.add_ui(item(), |ui| {
+                ui.horizontal(|ui| {
+                    if ui.button(t!("home.settings")).clicked() {
+                        world.insert_resource(OpenSettings);
+                    }
+
+                    // TODO
+                    ui.checkbox(&mut false, t!("home.telemetry"));
+                })
+            });
         });
 
         ui.separator();

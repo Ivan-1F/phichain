@@ -211,6 +211,8 @@ home:
     create: 创建项目
 
     music_unselected: 未选择音乐
+  settings: 设置
+  telemetry: 遥测
 
 audio_setting:
   save:

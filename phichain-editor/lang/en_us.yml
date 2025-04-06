@@ -211,6 +211,8 @@ home:
     create: Create Project
 
     music_unselected: Music is not selected
+  settings: Settings
+  telemetry: Telemetry
 
 audio_setting:
   save:

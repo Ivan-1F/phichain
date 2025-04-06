@@ -66,6 +66,10 @@ enum SettingCategories {
 }
 
 pub fn settings_tab(In(mut ui): In<Ui>, world: &mut World) {
+    settings_ui(&mut ui, world);
+}
+
+pub fn settings_ui(ui: &mut Ui, world: &mut World) {
     world.resource_scope(
         |world, mut editor_settings: Mut<Persistent<EditorSettings>>| {
             world.resource_scope(|world, mut toasts: Mut<ToastsStorage>| {
