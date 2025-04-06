@@ -131,6 +131,10 @@ tab:
           never: Never
           always: Always
           visible: Visible Lines Only
+        send_telemetry:
+          label: Send Telemetry
+          disabled_by_env_var: Telemetry disabled by environment variable
+          debug_enabled: Telemetry debug enabled
         language:
           label: Language
           description: The language used by the editor

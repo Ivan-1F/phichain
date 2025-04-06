@@ -24,6 +24,7 @@ mod selection;
 mod serialization;
 mod settings;
 mod tab;
+mod telemetry;
 mod timeline;
 mod timing;
 mod translation;
@@ -58,6 +59,7 @@ use crate::tab::game::GameTabPlugin;
 use crate::tab::quick_action::quick_action;
 use crate::tab::TabPlugin;
 use crate::tab::{EditorTab, TabRegistry};
+use crate::telemetry::TelemetryPlugin;
 use crate::timeline::TimelinePlugin;
 use crate::timing::TimingPlugin;
 use crate::translation::TranslationPlugin;
@@ -72,6 +74,7 @@ use bevy::render::settings::WgpuSettings;
 use bevy::render::RenderPlugin;
 use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{EguiContext, EguiPlugin};
+use bevy_mod_reqwest::ReqwestPlugin;
 use bevy_persistent::Persistent;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use phichain_assets::AssetsPlugin;
@@ -103,6 +106,7 @@ fn main() {
         )
         .insert_resource(ClearColor(Color::BLACK))
         .insert_resource(UiState::new())
+        .add_plugins(ReqwestPlugin::default())
         .add_plugins(HotkeyPlugin)
         .add_plugins(CliPlugin)
         .add_plugins(MiscPlugin)
@@ -110,6 +114,7 @@ fn main() {
         .add_plugins(TranslationPlugin)
         .add_plugins(RecentProjectsPlugin)
         .add_plugins(HomePlugin)
+        .add_plugins(TelemetryPlugin)
         .add_plugins(
             DefaultPlugins
                 .set(RenderPlugin {

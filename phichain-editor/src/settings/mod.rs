@@ -20,6 +20,8 @@ impl Plugin for EditorSettingsPlugin {
                 .format(StorageFormat::Yaml)
                 .path(config_dir.join("settings.yml"))
                 .default(EditorSettings::default())
+                .revertible(true)
+                .revert_to_default_on_deserialization_errors(true) // TODO: better error handling, fix instead of revert
                 .build()
                 .expect("Failed to initialize editor settings"),
         );
@@ -41,6 +43,8 @@ pub struct GeneralSettings {
     pub timeline_scroll_sensitivity: f32,
     pub highlight_selected_line: bool,
     pub show_line_anchor: ShowLineAnchorOption,
+
+    pub send_telemetry: bool,
 }
 
 impl Default for GeneralSettings {
@@ -50,6 +54,8 @@ impl Default for GeneralSettings {
             timeline_scroll_sensitivity: 10.0,
             highlight_selected_line: true,
             show_line_anchor: ShowLineAnchorOption::Always,
+
+            send_telemetry: true,
         }
     }
 }
@@ -74,6 +80,7 @@ impl Default for AudioSettings {
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum AspectRatio {
     #[default]
     Free,

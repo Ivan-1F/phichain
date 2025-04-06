@@ -383,8 +383,7 @@ impl Timeline for EventTimeline {
 
         // lane
         // [0.2, 0.4, 0.6, 0.8]
-        let lane_percents = iter::repeat(0.0)
-            .take(5 - 1)
+        let lane_percents = iter::repeat_n(0.0, 5 - 1)
             .enumerate()
             .map(|(i, _)| (i + 1) as f32 * 1.0 / 5.0)
             .collect::<Vec<_>>();

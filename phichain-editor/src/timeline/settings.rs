@@ -41,8 +41,7 @@ impl TimelineSettings {
 
     pub fn lane_percents(&self) -> Vec<f32> {
         let lane_width = 1.0 / (self.lanes + 1) as f32;
-        std::iter::repeat(0)
-            .take(self.lanes as usize)
+        std::iter::repeat_n(0, self.lanes as usize)
             .enumerate()
             .map(|(i, _)| (i + 1) as f32 * lane_width)
             .collect()

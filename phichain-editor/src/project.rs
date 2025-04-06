@@ -10,13 +10,16 @@ use crate::hotkey::modifier::Modifier;
 use crate::hotkey::Hotkey;
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::recent_projects::{PersistentRecentProjectsExt, RecentProject, RecentProjects};
+use crate::telemetry::PushTelemetryEvent;
 use bevy::ecs::system::SystemState;
 use bevy_kira_audio::{Audio, AudioControl, AudioSource};
 use bevy_persistent::Persistent;
 use phichain_chart::line::Line;
 pub use phichain_chart::project::{Project, ProjectMeta, ProjectPath};
 use phichain_chart::serialization::PhichainChart;
+use serde_json::json;
 use std::path::PathBuf;
+use std::time::Instant;
 
 /// A [Condition] represents the project is loaded
 pub fn project_loaded() -> impl Condition<()> {
@@ -101,17 +104,28 @@ fn load_project_system(
     mut toasts: ResMut<ToastsStorage>,
 
     mut recent_projects: ResMut<Persistent<RecentProjects>>,
+
+    mut telemetry: EventWriter<PushTelemetryEvent>,
 ) {
     if events.len() > 1 {
         warn!("Multiple projects are requested, ignoring previous ones");
     }
 
     if let Some(event) = events.read().last() {
+        let start = Instant::now();
         match Project::load(event.0.clone()) {
             Ok(project) => {
                 if let Err(error) = phichain_game::load_project(&project, &mut commands) {
                     toasts.error(format!("Failed to load chart: {:?}", error));
+                    telemetry.send(PushTelemetryEvent::new(
+                        "phichain.editor.project.load.failed",
+                        json!({ "duration": start.elapsed().as_secs_f32() }),
+                    ));
                 } else {
+                    telemetry.send(PushTelemetryEvent::new(
+                        "phichain.editor.project.loaded",
+                        json!({ "duration": start.elapsed().as_secs_f32() }),
+                    ));
                     recent_projects.push(RecentProject::new(
                         project.meta.name.clone(),
                         project.path.0.clone(),

@@ -39,7 +39,10 @@ bevy = { version = "0.15.1", default-features = false, features = [
     "bevy_debug_stepping",
     "serialize",
     "trace",
+    "sysinfo_plugin"
 ] }
+wgpu-types = { version = "23.0.0", features = ["serde"] }
+
 bevy_kira_audio = { version = "0.22.0", features = [
     "mp3",
     "ogg",
@@ -92,3 +95,10 @@ tracing = "0.1.41"
 tracing-appender = "0.2.3"
 
 smallvec = "1.13.2"
+uuid = { version = "1.13.1", features = ["v4"] }
+
+bevy_mod_reqwest = "0.18.0"
+os_info = "3.10.0"
+sysinfo = "0.33.1"
+machine-uid = "0.5.3"
+sha2 = "0.10"
