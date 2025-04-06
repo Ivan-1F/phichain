@@ -117,7 +117,7 @@ fn container_environment() -> Option<&'static str> {
     None
 }
 
-fn telemetry_disabled_by_env_var() -> bool {
+pub fn telemetry_disabled_by_env_var() -> bool {
     matches!(
         env::var("PHICHAIN_TELEMETRY_DISABLED")
             .unwrap_or_default()
@@ -133,7 +133,7 @@ fn telemetry_disabled_by_env_var() -> bool {
     )
 }
 
-fn telemetry_debug() -> bool {
+pub fn telemetry_debug() -> bool {
     matches!(
         env::var("PHICHAIN_TELEMETRY_DEBUG")
             .unwrap_or_default()

@@ -3,7 +3,7 @@ use crate::tab::settings::SettingCategory;
 use crate::translation::Languages;
 use crate::ui::latch;
 use bevy::prelude::World;
-use egui::Ui;
+use egui::{Color32, RichText, Ui};
 use rust_i18n::set_locale;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
@@ -91,7 +91,14 @@ impl SettingCategory for General {
                         .inner;
                     ui.end_row();
 
-                    ui.label(t!("tab.settings.category.general.send_telemetry"));
+                    ui.vertical(|ui| {
+                        ui.label(t!("tab.settings.category.general.send_telemetry.label"));
+                        if crate::telemetry::telemetry_disabled_by_env_var() {
+                            ui.small(RichText::new(t!("tab.settings.category.general.send_telemetry.disabled_by_env_var")).color(Color32::LIGHT_RED));
+                        } else if crate::telemetry::telemetry_debug() {
+                            ui.small(RichText::new(t!("tab.settings.category.general.send_telemetry.debug_enabled")).color(Color32::LIGHT_RED));
+                        }
+                    });
                     let response = ui.checkbox(&mut settings.general.send_telemetry, "");
                     finished |= response.changed();
                     ui.end_row();

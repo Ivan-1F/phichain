@@ -128,7 +128,10 @@ tab:
           never: 从不
           always: 总是
           visible: 仅可见判定线
-        send_telemetry: 发送遥测
+        send_telemetry:
+          label: 发送遥测
+          disabled_by_env_var: 遥测被环境变量禁用
+          debug_enabled: 遥测调试启用
       audio:
         title: 音频
         music_volume: 音乐音量
