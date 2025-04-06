@@ -1,4 +1,5 @@
 use crate::recent_projects::{PersistentRecentProjectsExt, RecentProjects};
+use crate::settings::EditorSettings;
 use crate::tab::settings::settings_ui;
 use crate::{
     file::{pick_file, pick_folder, PickingEvent, PickingKind},
@@ -191,8 +192,12 @@ fn ui_system(world: &mut World) {
                         world.insert_resource(OpenSettings);
                     }
 
-                    // TODO
-                    ui.checkbox(&mut false, t!("home.telemetry"));
+                    let mut editor_settings = world.resource_mut::<Persistent<EditorSettings>>();
+
+                    ui.checkbox(
+                        &mut editor_settings.general.send_telemetry,
+                        t!("home.telemetry"),
+                    );
                 })
             });
         });
