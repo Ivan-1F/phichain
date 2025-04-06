@@ -1,6 +1,7 @@
 use crate::recent_projects::{PersistentRecentProjectsExt, RecentProjects};
 use crate::settings::EditorSettings;
 use crate::tab::settings::settings_ui;
+use crate::ui::widgets::language_combobox::language_combobox;
 use crate::{
     file::{pick_file, pick_folder, PickingEvent, PickingKind},
     notification::{ToastsExt, ToastsStorage},
@@ -9,7 +10,7 @@ use crate::{
 use bevy::prelude::*;
 use bevy_egui::EguiContext;
 use bevy_persistent::Persistent;
-use egui::{Align2, CursorIcon, RichText, ScrollArea, Sense};
+use egui::{Align2, Color32, CursorIcon, RichText, ScrollArea, Sense};
 use egui_flex::{item, Flex};
 use rfd::FileDialog;
 use std::path::PathBuf;
@@ -72,6 +73,7 @@ fn ui_system(world: &mut World) {
                 if ui
                     .heading(egui_phosphor::regular::ARROW_LEFT)
                     .on_hover_cursor(CursorIcon::PointingHand)
+                    .on_hover_and_drag_cursor(CursorIcon::PointingHand)
                     .clicked()
                 {
                     world.remove_resource::<OpenSettings>();
@@ -188,6 +190,18 @@ fn ui_system(world: &mut World) {
             flex.grow();
             flex.add_ui(item(), |ui| {
                 ui.horizontal(|ui| {
+                    ui.label(
+                        RichText::new(format!(
+                            "{} {}",
+                            egui_phosphor::regular::GLOBE,
+                            t!("tab.settings.category.general.language.label")
+                        ))
+                        .color(Color32::LIGHT_BLUE),
+                    );
+                    if language_combobox(ui, world) {
+                        let _ = world.resource_mut::<Persistent<EditorSettings>>().persist();
+                    }
+
                     if ui.button(t!("home.settings")).clicked() {
                         world.insert_resource(OpenSettings);
                     }
@@ -241,8 +255,8 @@ fn ui_system(world: &mut World) {
                     );
                 })
                 .response
-                .on_hover_cursor(egui::CursorIcon::PointingHand)
-                .on_hover_and_drag_cursor(egui::CursorIcon::PointingHand);
+                .on_hover_cursor(CursorIcon::PointingHand)
+                .on_hover_and_drag_cursor(CursorIcon::PointingHand);
             }
         });
         ui.style_mut().interaction.selectable_labels = true;

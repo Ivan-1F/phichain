@@ -1,10 +1,9 @@
 use crate::settings::{EditorSettings, ShowLineAnchorOption};
 use crate::tab::settings::{SettingCategory, SettingUi};
-use crate::translation::Languages;
 use crate::ui::latch;
+use crate::ui::widgets::language_combobox::language_combobox;
 use bevy::prelude::World;
 use egui::{Color32, RichText, Ui};
-use rust_i18n::set_locale;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
 pub struct General;
@@ -18,8 +17,6 @@ impl SettingCategory for General {
         latch::latch(ui, "general-settings", settings.general.clone(), |ui| {
             let mut finished = false;
 
-            let languages = world.resource::<Languages>();
-
             finished |= ui.item(
                 RichText::new(format!(
                     "{} {}",
@@ -28,30 +25,7 @@ impl SettingCategory for General {
                 ))
                 .color(Color32::LIGHT_BLUE),
                 Some(t!("tab.settings.category.general.language.description")),
-                |ui| {
-                    let mut combobox_changed = false;
-                    egui::ComboBox::from_label("")
-                        .selected_text(
-                            languages
-                                .0
-                                .get(&settings.general.language)
-                                .unwrap_or(&settings.general.language),
-                        )
-                        .show_ui(ui, |ui| {
-                            for (id, name) in &languages.0 {
-                                if ui
-                                    .selectable_label(settings.general.language == *id, name)
-                                    .clicked()
-                                {
-                                    settings.general.language.clone_from(id);
-                                    set_locale(id);
-                                    combobox_changed = true;
-                                }
-                            }
-                        });
-
-                    combobox_changed
-                },
+                |ui| language_combobox(ui, world),
             );
 
             ui.separator();
