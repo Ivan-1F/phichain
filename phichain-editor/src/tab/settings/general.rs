@@ -1,5 +1,6 @@
 use crate::settings::{EditorSettings, ShowLineAnchorOption};
 use crate::tab::settings::{SettingCategory, SettingUi};
+use crate::translation::Languages;
 use crate::ui::latch;
 use crate::ui::widgets::language_combobox::language_combobox;
 use bevy::prelude::World;
@@ -17,6 +18,8 @@ impl SettingCategory for General {
         latch::latch(ui, "general-settings", settings.general.clone(), |ui| {
             let mut finished = false;
 
+            let languages = world.resource::<Languages>().0.clone();
+
             finished |= ui.item(
                 RichText::new(format!(
                     "{} {}",
@@ -25,7 +28,7 @@ impl SettingCategory for General {
                 ))
                 .color(Color32::LIGHT_BLUE),
                 Some(t!("tab.settings.category.general.language.description")),
-                |ui| language_combobox(ui, world),
+                |ui| language_combobox(ui, languages, &mut settings.general.language),
             );
 
             ui.separator();

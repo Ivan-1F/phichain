@@ -1,6 +1,7 @@
 use crate::recent_projects::{PersistentRecentProjectsExt, RecentProjects};
 use crate::settings::EditorSettings;
 use crate::tab::settings::settings_ui;
+use crate::translation::Languages;
 use crate::ui::widgets::language_combobox::language_combobox;
 use crate::{
     file::{pick_file, pick_folder, PickingEvent, PickingKind},
@@ -198,8 +199,10 @@ fn ui_system(world: &mut World) {
                         ))
                         .color(Color32::LIGHT_BLUE),
                     );
-                    if language_combobox(ui, world) {
-                        let _ = world.resource_mut::<Persistent<EditorSettings>>().persist();
+                    let languages = world.resource::<Languages>().0.clone();
+                    let mut editor_settings = world.resource_mut::<Persistent<EditorSettings>>();
+                    if language_combobox(ui, languages, &mut editor_settings.general.language) {
+                        let _ = editor_settings.persist();
                     }
 
                     if ui.button(t!("home.settings")).clicked() {
