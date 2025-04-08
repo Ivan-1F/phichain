@@ -1,7 +1,7 @@
 use crate::audio::AudioDuration;
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::settings::{AspectRatio, EditorSettings};
-use crate::timing::{ChartTime, SeekToEvent};
+use crate::timing::{SeekToEvent, Timing};
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
@@ -12,13 +12,13 @@ pub fn quick_action(ui: &mut Ui, world: &mut World) {
     let mut state: SystemState<(
         ResMut<Persistent<EditorSettings>>,
         ResMut<ToastsStorage>,
-        Res<ChartTime>,
+        Res<Timing>,
         Res<BpmList>,
         Res<AudioDuration>,
         EventWriter<SeekToEvent>,
     )> = SystemState::new(world);
 
-    let (mut editor_settings, mut toasts, time, bpm_list, duration, mut events) =
+    let (mut editor_settings, mut toasts, timing, bpm_list, duration, mut events) =
         state.get_mut(world);
 
     ui.horizontal(|ui| {
@@ -94,8 +94,9 @@ pub fn quick_action(ui: &mut Ui, world: &mut World) {
 
         // -------- Progress Control --------
 
-        let seconds = time.0;
+        let seconds = timing.now();
         let mut second_binding = seconds;
+        // TODO: maybe this can be optimized
         let beats = bpm_list.beat_at(seconds).value();
         let mut beat_binding = beats;
 
