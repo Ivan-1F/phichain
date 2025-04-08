@@ -58,6 +58,66 @@ pub enum Easing {
 }
 
 impl Easing {
+    pub fn is_linear(self) -> bool {
+        matches!(self, Easing::Linear)
+    }
+
+    #[allow(dead_code)]
+    pub fn is_in(self) -> bool {
+        matches!(
+            self,
+            Easing::EaseInSine
+                | Easing::EaseInQuad
+                | Easing::EaseInCubic
+                | Easing::EaseInQuart
+                | Easing::EaseInQuint
+                | Easing::EaseInExpo
+                | Easing::EaseInCirc
+                | Easing::EaseInBack
+                | Easing::EaseInElastic
+                | Easing::EaseInBounce
+        )
+    }
+
+    #[allow(dead_code)]
+    pub fn is_out(self) -> bool {
+        matches!(
+            self,
+            Easing::EaseOutSine
+                | Easing::EaseOutQuad
+                | Easing::EaseOutCubic
+                | Easing::EaseOutQuart
+                | Easing::EaseOutQuint
+                | Easing::EaseOutExpo
+                | Easing::EaseOutCirc
+                | Easing::EaseOutBack
+                | Easing::EaseOutElastic
+                | Easing::EaseOutBounce
+        )
+    }
+
+    pub fn is_in_out(self) -> bool {
+        matches!(
+            self,
+            Easing::EaseInOutSine
+                | Easing::EaseInOutQuad
+                | Easing::EaseInOutCubic
+                | Easing::EaseInOutQuart
+                | Easing::EaseInOutQuint
+                | Easing::EaseInOutExpo
+                | Easing::EaseInOutCirc
+                | Easing::EaseInOutBack
+                | Easing::EaseInOutElastic
+                | Easing::EaseInOutBounce
+        )
+    }
+
+    pub fn is_custom(self) -> bool {
+        matches!(self, Easing::Custom(_, _, _, _))
+    }
+}
+
+impl Easing {
     pub fn ease(self, x: f32) -> f32 {
         match self {
             Self::Linear => linear(x),

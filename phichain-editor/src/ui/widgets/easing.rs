@@ -1,5 +1,8 @@
 use egui::epaint::PathShape;
-use egui::{emath, Color32, Pos2, Rect, Response, Sense, Stroke, Ui, Vec2, Widget};
+use egui::{
+    emath, Color32, Frame, Grid, Label, Layout, Pos2, Rect, Response, RichText, Sense, Stroke, Ui,
+    UiBuilder, Vec2, Widget,
+};
 use phichain_chart::easing::Easing;
 use strum::IntoEnumIterator;
 
@@ -202,21 +205,105 @@ impl Widget for EasingValue<'_> {
         ui.vertical(|ui| {
             let mut combobox_changed = false;
             let mut response = egui::ComboBox::from_label("")
+                .height(300.0)
                 .selected_text(format!("{}", self.value))
                 .show_ui(ui, |ui| {
-                    for easing in Easing::iter().filter(|x| !self.disabled_easings.contains(x)) {
-                        if ui
-                            .selectable_label(*self.value == easing, format!("{}", easing))
-                            .clicked()
-                        {
-                            combobox_changed = true;
-                            if let Easing::Custom(_, _, _, _) = easing {
-                                *self.value = Easing::Custom(0.5, 0.0, 0.5, 1.0);
-                            } else {
-                                *self.value = easing;
+                    ui.scope(|ui| {
+                        ui.columns_const(|[linear, custom]| {
+                            linear.with_layout(
+                                Layout::top_down_justified(egui::Align::Center),
+                                |ui| {
+                                    if ui
+                                        .selectable_label(self.value.is_linear(), "Linear")
+                                        .clicked()
+                                    {
+                                        combobox_changed = true;
+                                        *self.value = Easing::Linear;
+                                    }
+                                },
+                            );
+                            custom.with_layout(
+                                Layout::top_down_justified(egui::Align::Center),
+                                |ui| {
+                                    if ui
+                                        .selectable_label(self.value.is_custom(), "Custom")
+                                        .clicked()
+                                    {
+                                        combobox_changed = true;
+                                        *self.value = Easing::Custom(0.5, 0.0, 0.5, 1.0);
+                                    }
+                                },
+                            );
+                        });
+                        Grid::new("easing-grid").num_columns(3).show(ui, |ui| {
+                            for easing in Easing::iter().filter(|x| {
+                                !self.disabled_easings.contains(x)
+                                    && !x.is_custom()
+                                    && !x.is_linear()
+                            }) {
+                                let selected = self.value == &easing;
+
+                                let response = ui
+                                    .scope_builder(
+                                        UiBuilder::new()
+                                            .id_salt("easing-value")
+                                            .sense(Sense::click()),
+                                        |ui| {
+                                            let response = ui.response();
+                                            let visuals =
+                                                ui.style().interact_selectable(&response, selected);
+                                            let text_color = visuals.text_color();
+
+                                            let mut frame = Frame::canvas(ui.style())
+                                                .fill(Color32::default())
+                                                .stroke(Stroke::default())
+                                                .inner_margin(ui.spacing().menu_margin);
+
+                                            if selected
+                                                || response.hovered()
+                                                || response.highlighted()
+                                                || response.has_focus()
+                                            {
+                                                frame = frame
+                                                    .fill(visuals.bg_fill)
+                                                    .stroke(visuals.bg_stroke);
+                                            }
+
+                                            frame.show(ui, |ui| {
+                                                ui.vertical(|ui| {
+                                                    let response = ui.add_sized(
+                                                        Vec2::new(80.0, 40.0),
+                                                        EasingGraph::new(&mut easing.clone()),
+                                                    );
+
+                                                    ui.put(
+                                                        response.rect,
+                                                        Label::new(
+                                                            RichText::new(
+                                                                format!("{}", easing)
+                                                                    .trim_start_matches("Ease"),
+                                                            )
+                                                            .color(text_color),
+                                                        )
+                                                        .selectable(false),
+                                                    );
+                                                })
+                                            });
+                                        },
+                                    )
+                                    .response;
+
+                                if response.clicked() {
+                                    combobox_changed = true;
+                                    *self.value = easing;
+                                }
+
+                                if easing.is_in_out() {
+                                    ui.end_row();
+                                }
                             }
-                        }
-                    }
+                        });
+                    });
                 })
                 .response;
 
