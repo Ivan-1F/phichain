@@ -4,6 +4,7 @@ use bevy_egui::EguiPreUpdateSet;
 
 mod compat;
 pub mod latch;
+pub mod sides;
 pub mod widgets;
 
 pub struct UiPlugin;

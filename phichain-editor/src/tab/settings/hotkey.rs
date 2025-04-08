@@ -31,7 +31,45 @@ impl SettingCategory for Hotkey {
             };
 
             ui.item(t!(key.as_str()), None::<&str>, |ui| {
+                // the order is revered since we use [`egui::Sides`] for `ui.item`. the right part starts from the end
                 ui.horizontal(|ui| {
+                    // Record and reset buttons
+                    ui.add_enabled_ui(
+                        ctx.state
+                            .get(id.clone())
+                            .is_some_and(|x| x != default.clone()),
+                        |ui| {
+                            if ui
+                                .button(t!("tab.settings.category.hotkey.reset"))
+                                .clicked()
+                            {
+                                ctx.state.set(id.clone(), default.clone());
+                                let _ = ctx.save();
+                            }
+                        },
+                    );
+
+                    match ctx.query.get_single() {
+                        Ok((recording, entity)) if recording.id == *id => {
+                            if ui
+                                .button(t!("tab.settings.category.hotkey.cancel"))
+                                .clicked()
+                            {
+                                despawn.replace(entity);
+                            }
+                        }
+                        _ => {
+                            ui.add_enabled_ui(ctx.query.get_single().is_err(), |ui| {
+                                if ui
+                                    .button(t!("tab.settings.category.hotkey.record"))
+                                    .clicked()
+                                {
+                                    spawn.replace(id.clone());
+                                }
+                            });
+                        }
+                    }
+
                     match ctx.query.get_single() {
                         Ok((recording, _)) if recording.id == *id => {
                             let mut keys = recording
@@ -55,43 +93,6 @@ impl SettingCategory for Hotkey {
                             ui.label(hotkey.to_string());
                         }
                     }
-
-                    // Record and reset buttons
-                    match ctx.query.get_single() {
-                        Ok((recording, entity)) if recording.id == *id => {
-                            if ui
-                                .button(t!("tab.settings.category.hotkey.cancel"))
-                                .clicked()
-                            {
-                                despawn.replace(entity);
-                            }
-                        }
-                        _ => {
-                            ui.add_enabled_ui(ctx.query.get_single().is_err(), |ui| {
-                                if ui
-                                    .button(t!("tab.settings.category.hotkey.record"))
-                                    .clicked()
-                                {
-                                    spawn.replace(id.clone());
-                                }
-                            });
-                        }
-                    }
-
-                    ui.add_enabled_ui(
-                        ctx.state
-                            .get(id.clone())
-                            .is_some_and(|x| x != default.clone()),
-                        |ui| {
-                            if ui
-                                .button(t!("tab.settings.category.hotkey.reset"))
-                                .clicked()
-                            {
-                                ctx.state.set(id.clone(), default.clone());
-                                let _ = ctx.save();
-                            }
-                        },
-                    );
                 });
 
                 false
