@@ -123,15 +123,10 @@ fn handle_seek_system(
             if keyboard.pressed(KeyCode::AltLeft) {
                 factor /= 2.0;
             }
-            match instance.state() {
-                PlaybackState::Paused { position }
-                | PlaybackState::Pausing { position }
-                | PlaybackState::Playing { position }
-                | PlaybackState::Stopping { position } => {
-                    instance.seek_to((position as f32 + event.0 * factor).max(0.0).into());
-                    timing.seek_to((position as f32 + event.0 * factor).max(0.0));
-                }
-                PlaybackState::Queued | PlaybackState::Stopped => {}
+            if let Some(position) = instance.state().position() {
+                let target = (position as f32 + event.0 * factor).max(0.0);
+                instance.seek_to(target as f64);
+                timing.seek_to(target);
             }
         }
     }
