@@ -1,12 +1,31 @@
 use bevy::prelude::Deref;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use smallvec::SmallVec;
 use std::convert::Infallible;
 use std::fmt::{Debug, Display, Formatter};
 use std::str::FromStr;
 
-#[derive(Deref, Hash, PartialEq, Eq, Clone, Serialize, Deserialize)]
+#[derive(Deref, Hash, PartialEq, Eq, Clone)]
 pub struct Identifier(SmallVec<[String; 6]>);
+
+impl Serialize for Identifier {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+impl<'de> Deserialize<'de> for Identifier {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let id: &str = Deserialize::deserialize(deserializer)?;
+        Ok(id.into())
+    }
+}
 
 pub trait IntoIdentifier {
     fn into_identifier(self) -> Identifier;
@@ -70,6 +89,22 @@ impl Identifier {
 mod tests {
     use super::*;
     use smallvec::smallvec;
+
+    #[test]
+    fn test_serialization() {
+        assert_eq!(
+            serde_json::to_string(&Identifier::from("a.b.c")).unwrap(),
+            "\"a.b.c\""
+        );
+    }
+
+    #[test]
+    fn test_deserialization() {
+        assert_eq!(
+            serde_json::from_str::<Identifier>("\"a.b.c\"").unwrap(),
+            Identifier::from("a.b.c")
+        );
+    }
 
     #[test]
     fn test_construction() {
