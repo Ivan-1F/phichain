@@ -11,7 +11,7 @@ use crate::{
 use bevy::prelude::*;
 use bevy_egui::EguiContext;
 use bevy_persistent::Persistent;
-use egui::{Align2, Color32, CursorIcon, RichText, ScrollArea, Sense};
+use egui::{Color32, CursorIcon, Id, RichText, ScrollArea, Sense};
 use egui_flex::{item, Flex};
 use rfd::FileDialog;
 use std::path::PathBuf;
@@ -91,13 +91,11 @@ fn ui_system(world: &mut World) {
 
         ui.separator();
 
-        let mut open = world.contains_resource::<CreatingProject>();
-        egui::Window::new(t!("home.create_project.label"))
-            .collapsible(false)
-            .resizable([true, false])
-            .anchor(Align2::CENTER_CENTER, egui::Vec2::ZERO)
-            .open(&mut open)
-            .show(ctx, |ui| {
+        if world.contains_resource::<CreatingProject>() {
+            let modal = egui::Modal::new(Id::new("home.settings")).show(ctx, |ui| {
+                ui.set_width(400.0);
+                ui.heading(t!("home.create_project.label"));
+                ui.separator();
                 egui::Grid::new("create_project_grid")
                     .num_columns(2)
                     .spacing([20.0, 2.0])
@@ -173,8 +171,9 @@ fn ui_system(world: &mut World) {
                 }
             });
 
-        if !open {
-            world.remove_resource::<CreatingProject>();
+            if modal.should_close() {
+                world.remove_resource::<CreatingProject>();
+            }
         }
 
         Flex::horizontal().w_full().show(ui, |flex| {
