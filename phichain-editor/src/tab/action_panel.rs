@@ -11,7 +11,7 @@ use bevy::prelude::{
 };
 use bevy::window::PrimaryWindow;
 use bevy_egui::EguiContext;
-use egui::{Align2, TextEdit, Widget};
+use egui::{TextEdit, Widget};
 use phichain_game::GameSet;
 
 pub struct ActionPanelPlugin;
@@ -105,13 +105,15 @@ fn action_panel_ui_system(
         })
     }
 
-    let response = egui::Window::new("Action Panel")
-        .title_bar(false)
-        .collapsible(false)
-        .resizable(false)
-        .fixed_size((window.width() * 0.5, window.height() * 0.5))
-        .anchor(Align2::CENTER_CENTER, egui::Vec2::ZERO)
+    let response = egui::Modal::new("Action Panel".into())
+        // .title_bar(false)
+        // .collapsible(false)
+        // .resizable(false)
+        // .fixed_size((window.width() * 0.5, window.height() * 0.5))
+        // .anchor(Align2::CENTER_CENTER, egui::Vec2::ZERO)
         .show(ctx, |ui| {
+            ui.set_width(window.width() * 0.5);
+            ui.set_height(window.height() * 0.5);
             ui.style_mut().interaction.selectable_labels = false;
 
             TextEdit::singleline(&mut panel.query)
@@ -137,42 +139,38 @@ fn action_panel_ui_system(
                 .cloned()
                 .collect::<Vec<_>>();
 
-            for (index, entry) in entries.iter().enumerate() {
-                let selected = panel.cursor.is_some_and(|x| x == index);
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                for (index, entry) in entries.iter().enumerate() {
+                    let selected = panel.cursor.is_some_and(|x| x == index);
 
-                egui::Frame::none()
-                    .fill(if selected {
-                        egui::Color32::from_rgba_unmultiplied(64, 94, 168, 100)
-                    } else {
-                        egui::Color32::TRANSPARENT
-                    })
-                    .show(ui, |ui| {
-                        ui.horizontal(|ui| {
-                            let icon = match entry.kind {
-                                ActionPanelEntryKind::Action => egui_phosphor::regular::COMMAND,
-                                ActionPanelEntryKind::Tab => egui_phosphor::regular::BROWSER,
-                            };
-                            ui.label(format!("{} {}", icon, entry.title));
+                    egui::Frame::none()
+                        .fill(if selected {
+                            egui::Color32::from_rgba_unmultiplied(64, 94, 168, 100)
+                        } else {
+                            egui::Color32::TRANSPARENT
+                        })
+                        .show(ui, |ui| {
+                            ui.horizontal(|ui| {
+                                let icon = match entry.kind {
+                                    ActionPanelEntryKind::Action => egui_phosphor::regular::COMMAND,
+                                    ActionPanelEntryKind::Tab => egui_phosphor::regular::BROWSER,
+                                };
+                                ui.label(format!("{} {}", icon, entry.title));
 
-                            let remain = ui.available_width();
-                            ui.add_space(remain - 200.0);
+                                let remain = ui.available_width();
+                                ui.add_space(remain - 200.0);
 
-                            if let Some(hotkey) = &entry.hotkey {
-                                ui.label(hotkey.to_string());
-                            }
+                                if let Some(hotkey) = &entry.hotkey {
+                                    ui.label(hotkey.to_string());
+                                }
 
-                            ui.add_space(ui.available_width());
+                                ui.add_space(ui.available_width());
+                            });
                         });
-                    });
-            }
-
-            ui.style_mut().interaction.selectable_labels = true;
-
-            ui.input(|x| {
-                if x.key_pressed(egui::Key::Escape) {
-                    commands.entity(entity).despawn();
                 }
             });
+
+            ui.style_mut().interaction.selectable_labels = true;
 
             // Update cursor
 
@@ -226,7 +224,7 @@ fn action_panel_ui_system(
             });
         });
 
-    if response.is_some_and(|x| x.response.clicked_elsewhere()) {
+    if response.should_close() {
         commands.entity(entity).despawn();
     }
 }
