@@ -166,6 +166,8 @@ impl<'a> EasingValue<'a> {
 }
 
 /// Draw a easing curve with a [`Ui`] on the given [`Rect`]
+///
+/// Curves of overshooting easing functions (Back / Elastic) may overflow the given [`Rect`], but will not affect layout
 pub fn draw_easing(
     ui: &mut Ui,
     rect: Rect,
@@ -174,6 +176,7 @@ pub fn draw_easing(
     mirror: bool,
     color: Color32,
 ) {
+    let rect = rect.expand2(rect.size());
     let painter = ui.painter_at(rect);
     let to_screen =
         emath::RectTransform::from_to(Rect::from_min_size(Pos2::ZERO, Vec2::new(1.0, 1.0)), rect);
@@ -194,6 +197,7 @@ pub fn draw_easing(
                 Pos2::new(x, 1.0 - easing.ease(x))
             }
         })
+        .map(|x| x / 3.0 + Vec2::splat(1.0 / 3.0))
         .map(|x| to_screen * x)
         .collect();
 
