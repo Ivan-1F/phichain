@@ -6,6 +6,8 @@ use egui::{
 use phichain_chart::easing::Easing;
 use strum::IntoEnumIterator;
 
+const CURVE_SAMPLES: usize = 100;
+
 pub struct EasingGraph<'a> {
     value: &'a mut Easing,
     inverse: bool,
@@ -165,7 +167,7 @@ impl<'a> EasingValue<'a> {
     }
 }
 
-/// Draw a easing curve with a [`Ui`] on the given [`Rect`]
+/// Draw an easing curve with a [`Ui`] on the given [`Rect`]
 ///
 /// Curves of overshooting easing functions (Back / Elastic) may overflow the given [`Rect`], but will not affect layout
 pub fn draw_easing(
@@ -181,10 +183,10 @@ pub fn draw_easing(
     let to_screen =
         emath::RectTransform::from_to(Rect::from_min_size(Pos2::ZERO, Vec2::new(1.0, 1.0)), rect);
 
-    let points: Vec<_> = std::iter::repeat_n(0.0, 40)
+    let points: Vec<_> = std::iter::repeat_n(0.0, CURVE_SAMPLES)
         .enumerate()
         .map(|(i, _)| {
-            let x = i as f32 / 40.0;
+            let x = i as f32 / CURVE_SAMPLES as f32;
             if reverse {
                 if mirror {
                     Pos2::new(1.0 - easing.ease(1.0 - x), x)
