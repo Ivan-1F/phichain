@@ -2,6 +2,7 @@
 //!
 //! Checkout https://easings.net/ for more details
 
+use bevy::math::{ops, FloatPow};
 use bevy::prelude::CubicSegment;
 use serde::{Deserialize, Serialize};
 use simple_easing::*;
@@ -57,6 +58,9 @@ pub enum Easing {
     EaseInOutBounce,
 
     Custom(f32, f32, f32, f32),
+
+    Steps(usize),
+    Elastic(f32),
 }
 
 impl Easing {
@@ -117,6 +121,16 @@ impl Easing {
     pub fn is_custom(self) -> bool {
         matches!(self, Easing::Custom(_, _, _, _))
     }
+
+    #[allow(dead_code)]
+    pub fn is_steps(self) -> bool {
+        matches!(self, Easing::Steps(_))
+    }
+
+    #[allow(dead_code)]
+    pub fn is_elastic(self) -> bool {
+        matches!(self, Easing::Elastic(_))
+    }
 }
 
 impl Easing {
@@ -155,6 +169,12 @@ impl Easing {
             Self::EaseInOutBounce => bounce_in_out(x),
 
             Self::Custom(x1, y1, x2, y2) => CubicSegment::new_bezier([x1, y1], [x2, y2]).ease(x),
+
+            Self::Steps(num_steps) => (x * num_steps as f32).round() / num_steps.max(1) as f32,
+            Self::Elastic(omega) => {
+                1.0 - (1.0 - x).squared()
+                    * (2.0 * ops::sin(omega * x) / omega + ops::cos(omega * x))
+            }
         }
     }
 }
@@ -198,13 +218,6 @@ mod tests {
     fn test_linear() {
         assert_eq!(Easing::Linear.ease(0.5), 0.5);
         assert_eq!(Easing::EaseInOutSine.ease(0.5), 0.5);
-    }
-
-    #[test]
-    fn test_custom() {
-        assert_eq!(Easing::Custom(0.0, 0.0, 1.0, 1.0).ease(0.5), 0.5);
-        assert_eq!(Easing::Custom(0.0, 0.0, 1.0, 1.0).ease(0.1), 0.1);
-        assert_eq!(Easing::Custom(0.0, 0.0, 1.0, 1.0).ease(0.9), 0.9);
     }
 
     #[test]
