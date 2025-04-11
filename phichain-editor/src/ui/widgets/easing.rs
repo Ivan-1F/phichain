@@ -206,6 +206,41 @@ pub fn draw_easing(
     painter.add(PathShape::line(points, Stroke::new(2.0, color)));
 }
 
+fn draw_easing_options(ui: &mut Ui, easing: Easing, selected: bool, name: &str) -> Response {
+    ui.scope_builder(
+        UiBuilder::new()
+            .id_salt("easing-value")
+            .sense(Sense::click()),
+        |ui| {
+            let response = ui.response();
+            let visuals = ui.style().interact_selectable(&response, selected);
+            let text_color = visuals.text_color();
+
+            let mut frame = Frame::canvas(ui.style())
+                .fill(Color32::default())
+                .stroke(Stroke::default())
+                .inner_margin(ui.spacing().menu_margin);
+
+            if selected || response.hovered() || response.highlighted() || response.has_focus() {
+                frame = frame.fill(visuals.bg_fill).stroke(visuals.bg_stroke);
+            }
+
+            frame.show(ui, |ui| {
+                ui.vertical(|ui| {
+                    let response =
+                        ui.add_sized(Vec2::new(80.0, 40.0), EasingGraph::new(&mut easing.clone()));
+
+                    ui.put(
+                        response.rect,
+                        Label::new(RichText::new(name).color(text_color)).selectable(false),
+                    );
+                })
+            });
+        },
+    )
+    .response
+}
+
 impl Widget for EasingValue<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
         ui.vertical(|ui| {
@@ -246,58 +281,17 @@ impl Widget for EasingValue<'_> {
                                 !self.disabled_easings.contains(x)
                                     && !x.is_custom()
                                     && !x.is_linear()
+                                    && !x.is_steps()
+                                    && !x.is_elastic()
                             }) {
                                 let selected = self.value == &easing;
 
-                                let response = ui
-                                    .scope_builder(
-                                        UiBuilder::new()
-                                            .id_salt("easing-value")
-                                            .sense(Sense::click()),
-                                        |ui| {
-                                            let response = ui.response();
-                                            let visuals =
-                                                ui.style().interact_selectable(&response, selected);
-                                            let text_color = visuals.text_color();
-
-                                            let mut frame = Frame::canvas(ui.style())
-                                                .fill(Color32::default())
-                                                .stroke(Stroke::default())
-                                                .inner_margin(ui.spacing().menu_margin);
-
-                                            if selected
-                                                || response.hovered()
-                                                || response.highlighted()
-                                                || response.has_focus()
-                                            {
-                                                frame = frame
-                                                    .fill(visuals.bg_fill)
-                                                    .stroke(visuals.bg_stroke);
-                                            }
-
-                                            frame.show(ui, |ui| {
-                                                ui.vertical(|ui| {
-                                                    let response = ui.add_sized(
-                                                        Vec2::new(80.0, 40.0),
-                                                        EasingGraph::new(&mut easing.clone()),
-                                                    );
-
-                                                    ui.put(
-                                                        response.rect,
-                                                        Label::new(
-                                                            RichText::new(
-                                                                format!("{}", easing)
-                                                                    .trim_start_matches("Ease"),
-                                                            )
-                                                            .color(text_color),
-                                                        )
-                                                        .selectable(false),
-                                                    );
-                                                })
-                                            });
-                                        },
-                                    )
-                                    .response;
+                                let response = draw_easing_options(
+                                    ui,
+                                    easing,
+                                    selected,
+                                    format!("{}", easing).trim_start_matches("Ease"),
+                                );
 
                                 if response.clicked() {
                                     combobox_changed = true;
@@ -307,6 +301,30 @@ impl Widget for EasingValue<'_> {
                                 if easing.is_in_out() {
                                     ui.end_row();
                                 }
+                            }
+
+                            if draw_easing_options(
+                                ui,
+                                Easing::Steps(4),
+                                self.value.is_steps(),
+                                "Steps",
+                            )
+                            .clicked()
+                            {
+                                combobox_changed = true;
+                                *self.value = Easing::Steps(4);
+                            }
+
+                            if draw_easing_options(
+                                ui,
+                                Easing::Elastic(20.0),
+                                self.value.is_elastic(),
+                                "Elastic",
+                            )
+                            .clicked()
+                            {
+                                combobox_changed = true;
+                                *self.value = Easing::Steps(4);
                             }
                         });
                     });
