@@ -227,8 +227,10 @@ fn draw_easing_options(ui: &mut Ui, easing: Easing, selected: bool, name: &str) 
 
             frame.show(ui, |ui| {
                 ui.vertical(|ui| {
-                    let response =
-                        ui.add_sized(Vec2::new(80.0, 40.0), EasingGraph::new(&mut easing.clone()));
+                    let response = ui.add_sized(
+                        Vec2::new(80.0, 40.0),
+                        EasingGraph::new(&mut easing.clone()).color(Color32::DARK_GRAY),
+                    );
 
                     ui.put(
                         response.rect,
