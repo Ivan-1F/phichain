@@ -2,11 +2,13 @@
 //!
 //! Checkout https://easings.net/ for more details
 
+use bevy::prelude::CubicSegment;
 use serde::{Deserialize, Serialize};
 use simple_easing::*;
 use std::fmt::{Debug, Display, Formatter};
 use strum::EnumIter;
 
+/// TODO: this can be replaced with bevy::prelude::EaseFunction and bevy::prelude::FunctionCurve
 #[derive(Debug, Default, Copy, Clone, PartialEq, Serialize, Deserialize, EnumIter)]
 #[serde(rename_all = "snake_case")]
 #[repr(u8)]
@@ -152,7 +154,7 @@ impl Easing {
             Self::EaseOutBounce => bounce_out(x),
             Self::EaseInOutBounce => bounce_in_out(x),
 
-            Self::Custom(x1, y1, x2, y2) => BezierTween::new((x1, y1), (x2, y2)).y(x),
+            Self::Custom(x1, y1, x2, y2) => CubicSegment::new_bezier([x1, y1], [x2, y2]).ease(x),
         }
     }
 }
@@ -162,106 +164,6 @@ impl Display for Easing {
         match self {
             Easing::Custom(_, _, _, _) => write!(f, "Custom"),
             _ => write!(f, "{:?}", self),
-        }
-    }
-}
-
-// https://github.com/gre/bezier-easing
-// https://github.com/TeamFlos/phira/blob/main/prpr/src/core/tween.rs
-
-const SAMPLE_TABLE_SIZE: usize = 21;
-const SAMPLE_STEP: f32 = 1. / (SAMPLE_TABLE_SIZE - 1) as f32;
-const NEWTON_MIN_STEP: f32 = 1e-3;
-const NEWTON_ITERATIONS: usize = 4;
-const SUBDIVISION_PRECISION: f32 = 1e-7;
-const SUBDIVISION_MAX_ITERATION: usize = 10;
-const SLOPE_EPS: f32 = 1e-7;
-
-pub struct BezierTween {
-    sample_table: [f32; SAMPLE_TABLE_SIZE],
-    pub p1: (f32, f32),
-    pub p2: (f32, f32),
-}
-
-impl BezierTween {
-    fn y(&self, x: f32) -> f32 {
-        Self::sample(self.p1.1, self.p2.1, self.t_for_x(x))
-    }
-
-    #[inline]
-    fn coefficients(x1: f32, x2: f32) -> (f32, f32, f32) {
-        ((x1 - x2) * 3. + 1., x2 * 3. - x1 * 6., x1 * 3.)
-    }
-
-    #[inline]
-    fn sample(x1: f32, x2: f32, t: f32) -> f32 {
-        let (a, b, c) = Self::coefficients(x1, x2);
-        ((a * t + b) * t + c) * t
-    }
-    #[inline]
-    fn slope(x1: f32, x2: f32, t: f32) -> f32 {
-        let (a, b, c) = Self::coefficients(x1, x2);
-        (a * 3. * t + b * 2.) * t + c
-    }
-
-    fn newton_raphson_iterate(x: f32, mut t: f32, x1: f32, x2: f32) -> f32 {
-        for _ in 0..NEWTON_ITERATIONS {
-            let slope = Self::slope(x1, x2, t);
-            if slope <= SLOPE_EPS {
-                return t;
-            }
-            let diff = Self::sample(x1, x2, t) - x;
-            t -= diff / slope;
-        }
-        t
-    }
-
-    fn binary_subdivide(x: f32, mut l: f32, mut r: f32, x1: f32, x2: f32) -> f32 {
-        let mut t = (l + r) / 2.;
-        for _ in 0..SUBDIVISION_MAX_ITERATION {
-            let diff = Self::sample(x1, x2, t) - x;
-            if diff.abs() <= SUBDIVISION_PRECISION {
-                break;
-            }
-            if diff > 0. {
-                r = t;
-            } else {
-                l = t;
-            }
-            t = (l + r) / 2.;
-        }
-        t
-    }
-
-    pub fn t_for_x(&self, x: f32) -> f32 {
-        if x == 0. || x == 1. {
-            return x;
-        }
-        let id = (x / SAMPLE_STEP) as usize;
-        let id = id.min(SAMPLE_TABLE_SIZE - 1);
-        let dist =
-            (x - self.sample_table[id]) / (self.sample_table[id + 1] - self.sample_table[id]);
-        let init_t = SAMPLE_STEP * (id as f32 + dist);
-        match Self::slope(self.p1.0, self.p2.0, init_t) {
-            y if y <= SLOPE_EPS => init_t,
-            y if y >= NEWTON_MIN_STEP => {
-                Self::newton_raphson_iterate(x, init_t, self.p1.0, self.p2.0)
-            }
-            _ => Self::binary_subdivide(
-                x,
-                SAMPLE_STEP * id as f32,
-                SAMPLE_STEP * (id + 1) as f32,
-                self.p1.0,
-                self.p2.0,
-            ),
-        }
-    }
-
-    pub fn new(p1: (f32, f32), p2: (f32, f32)) -> Self {
-        Self {
-            sample_table: std::array::from_fn(|i| Self::sample(p1.0, p2.0, i as f32 * SAMPLE_STEP)),
-            p1,
-            p2,
         }
     }
 }
