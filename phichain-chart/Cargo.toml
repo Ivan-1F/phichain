@@ -4,29 +4,7 @@ version = "1.0.0-beta.2"
 edition = "2021"
 
 [dependencies]
-bevy = { version = "0.15.1", default-features = false, features = [
-    "animation",
-    "bevy_asset",
-    "bevy_gilrs",
-    "bevy_scene",
-    "bevy_winit",
-    "bevy_core_pipeline",
-    "bevy_pbr",
-    "bevy_gltf",
-    "bevy_render",
-    "bevy_sprite",
-    "bevy_text",
-    "bevy_ui",
-    "multi_threaded",
-    "png",
-    "hdr",
-    "x11",
-    "bevy_gizmos",
-    "tonemapping_luts",
-    "default_font",
-    "webgl2",
-    "bevy_debug_stepping",
-], optional = true }
+bevy = { version = "0.15.1", default-features = false }
 num = { version = "0.4.3", features = ["serde"] }
 serde = { version = "1.0.197", features = ["derive"] }
 strum = { version = "0.26.2", features = ["derive"] }
@@ -39,4 +17,4 @@ tracing = "0.1.40"
 convert_case = "0.6.0"
 
 [features]
-bevy = ["dep:bevy"]
+bevy = ["bevy/bevy_sprite"]

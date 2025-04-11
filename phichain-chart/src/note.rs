@@ -120,6 +120,8 @@ impl Note {
     }
 }
 
+// TODO: types below should be moved to phichain-game
+
 #[cfg(feature = "bevy")]
 #[derive(bevy::prelude::Bundle)]
 pub struct NoteBundle {

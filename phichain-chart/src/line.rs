@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::time::SystemTime;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(bevy::prelude::Component))]
@@ -14,6 +13,8 @@ impl Default for Line {
         }
     }
 }
+
+// TODO: types below should be moved to phichain-game
 
 #[cfg(feature = "bevy")]
 #[derive(bevy::prelude::Component, Debug, Default)]
@@ -57,8 +58,8 @@ impl LineBundle {
         Self {
             line,
             timestamp: LineTimestamp(
-                SystemTime::now()
-                    .duration_since(SystemTime::UNIX_EPOCH)
+                std::time::SystemTime::now()
+                    .duration_since(std::time::SystemTime::UNIX_EPOCH)
                     .unwrap()
                     .as_secs(),
             ),

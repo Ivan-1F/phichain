@@ -313,6 +313,8 @@ impl From<primitive::event::LineEvent> for LineEvent {
     }
 }
 
+// TODO: types below should be moved to phichain-game
+
 #[cfg(feature = "bevy")]
 #[derive(bevy::prelude::Bundle)]
 pub struct LineEventBundle {
