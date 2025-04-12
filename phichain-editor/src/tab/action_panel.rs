@@ -105,153 +105,143 @@ fn action_panel_ui_system(
         })
     }
 
-    let response = egui::Modal::new("Action Panel".into())
-        // .title_bar(false)
-        // .collapsible(false)
-        // .resizable(false)
-        // .fixed_size((window.width() * 0.5, window.height() * 0.5))
-        // .anchor(Align2::CENTER_CENTER, egui::Vec2::ZERO)
-        .show(ctx, |ui| {
-            ui.set_width(window.width() * 0.5);
-            ui.set_height(window.height() * 0.5);
-            ui.style_mut().interaction.selectable_labels = false;
+    let response = egui::Modal::new("Action Panel".into()).show(ctx, |ui| {
+        ui.set_width(window.width() * 0.5);
+        ui.set_height(window.height() * 0.5);
+        ui.style_mut().interaction.selectable_labels = false;
 
-            TextEdit::singleline(&mut panel.query)
-                .desired_width(f32::INFINITY)
-                .ui(ui)
-                .request_focus();
+        TextEdit::singleline(&mut panel.query)
+            .desired_width(f32::INFINITY)
+            .ui(ui)
+            .request_focus();
 
-            ui.separator();
+        ui.separator();
 
-            let entries = entries
-                .iter()
-                .filter(|entry| {
-                    entry
-                        .title
+        let entries = entries
+            .iter()
+            .filter(|entry| {
+                entry
+                    .title
+                    .to_ascii_lowercase()
+                    .contains(panel.query.to_ascii_lowercase().as_str())
+                    || entry
+                        .id
+                        .to_string()
                         .to_ascii_lowercase()
                         .contains(panel.query.to_ascii_lowercase().as_str())
-                        || entry
-                            .id
-                            .to_string()
-                            .to_ascii_lowercase()
-                            .contains(panel.query.to_ascii_lowercase().as_str())
-                })
-                .cloned()
-                .collect::<Vec<_>>();
+            })
+            .cloned()
+            .collect::<Vec<_>>();
 
-            egui::ScrollArea::vertical().show(ui, |ui| {
-                for (index, entry) in entries.iter().enumerate() {
-                    let selected = panel.cursor.is_some_and(|x| x == index);
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            for (index, entry) in entries.iter().enumerate() {
+                let selected = panel.cursor.is_some_and(|x| x == index);
 
-                    ui.scope_builder(UiBuilder::new().sense(Sense::click()), |ui| {
-                        egui::Frame::none()
-                            .fill(if selected {
-                                egui::Color32::from_rgba_unmultiplied(64, 94, 168, 100)
-                            } else {
-                                egui::Color32::TRANSPARENT
-                            })
-                            .show(ui, |ui| {
-                                ui.horizontal(|ui| {
-                                    let icon = match entry.kind {
-                                        ActionPanelEntryKind::Action => {
-                                            egui_phosphor::regular::COMMAND
-                                        }
-                                        ActionPanelEntryKind::Tab => {
-                                            egui_phosphor::regular::BROWSER
-                                        }
-                                    };
-                                    ui.label(format!("{} {}", icon, entry.title));
+                ui.scope_builder(UiBuilder::new().sense(Sense::click()), |ui| {
+                    egui::Frame::none()
+                        .fill(if selected {
+                            egui::Color32::from_rgba_unmultiplied(64, 94, 168, 100)
+                        } else {
+                            egui::Color32::TRANSPARENT
+                        })
+                        .show(ui, |ui| {
+                            ui.horizontal(|ui| {
+                                let icon = match entry.kind {
+                                    ActionPanelEntryKind::Action => egui_phosphor::regular::COMMAND,
+                                    ActionPanelEntryKind::Tab => egui_phosphor::regular::BROWSER,
+                                };
+                                ui.label(format!("{} {}", icon, entry.title));
 
-                                    let remain = ui.available_width();
-                                    ui.add_space(remain - 200.0);
+                                let remain = ui.available_width();
+                                ui.add_space(remain - 200.0);
 
-                                    if let Some(hotkey) = &entry.hotkey {
-                                        ui.label(hotkey.to_string());
-                                    }
+                                if let Some(hotkey) = &entry.hotkey {
+                                    ui.label(hotkey.to_string());
+                                }
 
-                                    ui.add_space(ui.available_width());
-                                });
+                                ui.add_space(ui.available_width());
                             });
+                        });
 
-                        if ui.response().hovered() {
-                            panel.cursor = Some(index);
-                        }
-
-                        // hover on items and click to run action
-                        if ui.response().clicked() && panel.cursor.is_some_and(|x| x == index) {
-                            commands.entity(entity).despawn();
-                            match entry.kind {
-                                ActionPanelEntryKind::Action => {
-                                    run.send(RunActionEvent(entry.id.clone()));
-                                }
-                                ActionPanelEntryKind::Tab => {
-                                    let id = entry.id.clone();
-
-                                    if let Some(node) = ui_state.state.find_tab(&id) {
-                                        ui_state.state.set_active_tab(node);
-                                    } else {
-                                        ui_state.state.add_window(vec![id]);
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }
-            });
-
-            ui.style_mut().interaction.selectable_labels = true;
-
-            // Update cursor
-
-            // 1. If the cursor is `Some` and exceeds the number of entries, update it to `Some(0)` if there is at least one entry present. Otherwise, set it to `None`
-            if panel.cursor.is_some_and(|x| x >= entries.len()) {
-                if !entries.is_empty() {
-                    panel.cursor = Some(0);
-                } else {
-                    panel.cursor = None;
-                }
-            }
-
-            // 2. if cursor is None, but at least 1 entry present, update it to Some(0)
-            if panel.cursor.is_none() && !entries.is_empty() {
-                panel.cursor = Some(0);
-            }
-
-            // 3. move cursor with up and down arrows
-            ui.input(|x| {
-                if let Some(cursor) = panel.cursor {
-                    if x.key_pressed(egui::Key::ArrowUp) {
-                        panel.cursor = Some(cursor.saturating_sub(1));
-                    } else if x.key_pressed(egui::Key::ArrowDown) {
-                        panel.cursor = Some((cursor + 1).min(entries.len() - 1));
+                    if ui.response().hovered() {
+                        panel.cursor = Some(index);
                     }
-                }
-            });
 
-            ui.input(|x| {
-                if x.key_pressed(egui::Key::Enter) {
-                    if let Some(cursor) = panel.cursor {
-                        if let Some(entry) = entries.get(cursor) {
-                            commands.entity(entity).despawn();
-                            match entry.kind {
-                                ActionPanelEntryKind::Action => {
-                                    run.send(RunActionEvent(entry.id.clone()));
-                                }
-                                ActionPanelEntryKind::Tab => {
-                                    let id = entry.id.clone();
+                    // hover on items and click to run action
+                    if ui.response().clicked() && panel.cursor.is_some_and(|x| x == index) {
+                        commands.entity(entity).despawn();
+                        match entry.kind {
+                            ActionPanelEntryKind::Action => {
+                                run.send(RunActionEvent(entry.id.clone()));
+                            }
+                            ActionPanelEntryKind::Tab => {
+                                let id = entry.id.clone();
 
-                                    if let Some(node) = ui_state.state.find_tab(&id) {
-                                        ui_state.state.set_active_tab(node);
-                                    } else {
-                                        ui_state.state.add_window(vec![id]);
-                                    }
+                                if let Some(node) = ui_state.state.find_tab(&id) {
+                                    ui_state.state.set_active_tab(node);
+                                } else {
+                                    ui_state.state.add_window(vec![id]);
                                 }
                             }
                         }
                     }
-                }
-            });
+                });
+            }
         });
+
+        ui.style_mut().interaction.selectable_labels = true;
+
+        // Update cursor
+
+        // 1. If the cursor is `Some` and exceeds the number of entries, update it to `Some(0)` if there is at least one entry present. Otherwise, set it to `None`
+        if panel.cursor.is_some_and(|x| x >= entries.len()) {
+            if !entries.is_empty() {
+                panel.cursor = Some(0);
+            } else {
+                panel.cursor = None;
+            }
+        }
+
+        // 2. if cursor is None, but at least 1 entry present, update it to Some(0)
+        if panel.cursor.is_none() && !entries.is_empty() {
+            panel.cursor = Some(0);
+        }
+
+        // 3. move cursor with up and down arrows
+        ui.input(|x| {
+            if let Some(cursor) = panel.cursor {
+                if x.key_pressed(egui::Key::ArrowUp) {
+                    panel.cursor = Some(cursor.saturating_sub(1));
+                } else if x.key_pressed(egui::Key::ArrowDown) {
+                    panel.cursor = Some((cursor + 1).min(entries.len() - 1));
+                }
+            }
+        });
+
+        ui.input(|x| {
+            if x.key_pressed(egui::Key::Enter) {
+                if let Some(cursor) = panel.cursor {
+                    if let Some(entry) = entries.get(cursor) {
+                        commands.entity(entity).despawn();
+                        match entry.kind {
+                            ActionPanelEntryKind::Action => {
+                                run.send(RunActionEvent(entry.id.clone()));
+                            }
+                            ActionPanelEntryKind::Tab => {
+                                let id = entry.id.clone();
+
+                                if let Some(node) = ui_state.state.find_tab(&id) {
+                                    ui_state.state.set_active_tab(node);
+                                } else {
+                                    ui_state.state.add_window(vec![id]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
 
     if response.should_close() {
         commands.entity(entity).despawn();
