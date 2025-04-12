@@ -260,3 +260,14 @@ action:
   phichain.create_line: Create Line
 
   phichain.open_in_file_manager: Open Project in File Manager
+
+  phichain.select_line_1: 'Select Line #1'
+  phichain.select_line_2: 'Select Line #2'
+  phichain.select_line_3: 'Select Line #3'
+  phichain.select_line_4: 'Select Line #4'
+  phichain.select_line_5: 'Select Line #5'
+  phichain.select_line_6: 'Select Line #6'
+  phichain.select_line_7: 'Select Line #7'
+  phichain.select_line_8: 'Select Line #8'
+  phichain.select_line_9: 'Select Line #9'
+  phichain.select_line_0: 'Select Line #10'

@@ -260,3 +260,14 @@ action:
   phichain.create_line: 新建判定线
 
   phichain.open_in_file_manager: 在文件管理器中打开项目
+
+  phichain.select_line_1: '选中 1 号判定线'
+  phichain.select_line_2: '选中 2 号判定线'
+  phichain.select_line_3: '选中 3 号判定线'
+  phichain.select_line_4: '选中 4 号判定线'
+  phichain.select_line_5: '选中 5 号判定线'
+  phichain.select_line_6: '选中 6 号判定线'
+  phichain.select_line_7: '选中 7 号判定线'
+  phichain.select_line_8: '选中 8 号判定线'
+  phichain.select_line_9: '选中 9 号判定线'
+  phichain.select_line_0: '选中 10 号判定线'
