@@ -16,6 +16,7 @@ const LINE_STATE_COLUMN_WIDTH: f32 = 140.0;
 
 struct LineList<'w> {
     world: &'w mut World,
+    index: usize,
 }
 
 macro_rules! trunc_label {
@@ -24,8 +25,14 @@ macro_rules! trunc_label {
     };
 }
 
-impl LineList<'_> {
+impl<'a> LineList<'a> {
+    fn new(world: &'a mut World) -> Self {
+        Self { world, index: 0 }
+    }
+
     fn show(&mut self, ui: &mut Ui) {
+        self.index = 0;
+
         let mut query = self
             .world
             .query_filtered::<(Entity, &LineTimestamp), (Without<Parent>, With<Line>)>();
@@ -61,6 +68,7 @@ impl LineList<'_> {
                 });
                 spd.vertical_centered(|ui| {
                     ui.add(trunc_label!(t!("tab.line_list.speed")));
+                    ui.add(trunc_label!(t!("tab.line_list.index")));
                 });
             });
         });
@@ -82,6 +90,8 @@ impl LineList<'_> {
     }
 
     fn entity_ui(&mut self, ui: &mut Ui, entity: Entity, level: u32) {
+        self.index += 1;
+
         let mut state: SystemState<(
             Query<&Note>,
             Query<&LineEvent>,
@@ -214,6 +224,11 @@ impl LineList<'_> {
                     });
                     spd.vertical_centered(|ui| {
                         ui.add(trunc_label!(format!("{:.2}", speed.0)));
+                        ui.label(
+                            RichText::new(format!("#{}", self.index))
+                                .small()
+                                .color(Color32::WHITE),
+                        );
                     });
                 });
 
@@ -270,5 +285,5 @@ impl LineList<'_> {
 }
 
 pub fn line_list_tab(In(mut ui): In<Ui>, world: &mut World) {
-    LineList { world }.show(&mut ui);
+    LineList::new(world).show(&mut ui);
 }

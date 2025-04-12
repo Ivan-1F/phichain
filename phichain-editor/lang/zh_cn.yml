@@ -101,6 +101,7 @@ tab:
     rotation: 旋转
     opacity: 透明
     speed: 速度
+    index: 编号
     remove: 移除
     hierarchy:
       as_child_of_current_line: 作为当前判定线的子线

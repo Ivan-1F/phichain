@@ -101,6 +101,7 @@ tab:
     rotation: Rot
     opacity: Opa
     speed: Spd
+    index: Idx
     remove: Remove
     hierarchy:
       as_child_of_current_line: As child of current line
