@@ -11,7 +11,7 @@ use bevy::prelude::{
 };
 use bevy::window::PrimaryWindow;
 use bevy_egui::EguiContext;
-use egui::{TextEdit, Widget};
+use egui::{Sense, TextEdit, UiBuilder, Widget};
 use phichain_game::GameSet;
 
 pub struct ActionPanelPlugin;
@@ -143,30 +143,59 @@ fn action_panel_ui_system(
                 for (index, entry) in entries.iter().enumerate() {
                     let selected = panel.cursor.is_some_and(|x| x == index);
 
-                    egui::Frame::none()
-                        .fill(if selected {
-                            egui::Color32::from_rgba_unmultiplied(64, 94, 168, 100)
-                        } else {
-                            egui::Color32::TRANSPARENT
-                        })
-                        .show(ui, |ui| {
-                            ui.horizontal(|ui| {
-                                let icon = match entry.kind {
-                                    ActionPanelEntryKind::Action => egui_phosphor::regular::COMMAND,
-                                    ActionPanelEntryKind::Tab => egui_phosphor::regular::BROWSER,
-                                };
-                                ui.label(format!("{} {}", icon, entry.title));
+                    ui.scope_builder(UiBuilder::new().sense(Sense::click()), |ui| {
+                        egui::Frame::none()
+                            .fill(if selected {
+                                egui::Color32::from_rgba_unmultiplied(64, 94, 168, 100)
+                            } else {
+                                egui::Color32::TRANSPARENT
+                            })
+                            .show(ui, |ui| {
+                                ui.horizontal(|ui| {
+                                    let icon = match entry.kind {
+                                        ActionPanelEntryKind::Action => {
+                                            egui_phosphor::regular::COMMAND
+                                        }
+                                        ActionPanelEntryKind::Tab => {
+                                            egui_phosphor::regular::BROWSER
+                                        }
+                                    };
+                                    ui.label(format!("{} {}", icon, entry.title));
 
-                                let remain = ui.available_width();
-                                ui.add_space(remain - 200.0);
+                                    let remain = ui.available_width();
+                                    ui.add_space(remain - 200.0);
 
-                                if let Some(hotkey) = &entry.hotkey {
-                                    ui.label(hotkey.to_string());
-                                }
+                                    if let Some(hotkey) = &entry.hotkey {
+                                        ui.label(hotkey.to_string());
+                                    }
 
-                                ui.add_space(ui.available_width());
+                                    ui.add_space(ui.available_width());
+                                });
                             });
-                        });
+
+                        if ui.response().hovered() {
+                            panel.cursor = Some(index);
+                        }
+
+                        // hover on items and click to run action
+                        if ui.response().clicked() && panel.cursor.is_some_and(|x| x == index) {
+                            commands.entity(entity).despawn();
+                            match entry.kind {
+                                ActionPanelEntryKind::Action => {
+                                    run.send(RunActionEvent(entry.id.clone()));
+                                }
+                                ActionPanelEntryKind::Tab => {
+                                    let id = entry.id.clone();
+
+                                    if let Some(node) = ui_state.state.find_tab(&id) {
+                                        ui_state.state.set_active_tab(node);
+                                    } else {
+                                        ui_state.state.add_window(vec![id]);
+                                    }
+                                }
+                            }
+                        }
+                    });
                 }
             });
 
