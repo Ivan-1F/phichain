@@ -9,6 +9,7 @@ mod loader;
 pub mod scale;
 mod score;
 mod ui;
+mod utils;
 
 pub use crate::loader::load_project;
 

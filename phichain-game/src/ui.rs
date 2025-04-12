@@ -1,6 +1,10 @@
 use super::{GameConfig, GameSet, GameViewport};
 use crate::score::GameScore;
+use crate::utils::{split_by_script, Script};
 use bevy::prelude::*;
+
+const CJK_FONT: &str = "font/MiSans-Regular.ttf";
+const ASCII_FONT: &str = "font/phigros.ttf";
 
 pub struct GameUiPlugin;
 
@@ -23,10 +27,20 @@ impl Plugin for GameUiPlugin {
             .add_systems(Update, update_score_system.in_set(GameSet))
             // name
             .add_systems(Startup, spawn_name_ui_system)
-            .add_systems(Update, update_name_system.in_set(GameSet))
+            .add_systems(
+                Update,
+                update_name_system
+                    .in_set(GameSet)
+                    .run_if(resource_exists_and_changed::<GameConfig>),
+            )
             // level
             .add_systems(Startup, spawn_level_ui_system)
-            .add_systems(Update, update_level_system.in_set(GameSet));
+            .add_systems(
+                Update,
+                update_level_system
+                    .in_set(GameSet)
+                    .run_if(resource_exists_and_changed::<GameConfig>),
+            );
     }
 }
 
@@ -216,9 +230,9 @@ fn spawn_name_ui_system(mut commands: Commands, asset_server: Res<AssetServer>) 
         ))
         .with_children(|parent| {
             parent.spawn((
-                Text::new("Name"),
+                Text::default(),
                 TextFont {
-                    font: asset_server.load("font/phigros.ttf"),
+                    font: asset_server.load("font/MiSans-Regular.ttf"),
                     font_size: 10.0,
                     ..default()
                 },
@@ -246,7 +260,7 @@ fn spawn_level_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
         ))
         .with_children(|parent| {
             parent.spawn((
-                Text::new("Level"),
+                Text::default(),
                 TextFont {
                     font: asset_server.load("font/phigros.ttf"),
                     font_size: 10.0,
@@ -294,17 +308,57 @@ fn update_score_system(
 }
 
 fn update_name_system(
-    mut name_text_query: Query<&mut Text, With<NameText>>,
+    mut commands: Commands,
+    mut name_text_query: Query<Entity, With<NameText>>,
     config: Res<GameConfig>,
+    asset_server: Res<AssetServer>,
 ) {
-    let mut name_text = name_text_query.single_mut();
-    **name_text = config.name.replace(' ', "\u{00A0}");
+    let container = name_text_query.single_mut();
+
+    commands.entity(container).despawn_descendants();
+    commands.entity(container).with_children(|parent| {
+        for (content, script) in split_by_script(&config.name) {
+            parent.spawn((
+                Text::new(content),
+                TextFont {
+                    font: asset_server.load(match script {
+                        Script::Ascii => ASCII_FONT,
+                        Script::Cjk => CJK_FONT,
+                    }),
+                    font_size: 10.0,
+                    ..default()
+                },
+                TextColor::WHITE,
+                TextScale(0.5),
+            ));
+        }
+    });
 }
 
 fn update_level_system(
-    mut name_text_query: Query<&mut Text, With<LevelText>>,
+    mut commands: Commands,
+    mut name_text_query: Query<Entity, With<LevelText>>,
     config: Res<GameConfig>,
+    asset_server: Res<AssetServer>,
 ) {
-    let mut name_text = name_text_query.single_mut();
-    **name_text = config.level.replace(' ', "\u{00A0}");
+    let container = name_text_query.single_mut();
+
+    commands.entity(container).despawn_descendants();
+    commands.entity(container).with_children(|parent| {
+        for (content, script) in split_by_script(&config.level) {
+            parent.spawn((
+                Text::new(content),
+                TextFont {
+                    font: asset_server.load(match script {
+                        Script::Ascii => ASCII_FONT,
+                        Script::Cjk => CJK_FONT,
+                    }),
+                    font_size: 10.0,
+                    ..default()
+                },
+                TextColor::WHITE,
+                TextScale(0.5),
+            ));
+        }
+    });
 }
