@@ -1,6 +1,6 @@
 use super::{GameConfig, GameSet, GameViewport};
 use crate::score::GameScore;
-use crate::utils::{split_by_script, Script};
+use crate::utils::text_utils::{split_by_script, Script};
 use bevy::prelude::*;
 
 const CJK_FONT: &str = "font/MiSans-Regular.ttf";
