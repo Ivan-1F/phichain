@@ -2,7 +2,8 @@ use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
 use crate::identifier::Identifier;
 use crate::telemetry::PushTelemetryEvent;
 use bevy::ecs::system::SystemState;
-use bevy::{prelude::*, utils::HashMap};
+use bevy::prelude::*;
+use indexmap::IndexMap;
 use phichain_game::GameSet;
 use serde_json::json;
 
@@ -20,7 +21,7 @@ impl RegisteredAction {
 }
 
 #[derive(Resource, Deref, Default)]
-pub struct ActionRegistry(pub HashMap<ActionIdentifier, RegisteredAction>);
+pub struct ActionRegistry(pub IndexMap<ActionIdentifier, RegisteredAction>);
 
 impl ActionRegistry {
     pub fn run_action(&mut self, world: &mut World, id: impl Into<ActionIdentifier>) {
