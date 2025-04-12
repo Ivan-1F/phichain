@@ -66,20 +66,19 @@ impl ActionRegistrationExt for App {
     ) -> &mut Self {
         let id = id.into();
 
+        let action = RegisteredAction {
+            system: Box::new({
+                let mut sys = IntoSystem::into_system(system);
+                sys.initialize(self.world_mut());
+                sys
+            }),
+            enable_hotkey: hotkey.is_some(),
+        };
+
         self.world_mut()
-            .resource_scope(|world, mut registry: Mut<ActionRegistry>| {
-                registry.0.insert(
-                    id.clone(),
-                    RegisteredAction {
-                        system: Box::new({
-                            let mut sys = IntoSystem::into_system(system);
-                            sys.initialize(world);
-                            sys
-                        }),
-                        enable_hotkey: hotkey.is_some(),
-                    },
-                )
-            });
+            .resource_mut::<ActionRegistry>()
+            .0
+            .insert(id.clone(), action);
 
         if let Some(hotkey) = hotkey {
             self.add_hotkey(id, hotkey);
