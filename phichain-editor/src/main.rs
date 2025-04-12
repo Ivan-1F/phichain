@@ -14,6 +14,7 @@ mod hit_sound;
 mod home;
 mod hotkey;
 mod identifier;
+mod ime;
 mod misc;
 mod notification;
 mod project;
@@ -44,6 +45,7 @@ use crate::hit_sound::HitSoundPlugin;
 use crate::home::HomePlugin;
 use crate::hotkey::HotkeyPlugin;
 use crate::identifier::{Identifier, IntoIdentifier};
+use crate::ime::ImeCompatPlugin;
 use crate::misc::{MiscPlugin, WorkingDirectory};
 use crate::notification::NotificationPlugin;
 use crate::project::project_loaded;
@@ -133,6 +135,7 @@ fn main() {
                     ..default()
                 }),
         )
+        .add_plugins(ImeCompatPlugin)
         .add_plugins(GamePlugin)
         .add_plugins(ActionPlugin)
         .add_plugins(ScreenshotPlugin)
