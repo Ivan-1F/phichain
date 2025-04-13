@@ -115,27 +115,28 @@ fn single_event_inspector(
     event: &mut LineEvent,
     mut event_writer: EventWriter<DoCommandEvent>,
 ) {
-    egui::Grid::new("inspector_grid")
-        .num_columns(2)
-        .spacing([20.0, 2.0])
-        .striped(true)
-        .show(ui, |ui| {
-            let result = latch::latch(ui, "event", *event, |ui| {
-                let mut finished = false;
+    let result = latch::latch(ui, "event", *event, |ui| {
+        let mut finished = false;
 
-                ui.label(t!("tab.inspector.single_event.start_beat"));
+        ui.sides(
+            |ui| ui.label(t!("tab.inspector.single_event.start_beat")),
+            |ui| {
                 let response = ui.beat(&mut event.start_beat);
                 finished |= response.drag_stopped() || response.lost_focus();
-                ui.end_row();
-
-                ui.label(t!("tab.inspector.single_event.end_beat"));
+            },
+        );
+        ui.sides(
+            |ui| ui.label(t!("tab.inspector.single_event.end_beat")),
+            |ui| {
                 let response = ui.beat(&mut event.end_beat);
                 finished |= response.drag_stopped() || response.lost_focus();
-                ui.end_row();
-
-                ui.label(t!("tab.inspector.single_event.value_type"));
-                ui.columns(2, |columns| {
-                    if columns[0]
+            },
+        );
+        ui.sides(
+            |ui| ui.label(t!("tab.inspector.single_event.value_type")),
+            |ui| {
+                ui.horizontal(|ui| {
+                    if ui
                         .selectable_label(
                             event.value.is_transition(),
                             t!("tab.inspector.single_event.transition"),
@@ -148,7 +149,7 @@ fn single_event_inspector(
                             EditEvent::new(entity, *event, new_event),
                         )));
                     }
-                    if columns[1]
+                    if ui
                         .selectable_label(
                             event.value.is_constant(),
                             t!("tab.inspector.single_event.constant"),
@@ -162,61 +163,68 @@ fn single_event_inspector(
                         )));
                     }
                 });
-                ui.end_row();
+            },
+        );
 
-                match event.value {
-                    LineEventValue::Transition {
-                        ref mut start,
-                        ref mut end,
-                        ref mut easing,
-                    } => {
-                        ui.label(t!("tab.inspector.single_event.start_value"));
-                        let range = match event.kind {
-                            LineEventKind::Opacity => 0.0..=255.0,
-                            _ => f32::MIN..=f32::MAX,
-                        };
+        match event.value {
+            LineEventValue::Transition {
+                ref mut start,
+                ref mut end,
+                ref mut easing,
+            } => {
+                let range = match event.kind {
+                    LineEventKind::Opacity => 0.0..=255.0,
+                    _ => f32::MIN..=f32::MAX,
+                };
+                ui.sides(
+                    |ui| ui.label(t!("tab.inspector.single_event.start_value")),
+                    |ui| {
                         let response =
-                            ui.add(egui::DragValue::new(start).range(range.clone()).speed(1.0));
+                            ui.add(DragValue::new(start).range(range.clone()).speed(1.0));
                         finished |= response.drag_stopped() || response.lost_focus();
-                        ui.end_row();
-
-                        ui.label(t!("tab.inspector.single_event.end_value"));
-                        let response =
-                            ui.add(egui::DragValue::new(end).range(range.clone()).speed(1.0));
+                    },
+                );
+                ui.sides(
+                    |ui| ui.label(t!("tab.inspector.single_event.end_value")),
+                    |ui| {
+                        let response = ui.add(DragValue::new(end).range(range.clone()).speed(1.0));
                         finished |= response.drag_stopped() || response.lost_focus();
-                        ui.end_row();
-
-                        if !event.kind.is_speed() {
-                            ui.label(t!("tab.inspector.single_event.easing"));
-                            let response = ui.add(EasingValue::new(easing));
-                            finished |= response.drag_stopped() || response.lost_focus();
-                            ui.end_row();
-                        }
-                    }
-                    LineEventValue::Constant(ref mut value) => {
-                        ui.label(t!("tab.inspector.single_event.value"));
-                        let range = match event.kind {
-                            LineEventKind::Opacity => 0.0..=255.0,
-                            _ => f32::MIN..=f32::MAX,
-                        };
-                        let response =
-                            ui.add(egui::DragValue::new(value).range(range.clone()).speed(1.0));
+                    },
+                );
+                ui.sides(
+                    |ui| ui.label(t!("tab.inspector.single_event.easing")),
+                    |ui| {
+                        let response = ui.add(EasingValue::new(easing));
                         finished |= response.drag_stopped() || response.lost_focus();
-                        ui.end_row();
-                    }
-                }
-
-                finished
-            });
-
-            if let Some(from) = result {
-                if from != *event {
-                    event_writer.send(DoCommandEvent(EditorCommand::EditEvent(EditEvent::new(
-                        entity, from, *event,
-                    ))));
-                }
+                    },
+                );
             }
-        });
+            LineEventValue::Constant(ref mut value) => {
+                let range = match event.kind {
+                    LineEventKind::Opacity => 0.0..=255.0,
+                    _ => f32::MIN..=f32::MAX,
+                };
+                ui.sides(
+                    |ui| ui.label(t!("tab.inspector.single_event.value")),
+                    |ui| {
+                        let response =
+                            ui.add(DragValue::new(value).range(range.clone()).speed(1.0));
+                        finished |= response.drag_stopped() || response.lost_focus();
+                    },
+                );
+            }
+        }
+
+        finished
+    });
+
+    if let Some(from) = result {
+        if from != *event {
+            event_writer.send(DoCommandEvent(EditorCommand::EditEvent(EditEvent::new(
+                entity, from, *event,
+            ))));
+        }
+    }
 }
 
 fn single_note_inspector(
