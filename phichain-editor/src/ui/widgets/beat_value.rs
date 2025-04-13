@@ -7,6 +7,7 @@ use std::ops::RangeInclusive;
 pub struct BeatValue<'a> {
     beat: &'a mut Beat,
     clamp_range: RangeInclusive<Beat>,
+    reversed: bool,
 }
 
 impl<'a> BeatValue<'a> {
@@ -14,11 +15,17 @@ impl<'a> BeatValue<'a> {
         Self {
             beat,
             clamp_range: Beat::MIN..=Beat::MAX,
+            reversed: false,
         }
     }
 
     pub fn range(mut self, range: RangeInclusive<Beat>) -> Self {
         self.clamp_range = range;
+        self
+    }
+
+    pub fn reversed(mut self, reversed: bool) -> Self {
+        self.reversed = reversed;
         self
     }
 }
@@ -33,30 +40,72 @@ impl Widget for BeatValue<'_> {
             let mut denom = self.beat.denom();
 
             ui.spacing_mut().item_spacing.x = 4.0;
-            let response_whole = ui.add(
-                egui::DragValue::new(&mut whole)
-                    .range(0..=u32::MAX)
-                    .speed(1),
-            );
-            ui.spacing_mut().interact_size = Vec2::new(20.0, 18.0);
-            let response_numer = ui.add(
-                egui::DragValue::new(&mut numer)
-                    .range(0..=u32::MAX)
-                    .speed(1),
-            );
-            let response_denom = ui.add(
-                egui::DragValue::new(&mut denom)
-                    .range(1..=u32::MAX)
-                    .speed(1),
-            );
-            ui.spacing_mut().interact_size = Vec2::new(40.0, 18.0);
 
-            let response_value = ui.add(
-                egui::DragValue::new(&mut value)
-                    .range(0.0..=f32::MAX)
-                    .custom_formatter(|x, _| format!("{:?}", Beat::from(x as f32)))
-                    .speed(0.01),
-            );
+            let (response_value, response_whole, response_numer, response_denom) = if self.reversed
+            {
+                let response_value = ui.add(
+                    egui::DragValue::new(&mut value)
+                        .range(0.0..=f32::MAX)
+                        .custom_formatter(|x, _| format!("{:?}", Beat::from(x as f32)))
+                        .speed(0.01),
+                );
+                ui.spacing_mut().interact_size = Vec2::new(20.0, 18.0);
+                let response_denom = ui.add(
+                    egui::DragValue::new(&mut denom)
+                        .range(1..=u32::MAX)
+                        .speed(1),
+                );
+                let response_numer = ui.add(
+                    egui::DragValue::new(&mut numer)
+                        .range(0..=u32::MAX)
+                        .speed(1),
+                );
+                ui.spacing_mut().interact_size = Vec2::new(40.0, 18.0);
+                let response_whole = ui.add(
+                    egui::DragValue::new(&mut whole)
+                        .range(0..=u32::MAX)
+                        .speed(1),
+                );
+
+                (
+                    response_value,
+                    response_whole,
+                    response_numer,
+                    response_denom,
+                )
+            } else {
+                let response_whole = ui.add(
+                    egui::DragValue::new(&mut whole)
+                        .range(0..=u32::MAX)
+                        .speed(1),
+                );
+                ui.spacing_mut().interact_size = Vec2::new(20.0, 18.0);
+                let response_numer = ui.add(
+                    egui::DragValue::new(&mut numer)
+                        .range(0..=u32::MAX)
+                        .speed(1),
+                );
+                let response_denom = ui.add(
+                    egui::DragValue::new(&mut denom)
+                        .range(1..=u32::MAX)
+                        .speed(1),
+                );
+                ui.spacing_mut().interact_size = Vec2::new(40.0, 18.0);
+
+                let response_value = ui.add(
+                    egui::DragValue::new(&mut value)
+                        .range(0.0..=f32::MAX)
+                        .custom_formatter(|x, _| format!("{:?}", Beat::from(x as f32)))
+                        .speed(0.01),
+                );
+
+                (
+                    response_value,
+                    response_whole,
+                    response_numer,
+                    response_denom,
+                )
+            };
 
             fn has_focus_changed(response: &Response) -> bool {
                 response.has_focus() || response.lost_focus() || response.gained_focus()

@@ -5,7 +5,7 @@ use crate::editing::DoCommandEvent;
 use crate::selection::{Selected, SelectedLine};
 use crate::ui::latch;
 use crate::ui::sides::SidesExt;
-use crate::ui::widgets::beat_value::BeatExt;
+use crate::ui::widgets::beat_value::{BeatExt, BeatValue};
 use crate::ui::widgets::easing::EasingValue;
 use bevy::prelude::*;
 use egui::{Align, Color32, DragValue, Layout, RichText, Ui};
@@ -231,7 +231,7 @@ fn single_note_inspector(
         ui.sides(
             |ui| ui.label(t!("tab.inspector.single_note.beat")),
             |ui| {
-                let response = ui.beat(&mut note.beat);
+                let response = ui.add(BeatValue::new(&mut note.beat).reversed(true));
                 finished |= response.drag_stopped() || response.lost_focus();
             },
         );
