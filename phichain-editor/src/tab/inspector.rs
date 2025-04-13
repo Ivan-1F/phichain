@@ -229,17 +229,17 @@ fn single_note_inspector(
         let mut finished = false;
 
         ui.sides(
-            |ui| ui.label(t!("tab.inspector.single_note.x")),
+            |ui| ui.label(t!("tab.inspector.single_note.beat")),
             |ui| {
-                let response = ui.add(DragValue::new(&mut note.x).speed(1));
+                let response = ui.beat(&mut note.beat);
                 finished |= response.drag_stopped() || response.lost_focus();
             },
         );
 
         ui.sides(
-            |ui| ui.label(t!("tab.inspector.single_note.beat")),
+            |ui| ui.label(t!("tab.inspector.single_note.x")),
             |ui| {
-                let response = ui.beat(&mut note.beat);
+                let response = ui.add(DragValue::new(&mut note.x).speed(1));
                 finished |= response.drag_stopped() || response.lost_focus();
             },
         );
