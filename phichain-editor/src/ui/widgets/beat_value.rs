@@ -1,4 +1,4 @@
-use egui::{Response, Ui, Widget};
+use egui::{Response, Ui, Vec2, Widget};
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
 use std::cmp::Ordering;
@@ -32,11 +32,13 @@ impl Widget for BeatValue<'_> {
             let mut numer = self.beat.numer();
             let mut denom = self.beat.denom();
 
+            ui.spacing_mut().item_spacing.x = 4.0;
             let response_whole = ui.add(
                 egui::DragValue::new(&mut whole)
                     .range(0..=u32::MAX)
                     .speed(1),
             );
+            ui.spacing_mut().interact_size = Vec2::new(20.0, 18.0);
             let response_numer = ui.add(
                 egui::DragValue::new(&mut numer)
                     .range(0..=u32::MAX)
@@ -47,6 +49,7 @@ impl Widget for BeatValue<'_> {
                     .range(1..=u32::MAX)
                     .speed(1),
             );
+            ui.spacing_mut().interact_size = Vec2::new(40.0, 18.0);
 
             let response_value = ui.add(
                 egui::DragValue::new(&mut value)

@@ -4,6 +4,7 @@ use crate::editing::command::{CommandSequence, EditorCommand};
 use crate::editing::DoCommandEvent;
 use crate::selection::{Selected, SelectedLine};
 use crate::ui::latch;
+use crate::ui::sides::SidesExt;
 use crate::ui::widgets::beat_value::BeatExt;
 use crate::ui::widgets::easing::EasingValue;
 use bevy::prelude::*;
@@ -224,57 +225,65 @@ fn single_note_inspector(
     note: &mut Note,
     mut event_writer: EventWriter<DoCommandEvent>,
 ) {
-    egui::Grid::new("inspector_grid")
-        .num_columns(2)
-        .spacing([20.0, 2.0])
-        .striped(true)
-        .show(ui, |ui| {
-            let result = latch::latch(ui, "note", *note, |ui| {
-                let mut finished = false;
+    let result = latch::latch(ui, "note", *note, |ui| {
+        let mut finished = false;
 
-                ui.label(t!("tab.inspector.single_note.x"));
-                let response = ui.add(egui::DragValue::new(&mut note.x).speed(1));
+        ui.sides(
+            |ui| ui.label(t!("tab.inspector.single_note.x")),
+            |ui| {
+                let response = ui.add(DragValue::new(&mut note.x).speed(1));
                 finished |= response.drag_stopped() || response.lost_focus();
-                ui.end_row();
+            },
+        );
 
-                ui.label(t!("tab.inspector.single_note.beat"));
+        ui.sides(
+            |ui| ui.label(t!("tab.inspector.single_note.beat")),
+            |ui| {
                 let response = ui.beat(&mut note.beat);
                 finished |= response.drag_stopped() || response.lost_focus();
-                ui.end_row();
+            },
+        );
 
-                if let NoteKind::Hold { hold_beat } = note.kind {
-                    ui.label(t!("tab.inspector.single_note.hold_beat"));
-
+        if let NoteKind::Hold { hold_beat } = note.kind {
+            ui.sides(
+                |ui| ui.label(t!("tab.inspector.single_note.hold_beat")),
+                |ui| {
                     let mut bind = hold_beat;
                     let response = ui.beat(&mut bind);
                     finished |= response.drag_stopped() || response.lost_focus();
                     if bind != hold_beat {
                         note.kind = NoteKind::Hold { hold_beat: bind };
                     }
+                },
+            );
+        }
 
-                    ui.end_row();
-                }
-
-                ui.label(t!("tab.inspector.single_note.above"));
+        ui.sides(
+            |ui| ui.label(t!("tab.inspector.single_note.above")),
+            |ui| {
                 let response = ui.checkbox(&mut note.above, "");
                 finished |= response.changed();
-                ui.end_row();
+            },
+        );
 
-                ui.label(t!("tab.inspector.single_note.speed"));
-                let response = ui.add(egui::DragValue::new(&mut note.speed).speed(0.1));
+        ui.sides(
+            |ui| ui.label(t!("tab.inspector.single_note.speed")),
+            |ui| {
+                let response = ui.add(DragValue::new(&mut note.speed).speed(0.1));
                 finished |= response.drag_stopped() || response.lost_focus();
+            },
+        );
 
-                finished
-            });
+        finished
+    });
 
-            if let Some(from) = result {
-                if from != *note {
-                    event_writer.send(DoCommandEvent(EditorCommand::EditNote(EditNote::new(
-                        entity, from, *note,
-                    ))));
-                }
-            }
-        });
+    if let Some(from) = result {
+        if from != *note {
+            event_writer.send(DoCommandEvent(EditorCommand::EditNote(EditNote::new(
+                entity, from, *note,
+            ))));
+        }
+    }
 }
 
 fn multiple_notes_inspector(

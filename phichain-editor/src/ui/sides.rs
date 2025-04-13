@@ -129,3 +129,21 @@ impl Sides {
         (result_left, result_right)
     }
 }
+
+pub trait SidesExt {
+    fn sides<RetL, RetR>(
+        self,
+        left: impl FnOnce(&mut Ui) -> RetL,
+        right: impl FnOnce(&mut Ui) -> RetR,
+    ) -> (RetL, RetR);
+}
+
+impl SidesExt for &mut Ui {
+    fn sides<RetL, RetR>(
+        self,
+        left: impl FnOnce(&mut Ui) -> RetL,
+        right: impl FnOnce(&mut Ui) -> RetR,
+    ) -> (RetL, RetR) {
+        Sides::new().show(self, left, right)
+    }
+}
