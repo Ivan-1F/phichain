@@ -6,7 +6,7 @@ use crate::selection::{Selected, SelectedLine};
 use crate::ui::latch;
 use crate::ui::sides::SidesExt;
 use crate::ui::widgets::beat_value::{BeatExt, BeatValue};
-use crate::ui::widgets::easing::EasingValue;
+use crate::ui::widgets::easing::{EasingGraph, EasingValue};
 use bevy::prelude::*;
 use egui::{Align, Color32, DragValue, Layout, RichText, Ui};
 use phichain_chart::beat;
@@ -102,7 +102,7 @@ fn curve_note_track_inspector(ui: &mut Ui, track: &mut CurveNoteTrack) {
             ui.end_row();
 
             ui.label(t!("tab.inspector.curve_note_track.curve"));
-            ui.add(EasingValue::new(&mut track.options.curve).show_graph(false));
+            ui.add(EasingValue::new(&mut track.options.curve));
             ui.end_row();
         });
 
@@ -198,6 +198,12 @@ fn single_event_inspector(
                         finished |= response.drag_stopped() || response.lost_focus();
                     },
                 );
+                ui.separator();
+                let response = ui.add_sized(
+                    egui::Vec2::new(ui.available_width(), ui.available_width() / 3.0 * 2.0),
+                    EasingGraph::new(easing),
+                );
+                finished |= response.drag_stopped();
             }
             LineEventValue::Constant(ref mut value) => {
                 let range = match event.kind {

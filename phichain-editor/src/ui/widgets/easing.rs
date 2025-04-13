@@ -139,7 +139,6 @@ impl Widget for EasingGraph<'_> {
 
 pub struct EasingValue<'a> {
     value: &'a mut Easing,
-    show_graph: bool,
 
     /// Easings in this vec will not be shown in the combobox
     disabled_easings: Vec<Easing>,
@@ -149,15 +148,9 @@ impl<'a> EasingValue<'a> {
     pub fn new(value: &'a mut Easing) -> Self {
         Self {
             value,
-            show_graph: true,
 
             disabled_easings: vec![],
         }
-    }
-
-    pub fn show_graph(mut self, show_graph: bool) -> Self {
-        self.show_graph = show_graph;
-        self
     }
 
     #[allow(dead_code)]
@@ -245,131 +238,111 @@ fn draw_easing_options(ui: &mut Ui, easing: Easing, selected: bool, name: &str) 
 
 impl Widget for EasingValue<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
-        ui.vertical(|ui| {
-            let mut combobox_changed = false;
-            // wrapping in horizontal for Easing::Steps and Easing::Elastic inner DragValue
-            let combobox_response = ui
-                .horizontal(|ui| {
-                    let mut response = egui::ComboBox::from_label("")
-                        .height(300.0)
-                        .selected_text(format!("{}", self.value))
-                        .show_ui(ui, |ui| {
-                            ui.scope(|ui| {
-                                ui.columns_const(|[linear, custom]| {
-                                    linear.with_layout(
-                                        Layout::top_down_justified(egui::Align::Center),
-                                        |ui| {
-                                            if ui
-                                                .selectable_label(self.value.is_linear(), "Linear")
-                                                .clicked()
-                                            {
-                                                combobox_changed = true;
-                                                *self.value = Easing::Linear;
-                                            }
-                                        },
-                                    );
-                                    custom.with_layout(
-                                        Layout::top_down_justified(egui::Align::Center),
-                                        |ui| {
-                                            if ui
-                                                .selectable_label(self.value.is_custom(), "Custom")
-                                                .clicked()
-                                            {
-                                                combobox_changed = true;
-                                                *self.value = Easing::Custom(0.5, 0.0, 0.5, 1.0);
-                                            }
-                                        },
-                                    );
-                                });
-                                Grid::new("easing-grid").num_columns(3).show(ui, |ui| {
-                                    for easing in Easing::iter().filter(|x| {
-                                        !self.disabled_easings.contains(x)
-                                            && !x.is_custom()
-                                            && !x.is_linear()
-                                            && !x.is_steps()
-                                            && !x.is_elastic()
-                                    }) {
-                                        let selected = self.value == &easing;
-
-                                        let response = draw_easing_options(
-                                            ui,
-                                            easing,
-                                            selected,
-                                            format!("{}", easing).trim_start_matches("Ease"),
-                                        );
-
-                                        if response.clicked() {
-                                            combobox_changed = true;
-                                            *self.value = easing;
-                                        }
-
-                                        if easing.is_in_out() {
-                                            ui.end_row();
-                                        }
-                                    }
-
-                                    if draw_easing_options(
-                                        ui,
-                                        Easing::Steps(4),
-                                        self.value.is_steps(),
-                                        "Steps",
-                                    )
-                                    .clicked()
+        let mut combobox_changed = false;
+        // wrapping in horizontal for Easing::Steps and Easing::Elastic inner DragValue
+        ui.horizontal(|ui| {
+            let mut response = egui::ComboBox::from_label("")
+                .height(300.0)
+                .selected_text(format!("{}", self.value))
+                .show_ui(ui, |ui| {
+                    ui.scope(|ui| {
+                        ui.columns_const(|[linear, custom]| {
+                            linear.with_layout(
+                                Layout::top_down_justified(egui::Align::Center),
+                                |ui| {
+                                    if ui
+                                        .selectable_label(self.value.is_linear(), "Linear")
+                                        .clicked()
                                     {
                                         combobox_changed = true;
-                                        *self.value = Easing::Steps(4);
+                                        *self.value = Easing::Linear;
                                     }
-
-                                    if draw_easing_options(
-                                        ui,
-                                        Easing::Elastic(20.0),
-                                        self.value.is_elastic(),
-                                        "Elastic",
-                                    )
-                                    .clicked()
+                                },
+                            );
+                            custom.with_layout(
+                                Layout::top_down_justified(egui::Align::Center),
+                                |ui| {
+                                    if ui
+                                        .selectable_label(self.value.is_custom(), "Custom")
+                                        .clicked()
                                     {
                                         combobox_changed = true;
-                                        *self.value = Easing::Elastic(20.0);
+                                        *self.value = Easing::Custom(0.5, 0.0, 0.5, 1.0);
                                     }
-                                });
-                            });
-                        })
-                        .response;
+                                },
+                            );
+                        });
+                        Grid::new("easing-grid").num_columns(3).show(ui, |ui| {
+                            for easing in Easing::iter().filter(|x| {
+                                !self.disabled_easings.contains(x)
+                                    && !x.is_custom()
+                                    && !x.is_linear()
+                                    && !x.is_steps()
+                                    && !x.is_elastic()
+                            }) {
+                                let selected = self.value == &easing;
 
-                    if let Easing::Steps(steps) = self.value {
-                        let dv_response =
-                            ui.add(egui::DragValue::new(steps).speed(1).range(1..=64));
-                        response.drag_stopped |=
-                            dv_response.drag_stopped() || dv_response.changed();
-                    }
+                                let response = draw_easing_options(
+                                    ui,
+                                    easing,
+                                    selected,
+                                    format!("{}", easing).trim_start_matches("Ease"),
+                                );
 
-                    if let Easing::Elastic(omega) = self.value {
-                        let dv_response =
-                            ui.add(egui::DragValue::new(omega).speed(0.1).range(10.0..=128.0));
-                        response.drag_stopped |=
-                            dv_response.drag_stopped() || dv_response.changed();
-                    }
+                                if response.clicked() {
+                                    combobox_changed = true;
+                                    *self.value = easing;
+                                }
 
-                    // temporary workaround for change handling: .change() is reserved by egui,
-                    // we use drag_stopped for change handling as the same as DragValue
-                    response.drag_stopped |= combobox_changed;
+                                if easing.is_in_out() {
+                                    ui.end_row();
+                                }
+                            }
 
-                    response
+                            if draw_easing_options(
+                                ui,
+                                Easing::Steps(4),
+                                self.value.is_steps(),
+                                "Steps",
+                            )
+                            .clicked()
+                            {
+                                combobox_changed = true;
+                                *self.value = Easing::Steps(4);
+                            }
+
+                            if draw_easing_options(
+                                ui,
+                                Easing::Elastic(20.0),
+                                self.value.is_elastic(),
+                                "Elastic",
+                            )
+                            .clicked()
+                            {
+                                combobox_changed = true;
+                                *self.value = Easing::Elastic(20.0);
+                            }
+                        });
+                    });
                 })
-                .inner;
+                .response;
 
-            if self.show_graph {
-                let mut graph_response = ui.add_sized(
-                    Vec2::new(ui.available_width(), ui.available_width() / 3.0 * 2.0),
-                    EasingGraph::new(self.value),
-                );
-
-                graph_response.drag_stopped |= combobox_response.drag_stopped;
-
-                graph_response
-            } else {
-                combobox_response
+            if let Easing::Steps(steps) = self.value {
+                let dv_response = ui.add(egui::DragValue::new(steps).speed(1).range(1..=64));
+                response.drag_stopped |= dv_response.drag_stopped() || dv_response.changed();
             }
+
+            if let Easing::Elastic(omega) = self.value {
+                let dv_response =
+                    ui.add(egui::DragValue::new(omega).speed(0.1).range(10.0..=128.0));
+                response.drag_stopped |= dv_response.drag_stopped() || dv_response.changed();
+            }
+
+            // temporary workaround for change handling: .change() is reserved by egui,
+            // we use drag_stopped for change handling as the same as DragValue
+            response.drag_stopped |= combobox_changed;
+
+            response
         })
         .inner
     }
