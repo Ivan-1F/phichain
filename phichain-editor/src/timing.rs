@@ -208,6 +208,18 @@ impl Timing {
         self.start_time = self.pause_time.unwrap_or(self.real_time) - pos / self.speed;
         self.wait();
     }
+
+    pub fn set_speed(&mut self, new_speed: f32) {
+        let old_speed = self.speed;
+
+        let t = self.pause_time.unwrap_or(self.real_time);
+
+        self.start_time = t - (t - self.start_time) * old_speed / new_speed;
+
+        self.speed = new_speed;
+
+        self.wait();
+    }
 }
 
 /// Update [`phichain_game::ChartTime`] (for `phichain-game`) and [`ChartTime`] (for `phichain-editor`) with [`Timing`]
@@ -216,6 +228,7 @@ impl Timing {
 pub fn update_time_system(
     mut timing: ResMut<Timing>,
     time: Res<Time>,
+    settings: Res<Persistent<EditorSettings>>,
     mut audio_instances: ResMut<Assets<AudioInstance>>,
     handle: Res<InstanceHandle>,
     offset: Res<Offset>,
@@ -223,6 +236,8 @@ pub fn update_time_system(
     mut chart_time: ResMut<ChartTime>,
     mut game_time: ResMut<phichain_game::ChartTime>,
 ) {
+    timing.set_speed(settings.audio.playback_rate);
+
     if let Some(instance) = audio_instances.get_mut(&handle.0) {
         let value = instance.state().position().unwrap_or_default() as f32;
         timing.update(time.elapsed_secs(), value);
