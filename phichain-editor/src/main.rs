@@ -71,8 +71,6 @@ use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::log::tracing_subscriber::Layer;
 use bevy::log::{tracing_subscriber, BoxedLayer, LogPlugin};
 use bevy::prelude::*;
-use bevy::render::render_resource::WgpuFeatures;
-use bevy::render::settings::WgpuSettings;
 use bevy::render::RenderPlugin;
 use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{EguiContext, EguiPlugin};
@@ -90,11 +88,6 @@ use std::sync::Arc;
 i18n!("lang", fallback = "en_us");
 
 fn main() {
-    let mut wgpu_settings = WgpuSettings::default();
-    wgpu_settings
-        .features
-        .set(WgpuFeatures::VERTEX_WRITABLE_STORAGE, true);
-
     phichain_assets::setup_assets();
 
     App::new()
@@ -120,8 +113,8 @@ fn main() {
         .add_plugins(
             DefaultPlugins
                 .set(RenderPlugin {
-                    render_creation: wgpu_settings.into(),
                     synchronous_pipeline_compilation: false,
+                    ..default()
                 })
                 .set(WindowPlugin {
                     primary_window: Some(Window {
