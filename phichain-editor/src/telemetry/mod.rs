@@ -223,7 +223,7 @@ fn handle_push_telemetry_event_system(
         });
 
         if telemetry_debug() {
-            info!(
+            eprintln!(
                 "[telemetry] {}",
                 serde_json::to_string_pretty(&payload).unwrap()
             );
