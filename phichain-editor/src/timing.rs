@@ -121,7 +121,9 @@ fn scroll_progress_control_system(
 
     settings: Res<Persistent<EditorSettings>>,
 ) {
-    let window = window_query.single();
+    let Ok(window) = window_query.get_single() else {
+        return;
+    };
     if window
         .cursor_position()
         .is_some_and(|p| viewport.0.contains(p))
