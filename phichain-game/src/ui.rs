@@ -31,7 +31,8 @@ impl Plugin for GameUiPlugin {
                 Update,
                 update_name_system
                     .in_set(GameSet)
-                    .run_if(resource_exists_and_changed::<GameConfig>),
+                    .run_if(resource_exists_and_changed::<GameConfig>)
+                    .before(update_text_scale_system), // make sure update_name_system will not override font_size
             )
             // level
             .add_systems(Startup, spawn_level_ui_system)
@@ -39,7 +40,8 @@ impl Plugin for GameUiPlugin {
                 Update,
                 update_level_system
                     .in_set(GameSet)
-                    .run_if(resource_exists_and_changed::<GameConfig>),
+                    .run_if(resource_exists_and_changed::<GameConfig>)
+                    .before(update_text_scale_system), // make sure update_level_system will not override font_size
             );
     }
 }
@@ -217,7 +219,7 @@ fn spawn_score_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
 #[derive(Component)]
 struct NameText;
 
-fn spawn_name_ui_system(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn spawn_name_ui_system(mut commands: Commands) {
     commands
         .spawn((
             Node {
@@ -229,17 +231,7 @@ fn spawn_name_ui_system(mut commands: Commands, asset_server: Res<AssetServer>) 
             ApplyMargin::all(),
         ))
         .with_children(|parent| {
-            parent.spawn((
-                Text::default(),
-                TextFont {
-                    font: asset_server.load("font/MiSans-Regular.ttf"),
-                    font_size: 10.0,
-                    ..default()
-                },
-                TextColor::WHITE,
-                NameText,
-                TextScale(0.5),
-            ));
+            parent.spawn((Text::default(), NameText));
         });
 }
 
@@ -247,7 +239,7 @@ fn spawn_name_ui_system(mut commands: Commands, asset_server: Res<AssetServer>) 
 #[derive(Component)]
 struct LevelText;
 
-fn spawn_level_ui_system(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn spawn_level_ui_system(mut commands: Commands) {
     commands
         .spawn((
             Node {
@@ -259,17 +251,7 @@ fn spawn_level_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
             ApplyMargin::all(),
         ))
         .with_children(|parent| {
-            parent.spawn((
-                Text::default(),
-                TextFont {
-                    font: asset_server.load("font/phigros.ttf"),
-                    font_size: 10.0,
-                    ..default()
-                },
-                TextColor::WHITE,
-                LevelText,
-                TextScale(0.5),
-            ));
+            parent.spawn((Text::default(), LevelText));
         });
 }
 
