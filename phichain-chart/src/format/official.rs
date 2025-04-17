@@ -348,8 +348,8 @@ impl Format for OfficialChart {
                     split_beats.push(event.end_beat);
                 }
                 split_beats.push(beat!(1000000000));
-                split_beats.dedup();
                 split_beats.sort();
+                split_beats.dedup();
 
                 let mut connected_events = vec![];
 
@@ -496,8 +496,8 @@ impl Format for OfficialChart {
                 split_beats.push(event.end_beat);
             }
             split_beats.push(beat!(1000000000));
-            split_beats.dedup();
             split_beats.sort();
+            split_beats.dedup();
 
             for i in 0..split_beats.len() - 1 {
                 let start_beat = split_beats[i];

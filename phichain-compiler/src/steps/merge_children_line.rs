@@ -40,8 +40,8 @@ fn merge(parent: SerializedLine) -> Vec<SerializedLine> {
                 splits.push(event.end_beat);
             }
 
-            splits.dedup();
             splits.sort();
+            splits.dedup();
 
             let minimum = beat!(1, 32);
 
