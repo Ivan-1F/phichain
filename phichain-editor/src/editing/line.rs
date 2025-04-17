@@ -11,7 +11,7 @@ pub struct LineEditingPlugin;
 
 impl Plugin for LineEditingPlugin {
     fn build(&self, app: &mut App) {
-        app.add_action(
+        app.add_heavy_action(
             "phichain.create_line",
             create_line_system,
             Some(Hotkey::new(KeyCode::KeyN, vec![Modifier::Control])),

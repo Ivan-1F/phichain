@@ -21,7 +21,7 @@ pub struct ExportPlugin;
 impl Plugin for ExportPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, export_official_system.run_if(project_loaded()))
-            .add_action(
+            .add_heavy_action(
                 "phichain.export_as_official",
                 export_as_official_system,
                 Some(Hotkey::new(

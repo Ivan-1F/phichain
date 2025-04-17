@@ -12,6 +12,7 @@ pub type ActionIdentifier = Identifier;
 pub struct RegisteredAction {
     system: Box<dyn System<In = (), Out = ()>>,
     pub enable_hotkey: bool,
+    pub is_heavy: bool,
 }
 
 impl RegisteredAction {
@@ -27,10 +28,13 @@ impl ActionRegistry {
     pub fn run_action(&mut self, world: &mut World, id: impl Into<ActionIdentifier>) {
         let id = id.into();
         if let Some(action) = self.0.get_mut(&id) {
-            world.send_event(PushTelemetryEvent::new(
-                "phichain.editor.action.invoked",
-                json!({ "action": id }),
-            ));
+            if action.is_heavy {
+                world.send_event(PushTelemetryEvent::new(
+                    "phichain.editor.action.invoked",
+                    json!({ "action": id }),
+                ));
+            }
+
             action.run(world);
         } else {
             error!("Failed to find action with id {}", id);
@@ -49,8 +53,44 @@ impl Plugin for ActionPlugin {
     }
 }
 
+fn add_action_impl<M1>(
+    app: &mut App,
+    id: impl Into<ActionIdentifier>,
+    system: impl IntoSystem<(), (), M1>,
+    hotkey: Option<Hotkey>,
+    heavy: bool,
+) {
+    let id = id.into();
+
+    let action = RegisteredAction {
+        system: Box::new({
+            let mut sys = IntoSystem::into_system(system);
+            sys.initialize(app.world_mut());
+            sys
+        }),
+        enable_hotkey: hotkey.is_some(),
+        is_heavy: heavy,
+    };
+
+    app.world_mut()
+        .resource_mut::<ActionRegistry>()
+        .0
+        .insert(id.clone(), action);
+
+    if let Some(hotkey) = hotkey {
+        app.add_hotkey(id, hotkey);
+    }
+}
+
 pub trait ActionRegistrationExt {
     fn add_action<M1>(
+        &mut self,
+        id: impl Into<ActionIdentifier>,
+        system: impl IntoSystem<(), (), M1>,
+        hotkey: Option<Hotkey>,
+    ) -> &mut Self;
+
+    fn add_heavy_action<M1>(
         &mut self,
         id: impl Into<ActionIdentifier>,
         system: impl IntoSystem<(), (), M1>,
@@ -65,26 +105,17 @@ impl ActionRegistrationExt for App {
         system: impl IntoSystem<(), (), M1>,
         hotkey: Option<Hotkey>,
     ) -> &mut Self {
-        let id = id.into();
+        add_action_impl(self, id, system, hotkey, false);
+        self
+    }
 
-        let action = RegisteredAction {
-            system: Box::new({
-                let mut sys = IntoSystem::into_system(system);
-                sys.initialize(self.world_mut());
-                sys
-            }),
-            enable_hotkey: hotkey.is_some(),
-        };
-
-        self.world_mut()
-            .resource_mut::<ActionRegistry>()
-            .0
-            .insert(id.clone(), action);
-
-        if let Some(hotkey) = hotkey {
-            self.add_hotkey(id, hotkey);
-        }
-
+    fn add_heavy_action<M1>(
+        &mut self,
+        id: impl Into<ActionIdentifier>,
+        system: impl IntoSystem<(), (), M1>,
+        hotkey: Option<Hotkey>,
+    ) -> &mut Self {
+        add_action_impl(self, id, system, hotkey, true);
         self
     }
 }
