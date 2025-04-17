@@ -119,12 +119,12 @@ fn load_project_system(
                     toasts.error(format!("Failed to load chart: {:?}", error));
                     telemetry.send(PushTelemetryEvent::new(
                         "phichain.editor.project.load.failed",
-                        json!({ "duration": start.elapsed().as_secs_f32() }),
+                        json!({ "duration": start.elapsed().as_millis() }),
                     ));
                 } else {
                     telemetry.send(PushTelemetryEvent::new(
                         "phichain.editor.project.loaded",
-                        json!({ "duration": start.elapsed().as_secs_f32() }),
+                        json!({ "duration": start.elapsed().as_millis() }),
                     ));
                     recent_projects.push(RecentProject::new(
                         project.meta.name.clone(),
