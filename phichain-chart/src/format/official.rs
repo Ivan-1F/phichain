@@ -276,7 +276,10 @@ impl Format for OfficialChart {
         Self: Sized,
     {
         fn cut_event(event: primitive::event::LineEvent) -> Vec<primitive::event::LineEvent> {
-            if matches!(event.easing, Easing::Linear) {
+            if event.start == event.end {
+                return vec![event];
+            }
+            if matches!(event.easing, Easing::Linear) && !event.kind.is_speed() {
                 return vec![event];
             }
 
@@ -361,7 +364,7 @@ impl Format for OfficialChart {
                     let end = evaluate(&events, end_beat, false);
 
                     connected_events.push(primitive::event::LineEvent {
-                        kind: LineEventKind::X, // does not matter
+                        kind: events.first().unwrap().kind, // does not matter
                         start,
                         end,
                         easing: Easing::Linear,
@@ -380,6 +383,7 @@ impl Format for OfficialChart {
                 target: &mut Vec<T>,
             ) where
                 F: FnMut(&primitive::event::LineEvent) -> T,
+                T: std::fmt::Debug,
             {
                 let events = connect_events(
                     &line
@@ -392,8 +396,14 @@ impl Format for OfficialChart {
 
                 for event in events {
                     let events = cut_event(event);
+                    // if kind.is_speed() {
+                    //     println!("Cut events: {:?}", events);
+                    // }
                     let mut transformed_events =
                         events.iter().map(&mut transform).collect::<Vec<_>>();
+                    // if kind.is_speed() {
+                    //     println!("Appending transformed events: {:?}", transformed_events);
+                    // }
                     target.append(&mut transformed_events);
                 }
             }
