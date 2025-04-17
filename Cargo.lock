@@ -5037,6 +5037,7 @@ dependencies = [
  "simple-easing",
  "strum",
  "tracing",
+ "uuid",
 ]
 
 [[package]]

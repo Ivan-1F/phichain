@@ -157,8 +157,9 @@ fn handle_push_telemetry_event_system(
     event_query: Query<&LineEvent>,
 ) {
     for event in events.read() {
-        let project_info = if project.is_some() {
+        let project_info = if let Some(ref project) = project {
             json!({
+                "id": project.id,
                 "notes": note_query.iter().len(),
                 "lines": line_query.iter().len(),
                 "events": event_query.iter().len(),

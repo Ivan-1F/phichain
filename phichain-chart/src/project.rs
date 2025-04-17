@@ -2,6 +2,7 @@ use anyhow::{anyhow, bail, Context};
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::path::{Path, PathBuf};
+use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct ProjectMeta {
@@ -17,6 +18,9 @@ pub struct ProjectMeta {
 pub struct Project {
     pub path: ProjectPath,
     pub meta: ProjectMeta,
+
+    /// A unique uuid represents a project session.
+    pub id: Uuid,
 }
 
 impl Project {
@@ -83,6 +87,10 @@ impl ProjectPath {
         let meta_file = File::open(self.meta_path()).context("Failed to open meta file")?;
         let meta: ProjectMeta = serde_json::from_reader(meta_file).context("Invalid meta file")?;
 
-        Ok(Project { path: self, meta })
+        Ok(Project {
+            path: self,
+            meta,
+            id: Uuid::new_v4(),
+        })
     }
 }
