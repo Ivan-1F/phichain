@@ -1,7 +1,6 @@
-use anyhow::{bail, Context};
 use bevy::prelude::*;
-use std::fs;
 use std::path::{Path, PathBuf};
+use std::{fs, io};
 
 pub struct MiscPlugin;
 
@@ -24,7 +23,7 @@ impl MiscPlugin {
 
 impl Plugin for MiscPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(WorkingDirectory(Self::get_base_path()));
+        app.insert_resource(WorkingDirectory::default());
     }
 }
 
@@ -32,28 +31,33 @@ impl Plugin for MiscPlugin {
 #[derive(Resource, Debug)]
 pub struct WorkingDirectory(pub PathBuf);
 
+impl Default for WorkingDirectory {
+    fn default() -> Self {
+        Self(MiscPlugin::get_base_path())
+    }
+}
+
 impl WorkingDirectory {
-    fn directory(&self, path: impl AsRef<Path>) -> anyhow::Result<PathBuf> {
+    fn directory(&self, path: impl AsRef<Path>) -> io::Result<PathBuf> {
         let new_path = self.0.join(&path);
 
         if !new_path.exists() {
-            fs::create_dir(&new_path)
-                .context(format!("Failed to create directory: {:?}", path.as_ref()))?;
+            fs::create_dir(&new_path)?;
         }
         if !new_path.is_dir() {
-            bail!("Expected a directory at {:?}, found a file", path.as_ref());
+            return Err(io::Error::from(io::ErrorKind::NotADirectory));
         }
 
         Ok(new_path)
     }
 
-    pub fn screenshot(&self) -> anyhow::Result<PathBuf> {
+    pub fn screenshot(&self) -> io::Result<PathBuf> {
         self.directory("screenshots")
     }
-    pub fn config(&self) -> anyhow::Result<PathBuf> {
+    pub fn config(&self) -> io::Result<PathBuf> {
         self.directory("config")
     }
-    pub fn log(&self) -> anyhow::Result<PathBuf> {
+    pub fn log(&self) -> io::Result<PathBuf> {
         self.directory("logs")
     }
 }
