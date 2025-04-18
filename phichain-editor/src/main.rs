@@ -15,6 +15,7 @@ mod home;
 mod hotkey;
 mod identifier;
 mod ime;
+mod logging;
 mod misc;
 mod notification;
 mod project;
@@ -46,7 +47,8 @@ use crate::home::HomePlugin;
 use crate::hotkey::HotkeyPlugin;
 use crate::identifier::{Identifier, IntoIdentifier};
 use crate::ime::ImeCompatPlugin;
-use crate::misc::{MiscPlugin, WorkingDirectory};
+use crate::logging::custom_layer;
+use crate::misc::MiscPlugin;
 use crate::notification::NotificationPlugin;
 use crate::project::project_loaded;
 use crate::project::LoadProjectEvent;
@@ -68,8 +70,7 @@ use crate::translation::TranslationPlugin;
 use crate::ui::UiPlugin;
 use crate::zoom::ZoomPlugin;
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
-use bevy::log::tracing_subscriber::Layer;
-use bevy::log::{tracing_subscriber, BoxedLayer, LogPlugin};
+use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use bevy::render::RenderPlugin;
 use bevy_egui::egui::{Color32, Frame};
@@ -88,6 +89,10 @@ use std::sync::Arc;
 i18n!("lang", fallback = "en_us");
 
 fn main() {
+    if let Err(err) = logging::roll_latest() {
+        error!("Failed to roll latest.log: {}", err);
+    }
+
     phichain_assets::setup_assets();
 
     App::new()
@@ -159,26 +164,6 @@ fn main() {
             (apply_args_config_system, apply_editor_settings_system),
         )
         .run();
-}
-
-/// Hold the [`tracing_appender`] guard
-#[derive(Resource)]
-#[allow(dead_code)]
-struct LogGuard(tracing_appender::non_blocking::WorkerGuard);
-
-fn custom_layer(app: &mut App) -> Option<BoxedLayer> {
-    let path = app.world().resource::<WorkingDirectory>().log().ok()?;
-
-    let appender = tracing_appender::rolling::never(path, "phichain.log");
-
-    let (non_blocking, guard) = tracing_appender::non_blocking(appender);
-
-    app.insert_resource(LogGuard(guard));
-
-    Some(Box::new(vec![tracing_subscriber::fmt::layer()
-        .with_writer(non_blocking)
-        .with_ansi(false)
-        .boxed()]))
 }
 
 fn apply_editor_settings_system(settings: Res<Persistent<EditorSettings>>) {
