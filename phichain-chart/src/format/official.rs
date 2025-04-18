@@ -364,7 +364,7 @@ impl Format for OfficialChart {
                     let end = evaluate(&events, end_beat, false);
 
                     connected_events.push(primitive::event::LineEvent {
-                        kind: events.first().unwrap().kind, // does not matter
+                        kind: events.first().unwrap().kind,
                         start,
                         end,
                         easing: Easing::Linear,
@@ -396,14 +396,8 @@ impl Format for OfficialChart {
 
                 for event in events {
                     let events = cut_event(event);
-                    // if kind.is_speed() {
-                    //     println!("Cut events: {:?}", events);
-                    // }
                     let mut transformed_events =
                         events.iter().map(&mut transform).collect::<Vec<_>>();
-                    // if kind.is_speed() {
-                    //     println!("Appending transformed events: {:?}", transformed_events);
-                    // }
                     target.append(&mut transformed_events);
                 }
             }
