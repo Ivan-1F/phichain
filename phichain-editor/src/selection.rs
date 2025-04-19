@@ -25,19 +25,16 @@ impl Plugin for SelectionPlugin {
         app.add_event::<SelectEvent>()
             .add_systems(Update, handle_select_event.run_if(project_loaded()));
 
-        for i in 0..10 {
+        for i in 1..10 {
             app.add_action(
                 format!("phichain.select_line_{}", i).as_str(),
                 move |world: &mut World| {
-                    if let Some(entity) =
-                        query_ordered_lines(world).get(if i == 0 { 10 } else { i } - 1)
-                    {
+                    if let Some(entity) = query_ordered_lines(world).get(i - 1) {
                         world.resource_mut::<SelectedLine>().0 = *entity;
                     }
                 },
                 Some(Hotkey::new(
                     match i {
-                        0 => KeyCode::Digit0,
                         1 => KeyCode::Digit1,
                         2 => KeyCode::Digit2,
                         3 => KeyCode::Digit3,
