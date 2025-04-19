@@ -121,14 +121,14 @@ fn single_event_inspector(
         ui.sides(
             |ui| ui.label(t!("tab.inspector.single_event.start_beat")),
             |ui| {
-                let response = ui.beat(&mut event.start_beat);
+                let response = ui.add(BeatValue::new(&mut event.start_beat).reversed(true));
                 finished |= response.drag_stopped() || response.lost_focus();
             },
         );
         ui.sides(
             |ui| ui.label(t!("tab.inspector.single_event.end_beat")),
             |ui| {
-                let response = ui.beat(&mut event.end_beat);
+                let response = ui.add(BeatValue::new(&mut event.end_beat).reversed(true));
                 finished |= response.drag_stopped() || response.lost_focus();
             },
         );
