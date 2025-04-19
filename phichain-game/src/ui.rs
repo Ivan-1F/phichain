@@ -299,7 +299,7 @@ fn update_name_system(
 
     commands.entity(container).despawn_descendants();
     commands.entity(container).with_children(|parent| {
-        for (content, script) in split_by_script(&config.name) {
+        for (content, script) in split_by_script(&config.name.replace(' ', "\u{00A0}")) {
             parent.spawn((
                 Text::new(content),
                 TextFont {
@@ -327,7 +327,7 @@ fn update_level_system(
 
     commands.entity(container).despawn_descendants();
     commands.entity(container).with_children(|parent| {
-        for (content, script) in split_by_script(&config.level) {
+        for (content, script) in split_by_script(&config.level.replace(' ', "\u{00A0}")) {
             parent.spawn((
                 Text::new(content),
                 TextFont {
