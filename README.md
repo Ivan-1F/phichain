@@ -10,7 +10,8 @@
 
 基于 Rust 和 Bevy 的 Phigros 制谱工具链
 
-QQ群: [768476938](https://qm.qq.com/q/lWGARUtgiI)
+- QQ 群: [768476938](https://phicha.in/qq)
+- Discord: [discord.gg/ESUwcdMBPv](https://phicha.in/discord)
 
 ![screenshot](screenshots/phichain-editor.png)
 

@@ -10,6 +10,9 @@
 
 Phigros charting toolchain written in Rust and Bevy
 
+- QQ Group: [768476938](https://phicha.in/qq)
+- Discord: [discord.gg/ESUwcdMBPv](https://phicha.in/discord)
+
 ![screenshot](screenshots/phichain-editor.png)
 
 ## Thanks
