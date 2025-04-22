@@ -132,6 +132,9 @@ tab:
           never: 从不
           always: 总是
           visible: 仅可见判定线
+        pause_when_scroll:
+          label: 滚动时暂停
+          description: 在滚动时间线时暂停编辑器
         send_telemetry:
           label: 发送遥测
           description: 是否发送遥测数据。了解更多关于遥测的信息，请访问 https://phicha.in/telemetry

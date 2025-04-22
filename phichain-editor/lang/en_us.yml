@@ -132,6 +132,9 @@ tab:
           never: Never
           always: Always
           visible: Visible Lines Only
+        pause_when_scroll:
+          label: Pause when Scroll
+          description: Pause the editor when scrolling the timeline
         send_telemetry:
           label: Send Telemetry
           description: Whether to send telemetry data. Learn more about telemetry by visiting https://phicha.in/telemetry

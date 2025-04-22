@@ -119,6 +119,9 @@ fn scroll_progress_control_system(
     viewport: Res<TimelineViewport>,
     window_query: Query<&Window>,
 
+    paused: Res<Paused>,
+    mut pause_events: EventWriter<PauseEvent>,
+
     settings: Res<Persistent<EditorSettings>>,
 ) {
     let Ok(window) = window_query.get_single() else {
@@ -132,6 +135,10 @@ fn scroll_progress_control_system(
             seek_events.send(SeekEvent(
                 ev.y / 5000.0 * settings.general.timeline_scroll_sensitivity,
             ));
+
+            if settings.general.pause_when_scroll && !paused.0 {
+                pause_events.send_default();
+            }
         }
     }
 }

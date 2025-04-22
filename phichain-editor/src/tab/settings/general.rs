@@ -99,6 +99,19 @@ impl SettingCategory for General {
             ui.separator();
 
             finished |= ui.item(
+                t!("tab.settings.category.general.pause_when_scroll.label"),
+                Some(t!(
+                    "tab.settings.category.general.pause_when_scroll.description"
+                )),
+                |ui| {
+                    let response = ui.checkbox(&mut settings.general.pause_when_scroll, "");
+                    response.changed()
+                },
+            );
+
+            ui.separator();
+
+            finished |= ui.item(
                 t!("tab.settings.category.general.send_telemetry.label"),
                 Some(t!(
                     "tab.settings.category.general.send_telemetry.description"
