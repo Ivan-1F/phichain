@@ -77,6 +77,7 @@ use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_mod_reqwest::ReqwestPlugin;
 use bevy_persistent::Persistent;
+use egui::RichText;
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use phichain_assets::AssetsPlugin;
 use phichain_chart::event::LineEvent;
@@ -407,7 +408,11 @@ fn ui_system(world: &mut World) {
         ui.horizontal(|ui| {
             ui.label(format!("Phichain v{}", env!("CARGO_PKG_VERSION")));
 
-            ui.label(format!("FPS: {:.2}", fps));
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 0.0;
+                ui.label("FPS: ");
+                ui.label(RichText::new(format!("{:.2}", fps)).monospace());
+            });
 
             ui.label(format!("Notes: {}", notes));
             ui.label(format!("Events: {}", events));
