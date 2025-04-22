@@ -13,8 +13,7 @@ pub struct CurveNoteTrack {
 }
 
 impl CurveNoteTrack {
-    // TODO: rename to `start` to avoid confusion with the `From<T>` trait
-    pub fn from(entity: Entity) -> Self {
+    pub fn start(entity: Entity) -> Self {
         Self {
             from: Some(entity),
             to: None,
