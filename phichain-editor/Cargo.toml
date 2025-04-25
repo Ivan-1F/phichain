@@ -15,6 +15,8 @@ default-locale = "en_us"
 load-path = "lang"
 
 [dependencies]
+# Bevy Dependencies: Update according to Bevy version
+
 bevy = { version = "0.15.1", default-features = false, features = [
     "animation",
     "bevy_asset",
@@ -41,8 +43,7 @@ bevy = { version = "0.15.1", default-features = false, features = [
     "trace",
     "sysinfo_plugin"
 ] }
-wgpu-types = { version = "23.0.0", features = ["serde"] }
-
+wgpu-types = { version = "23.0.0", features = ["serde"] }  # explictly enable serialization for wgpu types
 bevy_kira_audio = { version = "0.22.0", features = [
     "mp3",
     "ogg",
@@ -51,36 +52,47 @@ bevy_kira_audio = { version = "0.22.0", features = [
 ] }
 bevy_egui = "0.32.0"
 bevy_prototype_lyon = "0.13.0"
-egui = "0.30.0"
-egui_flex = { git = "https://github.com/Ivan-1F/hello_egui.git", branch = "no-repaint-0.30" }
-egui_dock = "0.15"
-egui_extras = { version = "0.30.0", features = ["all_loaders"] }
-
-serde = { version = "1.0.197", features = ["derive"] }
-serde_json = "1.0.114"
-
-num = { version = "0.4.3", features = ["serde"] }
-serde_yaml = "0.9.34"
-rfd = "0.14.1"
-futures-lite = "2.3.0"
-anyhow = "1.0.83"
-egui-toast = "0.16.0"
-rust-i18n = "3.0.1"
-clap = { version = "4.5.4", features = ["derive"] }
-strum = { version = "0.26.2", features = ["derive"] }
-chrono = { version = "0.4.38", features = ["serde"] }
 bevy-persistent = { version = "0.7.0", features = ["yaml"] }
-undo = "0.51.0"
-enum_dispatch = "0.3.13"
-zip = "2.1.0"
+bevy_mod_reqwest = "0.18.0"
+
+# Phichain Dependencies
 
 phichain-chart = { path = "../phichain-chart", features = ["bevy"] }
 phichain-assets = { path = "../phichain-assets", features = ["egui"] }
 phichain-game = { path = "../phichain-game" }
 phichain-compiler = { path = "../phichain-compiler" }
+
+# Egui Dependencies: Update according to egui version
+
+egui = "0.30.0"
+egui_flex = { git = "https://github.com/Ivan-1F/hello_egui.git", branch = "no-repaint-0.30" }
+egui_dock = "0.15"
+egui_extras = { version = "0.30.0", features = ["all_loaders"] }
+egui-phosphor = "0.8.0"
+egui-toast = "0.16.0"
+
+# Serde Dependencies
+
+serde = { version = "1.0.197", features = ["derive"] }
+serde_json = "1.0.114"
+serde_yaml = "0.9.34"
+
+# Misc Dependencies
+
+num = { version = "0.4.3", features = ["serde"] }
+rfd = "0.14.1"
+futures-lite = "2.3.0"
+anyhow = "1.0.83"
+rust-i18n = "3.0.1"
+clap = { version = "4.5.4", features = ["derive"] }
+strum = { version = "0.26.2", features = ["derive"] }
+chrono = { version = "0.4.38", features = ["serde"] }
+undo = "0.51.0"
+enum_dispatch = "0.3.13"
+zip = "2.1.0"
+
 bon = "3.0.1"
 indexmap = "2.7.0"
-egui-phosphor = "0.8.0"
 open = "5.3.2"
 
 tracing = "0.1.41"
@@ -89,7 +101,6 @@ tracing-appender = "0.2.3"
 smallvec = "1.13.2"
 uuid = { version = "1.13.1", features = ["v4"] }
 
-bevy_mod_reqwest = "0.18.0"
 os_info = "3.10.0"
 sysinfo = "0.33.1"
 machine-uid = "0.5.3"
