@@ -55,14 +55,10 @@ egui = "0.30.0"
 egui_flex = { git = "https://github.com/Ivan-1F/hello_egui.git", branch = "no-repaint-0.30" }
 egui_dock = "0.15"
 egui_extras = { version = "0.30.0", features = ["all_loaders"] }
-image = { version = "0.25.2", features = ["jpeg", "png"] }
 
 serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.114"
-serde_repr = "0.1"
 
-bevy-inspector-egui = "0.29.1"
-url = "2.5.0"
 num = { version = "0.4.3", features = ["serde"] }
 serde_yaml = "0.9.34"
 rfd = "0.14.1"
@@ -71,9 +67,6 @@ anyhow = "1.0.83"
 egui-toast = "0.16.0"
 rust-i18n = "3.0.1"
 clap = { version = "4.5.4", features = ["derive"] }
-simple-easing = "1.0.1"
-log = "0.4.21"
-num_enum = "0.7.2"
 strum = { version = "0.26.2", features = ["derive"] }
 chrono = { version = "0.4.38", features = ["serde"] }
 bevy-persistent = { version = "0.7.0", features = ["yaml"] }
@@ -85,7 +78,6 @@ phichain-chart = { path = "../phichain-chart", features = ["bevy"] }
 phichain-assets = { path = "../phichain-assets", features = ["egui"] }
 phichain-game = { path = "../phichain-game" }
 phichain-compiler = { path = "../phichain-compiler" }
-rand = "0.9.0"
 bon = "3.0.1"
 indexmap = "2.7.0"
 egui-phosphor = "0.8.0"

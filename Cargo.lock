@@ -633,52 +633,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bevy-inspector-egui"
-version = "0.29.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3d3ea87310d78bacc94471bcf5a8b63ead43e7263d404571832c2297458b856"
-dependencies = [
- "bevy-inspector-egui-derive",
- "bevy_app",
- "bevy_asset",
- "bevy_color",
- "bevy_core",
- "bevy_core_pipeline",
- "bevy_ecs",
- "bevy_egui",
- "bevy_hierarchy",
- "bevy_image",
- "bevy_log",
- "bevy_math",
- "bevy_pbr",
- "bevy_reflect",
- "bevy_render",
- "bevy_state",
- "bevy_time",
- "bevy_utils",
- "bevy_window",
- "bytemuck",
- "disqualified",
- "egui",
- "fuzzy-matcher",
- "image",
- "smallvec",
- "uuid",
- "winit",
-]
-
-[[package]]
-name = "bevy-inspector-egui-derive"
-version = "0.29.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7259e525c7844b23f10fd2b2efaa3eea57996f101cc30e833070d139e2b4e4d"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.87",
-]
-
-[[package]]
 name = "bevy-persistent"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3194,15 +3148,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fuzzy-matcher"
-version = "0.3.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "54614a3312934d066701a80f20f15fa3b56d67ac7722b39eea5b4c9dd1d66c94"
-dependencies = [
- "thread_local",
-]
-
-[[package]]
 name = "generic-array"
 version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4962,7 +4907,6 @@ version = "1.0.0-beta.3"
 dependencies = [
  "anyhow",
  "bevy",
- "bevy-inspector-egui",
  "bevy-persistent",
  "bevy_egui",
  "bevy_kira_audio",
@@ -4980,34 +4924,27 @@ dependencies = [
  "enum_dispatch",
  "flate2",
  "futures-lite",
- "image",
  "indexmap 2.7.0",
- "log",
  "machine-uid",
  "num",
- "num_enum",
  "open",
  "os_info",
  "phichain-assets",
  "phichain-chart",
  "phichain-compiler",
  "phichain-game",
- "rand 0.9.0",
  "rfd",
  "rust-i18n",
  "serde",
  "serde_json",
- "serde_repr",
  "serde_yaml 0.9.34+deprecated",
  "sha2",
- "simple-easing",
  "smallvec",
  "strum",
  "sysinfo 0.33.1",
  "tracing",
  "tracing-appender",
  "undo",
- "url",
  "uuid",
  "wgpu-types",
  "zip",
