@@ -178,6 +178,7 @@ fn handle_seek_to_system(
     handle: Res<InstanceHandle>,
     mut audio_instances: ResMut<Assets<AudioInstance>>,
     mut events: EventReader<SeekToEvent>,
+    mut seek_target_time: ResMut<SeekTargetTime>,
 
     mut timing: ResMut<Timing>,
 ) {
@@ -185,6 +186,9 @@ fn handle_seek_to_system(
         for event in events.read() {
             instance.seek_to(event.0.max(0.0).into());
             timing.seek_to(event.0.max(0.0));
+            if seek_target_time.target.is_some() {
+                seek_target_time.target = None;
+            }
         }
     }
 }
