@@ -1,3 +1,4 @@
+use std::f32;
 use std::time::Duration;
 use std::{io::Cursor, path::PathBuf};
 
@@ -19,6 +20,17 @@ pub struct InstanceHandle(pub Handle<AudioInstance>);
 #[derive(Resource)]
 pub struct AudioAssetId(pub AssetId<AudioSource>);
 
+#[derive(Resource)]
+pub struct SeekTargetTime {
+    target: Option<f32>,
+}
+
+impl Default for SeekTargetTime {
+    fn default() -> Self {
+        Self { target: None }
+    }
+}
+
 /// The duration of the audio
 #[derive(Resource, Debug)]
 pub struct AudioDuration(pub Duration);
@@ -27,18 +39,21 @@ pub struct AudioPlugin;
 
 impl Plugin for AudioPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(bevy_kira_audio::AudioPlugin).add_systems(
-            Update,
-            (
-                handle_pause_system,
-                handle_resume_system,
-                handle_seek_system,
-                handle_seek_to_system,
-                update_volume_system,
-                update_playback_rate_system,
-            )
-                .run_if(project_loaded().and(resource_exists::<InstanceHandle>)),
-        );
+        app.insert_resource(SeekTargetTime::default())
+            .add_plugins(bevy_kira_audio::AudioPlugin)
+            .add_systems(
+                Update,
+                (
+                    handle_pause_system,
+                    handle_resume_system,
+                    handle_seek_system,
+                    handle_seek_to_system,
+                    update_seek_system,
+                    update_volume_system,
+                    update_playback_rate_system,
+                )
+                    .run_if(project_loaded().and(resource_exists::<InstanceHandle>)),
+            );
     }
 }
 
@@ -103,6 +118,29 @@ fn handle_resume_system(
     }
 }
 
+fn update_seek_system(
+    handle: Res<InstanceHandle>,
+    mut audio_instances: ResMut<Assets<AudioInstance>>,
+    time: Res<Time>,
+    paused: Res<Paused>,
+    mut seek_target_time: ResMut<SeekTargetTime>,
+
+    mut timing: ResMut<Timing>,
+) {
+    let delta = time.delta_secs();
+    if let Some(target) = seek_target_time.target {
+        let now = timing.now();
+        if !paused.0 {
+            if let Some(instance) = audio_instances.get_mut(&handle.0) {
+                instance.seek_to(now as f64);
+            }
+            seek_target_time.target = None;
+            return;
+        }
+        timing.seek_to(now + (target - now) * delta * 10.);
+    }
+}
+
 // TODO: move this to separate plugin
 /// When receiving [SeekEvent], seek the audio instance
 fn handle_seek_system(
@@ -110,8 +148,7 @@ fn handle_seek_system(
     mut audio_instances: ResMut<Assets<AudioInstance>>,
     mut events: EventReader<SeekEvent>,
     keyboard: Res<ButtonInput<KeyCode>>,
-
-    mut timing: ResMut<Timing>,
+    mut seek_target_time: ResMut<SeekTargetTime>,
 ) {
     if let Some(instance) = audio_instances.get_mut(&handle.0) {
         for event in events.read() {
@@ -124,9 +161,12 @@ fn handle_seek_system(
                 factor /= 2.0;
             }
             if let Some(position) = instance.state().position() {
-                let target = (position as f32 + event.0 * factor).max(0.0);
+                let target = match seek_target_time.target {
+                    Some(target) => (target as f32 + event.0 * factor).max(0.0),
+                    None => (position as f32 + event.0 * factor).max(0.0),
+                };
+                seek_target_time.target = Some(target);
                 instance.seek_to(target as f64);
-                timing.seek_to(target);
             }
         }
     }
