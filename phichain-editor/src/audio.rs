@@ -141,6 +141,9 @@ fn handle_seek_system(
     mut events: EventReader<SeekEvent>,
     keyboard: Res<ButtonInput<KeyCode>>,
     mut seek_target_time: ResMut<SeekTargetTime>,
+    settings: Res<Persistent<EditorSettings>>,
+
+    mut timing: ResMut<Timing>,
 ) {
     if let Some(instance) = audio_instances.get_mut(&handle.0) {
         for event in events.read() {
@@ -157,7 +160,12 @@ fn handle_seek_system(
                     Some(target) => (target + event.0 * factor).max(0.0),
                     None => (position as f32 + event.0 * factor).max(0.0),
                 };
-                seek_target_time.0 = Some(target);
+                if settings.general.timeline_smooth_scroll {
+                    seek_target_time.0 = Some(target);
+                } else {
+                    seek_target_time.0 = None;
+                    timing.seek_to(target);
+                }
                 instance.seek_to(target as f64);
             }
         }
