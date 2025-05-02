@@ -20,16 +20,8 @@ pub struct InstanceHandle(pub Handle<AudioInstance>);
 #[derive(Resource)]
 pub struct AudioAssetId(pub AssetId<AudioSource>);
 
-#[derive(Resource)]
-pub struct SeekTargetTime {
-    target: Option<f32>,
-}
-
-impl Default for SeekTargetTime {
-    fn default() -> Self {
-        Self { target: None }
-    }
-}
+#[derive(Resource, Default)]
+pub struct SeekTargetTime(Option<f32>);
 
 /// The duration of the audio
 #[derive(Resource, Debug)]
@@ -128,13 +120,13 @@ fn update_seek_system(
     mut timing: ResMut<Timing>,
 ) {
     let delta = time.delta_secs();
-    if let Some(target) = seek_target_time.target {
+    if let Some(target) = seek_target_time.0 {
         let now = timing.now();
         if !paused.0 {
             if let Some(instance) = audio_instances.get_mut(&handle.0) {
                 instance.seek_to(now as f64);
             }
-            seek_target_time.target = None;
+            seek_target_time.0 = None;
             return;
         }
         timing.seek_to(now + (target - now) * delta * 10.);
@@ -161,11 +153,11 @@ fn handle_seek_system(
                 factor /= 2.0;
             }
             if let Some(position) = instance.state().position() {
-                let target = match seek_target_time.target {
-                    Some(target) => (target as f32 + event.0 * factor).max(0.0),
+                let target = match seek_target_time.0 {
+                    Some(target) => (target + event.0 * factor).max(0.0),
                     None => (position as f32 + event.0 * factor).max(0.0),
                 };
-                seek_target_time.target = Some(target);
+                seek_target_time.0 = Some(target);
                 instance.seek_to(target as f64);
             }
         }
@@ -186,8 +178,8 @@ fn handle_seek_to_system(
         for event in events.read() {
             instance.seek_to(event.0.max(0.0).into());
             timing.seek_to(event.0.max(0.0));
-            if seek_target_time.target.is_some() {
-                seek_target_time.target = None;
+            if seek_target_time.0.is_some() {
+                seek_target_time.0 = None;
             }
         }
     }
