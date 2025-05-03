@@ -1,18 +1,20 @@
 use crate::timeline::event::EventTimeline;
 use crate::timeline::note::NoteTimeline;
 use crate::timeline::settings::TimelineSettings;
+use crate::timeline::Timeline;
 use crate::timeline::TimelineItem;
+use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use egui::{RichText, Ui};
 use phichain_chart::line::Line;
 
 use super::timeline::NoteSideFilter;
 
-pub fn timeline_setting_tab(
-    In(mut ui): In<Ui>,
-    mut timeline_settings: ResMut<TimelineSettings>,
-    line_query: Query<(&Line, Entity)>,
-) {
+pub fn timeline_setting_tab(In(mut ui): In<Ui>, world: &mut World) {
+    let mut state: SystemState<(Query<(&Line, Entity)>, ResMut<TimelineSettings>)> =
+        SystemState::new(world);
+    let (line_query, mut timeline_settings) = state.get_mut(world);
+
     egui::Grid::new("timeline_setting_grid")
         .num_columns(2)
         .spacing([20.0, 2.0])
@@ -121,7 +123,7 @@ pub fn timeline_setting_tab(
 
         ui.end_row();
 
-        let container = &mut timeline_settings.container;
+        let container = &world.resource::<TimelineSettings>().container;
         let mut delete = None;
         let mut move_up = None;
         let mut move_down = None;
@@ -142,35 +144,18 @@ pub fn timeline_setting_tab(
                             move_down.replace(index);
                         }
                     });
-                    let label = match &timeline.timeline {
-                        TimelineItem::Note(timeline) => match timeline.0 {
-                            None => t!("tab.timeline_setting.timelines.note_timeline.binding"),
-                            Some(entity) => t!(
-                                "tab.timeline_setting.timelines.note_timeline.for_line",
-                                line = line_query.get(entity).unwrap().0.name,
-                            ),
-                        },
-                        TimelineItem::Event(timeline) => match timeline.0 {
-                            None => t!("tab.timeline_setting.timelines.event_timeline.binding"),
-                            Some(entity) => t!(
-                                "tab.timeline_setting.timelines.event_timeline.for_line",
-                                line = line_query.get(entity).unwrap().0.name,
-                            ),
-                        },
-                    };
-                    ui.label(label);
+                    ui.label(timeline.timeline.name(world));
                 });
             });
         }
 
+        let container = &mut world.resource_mut::<TimelineSettings>().container;
         if let Some(delete) = delete {
             container.remove(delete);
         }
-
         if let Some(move_up) = move_up {
             container.swap(move_up - 1, move_up);
         }
-
         if let Some(move_down) = move_down {
             container.swap(move_down, move_down + 1);
         }

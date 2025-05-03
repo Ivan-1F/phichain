@@ -14,6 +14,7 @@ use egui::{Color32, Pos2, Rangef, Rect, Sense, Ui};
 use phichain_assets::ImageAssets;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::CANVAS_WIDTH;
+use phichain_chart::line::Line;
 use phichain_chart::note::{Note, NoteKind};
 use phichain_game::curve_note_track::{CurveNote, CurveNoteTrack};
 use phichain_game::highlight::Highlighted;
@@ -371,5 +372,16 @@ impl Timeline for NoteTimeline {
             })
             .map(|x| x.2)
             .collect()
+    }
+
+    fn name(&self, world: &World) -> String {
+        match self.0 {
+            None => t!("tab.timeline_setting.timelines.note_timeline.binding").to_string(),
+            Some(entity) => t!(
+                "tab.timeline_setting.timelines.note_timeline.for_line",
+                line = world.get::<Line>(entity).unwrap().name,
+            )
+            .to_string(),
+        }
     }
 }
