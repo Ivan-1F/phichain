@@ -65,11 +65,11 @@ pub struct CurveNote(pub Entity);
 /// If the cache is outdated, invalidate the cache, despawn all associated [`CurveNote`] instances and generate new ones
 pub fn update_curve_note_track_system(
     mut commands: Commands,
-    note_query: Query<(&Note, &Parent)>,
+    note_query: Query<(&Note, &ChildOf)>,
     query: Query<(&CurveNote, Entity)>,
     mut track_query: Query<(
         &CurveNoteTrack,
-        &Parent,
+        &ChildOf,
         Option<&mut CurveNoteCache>,
         Entity,
     )>,
@@ -130,7 +130,7 @@ pub fn despawn_dangle_curve_note_system(
 ) {
     for (entity, note) in &query {
         if track_query.get(note.0).is_err() {
-            commands.entity(entity).despawn_recursive();
+            commands.entity(entity).despawn();
         }
     }
 }

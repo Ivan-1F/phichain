@@ -1,9 +1,8 @@
 use crate::events::{EditorEvent, EditorEventAppExt};
 use crate::utils::entity::replace_with_empty;
 use bevy::app::{App, Plugin};
-use bevy::hierarchy::DespawnRecursiveExt;
 use bevy::log::debug;
-use bevy::prelude::{BuildChildren, Entity, Event, World};
+use bevy::prelude::{ChildOf, Entity, Event, World};
 use bon::Builder;
 use phichain_game::curve_note_track::CurveNoteTrack;
 
@@ -43,7 +42,7 @@ impl EditorEvent for SpawnCurveNoteTrackEvent {
         world
             .entity_mut(id)
             .insert(self.track)
-            .set_parent(self.line_entity)
+            .insert(ChildOf(self.line_entity))
             .id()
     }
 }
@@ -71,7 +70,7 @@ impl EditorEvent for DespawnCurveNoteTrackEvent {
         if self.keep_entity {
             replace_with_empty(world, self.target);
         } else {
-            world.entity_mut(self.target).despawn_recursive();
+            world.entity_mut(self.target).despawn();
         }
     }
 }

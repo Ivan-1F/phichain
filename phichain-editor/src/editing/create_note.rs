@@ -74,10 +74,10 @@ fn create_note_system(
     mut event: EventWriter<DoCommandEvent>,
 
     mut pending_note_query: Query<(&mut Note, Entity), With<Pending>>,
-) {
-    let window = window_query.single();
+) -> Result {
+    let window = window_query.single()?;
     let Some(cursor_position) = window.cursor_position() else {
-        return;
+        return Ok(());
     };
 
     let rect = ctx.viewport.0.into_egui();
@@ -172,6 +172,8 @@ fn create_note_system(
             }
         }
     }
+    
+    Ok(())
 }
 
 fn remove_pending_note_on_esc_system(

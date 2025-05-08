@@ -1,7 +1,6 @@
 use crate::events::curve_note_track::{DespawnCurveNoteTrackEvent, SpawnCurveNoteTrackEvent};
 use crate::events::EditorEvent;
-use bevy::hierarchy::Parent;
-use bevy::prelude::{debug, Entity, World};
+use bevy::prelude::{debug, ChildOf, Entity, World};
 use phichain_game::curve_note_track::CurveNoteTrack;
 use undo::Edit;
 
@@ -78,7 +77,7 @@ impl Edit for RemoveCurveNoteTrack {
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
         let track = target.entity(self.entity).get::<CurveNoteTrack>().cloned();
-        let parent = target.entity(self.entity).get::<Parent>().map(|x| x.get());
+        let parent = target.entity(self.entity).get::<ChildOf>().map(|x| x.get());
         self.track = Some((track.unwrap(), parent.unwrap()));
         DespawnCurveNoteTrackEvent::builder()
             .target(self.entity)

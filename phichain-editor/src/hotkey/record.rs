@@ -3,7 +3,7 @@ use crate::hotkey::{Hotkey, HotkeyContext};
 use crate::identifier::{Identifier, IntoIdentifier};
 use bevy::app::{App, Plugin};
 use bevy::input::ButtonInput;
-use bevy::prelude::{Commands, Component, IntoSystemConfigs, KeyCode, Res, Update};
+use bevy::prelude::{Commands, Component, IntoScheduleConfigs, KeyCode, Res, Update};
 use phichain_game::GameSet;
 
 #[derive(Debug, Clone, Component)]

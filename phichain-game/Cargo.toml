@@ -10,7 +10,7 @@ too_many_arguments = "allow"
 [dependencies]
 phichain-chart = { path = "../phichain-chart", features = ["bevy"] }
 phichain-assets = { path = "../phichain-assets" }
-bevy = { version = "0.15.1", default-features = false, features = [
+bevy = { version = "0.16.0", default-features = false, features = [
     "animation",
     "bevy_asset",
     "bevy_gilrs",
@@ -32,8 +32,10 @@ bevy = { version = "0.15.1", default-features = false, features = [
     "default_font",
     "webgl2",
     "bevy_debug_stepping",
+    "std",
+    "async_executor",
 ] }
-bevy_prototype_lyon = "0.13.0"
+bevy_prototype_lyon = { git = "https://github.com/Ivan-1F/bevy_prototype_lyon" }
 num = "0.4.3"
 rand = "0.8.5"
 image = { version = "0.25.2", features = ["jpeg", "png"] }

@@ -144,13 +144,13 @@ fn main() {
         .add_plugins(HitSoundPlugin)
         .add_plugins(GameTabPlugin)
         .add_plugins(TimelinePlugin)
-        .add_plugins(EguiPlugin)
+        .add_plugins(EguiPlugin { enable_multipass_for_primary_context: true })
         .add_plugins(ProjectPlugin)
         .add_plugins(ExportPlugin)
         .add_plugins(selection::SelectionPlugin)
         .add_plugins(TabPlugin)
         .add_plugins(EditingPlugin)
-        .add_plugins(FrameTimeDiagnosticsPlugin)
+        .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(AssetsPlugin)
         .add_plugins(NotificationPlugin)
         .add_plugins(FilePickingPlugin)
@@ -180,7 +180,7 @@ fn apply_args_config_system(args: Res<Args>, mut events: EventWriter<LoadProject
 }
 
 fn setup_egui_image_loader_system(mut contexts: bevy_egui::EguiContexts) {
-    egui_extras::install_image_loaders(contexts.ctx_mut());
+    egui_extras::install_image_loaders(contexts.ctx());
 }
 
 fn setup_egui_font_system(mut contexts: bevy_egui::EguiContexts) {

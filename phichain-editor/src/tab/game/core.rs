@@ -66,7 +66,7 @@ fn update_note_tint_system(
 }
 
 fn sync_hold_components_tint_system(
-    mut component_query: Query<(&mut Sprite, &Parent), With<HoldComponent>>,
+    mut component_query: Query<(&mut Sprite, &ChildOf), With<HoldComponent>>,
     parent_query: Query<&Sprite, Without<HoldComponent>>,
 ) {
     for (mut sprite, parent) in &mut component_query {
@@ -120,19 +120,17 @@ fn create_anchor_marker_system(mut commands: Commands, query: Query<Entity, Adde
         commands.entity(line).with_children(|parent| {
             parent.spawn((
                 AnchorMarker,
-                ShapeBundle {
-                    path: GeometryBuilder::build_as(&shape),
-                    ..default()
-                },
-                Fill::color(Color::WHITE),
-                Stroke::color(bevy::color::palettes::css::LIMEGREEN),
+                ShapeBuilder::with(&shape)
+                    .fill(Color::WHITE)
+                    .stroke(Stroke::color(bevy::color::palettes::css::LIMEGREEN))
+                    .build(),
             ));
         });
     }
 }
 
 fn update_anchor_marker_system(
-    mut query: Query<(&mut Visibility, &Parent), With<AnchorMarker>>,
+    mut query: Query<(&mut Visibility, &ChildOf), With<AnchorMarker>>,
     line_query: Query<&Sprite>,
     editor_settings: Res<Persistent<EditorSettings>>,
 ) {

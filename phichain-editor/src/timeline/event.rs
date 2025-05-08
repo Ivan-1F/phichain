@@ -7,8 +7,7 @@ use crate::selection::{SelectEvent, Selected, SelectedLine};
 use crate::timeline::{Timeline, TimelineContext};
 use crate::timing::SeekToEvent;
 use bevy::ecs::system::SystemState;
-use bevy::hierarchy::Parent;
-use bevy::prelude::{Entity, EventWriter, Query, Res, World};
+use bevy::prelude::{ChildOf, Entity, EventWriter, Query, Res, World};
 use egui::{Align2, Color32, FontId, Rangef, Rect, Sense, Stroke, Ui};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{LineEvent, LineEventKind};
@@ -107,7 +106,7 @@ impl Timeline for EventTimeline {
             TimelineContext,
             Query<(
                 &mut LineEvent,
-                &Parent,
+                &ChildOf,
                 Entity,
                 Option<&Selected>,
                 Option<&Pending>,
@@ -408,7 +407,7 @@ impl Timeline for EventTimeline {
         let x_range = selection.x_range();
         let time_range = selection.y_range();
 
-        let mut state: SystemState<(Query<(&LineEvent, &Parent, Entity)>, Res<BpmList>)> =
+        let mut state: SystemState<(Query<(&LineEvent, &ChildOf, Entity)>, Res<BpmList>)> =
             SystemState::new(world);
         let (event_query, bpm_list) = state.get_mut(world);
 

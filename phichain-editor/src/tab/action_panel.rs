@@ -5,10 +5,7 @@ use crate::identifier::Identifier;
 use crate::tab::TabRegistry;
 use crate::UiState;
 use bevy::app::App;
-use bevy::prelude::{
-    Commands, Component, Entity, EventWriter, IntoSystemConfigs, KeyCode, Plugin, Query, Res,
-    ResMut, Update, Window, With, World,
-};
+use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use bevy_egui::EguiContext;
 use egui::{Sense, TextEdit, UiBuilder, Widget};
@@ -68,18 +65,18 @@ fn action_panel_ui_system(
     mut ui_state: ResMut<UiState>,
 
     mut run: EventWriter<RunActionEvent>,
-) {
+) -> Result {
     let Ok((entity, mut panel)) = query.get_single_mut() else {
-        return;
+        return Ok(());
     };
-
     let Ok(egui_context) = context.get_single_mut() else {
-        return;
+        return Ok(());
     };
-    let mut egui_context = egui_context.clone();
-    let ctx = egui_context.get_mut();
 
-    let window = window.single();
+    let mut egui_context = egui_context.clone();
+    let ctx = egui_context.get();
+
+    let window = window.single()?;
 
     let mut entries = vec![];
 
@@ -246,4 +243,6 @@ fn action_panel_ui_system(
     if response.should_close() {
         commands.entity(entity).despawn();
     }
+
+    Ok(())
 }

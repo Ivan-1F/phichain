@@ -168,7 +168,7 @@ impl Easing {
             Self::EaseOutBounce => bounce_out(x),
             Self::EaseInOutBounce => bounce_in_out(x),
 
-            Self::Custom(x1, y1, x2, y2) => CubicSegment::new_bezier([x1, y1], [x2, y2]).ease(x),
+            Self::Custom(x1, y1, x2, y2) => CubicSegment::new_bezier_easing([x1, y1], [x2, y2]).ease(x),
 
             Self::Steps(num_steps) => (x * num_steps as f32).round() / num_steps.max(1) as f32,
             Self::Elastic(omega) => {

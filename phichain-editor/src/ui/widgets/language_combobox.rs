@@ -1,4 +1,4 @@
-use bevy::utils::HashMap;
+use bevy::platform::collections::HashMap;
 use egui::Ui;
 use rust_i18n::set_locale;
 

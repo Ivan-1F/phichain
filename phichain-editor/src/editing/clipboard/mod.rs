@@ -109,7 +109,8 @@ fn paste_system(
 
     mut event_writer: EventWriter<DoCommandEvent>,
 ) {
-    let window = window_query.single();
+    // TODO bevy-0.16: remove unwrap and use ? operator after refactored registered system
+    let window = window_query.single().unwrap();
     let Some(cursor_position) = window.cursor_position() else {
         return;
     };

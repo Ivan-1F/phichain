@@ -19,7 +19,8 @@ use crate::tab::line_list::line_list_tab;
 use crate::tab::settings::settings_tab;
 use crate::tab::timeline::timeline_tab;
 use crate::tab::timeline_setting::timeline_setting_tab;
-use bevy::{prelude::*, utils::HashMap};
+use bevy::platform::collections::HashMap;
+use bevy::prelude::*;
 use egui::{Ui, UiBuilder};
 
 #[allow(dead_code)]

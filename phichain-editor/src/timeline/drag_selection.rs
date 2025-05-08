@@ -3,7 +3,7 @@ use crate::timeline::{Timeline, TimelineContext};
 use crate::utils::convert::BevyEguiConvert;
 use bevy::app::App;
 use bevy::ecs::system::SystemState;
-use bevy::prelude::{EventWriter, Plugin, Query, ResMut, Resource, Window, World};
+use bevy::prelude::*;
 use egui::{Color32, Sense, Stroke, Ui};
 
 /// Represents the drag-selection on the timeline
@@ -18,7 +18,7 @@ impl Plugin for TimelineDragSelectionPlugin {
     }
 }
 
-pub fn timeline_drag_selection(ui: &mut Ui, world: &mut World) {
+pub fn timeline_drag_selection(ui: &mut Ui, world: &mut World) -> Result {
     let mut state: SystemState<(
         TimelineContext,
         ResMut<TimelineDragSelection>,
@@ -26,9 +26,9 @@ pub fn timeline_drag_selection(ui: &mut Ui, world: &mut World) {
     )> = SystemState::new(world);
     let (ctx, mut selection, window_query) = state.get_mut(world);
     let viewport = ctx.viewport.0;
-    let window = window_query.single();
+    let window = window_query.single()?;
     let Some(cursor_position) = window.cursor_position() else {
-        return;
+        return Ok(());
     };
 
     let response = ui.allocate_rect(viewport.into_egui(), Sense::drag());
@@ -87,4 +87,6 @@ pub fn timeline_drag_selection(ui: &mut Ui, world: &mut World) {
             }
         }
     }
+
+    Ok(())
 }

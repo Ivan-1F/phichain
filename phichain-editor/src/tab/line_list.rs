@@ -35,7 +35,7 @@ impl<'a> LineList<'a> {
 
         let mut query = self
             .world
-            .query_filtered::<(Entity, &LineTimestamp), (Without<Parent>, With<Line>)>();
+            .query_filtered::<(Entity, &LineTimestamp), (Without<ChildOf>, With<Line>)>();
         let mut entities = query.iter(self.world).collect::<Vec<_>>();
         entities.sort_by_key(|(_, timestamp)| **timestamp);
         let entities = entities
@@ -98,13 +98,13 @@ impl<'a> LineList<'a> {
             Query<(
                 &Line,
                 &Children,
-                Option<&Parent>,
+                Option<&ChildOf>,
                 &LinePosition,
                 &LineRotation,
                 &LineOpacity,
                 &LineSpeed,
             )>,
-            Query<&Parent>,
+            Query<&ChildOf>,
             ResMut<SelectedLine>,
             EventWriter<DoCommandEvent>,
         )> = SystemState::new(self.world);
@@ -194,12 +194,12 @@ impl<'a> LineList<'a> {
 
                 let notes = children
                     .iter()
-                    .filter(|child| note_query.get(**child).is_ok())
+                    .filter(|child| note_query.get(*child).is_ok())
                     .collect::<Vec<_>>()
                     .len();
                 let events = children
                     .iter()
-                    .filter(|child| event_query.get(**child).is_ok())
+                    .filter(|child| event_query.get(*child).is_ok())
                     .collect::<Vec<_>>()
                     .len();
 
@@ -239,8 +239,7 @@ impl<'a> LineList<'a> {
 
             let children_lines = children
                 .iter()
-                .filter(|x| query.get(**x).is_ok())
-                .copied()
+                .filter(|x| query.get(*x).is_ok())
                 .collect::<Vec<_>>();
             for child in children_lines {
                 self.entity_ui(ui, child, level + 1);
@@ -251,7 +250,7 @@ impl<'a> LineList<'a> {
             let mut new_line_entity = self.world.spawn_empty();
 
             if let Some(current_parent) = current_parent {
-                new_line_entity.set_parent(current_parent);
+                new_line_entity.insert(ChildOf(current_parent));
             }
 
             let new_line_entity = new_line_entity.id();

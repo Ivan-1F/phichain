@@ -1,6 +1,6 @@
+use bevy::platform::collections::HashMap;
 use crate::{GameConfig, GameSet};
 use bevy::prelude::*;
-use bevy::utils::HashMap;
 use phichain_chart::beat::Beat;
 use phichain_chart::note::Note;
 
@@ -47,11 +47,11 @@ fn mark_highlight_system(
             && highlighted_beat.0[&note.beat.reduced()] > 1
             && settings.multi_highlight
         {
-            if let Some(mut entity) = commands.get_entity(entity) {
+            if let Ok(mut entity) = commands.get_entity(entity) {
                 entity.try_insert(Highlighted);
             }
         } else {
-            if let Some(mut entity) = commands.get_entity(entity) {
+            if let Ok(mut entity) = commands.get_entity(entity) {
                 entity.remove::<Highlighted>();
             }
         }

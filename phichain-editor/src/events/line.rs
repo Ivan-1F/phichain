@@ -34,8 +34,8 @@ impl EditorEvent for DespawnLineEvent {
 
     fn run(self, world: &mut World) -> Self::Output {
         let mut state = SystemState::<(
-            Query<&Parent>,
-            Query<Entity, (With<Line>, Without<Parent>)>,
+            Query<&ChildOf>,
+            Query<Entity, (With<Line>, Without<ChildOf>)>,
             ResMut<SelectedLine>,
         )>::new(world);
         let (parent_query, root_line_query, mut selected_line) = state.get_mut(world);
@@ -77,7 +77,7 @@ impl EditorEvent for DespawnLineEvent {
         if self.keep_entity {
             replace_with_empty(world, self.target);
         } else {
-            world.entity_mut(self.target).despawn_recursive();
+            world.entity_mut(self.target).despawn();
         }
     }
 }
@@ -115,7 +115,7 @@ impl EditorEvent for SpawnLineEvent {
         });
 
         if let Some(parent) = self.parent {
-            world.entity_mut(id).set_parent(parent);
+            world.entity_mut(id).insert(ChildOf(parent));
         }
 
         for child in self.line.children {

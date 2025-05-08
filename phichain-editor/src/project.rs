@@ -185,7 +185,7 @@ fn unload_project_system(
         let mut illustration_query = world.query_filtered::<Entity, With<Illustration>>();
         let entities = illustration_query.iter(world).collect::<Vec<_>>();
         for entity in entities {
-            world.entity_mut(entity).despawn_recursive();
+            world.entity_mut(entity).despawn();
         }
         if let Some(illustration_asset_id) =
             world.get_resource::<IllustrationAssetId>().map(|x| x.0)
@@ -203,7 +203,7 @@ fn unload_project_system(
 
         // unload lines, notes and events
         use phichain_chart::line::Line;
-        let mut line_query = world.query_filtered::<Entity, (With<Line>, Without<Parent>)>();
+        let mut line_query = world.query_filtered::<Entity, (With<Line>, Without<ChildOf>)>();
         let entities = line_query.iter(world).collect::<Vec<_>>();
         for entity in entities {
             // notes and events will be despawned as children
@@ -214,10 +214,14 @@ fn unload_project_system(
         let to_remove = world
             .query::<Entity>()
             .iter(world)
-            .filter(|entity| world.inspect_entity(*entity).collect::<Vec<_>>().is_empty())
+            .filter(|entity| {
+                world
+                    .inspect_entity(*entity)
+                    .is_ok_and(|x| x.collect::<Vec<_>>().is_empty())
+            })
             .collect::<Vec<_>>();
         for entity in to_remove {
-            world.entity_mut(entity).despawn_recursive();
+            world.entity_mut(entity).despawn();
         }
 
         // clear editor history

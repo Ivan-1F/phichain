@@ -48,7 +48,7 @@ impl Timeline for NoteTimeline {
             TimelineContext,
             Query<(
                 &mut Note,
-                &Parent,
+                &ChildOf,
                 Entity,
                 Option<&Highlighted>,
                 Option<&Selected>,
@@ -56,7 +56,7 @@ impl Timeline for NoteTimeline {
                 Option<&Pending>,
             )>,
             Query<&Selected>,
-            Query<(&mut CurveNoteTrack, &Parent, Entity)>,
+            Query<(&mut CurveNoteTrack, &ChildOf, Entity)>,
             Res<BpmList>,
             Res<ImageAssets>,
             Res<Assets<Image>>,
@@ -347,7 +347,7 @@ impl Timeline for NoteTimeline {
         }
 
         if let Some(despawn_cnt) = despawn_cnt {
-            world.entity_mut(despawn_cnt).despawn_recursive();
+            world.entity_mut(despawn_cnt).despawn();
         }
     }
 
@@ -357,7 +357,7 @@ impl Timeline for NoteTimeline {
         let x_range = selection.x_range();
         let time_range = selection.y_range();
 
-        let mut state: SystemState<(Query<(&Note, &Parent, Entity)>, Res<BpmList>)> =
+        let mut state: SystemState<(Query<(&Note, &ChildOf, Entity)>, Res<BpmList>)> =
             SystemState::new(world);
         let (note_query, bpm_list) = state.get_mut(world);
 

@@ -1,11 +1,11 @@
-use bevy::prelude::{Children, DespawnRecursiveExt, Entity, World};
+use bevy::prelude::{Children, Entity, World};
 
 /// Replace the given entity with an empty one. Removes all its children and components
 pub fn replace_with_empty(world: &mut World, entity: Entity) {
     // despawn all children
     if let Some(children) = world.entity_mut(entity).take::<Children>() {
         for child in children.iter() {
-            world.entity_mut(*child).despawn_recursive();
+            world.entity_mut(*child).despawn();
         }
     }
 
