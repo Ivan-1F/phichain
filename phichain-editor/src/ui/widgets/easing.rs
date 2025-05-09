@@ -130,7 +130,8 @@ impl Widget for EasingGraph<'_> {
                 Stroke::new(2.0, Color32::GRAY),
             );
 
-            response.drag_stopped |= drag_stopped;
+            // TODO bevy-0.16: restore
+            // response.drag_stopped |= drag_stopped;
         }
 
         response
@@ -329,18 +330,21 @@ impl Widget for EasingValue<'_> {
 
             if let Easing::Steps(steps) = self.value {
                 let dv_response = ui.add(egui::DragValue::new(steps).speed(1).range(1..=64));
-                response.drag_stopped |= dv_response.drag_stopped() || dv_response.changed();
+                // TODO bevy-0.16: restore
+                // response.drag_stopped |= dv_response.drag_stopped() || dv_response.changed();
             }
 
             if let Easing::Elastic(omega) = self.value {
                 let dv_response =
                     ui.add(egui::DragValue::new(omega).speed(0.1).range(10.0..=128.0));
-                response.drag_stopped |= dv_response.drag_stopped() || dv_response.changed();
+                // TODO bevy-0.16: restore
+                // response.drag_stopped |= dv_response.drag_stopped() || dv_response.changed();
             }
 
             // temporary workaround for change handling: .change() is reserved by egui,
             // we use drag_stopped for change handling as the same as DragValue
-            response.drag_stopped |= combobox_changed;
+            // TODO bevy-0.16: restore
+            // response.drag_stopped |= combobox_changed;
 
             response
         })

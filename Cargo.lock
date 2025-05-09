@@ -2699,41 +2699,41 @@ dependencies = [
 
 [[package]]
 name = "egui-phosphor"
-version = "0.8.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ebe75c81cd796bfb6718df8a5339c47695bfb33e400fae03a77200305519f2c2"
+checksum = "171d57331491e92f0a7c73fad1088716e3200984309f4f8684731b750cee1378"
 dependencies = [
- "egui 0.30.0",
+ "egui 0.31.1",
 ]
 
 [[package]]
 name = "egui-toast"
-version = "0.16.0"
+version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2531762f801556e7b8c445feee7b5a790aca1d5bf4d4e09a66c73b807058816"
+checksum = "366a31eb8c905835c85a36baff26d7a003a9fd6631a04b1f15f42d9cb20d11ad"
 dependencies = [
- "egui 0.30.0",
+ "egui 0.31.1",
 ]
 
 [[package]]
 name = "egui_dock"
-version = "0.15.0"
+version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a2e6e4f8bc019bcd7cee5240c6c76a9eed421b364307739561c92acc4cc0f22"
+checksum = "9ea7536fb0243aea55c1ca123a41a18253e16520d427a7213da584b9e2cb3973"
 dependencies = [
  "duplicate",
- "egui 0.30.0",
+ "egui 0.31.1",
  "paste",
 ]
 
 [[package]]
 name = "egui_extras"
-version = "0.30.0"
+version = "0.31.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d7a8198c088b1007108cb2d403bc99a5e370999b200db4f14559610d7330126"
+checksum = "624659a2e972a46f4d5f646557906c55f1cd5a0836eddbe610fdf1afba1b4226"
 dependencies = [
  "ahash",
- "egui 0.30.0",
+ "egui 0.31.1",
  "ehttp",
  "enum-map",
  "image",
@@ -2909,7 +2909,6 @@ dependencies = [
  "ahash",
  "ecolor 0.30.0",
  "emath 0.30.0",
- "epaint_default_fonts 0.30.0",
  "nohash-hasher",
  "parking_lot",
  "profiling",
@@ -2926,17 +2925,11 @@ dependencies = [
  "bytemuck",
  "ecolor 0.31.1",
  "emath 0.31.1",
- "epaint_default_fonts 0.31.1",
+ "epaint_default_fonts",
  "nohash-hasher",
  "parking_lot",
  "profiling",
 ]
-
-[[package]]
-name = "epaint_default_fonts"
-version = "0.30.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "66f6ddac3e6ac6fd4c3d48bb8b1943472f8da0f43a4303bcd8a18aa594401c80"
 
 [[package]]
 name = "epaint_default_fonts"
@@ -5210,7 +5203,7 @@ dependencies = [
  "bon",
  "chrono",
  "clap",
- "egui 0.30.0",
+ "egui 0.31.1",
  "egui-phosphor",
  "egui-toast",
  "egui_dock",

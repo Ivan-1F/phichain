@@ -176,47 +176,47 @@ fn ui_system(world: &mut World) {
             }
         }
 
-        Flex::horizontal().w_full().show(ui, |flex| {
-            flex.add_ui(item().shrink(), |ui| {
-                ui.horizontal(|ui| {
-                    if ui.button(t!("home.open_project.load")).clicked() {
-                        pick_folder(world, PickingKind::OpenProject, FileDialog::new());
-                    }
-                    if ui.button(t!("home.create_project.create")).clicked() {
-                        world.insert_resource(CreatingProject);
-                    }
-                });
-            });
-            flex.grow();
-            flex.add_ui(item(), |ui| {
-                ui.horizontal(|ui| {
-                    ui.label(
-                        RichText::new(format!(
-                            "{} {}",
-                            egui_phosphor::regular::GLOBE,
-                            t!("tab.settings.category.general.language.label")
-                        ))
-                        .color(Color32::LIGHT_BLUE),
-                    );
-                    let languages = world.resource::<Languages>().0.clone();
-                    let mut editor_settings = world.resource_mut::<Persistent<EditorSettings>>();
-                    if language_combobox(ui, languages, &mut editor_settings.general.language) {
-                        let _ = editor_settings.persist();
-                    }
-
-                    if ui.button(t!("home.settings")).clicked() {
-                        world.insert_resource(OpenSettings);
-                    }
-
-                    let mut editor_settings = world.resource_mut::<Persistent<EditorSettings>>();
-
-                    ui.checkbox(
-                        &mut editor_settings.general.send_telemetry,
-                        t!("home.telemetry"),
-                    );
-                })
-            });
-        });
+        // Flex::horizontal().w_full().show(ui, |flex| {
+        //     flex.add_ui(item().shrink(), |ui| {
+        //         ui.horizontal(|ui| {
+        //             if ui.button(t!("home.open_project.load")).clicked() {
+        //                 pick_folder(world, PickingKind::OpenProject, FileDialog::new());
+        //             }
+        //             if ui.button(t!("home.create_project.create")).clicked() {
+        //                 world.insert_resource(CreatingProject);
+        //             }
+        //         });
+        //     });
+        //     flex.grow();
+        //     flex.add_ui(item(), |ui| {
+        //         ui.horizontal(|ui| {
+        //             ui.label(
+        //                 RichText::new(format!(
+        //                     "{} {}",
+        //                     egui_phosphor::regular::GLOBE,
+        //                     t!("tab.settings.category.general.language.label")
+        //                 ))
+        //                 .color(Color32::LIGHT_BLUE),
+        //             );
+        //             let languages = world.resource::<Languages>().0.clone();
+        //             let mut editor_settings = world.resource_mut::<Persistent<EditorSettings>>();
+        //             if language_combobox(ui, languages, &mut editor_settings.general.language) {
+        //                 let _ = editor_settings.persist();
+        //             }
+        // 
+        //             if ui.button(t!("home.settings")).clicked() {
+        //                 world.insert_resource(OpenSettings);
+        //             }
+        // 
+        //             let mut editor_settings = world.resource_mut::<Persistent<EditorSettings>>();
+        // 
+        //             ui.checkbox(
+        //                 &mut editor_settings.general.send_telemetry,
+        //                 t!("home.telemetry"),
+        //             );
+        //         })
+        //     });
+        // });
 
         ui.separator();
 

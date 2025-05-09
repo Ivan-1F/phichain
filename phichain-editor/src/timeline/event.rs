@@ -8,7 +8,7 @@ use crate::timeline::{Timeline, TimelineContext};
 use crate::timing::SeekToEvent;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::{ChildOf, Entity, EventWriter, Query, Res, World};
-use egui::{Align2, Color32, FontId, Rangef, Rect, Sense, Stroke, Ui};
+use egui::{Align2, Color32, FontId, Rangef, Rect, Sense, Stroke, StrokeKind, Ui};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{LineEvent, LineEventKind};
 use std::iter;
@@ -214,8 +214,13 @@ impl Timeline for EventTimeline {
                 || first_events_outside_bottom.contains(&Some(entity))
                 || first_events_outside_top.contains(&Some(entity))
             {
-                ui.painter()
-                    .rect(rect, 0.0, color, Stroke::new(2.0, Color32::WHITE));
+                ui.painter().rect(
+                    rect,
+                    0.0,
+                    color,
+                    Stroke::new(2.0, Color32::WHITE),
+                    StrokeKind::Middle,
+                );
 
                 let mut make_drag_zone = |start: bool| {
                     let drag_zone = Rect::from_x_y_ranges(
@@ -351,6 +356,7 @@ impl Timeline for EventTimeline {
             0.0,
             Color32::BLACK,
             Stroke::NONE,
+            StrokeKind::Middle,
         );
 
         // event track type indicator

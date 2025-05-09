@@ -4,7 +4,7 @@ use crate::utils::convert::BevyEguiConvert;
 use bevy::app::App;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
-use egui::{Color32, Sense, Stroke, Ui};
+use egui::{Color32, Sense, Stroke, StrokeKind, Ui};
 
 /// Represents the drag-selection on the timeline
 #[derive(Resource, Debug, Default)]
@@ -59,6 +59,7 @@ pub fn timeline_drag_selection(ui: &mut Ui, world: &mut World) -> Result {
             0.0,
             Color32::from_rgba_unmultiplied(255, 255, 255, 20),
             Stroke::NONE,
+            StrokeKind::Middle,
         );
     }
 

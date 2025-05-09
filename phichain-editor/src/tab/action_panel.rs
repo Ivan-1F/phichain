@@ -74,7 +74,7 @@ fn action_panel_ui_system(
     };
 
     let mut egui_context = egui_context.clone();
-    let ctx = egui_context.get();
+    let ctx = egui_context.get_mut();
 
     let window = window.single()?;
 
