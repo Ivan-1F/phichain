@@ -20,8 +20,8 @@ pub struct InstanceHandle(pub Handle<AudioInstance>);
 #[derive(Resource)]
 pub struct AudioAssetId(pub AssetId<AudioSource>);
 
-#[derive(Resource, Default)]
-pub struct SeekTargetTime(Option<f32>);
+#[derive(Resource)]
+pub struct SeekDeltaTime(f32);
 
 /// The duration of the audio
 #[derive(Resource, Debug)]
@@ -31,7 +31,7 @@ pub struct AudioPlugin;
 
 impl Plugin for AudioPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(SeekTargetTime::default())
+        app.insert_resource(SeekDeltaTime(0.0))
             .add_plugins(bevy_kira_audio::AudioPlugin)
             .add_systems(
                 Update,
@@ -114,23 +114,17 @@ fn update_seek_system(
     handle: Res<InstanceHandle>,
     mut audio_instances: ResMut<Assets<AudioInstance>>,
     time: Res<Time>,
-    paused: Res<Paused>,
-    mut seek_target_time: ResMut<SeekTargetTime>,
+    mut seek_delta_time: ResMut<SeekDeltaTime>,
 
     mut timing: ResMut<Timing>,
 ) {
     let delta = time.delta_secs();
-    if let Some(target) = seek_target_time.0 {
-        let now = timing.now();
-        if !paused.0 {
-            if let Some(instance) = audio_instances.get_mut(&handle.0) {
-                instance.seek_to(now as f64);
-            }
-            seek_target_time.0 = None;
-            return;
-        }
-        timing.seek_to(now + (target - now) * delta * 10.);
+    let now = timing.now();
+    timing.seek_to(now + seek_delta_time.0 * delta * 10.);
+    if let Some(instance) = audio_instances.get_mut(&handle.0) {
+        instance.seek_to(timing.now() as f64);
     }
+    seek_delta_time.0 -= seek_delta_time.0 * delta * 10.;
 }
 
 // TODO: move this to separate plugin
@@ -140,10 +134,7 @@ fn handle_seek_system(
     mut audio_instances: ResMut<Assets<AudioInstance>>,
     mut events: EventReader<SeekEvent>,
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut seek_target_time: ResMut<SeekTargetTime>,
-    settings: Res<Persistent<EditorSettings>>,
-
-    mut timing: ResMut<Timing>,
+    mut seek_target_time: ResMut<SeekDeltaTime>,
 ) {
     if let Some(instance) = audio_instances.get_mut(&handle.0) {
         for event in events.read() {
@@ -156,17 +147,8 @@ fn handle_seek_system(
                 factor /= 2.0;
             }
             if let Some(position) = instance.state().position() {
-                let target = match seek_target_time.0 {
-                    Some(target) => (target + event.0 * factor).max(0.0),
-                    None => (position as f32 + event.0 * factor).max(0.0),
-                };
-                if settings.general.timeline_smooth_scroll {
-                    seek_target_time.0 = Some(target);
-                } else {
-                    seek_target_time.0 = None;
-                    timing.seek_to(target);
-                }
-                instance.seek_to(target as f64);
+                seek_target_time.0 = event.0 * factor;
+                instance.seek_to(position + seek_target_time.0 as f64);
             }
         }
     }
@@ -178,7 +160,7 @@ fn handle_seek_to_system(
     handle: Res<InstanceHandle>,
     mut audio_instances: ResMut<Assets<AudioInstance>>,
     mut events: EventReader<SeekToEvent>,
-    mut seek_target_time: ResMut<SeekTargetTime>,
+    mut seek_delta_time: ResMut<SeekDeltaTime>,
 
     mut timing: ResMut<Timing>,
 ) {
@@ -186,8 +168,8 @@ fn handle_seek_to_system(
         for event in events.read() {
             instance.seek_to(event.0.max(0.0).into());
             timing.seek_to(event.0.max(0.0));
-            if seek_target_time.0.is_some() {
-                seek_target_time.0 = None;
+            if seek_delta_time.0 > 0.0 {
+                seek_delta_time.0 = 0.0;
             }
         }
     }
