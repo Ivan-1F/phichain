@@ -279,3 +279,5 @@ action:
   phichain.move_down: Move Down
   phichain.move_left: Move Left
   phichain.move_right: Move Right
+
+  phichain.unselect_all: Unselect Everything
