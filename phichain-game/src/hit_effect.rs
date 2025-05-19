@@ -274,10 +274,10 @@ fn update_lifetime_system(
 }
 
 fn update_opacity_system(mut query: Query<(&mut Shape, &Lifetime), With<HitParticle>>) {
-    for (shape, lifetime) in &mut query {
-        if let Some(mut fill) = shape.fill {
-            fill.color.set_alpha((0.5 - lifetime.0) / 0.5);
-        }
+    for (mut shape, lifetime) in &mut query {
+        shape.fill = shape
+            .fill
+            .map(|fill| fill.color.with_alpha((0.5 - lifetime.0) / 0.5).into());
     }
 }
 

@@ -1335,8 +1335,8 @@ dependencies = [
 
 [[package]]
 name = "bevy_prototype_lyon"
-version = "0.13.0"
-source = "git+https://github.com/Ivan-1F/bevy_prototype_lyon#d7ec0ca7758e6b38f3b5a8ec51d6b09fbd4dd13b"
+version = "0.14.0"
+source = "git+https://github.com/rparrett/bevy_prototype_lyon?branch=fix-dynamic-examples#8a311d72fa2b0409102c42f382ce86e1f868057e"
 dependencies = [
  "bevy",
  "lyon_algorithms",

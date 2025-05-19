@@ -54,7 +54,7 @@ bevy_kira_audio = { version = "0.23.0", features = [
 ] }
 bevy_egui = { version = "0.34.1", features = ["immutable_ctx"] }
 # TODO: revert this when bevy_prototype_lyon release support for bevy 0.16
-bevy_prototype_lyon = { git = "https://github.com/Ivan-1F/bevy_prototype_lyon" }
+bevy_prototype_lyon = { git = "https://github.com/rparrett/bevy_prototype_lyon", branch = "fix-dynamic-examples" }
 # TODO: revert this when https://github.com/umut-sahin/bevy-persistent/pull/42 is merged and released
 bevy-persistent = { git = "https://github.com/fallible-algebra/bevy-persistent", branch = "version-bump/bevy-0.16.rc4", features = ["yaml"] }
 bevy_mod_reqwest = "0.19.2"

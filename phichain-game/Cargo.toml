@@ -35,7 +35,8 @@ bevy = { version = "0.16.0", default-features = false, features = [
     "std",
     "async_executor",
 ] }
-bevy_prototype_lyon = { git = "https://github.com/Ivan-1F/bevy_prototype_lyon" }
+# TODO: revert this when bevy_prototype_lyon release support for bevy 0.16
+bevy_prototype_lyon = { git = "https://github.com/rparrett/bevy_prototype_lyon", branch = "fix-dynamic-examples" }
 num = "0.4.3"
 rand = "0.8.5"
 image = { version = "0.25.2", features = ["jpeg", "png"] }
