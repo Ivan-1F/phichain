@@ -53,7 +53,7 @@ impl Plugin for HomePlugin {
 }
 
 fn ui_system(world: &mut World) {
-    let Ok(egui_context) = world.query::<&mut EguiContext>().get_single_mut(world) else {
+    let Ok(egui_context) = world.query::<&mut EguiContext>().single_mut(world) else {
         return;
     };
     let mut egui_context = egui_context.clone();

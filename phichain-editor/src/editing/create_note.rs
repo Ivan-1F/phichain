@@ -131,7 +131,7 @@ fn create_note_system(
                 create_note(NoteKind::Drag);
             }
 
-            if let Ok((mut pending_note, _)) = pending_note_query.get_single_mut() {
+            if let Ok((mut pending_note, _)) = pending_note_query.single_mut() {
                 if let NoteKind::Hold { .. } = pending_note.kind {
                     let (x, beat) = calc_note_attrs();
                     pending_note.kind = NoteKind::Hold {
@@ -146,7 +146,7 @@ fn create_note_system(
             }
 
             if hotkey.just_pressed(CreateNoteHotkeys::PlaceHold) {
-                if let Ok((pending_note, entity)) = pending_note_query.get_single() {
+                if let Ok((pending_note, entity)) = pending_note_query.single() {
                     commands.entity(entity).despawn_recursive();
                     event.write(DoCommandEvent(EditorCommand::CreateNote(CreateNote::new(
                         line_entity,

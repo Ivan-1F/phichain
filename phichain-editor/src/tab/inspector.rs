@@ -26,7 +26,7 @@ pub fn inspector_ui_system(
 
     mut selected_track: Query<&mut CurveNoteTrack, With<Selected>>,
 ) {
-    if let Ok(mut track) = selected_track.get_single_mut() {
+    if let Ok(mut track) = selected_track.single_mut() {
         curve_note_track_inspector(&mut ui, &mut track);
         return;
     }

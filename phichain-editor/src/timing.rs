@@ -126,7 +126,7 @@ fn scroll_progress_control_system(
 
     settings: Res<Persistent<EditorSettings>>,
 ) {
-    let Ok(window) = window_query.get_single() else {
+    let Ok(window) = window_query.single() else {
         return;
     };
     if window

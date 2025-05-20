@@ -61,7 +61,7 @@ fn record_hotkey_system(
 ) {
     let mut should_save = false;
 
-    if let Ok((mut recording, entity)) = ctx.query.get_single_mut() {
+    if let Ok((mut recording, entity)) = ctx.query.single_mut() {
         for key in keyboard.get_just_pressed() {
             recording.push(*key);
             if let Some(hotkey) = recording.hotkey() {

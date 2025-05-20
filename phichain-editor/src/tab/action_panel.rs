@@ -32,7 +32,7 @@ pub struct ActionPanel {
 
 // TODO: using exclusive system here because somehow `mut Commands` does not work with `world.run_system()`
 fn open_action_panel_system(world: &mut World) -> Result {
-    if world.query::<&ActionPanel>().get_single(world).is_ok() {
+    if world.query::<&ActionPanel>().single(world).is_ok() {
         return Ok(());
     }
 
@@ -68,10 +68,10 @@ fn action_panel_ui_system(
 
     mut run: EventWriter<RunActionEvent>,
 ) -> Result {
-    let Ok((entity, mut panel)) = query.get_single_mut() else {
+    let Ok((entity, mut panel)) = query.single_mut() else {
         return Ok(());
     };
-    let Ok(egui_context) = context.get_single_mut() else {
+    let Ok(egui_context) = context.single_mut() else {
         return Ok(());
     };
 

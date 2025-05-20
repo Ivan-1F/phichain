@@ -55,7 +55,7 @@ pub fn update_game_camera_viewport_system(
     game_viewport: Res<GameViewport>,
 ) -> Result {
     let mut game_camera = query.single_mut()?;
-    let Ok(window) = window_query.get_single() else {
+    let Ok(window) = window_query.single() else {
         return Ok(());
     };
 
