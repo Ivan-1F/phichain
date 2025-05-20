@@ -137,7 +137,7 @@ fn action_panel_ui_system(
                 let selected = panel.cursor.is_some_and(|x| x == index);
 
                 ui.scope_builder(UiBuilder::new().sense(Sense::click()), |ui| {
-                    egui::Frame::none()
+                    egui::Frame::new()
                         .fill(if selected {
                             egui::Color32::from_rgba_unmultiplied(64, 94, 168, 100)
                         } else {
