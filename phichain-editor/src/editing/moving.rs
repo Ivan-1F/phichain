@@ -43,7 +43,7 @@ fn move_up_system(
     selected_notes: Query<(&Note, Entity), With<Selected>>,
     selected_events: Query<(&LineEvent, Entity), With<Selected>>,
     mut event_writer: EventWriter<DoCommandEvent>,
-) {
+) -> Result {
     if let Some((start, _)) = selected_notes.iter().min_by_key(|(note, _)| note.beat) {
         let to = timeline_settings.attach((start.beat + timeline_settings.minimum_beat()).value());
         let delta = to - start.beat;
@@ -86,6 +86,8 @@ fn move_up_system(
             ),
         )));
     }
+
+    Ok(())
 }
 
 fn move_down_system(
@@ -93,7 +95,7 @@ fn move_down_system(
     selected_notes: Query<(&Note, Entity), With<Selected>>,
     selected_events: Query<(&LineEvent, Entity), With<Selected>>,
     mut event_writer: EventWriter<DoCommandEvent>,
-) {
+) -> Result {
     if let Some((start, _)) = selected_notes.iter().min_by_key(|(note, _)| note.beat) {
         let to = timeline_settings.attach((start.beat - timeline_settings.minimum_beat()).value());
         let delta = to - start.beat;
@@ -136,13 +138,15 @@ fn move_down_system(
             ),
         )));
     }
+
+    Ok(())
 }
 
 fn move_left_system(
     timeline_settings: Res<TimelineSettings>,
     selected_notes: Query<(&Note, Entity), With<Selected>>,
     mut event_writer: EventWriter<DoCommandEvent>,
-) {
+) -> Result {
     if let Some((start, _)) = selected_notes
         .iter()
         .min_by_key(|(note, _)| Rational32::from_f32(note.x))
@@ -164,13 +168,15 @@ fn move_left_system(
             ),
         )));
     }
+
+    Ok(())
 }
 
 fn move_right_system(
     timeline_settings: Res<TimelineSettings>,
     selected_notes: Query<(&Note, Entity), With<Selected>>,
     mut event_writer: EventWriter<DoCommandEvent>,
-) {
+) -> Result {
     if let Some((start, _)) = selected_notes
         .iter()
         .max_by_key(|(note, _)| Rational32::from_f32(note.x))
@@ -192,4 +198,6 @@ fn move_right_system(
             ),
         )));
     }
+
+    Ok(())
 }

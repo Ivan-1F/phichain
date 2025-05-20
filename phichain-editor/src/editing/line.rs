@@ -5,7 +5,7 @@ use crate::editing::DoCommandEvent;
 use crate::hotkey::modifier::Modifier;
 use crate::hotkey::Hotkey;
 use bevy::app::App;
-use bevy::prelude::{EventWriter, KeyCode, Plugin};
+use bevy::prelude::*;
 
 pub struct LineEditingPlugin;
 
@@ -19,7 +19,9 @@ impl Plugin for LineEditingPlugin {
     }
 }
 
-fn create_line_system(mut do_command_event: EventWriter<DoCommandEvent>) {
+fn create_line_system(mut do_command_event: EventWriter<DoCommandEvent>) -> Result {
     do_command_event.send(DoCommandEvent(EditorCommand::CreateLine(CreateLine::new())));
     // TODO: switch to this line
+
+    Ok(())
 }

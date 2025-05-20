@@ -27,34 +27,38 @@ impl Plugin for ZoomPlugin {
     }
 }
 
-// TODO bevy-0.16: make the following systems return Result and handle error using ? operator when add_action supports systems returning Result
-
-fn zoom_in_system(mut query: Query<&mut Projection, With<GameCamera>>) {
-    let mut projection = query.single_mut().unwrap();
+fn zoom_in_system(mut query: Query<&mut Projection, With<GameCamera>>) -> Result {
+    let mut projection = query.single_mut()?;
     match projection.as_mut() {
         Projection::Orthographic(ref mut projection) => {
             projection.scale /= 1.25;
         }
         _ => {}
     }
+
+    Ok(())
 }
 
-fn zoom_out_system(mut query: Query<&mut Projection, With<GameCamera>>) {
-    let mut projection = query.single_mut().unwrap();
+fn zoom_out_system(mut query: Query<&mut Projection, With<GameCamera>>) -> Result {
+    let mut projection = query.single_mut()?;
     match projection.as_mut() {
         Projection::Orthographic(ref mut projection) => {
             projection.scale *= 1.25;
         }
         _ => {}
     }
+
+    Ok(())
 }
 
-fn reset_zoom_system(mut query: Query<&mut Projection, With<GameCamera>>) {
-    let mut projection = query.single_mut().unwrap();
+fn reset_zoom_system(mut query: Query<&mut Projection, With<GameCamera>>) -> Result {
+    let mut projection = query.single_mut()?;
     match projection.as_mut() {
         Projection::Orthographic(ref mut projection) => {
             projection.scale = 1.0;
         }
         _ => {}
     }
+
+    Ok(())
 }

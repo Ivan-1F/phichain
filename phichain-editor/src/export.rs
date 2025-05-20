@@ -32,8 +32,10 @@ impl Plugin for ExportPlugin {
     }
 }
 
-fn export_as_official_system(world: &mut World) {
+fn export_as_official_system(world: &mut World) -> Result {
     pick_folder(world, PickingKind::ExportOfficial, FileDialog::new());
+    
+    Ok(())
 }
 
 /// Generates the export path under a path, ensuring the path does not already exist

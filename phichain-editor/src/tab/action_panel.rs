@@ -31,12 +31,14 @@ pub struct ActionPanel {
 }
 
 // TODO: using exclusive system here because somehow `mut Commands` does not work with `world.run_system()`
-fn open_action_panel_system(world: &mut World) {
+fn open_action_panel_system(world: &mut World) -> Result {
     if world.query::<&ActionPanel>().get_single(world).is_ok() {
-        return;
+        return Ok(());
     }
 
     world.spawn(ActionPanel::default());
+
+    Ok(())
 }
 
 #[derive(Debug, Clone)]

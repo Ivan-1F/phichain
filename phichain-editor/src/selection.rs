@@ -32,6 +32,8 @@ impl Plugin for SelectionPlugin {
                     if let Some(entity) = query_ordered_lines(world).get(i - 1) {
                         world.resource_mut::<SelectedLine>().0 = *entity;
                     }
+                    
+                    Ok(())
                 },
                 Some(Hotkey::new(
                     match i {

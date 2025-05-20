@@ -48,6 +48,8 @@ impl Plugin for ProjectPlugin {
                 "phichain.close_project",
                 |mut events: EventWriter<UnloadProjectEvent>| {
                     events.send(UnloadProjectEvent);
+
+                    Ok(())
                 },
                 Some(Hotkey::new(KeyCode::KeyW, vec![Modifier::Control])),
             )
@@ -55,13 +57,15 @@ impl Plugin for ProjectPlugin {
                 "phichain.open_in_file_manager",
                 |project: Res<Project>| {
                     let _ = open::that(project.path.0.clone());
+
+                    Ok(())
                 },
                 None,
             );
     }
 }
 
-fn save_project_system(world: &mut World) {
+fn save_project_system(world: &mut World) -> Result {
     world.resource_scope(|world, mut history: Mut<EditorHistory>| {
         if let Ok(chart) = PhichainExporter::export(world) {
             let project = world.resource::<Project>();
@@ -83,6 +87,8 @@ fn save_project_system(world: &mut World) {
             }
         }
     });
+
+    Ok(())
 }
 
 #[derive(Event, Debug)]

@@ -94,12 +94,14 @@ fn toggle_system(
     paused: Res<Paused>,
     mut pause_events: EventWriter<PauseEvent>,
     mut resume_events: EventWriter<ResumeEvent>,
-) {
+) -> Result {
     if paused.0 {
         resume_events.send_default();
     } else {
         pause_events.send_default();
     }
+    
+    Ok(())
 }
 
 /// Use ArrowLeft and ArrowRight to control the progress

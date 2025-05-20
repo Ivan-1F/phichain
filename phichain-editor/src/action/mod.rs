@@ -1,7 +1,7 @@
 use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
 use crate::identifier::Identifier;
 use crate::telemetry::PushTelemetryEvent;
-use bevy::ecs::system::SystemState;
+use bevy::ecs::system::{BoxedSystem, SystemState};
 use bevy::prelude::*;
 use indexmap::IndexMap;
 use phichain_game::GameSet;
@@ -10,14 +10,15 @@ use serde_json::json;
 pub type ActionIdentifier = Identifier;
 
 pub struct RegisteredAction {
-    system: Box<dyn System<In = (), Out = ()>>,
+    system: BoxedSystem<(), Result>,
     pub enable_hotkey: bool,
     pub is_heavy: bool,
 }
 
 impl RegisteredAction {
     pub fn run(&mut self, world: &mut World) {
-        self.system.run((), world);
+        let response = self.system.run((), world);
+        dbg!(response);
     }
 }
 
@@ -56,7 +57,7 @@ impl Plugin for ActionPlugin {
 fn add_action_impl<M1>(
     app: &mut App,
     id: impl Into<ActionIdentifier>,
-    system: impl IntoSystem<(), (), M1>,
+    system: impl IntoSystem<(), Result, M1>,
     hotkey: Option<Hotkey>,
     heavy: bool,
 ) {
@@ -86,14 +87,14 @@ pub trait ActionRegistrationExt {
     fn add_action<M1>(
         &mut self,
         id: impl Into<ActionIdentifier>,
-        system: impl IntoSystem<(), (), M1>,
+        system: impl IntoSystem<(), Result, M1>,
         hotkey: Option<Hotkey>,
     ) -> &mut Self;
 
     fn add_heavy_action<M1>(
         &mut self,
         id: impl Into<ActionIdentifier>,
-        system: impl IntoSystem<(), (), M1>,
+        system: impl IntoSystem<(), Result, M1>,
         hotkey: Option<Hotkey>,
     ) -> &mut Self;
 }
@@ -102,7 +103,7 @@ impl ActionRegistrationExt for App {
     fn add_action<M1>(
         &mut self,
         id: impl Into<ActionIdentifier>,
-        system: impl IntoSystem<(), (), M1>,
+        system: impl IntoSystem<(), Result, M1>,
         hotkey: Option<Hotkey>,
     ) -> &mut Self {
         add_action_impl(self, id, system, hotkey, false);
@@ -112,7 +113,7 @@ impl ActionRegistrationExt for App {
     fn add_heavy_action<M1>(
         &mut self,
         id: impl Into<ActionIdentifier>,
-        system: impl IntoSystem<(), (), M1>,
+        system: impl IntoSystem<(), Result, M1>,
         hotkey: Option<Hotkey>,
     ) -> &mut Self {
         add_action_impl(self, id, system, hotkey, true);

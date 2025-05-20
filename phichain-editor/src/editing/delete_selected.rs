@@ -30,7 +30,7 @@ fn delete_selected_system(
         Query<Entity, (With<Selected>, With<CurveNoteTrack>)>,
     )>,
     mut events: EventWriter<DoCommandEvent>,
-) {
+) -> Result {
     let mut sequence = CommandSequence(vec![]);
     for note in &set.p0() {
         sequence
@@ -51,4 +51,6 @@ fn delete_selected_system(
     if !sequence.0.is_empty() {
         events.send(DoCommandEvent(EditorCommand::CommandSequence(sequence)));
     }
+    
+    Ok(())
 }
