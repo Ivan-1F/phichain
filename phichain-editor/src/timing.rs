@@ -96,9 +96,9 @@ fn toggle_system(
     mut resume_events: EventWriter<ResumeEvent>,
 ) -> Result {
     if paused.0 {
-        resume_events.send_default();
+        resume_events.write_default();
     } else {
-        pause_events.send_default();
+        pause_events.write_default();
     }
 
     Ok(())
@@ -139,7 +139,7 @@ fn scroll_progress_control_system(
             ));
 
             if settings.general.pause_when_scroll && !paused.0 {
-                pause_events.send_default();
+                pause_events.write_default();
             }
         }
     }
