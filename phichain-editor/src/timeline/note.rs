@@ -324,6 +324,7 @@ impl Timeline for NoteTimeline {
                     let to_x = viewport.min.x + (to.x / CANVAS_WIDTH + 0.5) * viewport.width();
                     let to_y = ctx.time_to_y(bpm_list.time_at(to.beat));
                     let rect = Rect::from_two_pos(Pos2::new(from_x, from_y), Pos2::new(to_x, to_y));
+                    // FIXME: this will not be written to history
                     ui.put(
                         rect,
                         EasingGraph::new(&mut track.options.curve)
