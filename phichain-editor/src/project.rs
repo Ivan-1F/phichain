@@ -213,7 +213,7 @@ fn unload_project_system(
         let entities = line_query.iter(world).collect::<Vec<_>>();
         for entity in entities {
             // notes and events will be despawned as children
-            world.entity_mut(entity).despawn_recursive();
+            world.entity_mut(entity).despawn();
         }
 
         // despawn ghost entities created when despawning an entity with `keep_entity`

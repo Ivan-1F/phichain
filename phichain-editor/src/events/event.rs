@@ -67,7 +67,7 @@ impl EditorEvent for DespawnLineEventEvent {
         if self.keep_entity {
             replace_with_empty(world, self.target);
         } else {
-            world.entity_mut(self.target).despawn_recursive();
+            world.entity_mut(self.target).despawn();
         }
     }
 }
