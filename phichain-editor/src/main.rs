@@ -144,7 +144,9 @@ fn main() {
         .add_plugins(HitSoundPlugin)
         .add_plugins(GameTabPlugin)
         .add_plugins(TimelinePlugin)
-        .add_plugins(EguiPlugin { enable_multipass_for_primary_context: false })
+        .add_plugins(EguiPlugin {
+            enable_multipass_for_primary_context: false,
+        })
         .add_plugins(ProjectPlugin)
         .add_plugins(ExportPlugin)
         .add_plugins(selection::SelectionPlugin)

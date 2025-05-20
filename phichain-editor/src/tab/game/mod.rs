@@ -78,6 +78,6 @@ pub fn update_game_camera_viewport_system(
         physical_size: viewport_size.as_uvec2(),
         depth: 0.0..1.0,
     });
-    
+
     Ok(())
 }

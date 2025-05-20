@@ -169,7 +169,7 @@ fn create_event_system(
             }
         }
     }
-    
+
     Ok(())
 }
 

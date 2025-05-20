@@ -17,6 +17,6 @@ fn update_ime_system(
 ) -> Result {
     let ctx = contexts.ctx_mut();
     window_query.single_mut()?.ime_enabled = ctx.wants_keyboard_input();
-    
+
     Ok(())
 }

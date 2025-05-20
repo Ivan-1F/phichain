@@ -270,9 +270,12 @@ impl Timeline for NoteTimeline {
                             let mut completed_track = track.clone();
                             completed_track.to(entity);
 
-                            event_writer.write(DoCommandEvent(EditorCommand::CreateCurveNoteTrack(
-                                CreateCurveNoteTrack::new(child_of.parent(), completed_track),
-                            )));
+                            event_writer.write(DoCommandEvent(
+                                EditorCommand::CreateCurveNoteTrack(CreateCurveNoteTrack::new(
+                                    child_of.parent(),
+                                    completed_track,
+                                )),
+                            ));
 
                             handled = true;
                         }

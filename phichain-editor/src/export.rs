@@ -34,7 +34,7 @@ impl Plugin for ExportPlugin {
 
 fn export_as_official_system(world: &mut World) -> Result {
     pick_folder(world, PickingKind::ExportOfficial, FileDialog::new());
-    
+
     Ok(())
 }
 

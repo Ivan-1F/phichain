@@ -65,7 +65,10 @@ impl Edit for RemoveNote {
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
         let note = target.entity(self.entity).get::<Note>().copied();
-        let parent = target.entity(self.entity).get::<ChildOf>().map(|x| x.parent());
+        let parent = target
+            .entity(self.entity)
+            .get::<ChildOf>()
+            .map(|x| x.parent());
         self.note = Some((note.unwrap(), parent.unwrap()));
         DespawnNoteEvent::builder()
             .target(self.entity)

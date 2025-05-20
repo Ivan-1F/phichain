@@ -203,13 +203,13 @@ fn ui_system(world: &mut World) {
         //             if language_combobox(ui, languages, &mut editor_settings.general.language) {
         //                 let _ = editor_settings.persist();
         //             }
-        // 
+        //
         //             if ui.button(t!("home.settings")).clicked() {
         //                 world.insert_resource(OpenSettings);
         //             }
-        // 
+        //
         //             let mut editor_settings = world.resource_mut::<Persistent<EditorSettings>>();
-        // 
+        //
         //             ui.checkbox(
         //                 &mut editor_settings.general.send_telemetry,
         //                 t!("home.telemetry"),

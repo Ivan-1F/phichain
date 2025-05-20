@@ -1,5 +1,5 @@
-use bevy::platform::collections::HashMap;
 use crate::{GameConfig, GameSet};
+use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use phichain_chart::beat::Beat;
 use phichain_chart::note::Note;

@@ -67,7 +67,10 @@ impl Edit for RemoveEvent {
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
         let event = target.entity(self.entity).get::<LineEvent>().copied();
-        let parent = target.entity(self.entity).get::<ChildOf>().map(|x| x.parent());
+        let parent = target
+            .entity(self.entity)
+            .get::<ChildOf>()
+            .map(|x| x.parent());
         self.event = Some((event.unwrap(), parent.unwrap()));
         DespawnLineEventEvent::builder()
             .target(self.entity)

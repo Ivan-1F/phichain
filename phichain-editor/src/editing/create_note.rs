@@ -172,7 +172,7 @@ fn create_note_system(
             }
         }
     }
-    
+
     Ok(())
 }
 
