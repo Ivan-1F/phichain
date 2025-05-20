@@ -74,7 +74,7 @@ pub fn update_curve_note_track_system(
         Entity,
     )>,
 ) {
-    for (track, parent, cache, entity) in &mut track_query {
+    for (track, child_of, cache, entity) in &mut track_query {
         let Some((from, to)) = track.get_entities() else {
             continue;
         };
@@ -107,13 +107,14 @@ pub fn update_curve_note_track_system(
                 if note.0 == entity {
                     // despawning children does not remove references for parent
                     // https://github.com/bevyengine/bevy/issues/12235
+                    // TODO bevy-0.16: maybe this is unnecessary now
                     commands
-                        .entity(parent.get())
+                        .entity(child_of.parent())
                         .remove_children(&[note_entity]);
                     commands.entity(note_entity).despawn();
                 }
             }
-            commands.entity(from.1.get()).with_children(|p| {
+            commands.entity(from.1.parent()).with_children(|p| {
                 for note in notes {
                     p.spawn((NoteBundle::new(note), CurveNote(entity)));
                 }

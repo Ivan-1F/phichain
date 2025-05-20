@@ -197,7 +197,7 @@ pub fn update_note_y_system(
     for (children, entity) in &query {
         let mut speed_events: Vec<&SpeedEvent> = all_speed_events
             .iter()
-            .filter(|(_, _, parent)| parent.get() == entity)
+            .filter(|(_, _, child_of)| child_of.parent() == entity)
             .map(|(s, _, _)| *s)
             .collect();
         speed_events.sort_by(|a, b| {
@@ -372,8 +372,8 @@ pub fn update_hold_component_texture_system(
     parent_query: Query<Option<&Highlighted>>,
     assets: Res<ImageAssets>,
 ) {
-    for (mut sprite, parent) in &mut head_query {
-        if let Ok(highlight) = parent_query.get(parent.get()).map(|x| x.is_some()) {
+    for (mut sprite, child_of) in &mut head_query {
+        if let Ok(highlight) = parent_query.get(child_of.parent()).map(|x| x.is_some()) {
             sprite.image = if highlight {
                 assets.hold_head_highlight.clone()
             } else {
@@ -412,12 +412,14 @@ pub fn despawn_hold_component_system(
     query: Query<&Note>,
     component_query: Query<(&ChildOf, Entity), With<HoldComponent>>,
 ) {
-    for (parent, entity) in &component_query {
-        let note = query.get(parent.get());
+    for (child_of, entity) in &component_query {
+        let note = query.get(child_of.parent());
         if note.is_err() || note.is_ok_and(|n| !n.kind.is_hold()) {
             // despawning children does not remove references for parent
             // https://github.com/bevyengine/bevy/issues/12235
-            commands.entity(parent.get()).remove_children(&[entity]);
+            commands
+                .entity(child_of.parent())
+                .remove_children(&[entity]);
 
             commands.entity(entity).despawn();
         }

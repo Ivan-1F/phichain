@@ -160,11 +160,11 @@ impl Timeline for NoteTimeline {
         let mut start_track_note = None::<Entity>;
         let mut despawn_cnt = None::<Entity>;
 
-        for (mut note, parent, entity, highlighted, selected, curve_note, pending) in notes {
+        for (mut note, child_of, entity, highlighted, selected, curve_note, pending) in notes {
             if !ctx.settings.note_side_filter.filter(*note) {
                 continue;
             }
-            if parent.get() != line_entity {
+            if child_of.parent() != line_entity {
                 continue;
             }
 
@@ -271,7 +271,7 @@ impl Timeline for NoteTimeline {
                             completed_track.to(entity);
 
                             event_writer.send(DoCommandEvent(EditorCommand::CreateCurveNoteTrack(
-                                CreateCurveNoteTrack::new(parent.get(), completed_track),
+                                CreateCurveNoteTrack::new(child_of.parent(), completed_track),
                             )));
 
                             handled = true;
@@ -303,8 +303,8 @@ impl Timeline for NoteTimeline {
             );
         }
 
-        for (mut track, parent, entity) in &mut track_query {
-            if parent.get() != line_entity {
+        for (mut track, child_of, entity) in &mut track_query {
+            if child_of.parent() != line_entity {
                 continue;
             }
 
@@ -340,7 +340,7 @@ impl Timeline for NoteTimeline {
         }
 
         if let Some(entity) = start_track_note {
-            let parent = note_query.get(entity).unwrap().1.get();
+            let parent = note_query.get(entity).unwrap().1.parent();
             world.entity_mut(parent).with_children(|p| {
                 p.spawn((CurveNoteTrack::start(entity), Selected));
             });
@@ -364,7 +364,7 @@ impl Timeline for NoteTimeline {
 
         note_query
             .iter()
-            .filter(|x| x.1.get() == line_entity)
+            .filter(|x| x.1.parent() == line_entity)
             .filter(|x| {
                 let note = x.0;
                 x_range.contains((note.x / CANVAS_WIDTH + 0.5) * viewport.width())

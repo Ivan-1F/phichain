@@ -77,7 +77,7 @@ impl Edit for RemoveCurveNoteTrack {
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
         let track = target.entity(self.entity).get::<CurveNoteTrack>().cloned();
-        let parent = target.entity(self.entity).get::<ChildOf>().map(|x| x.get());
+        let parent = target.entity(self.entity).get::<ChildOf>().map(|x| x.parent());
         self.track = Some((track.unwrap(), parent.unwrap()));
         DespawnCurveNoteTrackEvent::builder()
             .target(self.entity)

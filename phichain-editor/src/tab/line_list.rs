@@ -169,7 +169,7 @@ impl<'a> LineList<'a> {
                             .button(t!("tab.line_list.hierarchy.add_parent"))
                             .clicked()
                         {
-                            add_parent.replace(parent.map(|x| x.get()));
+                            add_parent.replace(parent.map(|x| x.parent()));
                             ui.close_menu();
                         }
                         if ui.button(t!("tab.line_list.hierarchy.add_child")).clicked() {

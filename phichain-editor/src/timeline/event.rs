@@ -152,8 +152,8 @@ impl Timeline for EventTimeline {
         let mut first_events_outside_top = EventTrackData::splat(None::<Entity>);
         let mut first_events_outside_top_y = EventTrackData::splat(f32::MIN);
 
-        for (event, parent, entity, _, _) in &event_query {
-            if parent.get() != line_entity {
+        for (event, child_of, entity, _, _) in &event_query {
+            if child_of.parent() != line_entity {
                 continue;
             }
 
@@ -186,8 +186,8 @@ impl Timeline for EventTimeline {
             }
         }
 
-        for (mut event, parent, entity, selected, pending) in &mut event_query {
-            if parent.get() != line_entity {
+        for (mut event, child_of, entity, selected, pending) in &mut event_query {
+            if child_of.parent() != line_entity {
                 continue;
             }
 
@@ -419,7 +419,7 @@ impl Timeline for EventTimeline {
 
         event_query
             .iter()
-            .filter(|x| x.1.get() == line_entity)
+            .filter(|x| x.1.parent() == line_entity)
             .filter(|x| {
                 let event = x.0;
                 let track: u8 = event.kind.into();

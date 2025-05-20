@@ -108,7 +108,7 @@ fn create_event_system(
                     if let Some(last_event) = events
                         .iter()
                         .filter(|(e, _)| e.kind == pending_event.kind)
-                        .filter(|(_, p)| p.get() == line_entity)
+                        .filter(|(_, c)| c.parent() == line_entity)
                         .take_while(|(e, _)| e.end_beat <= pending_event.start_beat)
                         .map(|x| x.0)
                         .last()
@@ -126,7 +126,7 @@ fn create_event_system(
                     if let Some(next_event) = events
                         .iter()
                         .filter(|(e, _)| e.kind == pending_event.kind)
-                        .filter(|(_, p)| p.get() == line_entity)
+                        .filter(|(_, c)| c.parent() == line_entity)
                         .take_while(|(e, _)| e.start_beat >= pending_event.end_beat)
                         .map(|x| x.0)
                         .last()
