@@ -29,11 +29,8 @@ impl Plugin for ZoomPlugin {
 
 fn zoom_in_system(mut query: Query<&mut Projection, With<GameCamera>>) -> Result {
     let mut projection = query.single_mut()?;
-    match projection.as_mut() {
-        Projection::Orthographic(ref mut projection) => {
-            projection.scale /= 1.25;
-        }
-        _ => {}
+    if let Projection::Orthographic(ref mut projection) = projection.as_mut() {
+        projection.scale /= 1.25;
     }
 
     Ok(())
@@ -41,11 +38,8 @@ fn zoom_in_system(mut query: Query<&mut Projection, With<GameCamera>>) -> Result
 
 fn zoom_out_system(mut query: Query<&mut Projection, With<GameCamera>>) -> Result {
     let mut projection = query.single_mut()?;
-    match projection.as_mut() {
-        Projection::Orthographic(ref mut projection) => {
-            projection.scale *= 1.25;
-        }
-        _ => {}
+    if let Projection::Orthographic(ref mut projection) = projection.as_mut() {
+        projection.scale *= 1.25;
     }
 
     Ok(())
@@ -53,11 +47,8 @@ fn zoom_out_system(mut query: Query<&mut Projection, With<GameCamera>>) -> Resul
 
 fn reset_zoom_system(mut query: Query<&mut Projection, With<GameCamera>>) -> Result {
     let mut projection = query.single_mut()?;
-    match projection.as_mut() {
-        Projection::Orthographic(ref mut projection) => {
-            projection.scale = 1.0;
-        }
-        _ => {}
+    if let Projection::Orthographic(ref mut projection) = projection.as_mut() {
+        projection.scale = 1.0;
     }
 
     Ok(())
