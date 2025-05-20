@@ -117,7 +117,7 @@ fn create_note_system(
 
                 let note = Note::new(kind, true, beat, x * CANVAS_WIDTH, 1.0);
 
-                event.send(DoCommandEvent(EditorCommand::CreateNote(CreateNote::new(
+                event.write(DoCommandEvent(EditorCommand::CreateNote(CreateNote::new(
                     line_entity,
                     note,
                 ))));
@@ -148,7 +148,7 @@ fn create_note_system(
             if hotkey.just_pressed(CreateNoteHotkeys::PlaceHold) {
                 if let Ok((pending_note, entity)) = pending_note_query.get_single() {
                     commands.entity(entity).despawn_recursive();
-                    event.send(DoCommandEvent(EditorCommand::CreateNote(CreateNote::new(
+                    event.write(DoCommandEvent(EditorCommand::CreateNote(CreateNote::new(
                         line_entity,
                         *pending_note,
                     ))));

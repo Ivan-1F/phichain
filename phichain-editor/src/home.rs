@@ -284,7 +284,7 @@ fn load_project_system(
             continue;
         }
         if let Some(root_dir) = path {
-            events.send(LoadProjectEvent(root_dir.to_path_buf()));
+            events.write(LoadProjectEvent(root_dir.to_path_buf()));
             commands.remove_resource::<CreatingProject>();
         }
     }
@@ -342,7 +342,7 @@ fn handle_create_project_system(
             form.meta.clone(),
         ) {
             Ok(_) => {
-                load_project_events.send(LoadProjectEvent(root_path.clone()));
+                load_project_events.write(LoadProjectEvent(root_path.clone()));
                 commands.remove_resource::<CreatingProject>();
             }
             Err(error) => toasts.error(format!("{:?}", error)),

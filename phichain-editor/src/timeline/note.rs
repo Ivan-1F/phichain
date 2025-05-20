@@ -246,7 +246,7 @@ impl Timeline for NoteTimeline {
                             note.set_end_beat(end_beat);
                         }
                         if from != *note {
-                            event_writer.send(DoCommandEvent(EditorCommand::EditNote(
+                            event_writer.write(DoCommandEvent(EditorCommand::EditNote(
                                 EditNote::new(entity, from, *note),
                             )));
                         }
@@ -270,7 +270,7 @@ impl Timeline for NoteTimeline {
                             let mut completed_track = track.clone();
                             completed_track.to(entity);
 
-                            event_writer.send(DoCommandEvent(EditorCommand::CreateCurveNoteTrack(
+                            event_writer.write(DoCommandEvent(EditorCommand::CreateCurveNoteTrack(
                                 CreateCurveNoteTrack::new(child_of.parent(), completed_track),
                             )));
 
@@ -280,7 +280,7 @@ impl Timeline for NoteTimeline {
                 }
 
                 if !handled {
-                    select_events.send(SelectEvent(vec![entity]));
+                    select_events.write(SelectEvent(vec![entity]));
                 }
             }
         }

@@ -141,7 +141,7 @@ impl<'a> LineList<'a> {
                                 .button(t!("tab.line_list.hierarchy.as_child_of_current_line"))
                                 .clicked()
                             {
-                                do_command_event.send(DoCommandEvent(
+                                do_command_event.write(DoCommandEvent(
                                     EditorCommand::MoveLineAsChild(MoveLineAsChild::new(
                                         entity,
                                         Some(selected_line.0),
@@ -156,7 +156,7 @@ impl<'a> LineList<'a> {
                                 .button(t!("tab.line_list.hierarchy.move_to_root"))
                                 .clicked()
                             {
-                                do_command_event.send(DoCommandEvent(
+                                do_command_event.write(DoCommandEvent(
                                     EditorCommand::MoveLineAsChild(MoveLineAsChild::new(
                                         entity, None,
                                     )),
@@ -179,7 +179,7 @@ impl<'a> LineList<'a> {
                         ui.separator();
                         ui.add_enabled_ui(!under_selected_node && !selected, |ui| {
                             if ui.button(t!("tab.line_list.remove")).clicked() {
-                                do_command_event.send(DoCommandEvent(EditorCommand::RemoveLine(
+                                do_command_event.write(DoCommandEvent(EditorCommand::RemoveLine(
                                     RemoveLine::new(entity),
                                 )));
                                 ui.close_menu();

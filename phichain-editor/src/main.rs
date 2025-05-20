@@ -175,7 +175,7 @@ fn apply_editor_settings_system(settings: Res<Persistent<EditorSettings>>) {
 fn apply_args_config_system(args: Res<Args>, mut events: EventWriter<LoadProjectEvent>) {
     // load chart if specified
     if let Some(path) = &args.project {
-        events.send(LoadProjectEvent(path.into()));
+        events.write(LoadProjectEvent(path.into()));
     }
 }
 

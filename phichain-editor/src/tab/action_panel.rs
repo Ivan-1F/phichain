@@ -171,7 +171,7 @@ fn action_panel_ui_system(
                         commands.entity(entity).despawn();
                         match entry.kind {
                             ActionPanelEntryKind::Action => {
-                                run.send(RunActionEvent(entry.id.clone()));
+                                run.write(RunActionEvent(entry.id.clone()));
                             }
                             ActionPanelEntryKind::Tab => {
                                 let id = entry.id.clone();
@@ -224,7 +224,7 @@ fn action_panel_ui_system(
                         commands.entity(entity).despawn();
                         match entry.kind {
                             ActionPanelEntryKind::Action => {
-                                run.send(RunActionEvent(entry.id.clone()));
+                                run.write(RunActionEvent(entry.id.clone()));
                             }
                             ActionPanelEntryKind::Tab => {
                                 let id = entry.id.clone();

@@ -47,7 +47,7 @@ fn move_up_system(
     if let Some((start, _)) = selected_notes.iter().min_by_key(|(note, _)| note.beat) {
         let to = timeline_settings.attach((start.beat + timeline_settings.minimum_beat()).value());
         let delta = to - start.beat;
-        event_writer.send(DoCommandEvent(EditorCommand::CommandSequence(
+        event_writer.write(DoCommandEvent(EditorCommand::CommandSequence(
             CommandSequence(
                 selected_notes
                     .iter()
@@ -70,7 +70,7 @@ fn move_up_system(
         let to =
             timeline_settings.attach((start.start_beat + timeline_settings.minimum_beat()).value());
         let delta = to - start.start_beat;
-        event_writer.send(DoCommandEvent(EditorCommand::CommandSequence(
+        event_writer.write(DoCommandEvent(EditorCommand::CommandSequence(
             CommandSequence(
                 selected_events
                     .iter()
@@ -99,7 +99,7 @@ fn move_down_system(
     if let Some((start, _)) = selected_notes.iter().min_by_key(|(note, _)| note.beat) {
         let to = timeline_settings.attach((start.beat - timeline_settings.minimum_beat()).value());
         let delta = to - start.beat;
-        event_writer.send(DoCommandEvent(EditorCommand::CommandSequence(
+        event_writer.write(DoCommandEvent(EditorCommand::CommandSequence(
             CommandSequence(
                 selected_notes
                     .iter()
@@ -122,7 +122,7 @@ fn move_down_system(
         let to =
             timeline_settings.attach((start.start_beat - timeline_settings.minimum_beat()).value());
         let delta = to - start.start_beat;
-        event_writer.send(DoCommandEvent(EditorCommand::CommandSequence(
+        event_writer.write(DoCommandEvent(EditorCommand::CommandSequence(
             CommandSequence(
                 selected_events
                     .iter()
@@ -153,7 +153,7 @@ fn move_left_system(
     {
         let to = timeline_settings.attach_x(start.x - timeline_settings.minimum_lane());
         let delta = to - start.x;
-        event_writer.send(DoCommandEvent(EditorCommand::CommandSequence(
+        event_writer.write(DoCommandEvent(EditorCommand::CommandSequence(
             CommandSequence(
                 selected_notes
                     .iter()
@@ -183,7 +183,7 @@ fn move_right_system(
     {
         let to = timeline_settings.attach_x(start.x + timeline_settings.minimum_lane());
         let delta = to - start.x;
-        event_writer.send(DoCommandEvent(EditorCommand::CommandSequence(
+        event_writer.write(DoCommandEvent(EditorCommand::CommandSequence(
             CommandSequence(
                 selected_notes
                     .iter()

@@ -49,8 +49,8 @@ fn delete_selected_system(
     }
 
     if !sequence.0.is_empty() {
-        events.send(DoCommandEvent(EditorCommand::CommandSequence(sequence)));
+        events.write(DoCommandEvent(EditorCommand::CommandSequence(sequence)));
     }
-    
+
     Ok(())
 }

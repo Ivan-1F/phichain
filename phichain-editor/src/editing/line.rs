@@ -20,7 +20,7 @@ impl Plugin for LineEditingPlugin {
 }
 
 fn create_line_system(mut do_command_event: EventWriter<DoCommandEvent>) -> Result {
-    do_command_event.send(DoCommandEvent(EditorCommand::CreateLine(CreateLine::new())));
+    do_command_event.write(DoCommandEvent(EditorCommand::CreateLine(CreateLine::new())));
     // TODO: switch to this line
 
     Ok(())

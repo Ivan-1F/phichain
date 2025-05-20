@@ -66,7 +66,7 @@ fn copy_system(
             clipboard.events.push(*event);
         }
     }
-    
+
     Ok(())
 }
 
@@ -94,10 +94,10 @@ fn cut_system(
         }
     }
 
-    event_writer.send(DoCommandEvent(EditorCommand::CommandSequence(
+    event_writer.write(DoCommandEvent(EditorCommand::CommandSequence(
         CommandSequence(commands),
     )));
-    
+
     Ok(())
 }
 
@@ -171,9 +171,9 @@ fn paste_system(
         }
 
         if !sequence.0.is_empty() {
-            event_writer.send(DoCommandEvent(EditorCommand::CommandSequence(sequence)));
+            event_writer.write(DoCommandEvent(EditorCommand::CommandSequence(sequence)));
         }
     }
-    
+
     Ok(())
 }

@@ -588,7 +588,7 @@ fn update_system(
                     }
                 }
                 if chart_time.0 >= to {
-                    app_exit_writer.send(AppExit::Success);
+                    app_exit_writer.write(AppExit::Success);
                     ffmpeg.0.wait().expect("Failed to wait ffmpeg");
                 }
             }

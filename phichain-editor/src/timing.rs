@@ -100,17 +100,17 @@ fn toggle_system(
     } else {
         pause_events.send_default();
     }
-    
+
     Ok(())
 }
 
 /// Use ArrowLeft and ArrowRight to control the progress
 fn progress_control_system(hotkey: HotkeyContext, mut events: EventWriter<SeekEvent>) {
     if hotkey.pressed(TimingHotkeys::Backward) {
-        events.send(SeekEvent(-0.02));
+        events.write(SeekEvent(-0.02));
     }
     if hotkey.pressed(TimingHotkeys::Forward) {
-        events.send(SeekEvent(0.02));
+        events.write(SeekEvent(0.02));
     }
 }
 
@@ -134,7 +134,7 @@ fn scroll_progress_control_system(
         .is_some_and(|p| viewport.0.contains(p))
     {
         for ev in wheel_events.read() {
-            seek_events.send(SeekEvent(
+            seek_events.write(SeekEvent(
                 ev.y / 5000.0 * settings.general.timeline_scroll_sensitivity,
             ));
 

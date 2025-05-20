@@ -47,7 +47,7 @@ impl Plugin for ProjectPlugin {
             .add_action(
                 "phichain.close_project",
                 |mut events: EventWriter<UnloadProjectEvent>| {
-                    events.send(UnloadProjectEvent);
+                    events.write(UnloadProjectEvent);
 
                     Ok(())
                 },
@@ -123,12 +123,12 @@ fn load_project_system(
             Ok(project) => {
                 if let Err(error) = phichain_game::load_project(&project, &mut commands) {
                     toasts.error(format!("Failed to load chart: {:?}", error));
-                    telemetry.send(PushTelemetryEvent::new(
+                    telemetry.write(PushTelemetryEvent::new(
                         "phichain.editor.project.load.failed",
                         json!({ "duration": start.elapsed().as_millis() }),
                     ));
                 } else {
-                    telemetry.send(PushTelemetryEvent::new(
+                    telemetry.write(PushTelemetryEvent::new(
                         "phichain.editor.project.loaded",
                         json!({ "duration": start.elapsed().as_millis() }),
                     ));

@@ -202,7 +202,7 @@ impl Timeline for EventTimeline {
             }
 
             let mut on_event_change = |old_event, new_event| {
-                event_writer.send(DoCommandEvent(EditorCommand::EditEvent(EditEvent::new(
+                event_writer.write(DoCommandEvent(EditorCommand::EditEvent(EditEvent::new(
                     entity, old_event, new_event,
                 ))));
             };
@@ -306,7 +306,7 @@ impl Timeline for EventTimeline {
             }
 
             if response.clicked() {
-                select_events.send(SelectEvent(vec![entity]));
+                select_events.write(SelectEvent(vec![entity]));
             }
         }
 
@@ -330,7 +330,7 @@ impl Timeline for EventTimeline {
             {
                 if let Ok(event) = event_query.get(event) {
                     // TODO: refactor logic for navigation
-                    seek_to.send(SeekToEvent(bpm_list.time_at(event.0.start_beat)));
+                    seek_to.write(SeekToEvent(bpm_list.time_at(event.0.start_beat)));
                 }
             }
         };

@@ -141,7 +141,7 @@ fn create_event_system(
                         }
                     }
                     commands.entity(entity).despawn();
-                    event.send(DoCommandEvent(EditorCommand::CreateEvent(
+                    event.write(DoCommandEvent(EditorCommand::CreateEvent(
                         CreateEvent::new(line_entity, new_event),
                     )));
                 } else {
