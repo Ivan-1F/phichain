@@ -2,6 +2,7 @@ use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
 use crate::identifier::Identifier;
 use crate::telemetry::PushTelemetryEvent;
 use bevy::ecs::system::{BoxedSystem, SystemState};
+use bevy::log;
 use bevy::prelude::*;
 use indexmap::IndexMap;
 use phichain_game::GameSet;
@@ -9,6 +10,7 @@ use serde_json::json;
 
 pub type ActionIdentifier = Identifier;
 
+// TODO: hold action's name
 pub struct RegisteredAction {
     system: BoxedSystem<(), Result>,
     pub enable_hotkey: bool,
@@ -17,8 +19,13 @@ pub struct RegisteredAction {
 
 impl RegisteredAction {
     pub fn run(&mut self, world: &mut World) {
-        let response = self.system.run((), world);
-        dbg!(response);
+        match self.system.run((), world) {
+            Ok(_) => {}
+            Err(error) => {
+                // TODO: show a toast here
+                log::error!("Action failed: {}", error);
+            }
+        };
     }
 }
 
