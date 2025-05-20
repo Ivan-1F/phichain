@@ -39,7 +39,7 @@ impl EditorEvent for SpawnLineEventEvent {
         world
             .entity_mut(id)
             .insert(LineEventBundle::new(self.event))
-            .set_parent(self.line_entity)
+            .insert(ChildOf(self.line_entity))
             .id()
     }
 }
