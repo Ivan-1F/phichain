@@ -628,8 +628,9 @@ dependencies = [
 
 [[package]]
 name = "bevy-persistent"
-version = "0.7.0"
-source = "git+https://github.com/fallible-algebra/bevy-persistent?branch=version-bump%2Fbevy-0.16.rc4#f653b6f185ad6d3d68aaf22ed4c4b7925e40b0fd"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "68c5c08248eb0918c035cb397b9ebc9583ed51a7015812d747829c09ee3776c5"
 dependencies = [
  "bevy",
  "gloo-storage",
