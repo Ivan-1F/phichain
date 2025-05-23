@@ -279,3 +279,5 @@ action:
   phichain.move_down: 下移
   phichain.move_left: 左移
   phichain.move_right: 右移
+
+  phichain.unselect_all: 取消选择

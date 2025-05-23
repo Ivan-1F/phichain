@@ -5,7 +5,7 @@ use crate::identifier::{Identifier, IntoIdentifier};
 use crate::project::project_loaded;
 use crate::settings::EditorSettings;
 use crate::tab::timeline::TimelineViewport;
-use bevy::input::mouse::MouseWheel;
+use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
 use bevy::prelude::*;
 use bevy_kira_audio::AudioInstance;
 use bevy_persistent::Persistent;
@@ -134,8 +134,13 @@ fn scroll_progress_control_system(
         .is_some_and(|p| viewport.0.contains(p))
     {
         for ev in wheel_events.read() {
+            let multiplier = match ev.unit {
+                MouseScrollUnit::Line => 40.0, // mouse
+                MouseScrollUnit::Pixel => 1.0, // touchpad
+            };
+
             seek_events.write(SeekEvent(
-                ev.y / 5000.0 * settings.general.timeline_scroll_sensitivity,
+                ev.y / 5000.0 * settings.general.timeline_scroll_sensitivity * multiplier,
             ));
 
             if settings.general.pause_when_scroll && !paused.0 {
