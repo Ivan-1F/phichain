@@ -60,10 +60,15 @@ impl Plugin for SelectionPlugin {
     }
 }
 
-pub fn unselect_all_system(mut commands: Commands, selected_query: Query<Entity, With<Selected>>) {
+pub fn unselect_all_system(
+    mut commands: Commands,
+    selected_query: Query<Entity, With<Selected>>,
+) -> Result {
     for entity in &selected_query {
         commands.entity(entity).remove::<Selected>();
     }
+
+    Ok(())
 }
 
 pub fn handle_select_event(
