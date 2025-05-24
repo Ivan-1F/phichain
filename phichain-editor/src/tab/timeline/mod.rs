@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use egui::{Id, Sense, Ui};
+use egui::{Color32, Id, Sense, Ui};
 
 use crate::timeline;
 use crate::timeline::settings::TimelineSettings;
@@ -46,7 +46,9 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
 
         ui.put(badge_rect, |ui: &mut Ui| {
             ui.dnd_drag_source(Id::new(&name), index, |ui| {
-                ui.add(egui::Label::new(&name).truncate())
+                ui.add(
+                    egui::Label::new(egui::RichText::new(&name).color(Color32::WHITE)).truncate(),
+                )
             })
             .response
         });
