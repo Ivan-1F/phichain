@@ -45,8 +45,10 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
         let name = item.timeline.name(world);
 
         ui.put(badge_rect, |ui: &mut Ui| {
-            ui.dnd_drag_source(Id::new(&name), index, |ui| ui.label(&name))
-                .response
+            ui.dnd_drag_source(Id::new(&name), index, |ui| {
+                ui.add(egui::Label::new(&name).truncate())
+            })
+            .response
         });
 
         // dropzone
