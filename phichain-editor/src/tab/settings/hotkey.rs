@@ -49,7 +49,7 @@ impl SettingCategory for Hotkey {
                         },
                     );
 
-                    match ctx.query.get_single() {
+                    match ctx.query.single() {
                         Ok((recording, entity)) if recording.id == *id => {
                             if ui
                                 .button(t!("tab.settings.category.hotkey.cancel"))
@@ -59,7 +59,7 @@ impl SettingCategory for Hotkey {
                             }
                         }
                         _ => {
-                            ui.add_enabled_ui(ctx.query.get_single().is_err(), |ui| {
+                            ui.add_enabled_ui(ctx.query.single().is_err(), |ui| {
                                 if ui
                                     .button(t!("tab.settings.category.hotkey.record"))
                                     .clicked()
@@ -70,7 +70,7 @@ impl SettingCategory for Hotkey {
                         }
                     }
 
-                    match ctx.query.get_single() {
+                    match ctx.query.single() {
                         Ok((recording, _)) if recording.id == *id => {
                             let mut keys = recording
                                 .modifiers

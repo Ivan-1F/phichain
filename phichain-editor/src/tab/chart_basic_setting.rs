@@ -62,14 +62,14 @@ pub fn chart_basic_setting_tab(
 
             if let Some((meta_from, offset_from)) = result {
                 if meta_from != project.meta {
-                    event_writer.send(DoCommandEvent(EditorCommand::EditMeta(EditMeta::new(
+                    event_writer.write(DoCommandEvent(EditorCommand::EditMeta(EditMeta::new(
                         meta_from,
                         project.meta.clone(),
                     ))));
                 }
 
                 if offset_from != offset.0 {
-                    event_writer.send(DoCommandEvent(EditorCommand::EditOffset(EditOffset::new(
+                    event_writer.write(DoCommandEvent(EditorCommand::EditOffset(EditOffset::new(
                         offset_from,
                         offset.0,
                     ))));

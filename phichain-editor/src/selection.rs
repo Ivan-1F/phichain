@@ -23,7 +23,12 @@ pub struct SelectionPlugin;
 impl Plugin for SelectionPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<SelectEvent>()
-            .add_systems(Update, handle_select_event.run_if(project_loaded()));
+            .add_systems(Update, handle_select_event.run_if(project_loaded()))
+            .add_action(
+                "phichain.unselect_all",
+                unselect_all_system,
+                Some(Hotkey::new(KeyCode::Escape, vec![])),
+            );
 
         for i in 1..10 {
             app.add_action(
@@ -32,6 +37,8 @@ impl Plugin for SelectionPlugin {
                     if let Some(entity) = query_ordered_lines(world).get(i - 1) {
                         world.resource_mut::<SelectedLine>().0 = *entity;
                     }
+
+                    Ok(())
                 },
                 Some(Hotkey::new(
                     match i {
@@ -51,6 +58,17 @@ impl Plugin for SelectionPlugin {
             );
         }
     }
+}
+
+pub fn unselect_all_system(
+    mut commands: Commands,
+    selected_query: Query<Entity, With<Selected>>,
+) -> Result {
+    for entity in &selected_query {
+        commands.entity(entity).remove::<Selected>();
+    }
+
+    Ok(())
 }
 
 pub fn handle_select_event(

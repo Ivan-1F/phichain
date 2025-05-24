@@ -68,7 +68,7 @@ pub fn bpm_list_tab(
 
                         if let Some(from) = result {
                             if from != *point {
-                                event_writer.send(DoCommandEvent(EditorCommand::EditBpmPoint(
+                                event_writer.write(DoCommandEvent(EditorCommand::EditBpmPoint(
                                     EditBpmPoint::new(index, from, *point),
                                 )));
                             }
@@ -97,7 +97,7 @@ pub fn bpm_list_tab(
                 .last()
                 .map(|x| x.beat + Beat::ONE)
                 .unwrap_or(Beat::ONE);
-            event_writer.send(DoCommandEvent(EditorCommand::CreateBpmPoint(
+            event_writer.write(DoCommandEvent(EditorCommand::CreateBpmPoint(
                 CreateBpmPoint::new(BpmPoint::new(beat, 120.0)),
             )));
         }
@@ -110,7 +110,7 @@ pub fn bpm_list_tab(
 
     if !deletes.is_empty() {
         for i in deletes {
-            event_writer.send(DoCommandEvent(EditorCommand::RemoveBpmPoint(
+            event_writer.write(DoCommandEvent(EditorCommand::RemoveBpmPoint(
                 RemoveBpmPoint::new(i),
             )));
         }

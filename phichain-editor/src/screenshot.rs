@@ -23,7 +23,7 @@ fn take_screenshot_system(
     mut commands: Commands,
     mut toasts: ResMut<ToastsStorage>,
     working_directory: Res<WorkingDirectory>,
-) {
+) -> Result {
     match working_directory.screenshot() {
         Ok(screenshot_dir) => {
             let path = screenshot_dir.join(format!(
@@ -43,4 +43,6 @@ fn take_screenshot_system(
             toasts.error(t!("screenshot.save.locate_failed", eror = error));
         }
     }
+
+    Ok(())
 }

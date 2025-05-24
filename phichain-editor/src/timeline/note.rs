@@ -49,7 +49,7 @@ impl Timeline for NoteTimeline {
             TimelineContext,
             Query<(
                 &mut Note,
-                &Parent,
+                &ChildOf,
                 Entity,
                 Option<&Highlighted>,
                 Option<&Selected>,
@@ -57,7 +57,7 @@ impl Timeline for NoteTimeline {
                 Option<&Pending>,
             )>,
             Query<&Selected>,
-            Query<(&mut CurveNoteTrack, &Parent, Entity)>,
+            Query<(&mut CurveNoteTrack, &ChildOf, Entity)>,
             Res<BpmList>,
             Res<ImageAssets>,
             Res<Assets<Image>>,
@@ -161,11 +161,11 @@ impl Timeline for NoteTimeline {
         let mut start_track_note = None::<Entity>;
         let mut despawn_cnt = None::<Entity>;
 
-        for (mut note, parent, entity, highlighted, selected, curve_note, pending) in notes {
+        for (mut note, child_of, entity, highlighted, selected, curve_note, pending) in notes {
             if !ctx.settings.note_side_filter.filter(*note) {
                 continue;
             }
-            if parent.get() != line_entity {
+            if child_of.parent() != line_entity {
                 continue;
             }
 
@@ -247,7 +247,7 @@ impl Timeline for NoteTimeline {
                             note.set_end_beat(end_beat);
                         }
                         if from != *note {
-                            event_writer.send(DoCommandEvent(EditorCommand::EditNote(
+                            event_writer.write(DoCommandEvent(EditorCommand::EditNote(
                                 EditNote::new(entity, from, *note),
                             )));
                         }
@@ -271,9 +271,12 @@ impl Timeline for NoteTimeline {
                             let mut completed_track = track.clone();
                             completed_track.to(entity);
 
-                            event_writer.send(DoCommandEvent(EditorCommand::CreateCurveNoteTrack(
-                                CreateCurveNoteTrack::new(parent.get(), completed_track),
-                            )));
+                            event_writer.write(DoCommandEvent(
+                                EditorCommand::CreateCurveNoteTrack(CreateCurveNoteTrack::new(
+                                    child_of.parent(),
+                                    completed_track,
+                                )),
+                            ));
 
                             handled = true;
                         }
@@ -281,7 +284,7 @@ impl Timeline for NoteTimeline {
                 }
 
                 if !handled {
-                    select_events.send(SelectEvent(vec![entity]));
+                    select_events.write(SelectEvent(vec![entity]));
                 }
             }
         }
@@ -304,8 +307,8 @@ impl Timeline for NoteTimeline {
             );
         }
 
-        for (mut track, parent, entity) in &mut track_query {
-            if parent.get() != line_entity {
+        for (mut track, child_of, entity) in &mut track_query {
+            if child_of.parent() != line_entity {
                 continue;
             }
 
@@ -325,6 +328,7 @@ impl Timeline for NoteTimeline {
                     let to_x = viewport.min.x + (to.x / CANVAS_WIDTH + 0.5) * viewport.width();
                     let to_y = ctx.time_to_y(bpm_list.time_at(to.beat));
                     let rect = Rect::from_two_pos(Pos2::new(from_x, from_y), Pos2::new(to_x, to_y));
+                    // FIXME: this will not be written to history
                     ui.put(
                         rect,
                         EasingGraph::new(&mut track.options.curve)
@@ -340,7 +344,7 @@ impl Timeline for NoteTimeline {
         }
 
         if let Some(entity) = start_track_note {
-            let parent = note_query.get(entity).unwrap().1.get();
+            let parent = note_query.get(entity).unwrap().1.parent();
             world.entity_mut(parent).with_children(|p| {
                 p.spawn((CurveNoteTrack::start(entity), Selected));
             });
@@ -348,7 +352,7 @@ impl Timeline for NoteTimeline {
         }
 
         if let Some(despawn_cnt) = despawn_cnt {
-            world.entity_mut(despawn_cnt).despawn_recursive();
+            world.entity_mut(despawn_cnt).despawn();
         }
     }
 
@@ -358,13 +362,13 @@ impl Timeline for NoteTimeline {
         let x_range = selection.x_range();
         let time_range = selection.y_range();
 
-        let mut state: SystemState<(Query<(&Note, &Parent, Entity)>, Res<BpmList>)> =
+        let mut state: SystemState<(Query<(&Note, &ChildOf, Entity)>, Res<BpmList>)> =
             SystemState::new(world);
         let (note_query, bpm_list) = state.get_mut(world);
 
         note_query
             .iter()
-            .filter(|x| x.1.get() == line_entity)
+            .filter(|x| x.1.parent() == line_entity)
             .filter(|x| {
                 let note = x.0;
                 x_range.contains((note.x / CANVAS_WIDTH + 0.5) * viewport.width())

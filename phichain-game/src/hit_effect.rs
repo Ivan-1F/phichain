@@ -4,7 +4,7 @@ use crate::scale::NoteScale;
 use crate::{ChartTime, GameConfig, GameSet, GameViewport, Paused};
 use bevy::prelude::*;
 use bevy::transform::TransformSystem;
-use bevy_prototype_lyon::prelude::{Fill, GeometryBuilder, ShapeBundle};
+use bevy_prototype_lyon::prelude::*;
 use bevy_prototype_lyon::shapes;
 use phichain_assets::ImageAssets;
 use phichain_chart::bpm_list::BpmList;
@@ -225,8 +225,8 @@ pub struct HitParticleBundle {
     velocity: Velocity,
     direction: Direction,
     lifetime: Lifetime,
-    shape: ShapeBundle,
-    fill: Fill,
+    shape: Shape,
+    transform: Transform,
 }
 
 impl HitParticleBundle {
@@ -246,15 +246,11 @@ impl HitParticleBundle {
             velocity: Default::default(),
             direction: Direction(quat),
             lifetime: Default::default(),
-            shape: ShapeBundle {
-                path: GeometryBuilder::build_as(&shape),
-                transform: Transform {
-                    translation: position.extend(HIT_EFFECT_LAYER),
-                    ..default()
-                },
+            shape: ShapeBuilder::with(&shape).fill(PERFECT_COLOR).build(),
+            transform: Transform {
+                translation: position.extend(HIT_EFFECT_LAYER),
                 ..default()
             },
-            fill: Fill::color(PERFECT_COLOR),
         }
     }
 }
@@ -277,9 +273,11 @@ fn update_lifetime_system(
     }
 }
 
-fn update_opacity_system(mut query: Query<(&mut Fill, &Lifetime), With<HitParticle>>) {
-    for (mut fill, lifetime) in &mut query {
-        fill.color.set_alpha((0.5 - lifetime.0) / 0.5);
+fn update_opacity_system(mut query: Query<(&mut Shape, &Lifetime), With<HitParticle>>) {
+    for (mut shape, lifetime) in &mut query {
+        shape.fill = shape
+            .fill
+            .map(|fill| fill.color.with_alpha((0.5 - lifetime.0) / 0.5).into());
     }
 }
 

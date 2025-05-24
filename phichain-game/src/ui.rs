@@ -264,29 +264,38 @@ fn update_text_scale_system(
     }
 }
 
-fn update_combo_system(mut text_query: Query<&mut Text, With<ComboText>>, score: Res<GameScore>) {
-    let mut combo_text = text_query.single_mut();
+fn update_combo_system(
+    mut text_query: Query<&mut Text, With<ComboText>>,
+    score: Res<GameScore>,
+) -> Result {
+    let mut combo_text = text_query.single_mut()?;
     **combo_text = score.combo().to_string();
+
+    Ok(())
 }
 
 fn hide_combo_below_3_system(
     mut combo_query: Query<&mut Visibility, With<Combo>>,
     score: Res<GameScore>,
-) {
-    let mut visibility = combo_query.single_mut();
+) -> Result {
+    let mut visibility = combo_query.single_mut()?;
     *visibility = if score.combo() >= 3 {
         Visibility::Inherited
     } else {
         Visibility::Hidden
     };
+
+    Ok(())
 }
 
 fn update_score_system(
     mut score_text_query: Query<&mut Text, With<ScoreText>>,
     score: Res<GameScore>,
-) {
-    let mut score_text = score_text_query.single_mut();
+) -> Result {
+    let mut score_text = score_text_query.single_mut()?;
     **score_text = score.score_text();
+
+    Ok(())
 }
 
 fn update_name_system(
@@ -294,10 +303,10 @@ fn update_name_system(
     mut name_text_query: Query<Entity, With<NameText>>,
     config: Res<GameConfig>,
     asset_server: Res<AssetServer>,
-) {
-    let container = name_text_query.single_mut();
+) -> Result {
+    let container = name_text_query.single_mut()?;
 
-    commands.entity(container).despawn_descendants();
+    commands.entity(container).despawn_related::<Children>();
     commands.entity(container).with_children(|parent| {
         for (content, script) in split_by_script(&config.name.replace(' ', "\u{00A0}")) {
             parent.spawn((
@@ -315,6 +324,8 @@ fn update_name_system(
             ));
         }
     });
+
+    Ok(())
 }
 
 fn update_level_system(
@@ -322,10 +333,10 @@ fn update_level_system(
     mut name_text_query: Query<Entity, With<LevelText>>,
     config: Res<GameConfig>,
     asset_server: Res<AssetServer>,
-) {
-    let container = name_text_query.single_mut();
+) -> Result {
+    let container = name_text_query.single_mut()?;
 
-    commands.entity(container).despawn_descendants();
+    commands.entity(container).despawn_related::<Children>();
     commands.entity(container).with_children(|parent| {
         for (content, script) in split_by_script(&config.level.replace(' ', "\u{00A0}")) {
             parent.spawn((
@@ -343,4 +354,6 @@ fn update_level_system(
             ));
         }
     });
+
+    Ok(())
 }

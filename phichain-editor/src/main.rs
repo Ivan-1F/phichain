@@ -144,13 +144,15 @@ fn main() {
         .add_plugins(HitSoundPlugin)
         .add_plugins(GameTabPlugin)
         .add_plugins(TimelinePlugin)
-        .add_plugins(EguiPlugin)
+        .add_plugins(EguiPlugin {
+            enable_multipass_for_primary_context: false,
+        })
         .add_plugins(ProjectPlugin)
         .add_plugins(ExportPlugin)
         .add_plugins(selection::SelectionPlugin)
         .add_plugins(TabPlugin)
         .add_plugins(EditingPlugin)
-        .add_plugins(FrameTimeDiagnosticsPlugin)
+        .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(AssetsPlugin)
         .add_plugins(NotificationPlugin)
         .add_plugins(FilePickingPlugin)
@@ -175,7 +177,7 @@ fn apply_editor_settings_system(settings: Res<Persistent<EditorSettings>>) {
 fn apply_args_config_system(args: Res<Args>, mut events: EventWriter<LoadProjectEvent>) {
     // load chart if specified
     if let Some(path) = &args.project {
-        events.send(LoadProjectEvent(path.into()));
+        events.write(LoadProjectEvent(path.into()));
     }
 }
 
@@ -298,7 +300,7 @@ impl egui_dock::TabViewer for TabViewer<'_> {
 }
 
 fn ui_system(world: &mut World) {
-    let Ok(egui_context) = world.query::<&mut EguiContext>().get_single_mut(world) else {
+    let Ok(egui_context) = world.query::<&mut EguiContext>().single_mut(world) else {
         return;
     };
     let mut egui_context = egui_context.clone();

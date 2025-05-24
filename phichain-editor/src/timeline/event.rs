@@ -7,9 +7,8 @@ use crate::selection::{SelectEvent, Selected, SelectedLine};
 use crate::timeline::{Timeline, TimelineContext};
 use crate::timing::SeekToEvent;
 use bevy::ecs::system::SystemState;
-use bevy::hierarchy::Parent;
-use bevy::prelude::{Entity, EventWriter, Query, Res, World};
-use egui::{Align2, Color32, FontId, Rangef, Rect, Sense, Stroke, Ui};
+use bevy::prelude::{ChildOf, Entity, EventWriter, Query, Res, World};
+use egui::{Align2, Color32, FontId, Rangef, Rect, Sense, Stroke, StrokeKind, Ui};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{LineEvent, LineEventKind};
 use phichain_chart::line::Line;
@@ -108,7 +107,7 @@ impl Timeline for EventTimeline {
             TimelineContext,
             Query<(
                 &mut LineEvent,
-                &Parent,
+                &ChildOf,
                 Entity,
                 Option<&Selected>,
                 Option<&Pending>,
@@ -154,8 +153,8 @@ impl Timeline for EventTimeline {
         let mut first_events_outside_top = EventTrackData::splat(None::<Entity>);
         let mut first_events_outside_top_y = EventTrackData::splat(f32::MIN);
 
-        for (event, parent, entity, _, _) in &event_query {
-            if parent.get() != line_entity {
+        for (event, child_of, entity, _, _) in &event_query {
+            if child_of.parent() != line_entity {
                 continue;
             }
 
@@ -188,8 +187,8 @@ impl Timeline for EventTimeline {
             }
         }
 
-        for (mut event, parent, entity, selected, pending) in &mut event_query {
-            if parent.get() != line_entity {
+        for (mut event, child_of, entity, selected, pending) in &mut event_query {
+            if child_of.parent() != line_entity {
                 continue;
             }
 
@@ -204,7 +203,7 @@ impl Timeline for EventTimeline {
             }
 
             let mut on_event_change = |old_event, new_event| {
-                event_writer.send(DoCommandEvent(EditorCommand::EditEvent(EditEvent::new(
+                event_writer.write(DoCommandEvent(EditorCommand::EditEvent(EditEvent::new(
                     entity, old_event, new_event,
                 ))));
             };
@@ -216,8 +215,13 @@ impl Timeline for EventTimeline {
                 || first_events_outside_bottom.contains(&Some(entity))
                 || first_events_outside_top.contains(&Some(entity))
             {
-                ui.painter()
-                    .rect(rect, 0.0, color, Stroke::new(2.0, Color32::WHITE));
+                ui.painter().rect(
+                    rect,
+                    0.0,
+                    color,
+                    Stroke::new(2.0, Color32::WHITE),
+                    StrokeKind::Middle,
+                );
 
                 let mut make_drag_zone = |start: bool| {
                     let drag_zone = Rect::from_x_y_ranges(
@@ -303,7 +307,7 @@ impl Timeline for EventTimeline {
             }
 
             if response.clicked() {
-                select_events.send(SelectEvent(vec![entity]));
+                select_events.write(SelectEvent(vec![entity]));
             }
         }
 
@@ -327,7 +331,7 @@ impl Timeline for EventTimeline {
             {
                 if let Ok(event) = event_query.get(event) {
                     // TODO: refactor logic for navigation
-                    seek_to.send(SeekToEvent(bpm_list.time_at(event.0.start_beat)));
+                    seek_to.write(SeekToEvent(bpm_list.time_at(event.0.start_beat)));
                 }
             }
         };
@@ -353,6 +357,7 @@ impl Timeline for EventTimeline {
             0.0,
             Color32::BLACK,
             Stroke::NONE,
+            StrokeKind::Middle,
         );
 
         // event track type indicator
@@ -409,13 +414,13 @@ impl Timeline for EventTimeline {
         let x_range = selection.x_range();
         let time_range = selection.y_range();
 
-        let mut state: SystemState<(Query<(&LineEvent, &Parent, Entity)>, Res<BpmList>)> =
+        let mut state: SystemState<(Query<(&LineEvent, &ChildOf, Entity)>, Res<BpmList>)> =
             SystemState::new(world);
         let (event_query, bpm_list) = state.get_mut(world);
 
         event_query
             .iter()
-            .filter(|x| x.1.get() == line_entity)
+            .filter(|x| x.1.parent() == line_entity)
             .filter(|x| {
                 let event = x.0;
                 let track: u8 = event.kind.into();

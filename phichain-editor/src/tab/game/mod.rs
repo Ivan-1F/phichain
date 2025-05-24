@@ -53,13 +53,13 @@ pub fn update_game_camera_viewport_system(
     window_query: Query<&Window>,
     egui_settings: Query<&bevy_egui::EguiContextSettings>,
     game_viewport: Res<GameViewport>,
-) {
-    let mut game_camera = query.single_mut();
-    let Ok(window) = window_query.get_single() else {
-        return;
+) -> Result {
+    let mut game_camera = query.single_mut()?;
+    let Ok(window) = window_query.single() else {
+        return Ok(());
     };
 
-    let scale_factor = window.scale_factor() * egui_settings.single().scale_factor;
+    let scale_factor = window.scale_factor() * egui_settings.single()?.scale_factor;
     let viewport_pos = game_viewport.0.min * scale_factor;
     let viewport_size = game_viewport.0.size() * scale_factor;
 
@@ -70,7 +70,7 @@ pub fn update_game_camera_viewport_system(
         || viewport_pos.x + viewport_size.x > window.width() * scale_factor
         || viewport_pos.y + viewport_size.y > window.height() * scale_factor
     {
-        return;
+        return Ok(());
     }
 
     game_camera.viewport = Some(Viewport {
@@ -78,4 +78,6 @@ pub fn update_game_camera_viewport_system(
         physical_size: viewport_size.as_uvec2(),
         depth: 0.0..1.0,
     });
+
+    Ok(())
 }

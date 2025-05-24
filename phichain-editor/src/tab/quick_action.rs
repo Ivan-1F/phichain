@@ -123,11 +123,11 @@ pub fn quick_action(ui: &mut Ui, world: &mut World) {
         });
 
         if second_binding != seconds {
-            events.send(SeekToEvent(second_binding));
+            events.write(SeekToEvent(second_binding));
         }
 
         if beat_binding != beats {
-            events.send(SeekToEvent(bpm_list.time_at(beat_binding.into())));
+            events.write(SeekToEvent(bpm_list.time_at(beat_binding.into())));
         }
     });
 }

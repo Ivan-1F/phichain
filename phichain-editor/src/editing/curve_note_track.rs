@@ -21,7 +21,7 @@ impl Plugin for CurveNoteTrackPlugin {
 
 fn despawn_invalid_curve_note_track_system(
     mut commands: Commands,
-    note_query: Query<(&Note, &Parent)>,
+    note_query: Query<(&Note, &ChildOf)>,
     query: Query<(&CurveNote, Entity)>,
     mut track_query: Query<(&CurveNoteTrack, Option<&Selected>, Entity)>,
 

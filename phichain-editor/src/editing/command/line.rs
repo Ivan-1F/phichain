@@ -61,7 +61,10 @@ impl Edit for RemoveLine {
     // Instead, we retain the entity, despawn all its children and remove all components
     // When undoing, we restore the line entity and its children
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
-        let parent = target.entity(self.entity).get::<Parent>().map(|x| x.get());
+        let parent = target
+            .entity(self.entity)
+            .get::<ChildOf>()
+            .map(|x| x.parent());
         self.line = Some((SerializedLine::serialize_line(target, self.entity), parent));
         DespawnLineEvent::builder()
             .target(self.entity)
@@ -107,21 +110,24 @@ impl Edit for MoveLineAsChild {
     type Output = ();
 
     fn edit(&mut self, world: &mut Self::Target) -> Self::Output {
-        self.prev_parent = world.entity(self.entity).get::<Parent>().map(|x| x.get());
+        self.prev_parent = world
+            .entity(self.entity)
+            .get::<ChildOf>()
+            .map(|x| x.parent());
         match self.target {
             None => {
-                world.entity_mut(self.entity).remove_parent();
+                world.entity_mut(self.entity).remove::<ChildOf>();
             }
             Some(target) => {
-                world.entity_mut(self.entity).set_parent(target);
+                world.entity_mut(self.entity).insert(ChildOf(target));
             }
         }
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
-        target.entity_mut(self.entity).remove_parent();
+        target.entity_mut(self.entity).remove::<ChildOf>();
         if let Some(prev_parent) = self.prev_parent {
-            target.entity_mut(self.entity).set_parent(prev_parent);
+            target.entity_mut(self.entity).insert(ChildOf(prev_parent));
         }
     }
 }

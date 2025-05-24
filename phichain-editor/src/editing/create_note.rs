@@ -74,10 +74,10 @@ fn create_note_system(
     mut event: EventWriter<DoCommandEvent>,
 
     mut pending_note_query: Query<(&mut Note, Entity), With<Pending>>,
-) {
-    let window = window_query.single();
+) -> Result {
+    let window = window_query.single()?;
     let Some(cursor_position) = window.cursor_position() else {
-        return;
+        return Ok(());
     };
 
     let rect = ctx.viewport.0.into_egui();
@@ -117,7 +117,7 @@ fn create_note_system(
 
                 let note = Note::new(kind, true, beat, x * CANVAS_WIDTH, 1.0);
 
-                event.send(DoCommandEvent(EditorCommand::CreateNote(CreateNote::new(
+                event.write(DoCommandEvent(EditorCommand::CreateNote(CreateNote::new(
                     line_entity,
                     note,
                 ))));
@@ -131,7 +131,7 @@ fn create_note_system(
                 create_note(NoteKind::Drag);
             }
 
-            if let Ok((mut pending_note, _)) = pending_note_query.get_single_mut() {
+            if let Ok((mut pending_note, _)) = pending_note_query.single_mut() {
                 if let NoteKind::Hold { .. } = pending_note.kind {
                     let (x, beat) = calc_note_attrs();
                     pending_note.kind = NoteKind::Hold {
@@ -146,9 +146,9 @@ fn create_note_system(
             }
 
             if hotkey.just_pressed(CreateNoteHotkeys::PlaceHold) {
-                if let Ok((pending_note, entity)) = pending_note_query.get_single() {
-                    commands.entity(entity).despawn_recursive();
-                    event.send(DoCommandEvent(EditorCommand::CreateNote(CreateNote::new(
+                if let Ok((pending_note, entity)) = pending_note_query.single() {
+                    commands.entity(entity).despawn();
+                    event.write(DoCommandEvent(EditorCommand::CreateNote(CreateNote::new(
                         line_entity,
                         *pending_note,
                     ))));
@@ -172,6 +172,8 @@ fn create_note_system(
             }
         }
     }
+
+    Ok(())
 }
 
 fn remove_pending_note_on_esc_system(
@@ -181,7 +183,7 @@ fn remove_pending_note_on_esc_system(
 ) {
     if keyboard.just_pressed(KeyCode::Escape) {
         for entity in &query {
-            commands.entity(entity).despawn_recursive();
+            commands.entity(entity).despawn();
         }
     }
 }

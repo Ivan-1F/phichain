@@ -65,7 +65,10 @@ impl Edit for RemoveNote {
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
         let note = target.entity(self.entity).get::<Note>().copied();
-        let parent = target.entity(self.entity).get::<Parent>().map(|x| x.get());
+        let parent = target
+            .entity(self.entity)
+            .get::<ChildOf>()
+            .map(|x| x.parent());
         self.note = Some((note.unwrap(), parent.unwrap()));
         DespawnNoteEvent::builder()
             .target(self.entity)
@@ -133,13 +136,13 @@ mod tests {
         let entity = world.spawn(NoteBundle::new(note)).id();
         world.entity_mut(line).add_child(entity);
 
-        assert!(world.query::<&Note>().get_single(world).is_ok());
+        assert!(world.query::<&Note>().single(world).is_ok());
         history.edit(world, EditorCommand::RemoveNote(RemoveNote::new(entity)));
-        assert!(world.query::<&Note>().get_single(world).is_err());
+        assert!(world.query::<&Note>().single(world).is_err());
         history.undo(world);
-        assert!(world.query::<&Note>().get_single(world).is_ok());
+        assert!(world.query::<&Note>().single(world).is_ok());
         history.redo(world);
-        assert!(world.query::<&Note>().get_single(world).is_err());
+        assert!(world.query::<&Note>().single(world).is_err());
     }
 
     #[test]
@@ -153,16 +156,16 @@ mod tests {
         let mut history = History::new();
         let line = world.spawn(LineBundle::default()).id();
         let note = Note::new(NoteKind::Tap, true, Beat::ZERO, 0.0, 1.0);
-        assert!(world.query::<&Note>().get_single(world).is_err());
+        assert!(world.query::<&Note>().single(world).is_err());
         history.edit(
             world,
             EditorCommand::CreateNote(CreateNote::new(line, note)),
         );
-        assert!(world.query::<&Note>().get_single(world).is_ok());
+        assert!(world.query::<&Note>().single(world).is_ok());
         history.undo(world);
-        assert!(world.query::<&Note>().get_single(world).is_err());
+        assert!(world.query::<&Note>().single(world).is_err());
         history.redo(world);
-        assert!(world.query::<&Note>().get_single(world).is_ok());
+        assert!(world.query::<&Note>().single(world).is_ok());
     }
 
     #[test]

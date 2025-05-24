@@ -21,7 +21,8 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
         },
     );
 
-    timeline::drag_selection::timeline_drag_selection(&mut ui, world);
+    // TODO bevy-0.16: make timeline_tab return Result and handle error using ? operator when register_tab supports systems returning Result
+    let _ = timeline::drag_selection::timeline_drag_selection(&mut ui, world);
     let viewport = world.resource::<TimelineViewport>();
     let timeline_settings = world.resource::<TimelineSettings>();
 

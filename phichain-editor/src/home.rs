@@ -2,6 +2,7 @@ use crate::recent_projects::{PersistentRecentProjectsExt, RecentProjects};
 use crate::settings::EditorSettings;
 use crate::tab::settings::settings_ui;
 use crate::translation::Languages;
+use crate::ui::sides::SidesExt;
 use crate::ui::widgets::language_combobox::language_combobox;
 use crate::{
     file::{pick_file, pick_folder, PickingEvent, PickingKind},
@@ -12,7 +13,6 @@ use bevy::prelude::*;
 use bevy_egui::EguiContext;
 use bevy_persistent::Persistent;
 use egui::{Color32, CursorIcon, Id, RichText, ScrollArea, Sense};
-use egui_flex::{item, Flex};
 use rfd::FileDialog;
 use std::path::PathBuf;
 
@@ -53,7 +53,7 @@ impl Plugin for HomePlugin {
 }
 
 fn ui_system(world: &mut World) {
-    let Ok(egui_context) = world.query::<&mut EguiContext>().get_single_mut(world) else {
+    let Ok(egui_context) = world.query::<&mut EguiContext>().single_mut(world) else {
         return;
     };
     let mut egui_context = egui_context.clone();
@@ -176,8 +176,19 @@ fn ui_system(world: &mut World) {
             }
         }
 
-        Flex::horizontal().w_full().show(ui, |flex| {
-            flex.add_ui(item().shrink(), |ui| {
+        let languages = world.resource::<Languages>().0.clone();
+        let editor_settings = world.resource::<Persistent<EditorSettings>>();
+
+        let mut open_settings = false;
+
+        let mut language_changed = false;
+        let mut language = editor_settings.general.language.clone();
+
+        let mut telemetry_changed = false;
+        let mut telemetry = editor_settings.general.send_telemetry;
+
+        ui.sides(
+            |ui| {
                 ui.horizontal(|ui| {
                     if ui.button(t!("home.open_project.load")).clicked() {
                         pick_folder(world, PickingKind::OpenProject, FileDialog::new());
@@ -186,10 +197,21 @@ fn ui_system(world: &mut World) {
                         world.insert_resource(CreatingProject);
                     }
                 });
-            });
-            flex.grow();
-            flex.add_ui(item(), |ui| {
+            },
+            |ui| {
                 ui.horizontal(|ui| {
+                    if ui.checkbox(&mut telemetry, t!("home.telemetry")).changed() {
+                        telemetry_changed = true;
+                    }
+
+                    if ui.button(t!("home.settings")).clicked() {
+                        open_settings = true;
+                    }
+
+                    if language_combobox(ui, languages, &mut language) {
+                        language_changed = true;
+                    }
+
                     ui.label(
                         RichText::new(format!(
                             "{} {}",
@@ -198,25 +220,25 @@ fn ui_system(world: &mut World) {
                         ))
                         .color(Color32::LIGHT_BLUE),
                     );
-                    let languages = world.resource::<Languages>().0.clone();
-                    let mut editor_settings = world.resource_mut::<Persistent<EditorSettings>>();
-                    if language_combobox(ui, languages, &mut editor_settings.general.language) {
-                        let _ = editor_settings.persist();
-                    }
-
-                    if ui.button(t!("home.settings")).clicked() {
-                        world.insert_resource(OpenSettings);
-                    }
-
-                    let mut editor_settings = world.resource_mut::<Persistent<EditorSettings>>();
-
-                    ui.checkbox(
-                        &mut editor_settings.general.send_telemetry,
-                        t!("home.telemetry"),
-                    );
                 })
-            });
-        });
+            },
+        );
+
+        if open_settings {
+            world.insert_resource(OpenSettings);
+        }
+
+        if language_changed {
+            let mut editor_settings = world.resource_mut::<Persistent<EditorSettings>>();
+            editor_settings.general.language = language;
+            let _ = editor_settings.persist();
+        }
+
+        if telemetry_changed {
+            let mut editor_settings = world.resource_mut::<Persistent<EditorSettings>>();
+            editor_settings.general.send_telemetry = telemetry;
+            let _ = editor_settings.persist();
+        }
 
         ui.separator();
 
@@ -284,7 +306,7 @@ fn load_project_system(
             continue;
         }
         if let Some(root_dir) = path {
-            events.send(LoadProjectEvent(root_dir.to_path_buf()));
+            events.write(LoadProjectEvent(root_dir.to_path_buf()));
             commands.remove_resource::<CreatingProject>();
         }
     }
@@ -342,7 +364,7 @@ fn handle_create_project_system(
             form.meta.clone(),
         ) {
             Ok(_) => {
-                load_project_events.send(LoadProjectEvent(root_path.clone()));
+                load_project_events.write(LoadProjectEvent(root_path.clone()));
                 commands.remove_resource::<CreatingProject>();
             }
             Err(error) => toasts.error(format!("{:?}", error)),
