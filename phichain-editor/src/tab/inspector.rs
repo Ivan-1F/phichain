@@ -26,7 +26,7 @@ pub fn inspector_ui_system(
 
     mut selected_track: Query<&mut CurveNoteTrack, With<Selected>>,
 ) {
-    if let Ok(mut track) = selected_track.get_single_mut() {
+    if let Ok(mut track) = selected_track.single_mut() {
         curve_note_track_inspector(&mut ui, &mut track);
         return;
     }
@@ -145,7 +145,7 @@ fn single_event_inspector(
                     {
                         let mut new_event = *event;
                         new_event.value = new_event.value.into_transition();
-                        event_writer.send(DoCommandEvent(EditorCommand::EditEvent(
+                        event_writer.write(DoCommandEvent(EditorCommand::EditEvent(
                             EditEvent::new(entity, *event, new_event),
                         )));
                     }
@@ -158,7 +158,7 @@ fn single_event_inspector(
                     {
                         let mut new_event = *event;
                         new_event.value = new_event.value.into_constant();
-                        event_writer.send(DoCommandEvent(EditorCommand::EditEvent(
+                        event_writer.write(DoCommandEvent(EditorCommand::EditEvent(
                             EditEvent::new(entity, *event, new_event),
                         )));
                     }
@@ -226,7 +226,7 @@ fn single_event_inspector(
 
     if let Some(from) = result {
         if from != *event {
-            event_writer.send(DoCommandEvent(EditorCommand::EditEvent(EditEvent::new(
+            event_writer.write(DoCommandEvent(EditorCommand::EditEvent(EditEvent::new(
                 entity, from, *event,
             ))));
         }
@@ -293,7 +293,7 @@ fn single_note_inspector(
 
     if let Some(from) = result {
         if from != *note {
-            event_writer.send(DoCommandEvent(EditorCommand::EditNote(EditNote::new(
+            event_writer.write(DoCommandEvent(EditorCommand::EditNote(EditNote::new(
                 entity, from, *note,
             ))));
         }
@@ -324,7 +324,7 @@ fn multiple_notes_inspector(
                 })
                 .collect::<Vec<_>>();
 
-            event_writer.send(DoCommandEvent(EditorCommand::CommandSequence(
+            event_writer.write(DoCommandEvent(EditorCommand::CommandSequence(
                 CommandSequence(commands),
             )));
         }
@@ -349,7 +349,7 @@ fn multiple_notes_inspector(
                 })
                 .collect::<Vec<_>>();
 
-            event_writer.send(DoCommandEvent(EditorCommand::CommandSequence(
+            event_writer.write(DoCommandEvent(EditorCommand::CommandSequence(
                 CommandSequence(commands),
             )));
         }
@@ -372,7 +372,7 @@ fn multiple_notes_inspector(
                 })
                 .collect::<Vec<_>>();
 
-            event_writer.send(DoCommandEvent(EditorCommand::CommandSequence(
+            event_writer.write(DoCommandEvent(EditorCommand::CommandSequence(
                 CommandSequence(commands),
             )));
         }
@@ -385,7 +385,7 @@ fn multiple_notes_inspector(
                 })
                 .collect::<Vec<_>>();
 
-            event_writer.send(DoCommandEvent(EditorCommand::CommandSequence(
+            event_writer.write(DoCommandEvent(EditorCommand::CommandSequence(
                 CommandSequence(commands),
             )));
         };
@@ -444,7 +444,7 @@ fn multiple_events_inspector(
                 })
                 .collect::<Vec<_>>();
 
-            event_writer.send(DoCommandEvent(EditorCommand::CommandSequence(
+            event_writer.write(DoCommandEvent(EditorCommand::CommandSequence(
                 CommandSequence(commands),
             )));
         }

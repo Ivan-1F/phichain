@@ -5,10 +5,7 @@ use crate::identifier::Identifier;
 use crate::tab::TabRegistry;
 use crate::UiState;
 use bevy::app::App;
-use bevy::prelude::{
-    Commands, Component, Entity, EventWriter, IntoSystemConfigs, KeyCode, Plugin, Query, Res,
-    ResMut, Update, Window, With, World,
-};
+use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use bevy_egui::EguiContext;
 use egui::{Sense, TextEdit, UiBuilder, Widget};
@@ -34,12 +31,14 @@ pub struct ActionPanel {
 }
 
 // TODO: using exclusive system here because somehow `mut Commands` does not work with `world.run_system()`
-fn open_action_panel_system(world: &mut World) {
-    if world.query::<&ActionPanel>().get_single(world).is_ok() {
-        return;
+fn open_action_panel_system(world: &mut World) -> Result {
+    if world.query::<&ActionPanel>().single(world).is_ok() {
+        return Ok(());
     }
 
     world.spawn(ActionPanel::default());
+
+    Ok(())
 }
 
 #[derive(Debug, Clone)]
@@ -68,18 +67,18 @@ fn action_panel_ui_system(
     mut ui_state: ResMut<UiState>,
 
     mut run: EventWriter<RunActionEvent>,
-) {
-    let Ok((entity, mut panel)) = query.get_single_mut() else {
-        return;
+) -> Result {
+    let Ok((entity, mut panel)) = query.single_mut() else {
+        return Ok(());
+    };
+    let Ok(egui_context) = context.single_mut() else {
+        return Ok(());
     };
 
-    let Ok(egui_context) = context.get_single_mut() else {
-        return;
-    };
     let mut egui_context = egui_context.clone();
     let ctx = egui_context.get_mut();
 
-    let window = window.single();
+    let window = window.single()?;
 
     let mut entries = vec![];
 
@@ -138,7 +137,7 @@ fn action_panel_ui_system(
                 let selected = panel.cursor.is_some_and(|x| x == index);
 
                 ui.scope_builder(UiBuilder::new().sense(Sense::click()), |ui| {
-                    egui::Frame::none()
+                    egui::Frame::new()
                         .fill(if selected {
                             egui::Color32::from_rgba_unmultiplied(64, 94, 168, 100)
                         } else {
@@ -172,7 +171,7 @@ fn action_panel_ui_system(
                         commands.entity(entity).despawn();
                         match entry.kind {
                             ActionPanelEntryKind::Action => {
-                                run.send(RunActionEvent(entry.id.clone()));
+                                run.write(RunActionEvent(entry.id.clone()));
                             }
                             ActionPanelEntryKind::Tab => {
                                 let id = entry.id.clone();
@@ -225,7 +224,7 @@ fn action_panel_ui_system(
                         commands.entity(entity).despawn();
                         match entry.kind {
                             ActionPanelEntryKind::Action => {
-                                run.send(RunActionEvent(entry.id.clone()));
+                                run.write(RunActionEvent(entry.id.clone()));
                             }
                             ActionPanelEntryKind::Tab => {
                                 let id = entry.id.clone();
@@ -246,4 +245,6 @@ fn action_panel_ui_system(
     if response.should_close() {
         commands.entity(entity).despawn();
     }
+
+    Ok(())
 }

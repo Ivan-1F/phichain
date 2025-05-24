@@ -94,21 +94,23 @@ fn toggle_system(
     paused: Res<Paused>,
     mut pause_events: EventWriter<PauseEvent>,
     mut resume_events: EventWriter<ResumeEvent>,
-) {
+) -> Result {
     if paused.0 {
-        resume_events.send_default();
+        resume_events.write_default();
     } else {
-        pause_events.send_default();
+        pause_events.write_default();
     }
+
+    Ok(())
 }
 
 /// Use ArrowLeft and ArrowRight to control the progress
 fn progress_control_system(hotkey: HotkeyContext, mut events: EventWriter<SeekEvent>) {
     if hotkey.pressed(TimingHotkeys::Backward) {
-        events.send(SeekEvent(-0.02));
+        events.write(SeekEvent(-0.02));
     }
     if hotkey.pressed(TimingHotkeys::Forward) {
-        events.send(SeekEvent(0.02));
+        events.write(SeekEvent(0.02));
     }
 }
 
@@ -124,7 +126,7 @@ fn scroll_progress_control_system(
 
     settings: Res<Persistent<EditorSettings>>,
 ) {
-    let Ok(window) = window_query.get_single() else {
+    let Ok(window) = window_query.single() else {
         return;
     };
     if window
@@ -137,12 +139,12 @@ fn scroll_progress_control_system(
                 MouseScrollUnit::Pixel => 1.0, // touchpad
             };
 
-            seek_events.send(SeekEvent(
+            seek_events.write(SeekEvent(
                 ev.y / 5000.0 * settings.general.timeline_scroll_sensitivity * multiplier,
             ));
 
             if settings.general.pause_when_scroll && !paused.0 {
-                pause_events.send_default();
+                pause_events.write_default();
             }
         }
     }

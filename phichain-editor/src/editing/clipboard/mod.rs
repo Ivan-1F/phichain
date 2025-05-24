@@ -56,7 +56,7 @@ fn copy_system(
     event_query: Query<&LineEvent>,
 
     selected_query: Query<Entity, With<Selected>>,
-) {
+) -> Result {
     clipboard.clear();
 
     for entity in &selected_query {
@@ -66,6 +66,8 @@ fn copy_system(
             clipboard.events.push(*event);
         }
     }
+
+    Ok(())
 }
 
 fn cut_system(
@@ -77,7 +79,7 @@ fn cut_system(
     selected_query: Query<Entity, With<Selected>>,
 
     mut event_writer: EventWriter<DoCommandEvent>,
-) {
+) -> Result {
     clipboard.clear();
 
     let mut commands = vec![];
@@ -92,9 +94,11 @@ fn cut_system(
         }
     }
 
-    event_writer.send(DoCommandEvent(EditorCommand::CommandSequence(
+    event_writer.write(DoCommandEvent(EditorCommand::CommandSequence(
         CommandSequence(commands),
     )));
+
+    Ok(())
 }
 
 fn paste_system(
@@ -108,14 +112,14 @@ fn paste_system(
     bpm_list: Res<BpmList>,
 
     mut event_writer: EventWriter<DoCommandEvent>,
-) {
-    let window = window_query.single();
+) -> Result {
+    let window = window_query.single()?;
     let Some(cursor_position) = window.cursor_position() else {
-        return;
+        return Ok(());
     };
 
     if !ctx.viewport.0.contains(cursor_position) {
-        return;
+        return Ok(());
     }
 
     let timeline = ctx
@@ -127,7 +131,7 @@ fn paste_system(
         .map(|x| x.timeline);
 
     let Some(timeline) = timeline else {
-        return;
+        return Ok(());
     };
 
     let target_line = timeline.line_entity().unwrap_or(selected_line.0);
@@ -167,7 +171,9 @@ fn paste_system(
         }
 
         if !sequence.0.is_empty() {
-            event_writer.send(DoCommandEvent(EditorCommand::CommandSequence(sequence)));
+            event_writer.write(DoCommandEvent(EditorCommand::CommandSequence(sequence)));
         }
     }
+
+    Ok(())
 }

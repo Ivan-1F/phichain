@@ -37,6 +37,8 @@ impl Plugin for SelectionPlugin {
                     if let Some(entity) = query_ordered_lines(world).get(i - 1) {
                         world.resource_mut::<SelectedLine>().0 = *entity;
                     }
+
+                    Ok(())
                 },
                 Some(Hotkey::new(
                     match i {
@@ -58,10 +60,15 @@ impl Plugin for SelectionPlugin {
     }
 }
 
-pub fn unselect_all_system(mut commands: Commands, selected_query: Query<Entity, With<Selected>>) {
+pub fn unselect_all_system(
+    mut commands: Commands,
+    selected_query: Query<Entity, With<Selected>>,
+) -> Result {
     for entity in &selected_query {
         commands.entity(entity).remove::<Selected>();
     }
+
+    Ok(())
 }
 
 pub fn handle_select_event(

@@ -66,11 +66,11 @@ fn update_note_tint_system(
 }
 
 fn sync_hold_components_tint_system(
-    mut component_query: Query<(&mut Sprite, &Parent), With<HoldComponent>>,
+    mut component_query: Query<(&mut Sprite, &ChildOf), With<HoldComponent>>,
     parent_query: Query<&Sprite, Without<HoldComponent>>,
 ) {
-    for (mut sprite, parent) in &mut component_query {
-        if let Ok(parent_sprite) = parent_query.get(parent.get()) {
+    for (mut sprite, child_of) in &mut component_query {
+        if let Ok(parent_sprite) = parent_query.get(child_of.parent()) {
             sprite.color = parent_sprite.color;
         }
     }
@@ -120,24 +120,22 @@ fn create_anchor_marker_system(mut commands: Commands, query: Query<Entity, Adde
         commands.entity(line).with_children(|parent| {
             parent.spawn((
                 AnchorMarker,
-                ShapeBundle {
-                    path: GeometryBuilder::build_as(&shape),
-                    ..default()
-                },
-                Fill::color(Color::WHITE),
-                Stroke::color(bevy::color::palettes::css::LIMEGREEN),
+                ShapeBuilder::with(&shape)
+                    .fill(Color::WHITE)
+                    .stroke(Stroke::color(bevy::color::palettes::css::LIMEGREEN))
+                    .build(),
             ));
         });
     }
 }
 
 fn update_anchor_marker_system(
-    mut query: Query<(&mut Visibility, &Parent), With<AnchorMarker>>,
+    mut query: Query<(&mut Visibility, &ChildOf), With<AnchorMarker>>,
     line_query: Query<&Sprite>,
     editor_settings: Res<Persistent<EditorSettings>>,
 ) {
-    for (mut visibility, parent) in &mut query {
-        if let Ok(sprite) = line_query.get(parent.get()) {
+    for (mut visibility, child_of) in &mut query {
+        if let Ok(sprite) = line_query.get(child_of.parent()) {
             *visibility = match editor_settings.general.show_line_anchor {
                 ShowLineAnchorOption::Never => Visibility::Hidden,
                 ShowLineAnchorOption::Always => Visibility::Inherited,

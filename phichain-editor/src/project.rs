@@ -47,7 +47,9 @@ impl Plugin for ProjectPlugin {
             .add_action(
                 "phichain.close_project",
                 |mut events: EventWriter<UnloadProjectEvent>| {
-                    events.send(UnloadProjectEvent);
+                    events.write(UnloadProjectEvent);
+
+                    Ok(())
                 },
                 Some(Hotkey::new(KeyCode::KeyW, vec![Modifier::Control])),
             )
@@ -55,13 +57,15 @@ impl Plugin for ProjectPlugin {
                 "phichain.open_in_file_manager",
                 |project: Res<Project>| {
                     let _ = open::that(project.path.0.clone());
+
+                    Ok(())
                 },
                 None,
             );
     }
 }
 
-fn save_project_system(world: &mut World) {
+fn save_project_system(world: &mut World) -> Result {
     world.resource_scope(|world, mut history: Mut<EditorHistory>| {
         if let Ok(chart) = PhichainExporter::export(world) {
             let project = world.resource::<Project>();
@@ -83,6 +87,8 @@ fn save_project_system(world: &mut World) {
             }
         }
     });
+
+    Ok(())
 }
 
 #[derive(Event, Debug)]
@@ -117,12 +123,12 @@ fn load_project_system(
             Ok(project) => {
                 if let Err(error) = phichain_game::load_project(&project, &mut commands) {
                     toasts.error(format!("Failed to load chart: {:?}", error));
-                    telemetry.send(PushTelemetryEvent::new(
+                    telemetry.write(PushTelemetryEvent::new(
                         "phichain.editor.project.load.failed",
                         json!({ "duration": start.elapsed().as_millis() }),
                     ));
                 } else {
-                    telemetry.send(PushTelemetryEvent::new(
+                    telemetry.write(PushTelemetryEvent::new(
                         "phichain.editor.project.loaded",
                         json!({ "duration": start.elapsed().as_millis() }),
                     ));
@@ -185,7 +191,7 @@ fn unload_project_system(
         let mut illustration_query = world.query_filtered::<Entity, With<Illustration>>();
         let entities = illustration_query.iter(world).collect::<Vec<_>>();
         for entity in entities {
-            world.entity_mut(entity).despawn_recursive();
+            world.entity_mut(entity).despawn();
         }
         if let Some(illustration_asset_id) =
             world.get_resource::<IllustrationAssetId>().map(|x| x.0)
@@ -203,21 +209,25 @@ fn unload_project_system(
 
         // unload lines, notes and events
         use phichain_chart::line::Line;
-        let mut line_query = world.query_filtered::<Entity, (With<Line>, Without<Parent>)>();
+        let mut line_query = world.query_filtered::<Entity, (With<Line>, Without<ChildOf>)>();
         let entities = line_query.iter(world).collect::<Vec<_>>();
         for entity in entities {
             // notes and events will be despawned as children
-            world.entity_mut(entity).despawn_recursive();
+            world.entity_mut(entity).despawn();
         }
 
         // despawn ghost entities created when despawning an entity with `keep_entity`
         let to_remove = world
             .query::<Entity>()
             .iter(world)
-            .filter(|entity| world.inspect_entity(*entity).collect::<Vec<_>>().is_empty())
+            .filter(|entity| {
+                world
+                    .inspect_entity(*entity)
+                    .is_ok_and(|x| x.collect::<Vec<_>>().is_empty())
+            })
             .collect::<Vec<_>>();
         for entity in to_remove {
-            world.entity_mut(entity).despawn_recursive();
+            world.entity_mut(entity).despawn();
         }
 
         // clear editor history

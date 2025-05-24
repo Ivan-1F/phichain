@@ -1,6 +1,6 @@
 use crate::misc::WorkingDirectory;
+use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
-use bevy::utils::HashMap;
 use serde::{Deserialize, Serialize};
 
 pub struct TranslationPlugin;

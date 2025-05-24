@@ -64,7 +64,7 @@ fn load_line(line: SerializedLine, commands: &mut Commands, parent: Option<Entit
         .id();
 
     if let Some(parent) = parent {
-        commands.entity(id).set_parent(parent);
+        commands.entity(id).insert(ChildOf(parent));
     }
 
     for child in line.children {

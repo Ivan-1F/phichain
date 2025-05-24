@@ -13,8 +13,8 @@ use bevy::render::camera::RenderTarget;
 use bevy::render::render_asset::{RenderAssetUsages, RenderAssets};
 use bevy::render::render_graph::{NodeRunError, RenderGraph, RenderGraphContext, RenderLabel};
 use bevy::render::render_resource::{
-    Buffer, BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, ImageCopyBuffer,
-    ImageDataLayout, Maintain, MapMode, TextureDimension, TextureFormat, TextureUsages,
+    Buffer, BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, Maintain, MapMode,
+    TexelCopyBufferInfo, TexelCopyBufferLayout, TextureDimension, TextureFormat, TextureUsages,
 };
 use bevy::render::renderer::{RenderContext, RenderDevice, RenderQueue};
 use bevy::render::{render_graph, Extract, Render, RenderApp, RenderSet};
@@ -286,7 +286,7 @@ fn setup_render_target(
     commands.spawn(ImageToSave(cpu_image_handle));
 
     scene_controller.state = SceneState::Render(pre_roll_frames);
-    RenderTarget::Image(render_target_image_handle)
+    RenderTarget::Image(render_target_image_handle.into())
 }
 
 /// Setups image saver
@@ -315,8 +315,7 @@ impl ImageCopier {
         size: Extent3d,
         render_device: &RenderDevice,
     ) -> ImageCopier {
-        let padded_bytes_per_row =
-            RenderDevice::align_copy_bytes_per_row((size.width) as usize) * 4;
+        let padded_bytes_per_row = RenderDevice::align_copy_bytes_per_row(size.width as usize) * 4;
 
         let cpu_buffer = render_device.create_buffer(&BufferDescriptor {
             label: None,
@@ -384,20 +383,14 @@ impl render_graph::Node for ImageCopyDriver {
             // That's why image in buffer can be little bit wider
             // This should be taken into account at copy from buffer stage
             let padded_bytes_per_row = RenderDevice::align_copy_bytes_per_row(
-                (src_image.size.x as usize / block_dimensions.0 as usize) * block_size as usize,
+                (src_image.size.width as usize / block_dimensions.0 as usize) * block_size as usize,
             );
-
-            let texture_extent = Extent3d {
-                width: src_image.size.x,
-                height: src_image.size.y,
-                depth_or_array_layers: 1,
-            };
 
             encoder.copy_texture_to_buffer(
                 src_image.texture.as_image_copy(),
-                ImageCopyBuffer {
+                TexelCopyBufferInfo {
                     buffer: &image_copier.buffer,
-                    layout: ImageDataLayout {
+                    layout: TexelCopyBufferLayout {
                         offset: 0,
                         bytes_per_row: Some(
                             std::num::NonZeroU32::new(padded_bytes_per_row as u32)
@@ -407,7 +400,7 @@ impl render_graph::Node for ImageCopyDriver {
                         rows_per_image: None,
                     },
                 },
-                texture_extent,
+                src_image.size,
             );
 
             let render_queue = world.get_resource::<RenderQueue>().unwrap();
@@ -549,15 +542,17 @@ fn update_system(
                         * img_bytes.texture_descriptor.format.pixel_size();
                     let aligned_row_bytes = RenderDevice::align_copy_bytes_per_row(row_bytes);
                     if row_bytes == aligned_row_bytes {
-                        img_bytes.data.clone_from(&image_data);
+                        img_bytes.data.as_mut().unwrap().clone_from(&image_data);
                     } else {
                         // shrink data to original image size
-                        img_bytes.data = image_data
-                            .chunks(aligned_row_bytes)
-                            .take(img_bytes.height() as usize)
-                            .flat_map(|row| &row[..row_bytes.min(row.len())])
-                            .cloned()
-                            .collect();
+                        img_bytes.data = Some(
+                            image_data
+                                .chunks(aligned_row_bytes)
+                                .take(img_bytes.height() as usize)
+                                .flat_map(|row| &row[..row_bytes.min(row.len())])
+                                .cloned()
+                                .collect(),
+                        );
                     }
 
                     // Create RGBA Image Buffer
@@ -588,7 +583,7 @@ fn update_system(
                     }
                 }
                 if chart_time.0 >= to {
-                    app_exit_writer.send(AppExit::Success);
+                    app_exit_writer.write(AppExit::Success);
                     ffmpeg.0.wait().expect("Failed to wait ffmpeg");
                 }
             }

@@ -56,7 +56,7 @@ fn show_egui_notifies_system(
     mut context: Query<&mut EguiContext>,
     mut toasts: ResMut<ToastsStorage>,
 ) {
-    if let Ok(mut ctx) = context.get_single_mut() {
+    if let Ok(mut ctx) = context.single_mut() {
         toasts.show(ctx.get_mut())
     }
 }

@@ -1,13 +1,12 @@
 pub mod text_utils;
 
-use bevy::hierarchy::{Children, Parent};
-use bevy::prelude::{Entity, With, Without, World};
+use bevy::prelude::{ChildOf, Children, Entity, With, Without, World};
 use phichain_chart::line::{Line, LineTimestamp};
 
 /// Get all lines flattened with the order
 pub fn query_ordered_lines(world: &mut World) -> Vec<Entity> {
     let mut query =
-        world.query_filtered::<(Entity, &LineTimestamp), (Without<Parent>, With<Line>)>();
+        world.query_filtered::<(Entity, &LineTimestamp), (Without<ChildOf>, With<Line>)>();
     let mut root_entities = query.iter(world).collect::<Vec<_>>();
     root_entities.sort_by_key(|(_, timestamp)| **timestamp);
     let root_entities = root_entities

@@ -1,4 +1,5 @@
 use egui::epaint::PathShape;
+use egui::response::Flags;
 use egui::{
     emath, Color32, Frame, Grid, Label, Layout, Pos2, Rect, Response, RichText, Sense, Stroke, Ui,
     UiBuilder, Vec2, Widget,
@@ -130,7 +131,9 @@ impl Widget for EasingGraph<'_> {
                 Stroke::new(2.0, Color32::GRAY),
             );
 
-            response.drag_stopped |= drag_stopped;
+            if drag_stopped {
+                response.flags |= Flags::DRAG_STOPPED;
+            }
         }
 
         response
@@ -329,18 +332,24 @@ impl Widget for EasingValue<'_> {
 
             if let Easing::Steps(steps) = self.value {
                 let dv_response = ui.add(egui::DragValue::new(steps).speed(1).range(1..=64));
-                response.drag_stopped |= dv_response.drag_stopped() || dv_response.changed();
+                if dv_response.changed() {
+                    response.flags |= Flags::DRAG_STOPPED;
+                }
             }
 
             if let Easing::Elastic(omega) = self.value {
                 let dv_response =
                     ui.add(egui::DragValue::new(omega).speed(0.1).range(10.0..=128.0));
-                response.drag_stopped |= dv_response.drag_stopped() || dv_response.changed();
+                if dv_response.changed() {
+                    response.flags |= Flags::DRAG_STOPPED;
+                }
             }
 
             // temporary workaround for change handling: .change() is reserved by egui,
             // we use drag_stopped for change handling as the same as DragValue
-            response.drag_stopped |= combobox_changed;
+            if combobox_changed {
+                response.flags |= Flags::DRAG_STOPPED;
+            }
 
             response
         })

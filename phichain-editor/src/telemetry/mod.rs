@@ -235,7 +235,7 @@ fn handle_push_telemetry_event_system(
 }
 
 fn send_startup_event_system(mut events: EventWriter<PushTelemetryEvent>) {
-    events.send(PushTelemetryEvent::new(
+    events.write(PushTelemetryEvent::new(
         "phichain.editor.started",
         json!({}),
     ));

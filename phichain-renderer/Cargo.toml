@@ -12,7 +12,7 @@ phichain-chart = { path = "../phichain-chart", features = ["bevy"] }
 phichain-game = { path = "../phichain-game" }
 phichain-assets = { path = "../phichain-assets" }
 
-bevy = { version = "0.15.1", default-features = false, features = [
+bevy = { version = "0.16.0", default-features = false, features = [
     "animation",
     "bevy_asset",
     "bevy_gilrs",
@@ -34,8 +34,10 @@ bevy = { version = "0.15.1", default-features = false, features = [
     "default_font",
     "webgl2",
     "bevy_debug_stepping",
+    "std",
+    "async_executor",
 ] }
-bevy_kira_audio = { version = "0.22.0", features = [
+bevy_kira_audio = { version = "0.23.0", features = [
     "mp3",
     "ogg",
     "flac",

@@ -25,20 +25,20 @@ impl SerializeLine for SerializedLine {
 
         if let Some(children) = children {
             for child in children.iter() {
-                if let Some(note) = world.get::<Note>(*child) {
-                    if world.get::<CurveNote>(*child).is_some() {
+                if let Some(note) = world.get::<Note>(child) {
+                    if world.get::<CurveNote>(child).is_some() {
                         // skip curve notes
                         continue;
                     }
-                    note_entity_order.push(*child);
+                    note_entity_order.push(child);
                     notes.push(*note);
                 }
-                if let Some(event) = world.get::<LineEvent>(*child) {
+                if let Some(event) = world.get::<LineEvent>(child) {
                     events.push(*event);
                 }
             }
             for child in children.iter() {
-                if let Some(track) = world.get::<CurveNoteTrack>(*child) {
+                if let Some(track) = world.get::<CurveNoteTrack>(child) {
                     if let Some((from, to)) = track.get_entities() {
                         if let (Some(from), Some(to)) = (
                             note_entity_order.iter().position(|x| *x == from),
@@ -59,8 +59,8 @@ impl SerializeLine for SerializedLine {
 
         if let Some(children) = children {
             for child in children.iter() {
-                if world.get::<Line>(*child).is_some() {
-                    child_lines.push(SerializedLine::serialize_line(world, *child));
+                if world.get::<Line>(child).is_some() {
+                    child_lines.push(SerializedLine::serialize_line(world, child));
                 }
             }
         }

@@ -45,7 +45,7 @@ fn poll_system(
     for (entity, mut pending) in &mut tasks {
         if let Some(path) = future::block_on(future::poll_once(&mut pending.task)) {
             commands.entity(entity).despawn();
-            events.send(PickingEvent {
+            events.write(PickingEvent {
                 path,
                 kind: pending.kind,
             });

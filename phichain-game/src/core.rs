@@ -120,7 +120,7 @@ pub fn compute_line_system(
         let mut opacity_value = EventEvaluationResult::Unaffected;
         let mut speed_value = EventEvaluationResult::Unaffected;
 
-        for event in children.iter().filter_map(|x| event_query.get(*x).ok()) {
+        for event in children.iter().filter_map(|x| event_query.get(x).ok()) {
             let value = event.evaluate(beat);
             match event.kind {
                 LineEventKind::X => x_value = x_value.max(value),
@@ -159,7 +159,7 @@ pub fn update_line_system(
             &LineOpacity,
             &mut Transform,
             &mut Sprite,
-            Option<&Parent>,
+            Option<&ChildOf>,
         ),
         With<Line>,
     >,
@@ -188,7 +188,7 @@ pub fn update_line_system(
 pub fn update_note_y_system(
     query: Query<(&Children, Entity), With<Line>>,
     game_viewport: Res<GameViewport>,
-    speed_event_query: Query<(&SpeedEvent, &LineEvent, &Parent)>,
+    speed_event_query: Query<(&SpeedEvent, &LineEvent, &ChildOf)>,
     mut note_query: Query<(&mut Transform, &mut Sprite, &mut Visibility, &Note)>,
     time: Res<ChartTime>,
     bpm_list: Res<BpmList>,
@@ -197,7 +197,7 @@ pub fn update_note_y_system(
     for (children, entity) in &query {
         let mut speed_events: Vec<&SpeedEvent> = all_speed_events
             .iter()
-            .filter(|(_, _, parent)| parent.get() == entity)
+            .filter(|(_, _, child_of)| child_of.parent() == entity)
             .map(|(s, _, _)| *s)
             .collect();
         speed_events.sort_by(|a, b| {
@@ -333,12 +333,12 @@ pub fn spawn_hold_component_system(
                 });
             }
             Some(children) => {
-                if children.iter().all(|c| head_query.get(*c).is_err()) {
+                if children.iter().all(|c| head_query.get(c).is_err()) {
                     commands.entity(entity).with_children(|p| {
                         p.spawn(HoldHeadBundle::new());
                     });
                 }
-                if children.iter().all(|c| tail_query.get(*c).is_err()) {
+                if children.iter().all(|c| tail_query.get(c).is_err()) {
                     commands.entity(entity).with_children(|p| {
                         p.spawn(HoldTailBundle::new());
                     });
@@ -367,13 +367,13 @@ pub fn update_hold_components_scale_system(
 }
 
 pub fn update_hold_component_texture_system(
-    mut head_query: Query<(&mut Sprite, &Parent), (With<HoldHead>, Without<HoldTail>)>,
+    mut head_query: Query<(&mut Sprite, &ChildOf), (With<HoldHead>, Without<HoldTail>)>,
     mut tail_query: Query<&mut Sprite, (With<HoldTail>, Without<HoldHead>)>,
     parent_query: Query<Option<&Highlighted>>,
     assets: Res<ImageAssets>,
 ) {
-    for (mut sprite, parent) in &mut head_query {
-        if let Ok(highlight) = parent_query.get(parent.get()).map(|x| x.is_some()) {
+    for (mut sprite, child_of) in &mut head_query {
+        if let Ok(highlight) = parent_query.get(child_of.parent()).map(|x| x.is_some()) {
             sprite.image = if highlight {
                 assets.hold_head_highlight.clone()
             } else {
@@ -410,14 +410,16 @@ fn hide_hold_head_system(
 pub fn despawn_hold_component_system(
     mut commands: Commands,
     query: Query<&Note>,
-    component_query: Query<(&Parent, Entity), With<HoldComponent>>,
+    component_query: Query<(&ChildOf, Entity), With<HoldComponent>>,
 ) {
-    for (parent, entity) in &component_query {
-        let note = query.get(parent.get());
+    for (child_of, entity) in &component_query {
+        let note = query.get(child_of.parent());
         if note.is_err() || note.is_ok_and(|n| !n.kind.is_hold()) {
             // despawning children does not remove references for parent
             // https://github.com/bevyengine/bevy/issues/12235
-            commands.entity(parent.get()).remove_children(&[entity]);
+            commands
+                .entity(child_of.parent())
+                .remove_children(&[entity]);
 
             commands.entity(entity).despawn();
         }

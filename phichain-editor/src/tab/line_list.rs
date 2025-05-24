@@ -35,7 +35,7 @@ impl<'a> LineList<'a> {
 
         let mut query = self
             .world
-            .query_filtered::<(Entity, &LineTimestamp), (Without<Parent>, With<Line>)>();
+            .query_filtered::<(Entity, &LineTimestamp), (Without<ChildOf>, With<Line>)>();
         let mut entities = query.iter(self.world).collect::<Vec<_>>();
         entities.sort_by_key(|(_, timestamp)| **timestamp);
         let entities = entities
@@ -98,13 +98,13 @@ impl<'a> LineList<'a> {
             Query<(
                 &Line,
                 &Children,
-                Option<&Parent>,
+                Option<&ChildOf>,
                 &LinePosition,
                 &LineRotation,
                 &LineOpacity,
                 &LineSpeed,
             )>,
-            Query<&Parent>,
+            Query<&ChildOf>,
             ResMut<SelectedLine>,
             EventWriter<DoCommandEvent>,
         )> = SystemState::new(self.world);
@@ -141,7 +141,7 @@ impl<'a> LineList<'a> {
                                 .button(t!("tab.line_list.hierarchy.as_child_of_current_line"))
                                 .clicked()
                             {
-                                do_command_event.send(DoCommandEvent(
+                                do_command_event.write(DoCommandEvent(
                                     EditorCommand::MoveLineAsChild(MoveLineAsChild::new(
                                         entity,
                                         Some(selected_line.0),
@@ -156,7 +156,7 @@ impl<'a> LineList<'a> {
                                 .button(t!("tab.line_list.hierarchy.move_to_root"))
                                 .clicked()
                             {
-                                do_command_event.send(DoCommandEvent(
+                                do_command_event.write(DoCommandEvent(
                                     EditorCommand::MoveLineAsChild(MoveLineAsChild::new(
                                         entity, None,
                                     )),
@@ -169,7 +169,7 @@ impl<'a> LineList<'a> {
                             .button(t!("tab.line_list.hierarchy.add_parent"))
                             .clicked()
                         {
-                            add_parent.replace(parent.map(|x| x.get()));
+                            add_parent.replace(parent.map(|x| x.parent()));
                             ui.close_menu();
                         }
                         if ui.button(t!("tab.line_list.hierarchy.add_child")).clicked() {
@@ -179,7 +179,7 @@ impl<'a> LineList<'a> {
                         ui.separator();
                         ui.add_enabled_ui(!under_selected_node && !selected, |ui| {
                             if ui.button(t!("tab.line_list.remove")).clicked() {
-                                do_command_event.send(DoCommandEvent(EditorCommand::RemoveLine(
+                                do_command_event.write(DoCommandEvent(EditorCommand::RemoveLine(
                                     RemoveLine::new(entity),
                                 )));
                                 ui.close_menu();
@@ -194,12 +194,12 @@ impl<'a> LineList<'a> {
 
                 let notes = children
                     .iter()
-                    .filter(|child| note_query.get(**child).is_ok())
+                    .filter(|child| note_query.get(*child).is_ok())
                     .collect::<Vec<_>>()
                     .len();
                 let events = children
                     .iter()
-                    .filter(|child| event_query.get(**child).is_ok())
+                    .filter(|child| event_query.get(*child).is_ok())
                     .collect::<Vec<_>>()
                     .len();
 
@@ -239,8 +239,7 @@ impl<'a> LineList<'a> {
 
             let children_lines = children
                 .iter()
-                .filter(|x| query.get(**x).is_ok())
-                .copied()
+                .filter(|x| query.get(*x).is_ok())
                 .collect::<Vec<_>>();
             for child in children_lines {
                 self.entity_ui(ui, child, level + 1);
@@ -251,7 +250,7 @@ impl<'a> LineList<'a> {
             let mut new_line_entity = self.world.spawn_empty();
 
             if let Some(current_parent) = current_parent {
-                new_line_entity.set_parent(current_parent);
+                new_line_entity.insert(ChildOf(current_parent));
             }
 
             let new_line_entity = new_line_entity.id();

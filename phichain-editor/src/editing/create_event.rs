@@ -61,11 +61,11 @@ fn create_event_system(
 
     mut pending_event_query: Query<(&mut LineEvent, Entity), With<Pending>>,
 
-    event_query: Query<(&LineEvent, &Parent), Without<Pending>>,
-) {
-    let window = window_query.single();
+    event_query: Query<(&LineEvent, &ChildOf), Without<Pending>>,
+) -> Result {
+    let window = window_query.single()?;
     let Some(cursor_position) = window.cursor_position() else {
-        return;
+        return Ok(());
     };
 
     let rect = ctx.viewport.0.into_egui();
@@ -90,7 +90,7 @@ fn create_event_system(
                 (track, beat)
             };
 
-            if let Ok((mut pending_event, _)) = pending_event_query.get_single_mut() {
+            if let Ok((mut pending_event, _)) = pending_event_query.single_mut() {
                 let (track, beat) = calc_event_attrs();
                 pending_event.end_beat =
                     beat.max(pending_event.start_beat + ctx.settings.minimum_beat());
@@ -100,7 +100,7 @@ fn create_event_system(
             if hotkey.just_pressed(CreateEventHotkeys::PlaceTransitionEvent)
                 || hotkey.just_pressed(CreateEventHotkeys::PlaceConstantEvent)
             {
-                if let Ok((pending_event, entity)) = pending_event_query.get_single() {
+                if let Ok((pending_event, entity)) = pending_event_query.single() {
                     // inherit event's start & end value from neighbor events
                     let mut new_event = *pending_event;
                     let mut events = event_query.iter().collect::<Vec<_>>();
@@ -108,7 +108,7 @@ fn create_event_system(
                     if let Some(last_event) = events
                         .iter()
                         .filter(|(e, _)| e.kind == pending_event.kind)
-                        .filter(|(_, p)| p.get() == line_entity)
+                        .filter(|(_, c)| c.parent() == line_entity)
                         .take_while(|(e, _)| e.end_beat <= pending_event.start_beat)
                         .map(|x| x.0)
                         .last()
@@ -126,7 +126,7 @@ fn create_event_system(
                     if let Some(next_event) = events
                         .iter()
                         .filter(|(e, _)| e.kind == pending_event.kind)
-                        .filter(|(_, p)| p.get() == line_entity)
+                        .filter(|(_, c)| c.parent() == line_entity)
                         .take_while(|(e, _)| e.start_beat >= pending_event.end_beat)
                         .map(|x| x.0)
                         .last()
@@ -141,7 +141,7 @@ fn create_event_system(
                         }
                     }
                     commands.entity(entity).despawn();
-                    event.send(DoCommandEvent(EditorCommand::CreateEvent(
+                    event.write(DoCommandEvent(EditorCommand::CreateEvent(
                         CreateEvent::new(line_entity, new_event),
                     )));
                 } else {
@@ -169,6 +169,8 @@ fn create_event_system(
             }
         }
     }
+
+    Ok(())
 }
 
 fn remove_pending_event_on_esc_system(
