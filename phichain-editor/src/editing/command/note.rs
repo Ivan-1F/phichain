@@ -1,7 +1,6 @@
-use crate::events::note::{DespawnNoteEvent, SpawnNoteEvent};
-use crate::events::EditorEvent;
+use crate::removed::RemovedExt;
 use bevy::prelude::*;
-use phichain_chart::note::Note;
+use phichain_chart::note::{Note, NoteBundle};
 use undo::Edit;
 
 #[derive(Debug, Copy, Clone)]
@@ -27,22 +26,22 @@ impl Edit for CreateNote {
     type Output = ();
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
-        let entity = SpawnNoteEvent::builder()
-            .note(self.note)
-            .line_entity(self.line_entity)
-            .maybe_target(self.note_entity)
-            .build()
-            .run(target);
-        self.note_entity = Some(entity)
+        if let Some(note_entity) = self.note_entity {
+            target
+                .entity_mut(note_entity)
+                .decrease_removed::<Children>();
+        } else {
+            self.note_entity = Some(
+                target
+                    .spawn((NoteBundle::new(self.note), ChildOf(self.line_entity)))
+                    .id(),
+            );
+        }
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
         if let Some(entity) = self.note_entity {
-            DespawnNoteEvent::builder()
-                .target(entity)
-                .keep_entity(true)
-                .build()
-                .run(target);
+            target.entity_mut(entity).increase_removed::<Children>();
         }
     }
 }
@@ -50,12 +49,11 @@ impl Edit for CreateNote {
 #[derive(Debug, Copy, Clone)]
 pub struct RemoveNote {
     pub entity: Entity,
-    pub note: Option<(Note, Entity)>,
 }
 
 impl RemoveNote {
     pub fn new(entity: Entity) -> Self {
-        Self { entity, note: None }
+        Self { entity }
     }
 }
 
@@ -64,28 +62,15 @@ impl Edit for RemoveNote {
     type Output = ();
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
-        let note = target.entity(self.entity).get::<Note>().copied();
-        let parent = target
-            .entity(self.entity)
-            .get::<ChildOf>()
-            .map(|x| x.parent());
-        self.note = Some((note.unwrap(), parent.unwrap()));
-        DespawnNoteEvent::builder()
-            .target(self.entity)
-            .keep_entity(true)
-            .build()
-            .run(target);
+        target
+            .entity_mut(self.entity)
+            .increase_removed::<Children>();
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
-        if let Some((note, line_entity)) = self.note {
-            SpawnNoteEvent::builder()
-                .target(self.entity)
-                .note(note)
-                .line_entity(line_entity)
-                .build()
-                .run(target);
-        }
+        target
+            .entity_mut(self.entity)
+            .decrease_removed::<Children>();
     }
 }
 
@@ -123,6 +108,8 @@ impl Edit for EditNote {
 mod tests {
     use super::*;
     use crate::editing::command::EditorCommand;
+    use crate::removed::apply_removed_system;
+    use bevy::ecs::system::RunSystemOnce;
     use phichain_chart::beat::Beat;
     use phichain_chart::line::Line;
     use phichain_chart::note::{Note, NoteKind};
@@ -138,10 +125,13 @@ mod tests {
 
         assert!(world.query::<&Note>().single(world).is_ok());
         history.edit(world, EditorCommand::RemoveNote(RemoveNote::new(entity)));
+        world.run_system_once(apply_removed_system).unwrap();
         assert!(world.query::<&Note>().single(world).is_err());
         history.undo(world);
+        world.run_system_once(apply_removed_system).unwrap();
         assert!(world.query::<&Note>().single(world).is_ok());
         history.redo(world);
+        world.run_system_once(apply_removed_system).unwrap();
         assert!(world.query::<&Note>().single(world).is_err());
     }
 
@@ -161,10 +151,13 @@ mod tests {
             world,
             EditorCommand::CreateNote(CreateNote::new(line, note)),
         );
+        world.run_system_once(apply_removed_system).unwrap();
         assert!(world.query::<&Note>().single(world).is_ok());
         history.undo(world);
+        world.run_system_once(apply_removed_system).unwrap();
         assert!(world.query::<&Note>().single(world).is_err());
         history.redo(world);
+        world.run_system_once(apply_removed_system).unwrap();
         assert!(world.query::<&Note>().single(world).is_ok());
     }
 

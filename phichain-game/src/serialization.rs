@@ -9,6 +9,7 @@ use phichain_chart::line::Line;
 use phichain_chart::note::Note;
 use phichain_chart::offset::Offset;
 use phichain_chart::serialization::{PhichainChart, SerializedLine};
+use bevy::ecs::entity_disabling::Disabled;
 
 pub trait SerializeLine {
     /// Serialize a line from the world

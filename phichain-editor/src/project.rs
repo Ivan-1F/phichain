@@ -235,6 +235,7 @@ fn unload_project_system(
             world.entity_mut(entity).despawn();
         }
 
+        // TODO: with the new `Removed` and `Disabled` based undo/redo system, we need to despawn entities with `Disabled` here instead
         // despawn ghost entities created when despawning an entity with `keep_entity`
         let to_remove = world
             .query::<Entity>()

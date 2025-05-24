@@ -23,6 +23,7 @@ mod misc;
 mod notification;
 mod project;
 mod recent_projects;
+mod removed;
 mod schedule;
 mod screenshot;
 mod selection;
@@ -59,6 +60,7 @@ use crate::project::project_loaded;
 use crate::project::LoadProjectEvent;
 use crate::project::ProjectPlugin;
 use crate::recent_projects::RecentProjectsPlugin;
+use crate::removed::RemovedPlugin;
 use crate::schedule::EditorSet;
 use crate::screenshot::ScreenshotPlugin;
 use crate::selection::Selected;
@@ -144,6 +146,7 @@ fn main() {
                     ..default()
                 }),
         )
+        .add_plugins(RemovedPlugin)
         .add_plugins(ImeCompatPlugin)
         .add_plugins(GamePlugin)
         .add_plugins(ActionPlugin)

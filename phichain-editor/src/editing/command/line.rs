@@ -1,9 +1,8 @@
 use crate::events::line::{DespawnLineEvent, SpawnLineEvent};
 use crate::events::EditorEvent;
-use bevy::ecs::system::RunSystemOnce;
+use crate::removed::RemovedExt;
 use bevy::prelude::*;
 use phichain_chart::serialization::SerializedLine;
-use phichain_game::serialization::{SerializeLine, SerializeLineParam};
 use undo::Edit;
 
 #[derive(Debug, Copy, Clone)]
@@ -45,12 +44,11 @@ impl Edit for CreateLine {
 #[derive(Debug, Clone)]
 pub struct RemoveLine {
     entity: Entity,
-    line: Option<(SerializedLine, Option<Entity>)>,
 }
 
 impl RemoveLine {
     pub fn new(entity: Entity) -> Self {
-        Self { entity, line: None }
+        Self { entity }
     }
 }
 
@@ -62,36 +60,15 @@ impl Edit for RemoveLine {
     // Instead, we retain the entity, despawn all its children and remove all components
     // When undoing, we restore the line entity and its children
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
-        let entity = self.entity;
-        let parent = target
-            .entity(self.entity)
-            .get::<ChildOf>()
-            .map(|x| x.parent());
-
-        let serialized_line = target
-            .run_system_once(move |line_params: SerializeLineParam| {
-                SerializedLine::serialize_line(&line_params, entity)
-            })
-            .expect("Failed to serialize line");
-
-        self.line = Some((serialized_line, parent));
-        DespawnLineEvent::builder()
-            .target(self.entity)
-            .keep_entity(true)
-            .build()
-            .run(target);
+        target
+            .entity_mut(self.entity)
+            .increase_removed::<Children>();
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
-        if let Some(ref line) = self.line {
-            // restore line entity and its children
-            SpawnLineEvent::builder()
-                .line(line.0.clone())
-                .maybe_parent(line.1)
-                .target(self.entity)
-                .build()
-                .run(target);
-        }
+        target
+            .entity_mut(self.entity)
+            .decrease_removed::<Children>();
     }
 }
 
