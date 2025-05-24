@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use egui::Ui;
+use egui::{Color32, Id, Sense, Ui};
 
 use crate::timeline;
 use crate::timeline::settings::TimelineSettings;
@@ -28,9 +28,53 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
 
     let timelines = timeline_settings.container.clone();
 
-    for item in &timelines.allocate(viewport.0.into_egui()) {
+    let mut swap = None;
+
+    for (index, item) in timelines
+        .allocate(viewport.0.into_egui())
+        .iter()
+        .enumerate()
+    {
         item.timeline.ui(&mut ui, world, item.viewport);
+
+        let badge_rect = egui::Rect::from_center_size(
+            egui::Pos2::new(item.viewport.center().x, 150.0),
+            egui::Vec2::new(100.0, 30.0),
+        );
+
+        let name = item.timeline.name(world);
+
+        ui.put(badge_rect, |ui: &mut Ui| {
+            ui.dnd_drag_source(Id::new(&name), index, |ui| {
+                ui.add(
+                    egui::Label::new(egui::RichText::new(&name).color(Color32::WHITE)).truncate(),
+                )
+            })
+            .response
+        });
+
+        // dropzone
+        let response = ui.allocate_rect(item.viewport, Sense::hover());
+        if let Some(dragged_payload) = response.dnd_release_payload::<usize>() {
+            swap = Some((*dragged_payload, index));
+        }
+
+        if let Some(hovered_payload) = response.dnd_hover_payload::<usize>() {
+            if *hovered_payload != index {
+                ui.painter().rect_filled(
+                    item.viewport,
+                    0.0,
+                    egui_dock::Style::default().overlay.selection_color,
+                );
+            }
+        }
     }
+
+    if let Some((from, to)) = swap {
+        let mut timeline_settings = world.resource_mut::<TimelineSettings>();
+        timeline_settings.container.swap(from, to);
+    }
+
     timeline::common::beat_line_ui(&mut ui, world);
     timeline::common::indicator_ui(&mut ui, world);
     timeline::common::separator_ui(&mut ui, world);

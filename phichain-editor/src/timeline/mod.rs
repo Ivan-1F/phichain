@@ -112,6 +112,8 @@ pub trait Timeline {
     ///
     /// The return value of this function will be a vector contains all entities that are selected
     fn on_drag_selection(&self, world: &mut World, viewport: Rect, selection: Rect) -> Vec<Entity>;
+
+    fn name(&self, world: &World) -> String;
 }
 
 #[enum_dispatch]
