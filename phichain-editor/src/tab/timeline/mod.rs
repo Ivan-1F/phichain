@@ -30,7 +30,17 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
 
     for item in &timelines.allocate(viewport.0.into_egui()) {
         item.timeline.ui(&mut ui, world, item.viewport);
+
+        let badge_rect = egui::Rect::from_center_size(
+            egui::Pos2::new(item.viewport.center().x, 150.0),
+            egui::Vec2::new(100.0, 30.0),
+        );
+
+        let name = item.timeline.name(world);
+
+        ui.put(badge_rect, egui::Label::new(name));
     }
+
     timeline::common::beat_line_ui(&mut ui, world);
     timeline::common::indicator_ui(&mut ui, world);
     timeline::common::separator_ui(&mut ui, world);
