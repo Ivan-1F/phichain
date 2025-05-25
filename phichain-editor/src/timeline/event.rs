@@ -434,12 +434,16 @@ impl Timeline for EventTimeline {
 
     fn name(&self, world: &World) -> String {
         match self.0 {
-            None => t!("tab.timeline_setting.timelines.event_timeline.binding").to_string(),
-            Some(entity) => t!(
-                "tab.timeline_setting.timelines.event_timeline.for_line",
-                line = world.get::<Line>(entity).unwrap().name,
-            )
-            .to_string(),
+            None => format!(
+                "{} {}",
+                egui_phosphor::regular::DIAMOND,
+                t!("tab.timeline_setting.timelines.binding")
+            ),
+            Some(entity) => format!(
+                "{} {}",
+                egui_phosphor::regular::DIAMOND,
+                world.get::<Line>(entity).unwrap().name
+            ),
         }
     }
 }

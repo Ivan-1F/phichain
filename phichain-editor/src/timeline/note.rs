@@ -380,12 +380,16 @@ impl Timeline for NoteTimeline {
 
     fn name(&self, world: &World) -> String {
         match self.0 {
-            None => t!("tab.timeline_setting.timelines.note_timeline.binding").to_string(),
-            Some(entity) => t!(
-                "tab.timeline_setting.timelines.note_timeline.for_line",
-                line = world.get::<Line>(entity).unwrap().name,
-            )
-            .to_string(),
+            None => format!(
+                "{} {}",
+                egui_phosphor::regular::MUSIC_NOTE,
+                t!("tab.timeline_setting.timelines.binding")
+            ),
+            Some(entity) => format!(
+                "{} {}",
+                egui_phosphor::regular::MUSIC_NOTE,
+                world.get::<Line>(entity).unwrap().name
+            ),
         }
     }
 }
