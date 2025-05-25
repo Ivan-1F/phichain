@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use egui::{epaint, Color32, Id, Sense, Ui};
+use egui::Ui;
 
 use crate::timeline;
 use crate::timeline::settings::TimelineSettings;
@@ -28,68 +28,13 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
 
     let timelines = timeline_settings.container.clone();
 
-    let mut swap = None;
-
     for (index, item) in timelines
         .allocate(viewport.0.into_egui())
         .iter()
         .enumerate()
     {
         item.timeline.ui(&mut ui, world, item.viewport);
-
-        let name = item.timeline.name(world);
-        let galley =
-            ui.painter()
-                .layout_no_wrap(name.clone(), Default::default(), Default::default());
-
-        let badge_rect = egui::Rect::from_center_size(
-            egui::Pos2::new(
-                item.viewport.center().x,
-                item.viewport.top() + item.viewport.height() * 0.1,
-            ),
-            galley.size(),
-        );
-
-        let visuals = ui.style().visuals.widgets.inactive;
-
-        ui.put(badge_rect, |ui: &mut Ui| {
-            ui.dnd_drag_source(Id::new(&name).with(index), index, |ui| {
-                ui.painter().rect(
-                    badge_rect,
-                    visuals.corner_radius,
-                    visuals.weak_bg_fill,
-                    visuals.bg_stroke,
-                    epaint::StrokeKind::Inside,
-                );
-                ui.add(
-                    egui::Label::new(egui::RichText::new(&name).color(Color32::WHITE))
-                        .truncate()
-                        .selectable(false),
-                )
-            })
-            .response
-        });
-
-        // dropzone
-        let response = ui.allocate_rect(item.viewport, Sense::hover());
-        if let Some(dragged_payload) = response.dnd_release_payload::<usize>() {
-            swap = Some((*dragged_payload, index));
-        }
-
-        if let Some(hovered_payload) = response.dnd_hover_payload::<usize>() {
-            if *hovered_payload != index {
-                ui.painter().rect_filled(
-                    item.viewport,
-                    0.0,
-                    egui_dock::Style::default().overlay.selection_color,
-                );
-            }
-        }
-    }
-
-    if let Some((from, to)) = swap {
-        let mut timeline_settings = world.resource_mut::<TimelineSettings>();
-        timeline_settings.container.swap(from, to);
+        timeline::common::timeline_badge_ui(&mut ui, world, item, index);
     }
 
     timeline::common::beat_line_ui(&mut ui, world);
