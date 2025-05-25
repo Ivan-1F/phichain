@@ -53,7 +53,7 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
         let visuals = ui.style().visuals.widgets.inactive;
 
         ui.put(badge_rect, |ui: &mut Ui| {
-            ui.dnd_drag_source(Id::new(&name), index, |ui| {
+            ui.dnd_drag_source(Id::new(&name).with(index), index, |ui| {
                 ui.painter().rect(
                     badge_rect,
                     visuals.corner_radius,
