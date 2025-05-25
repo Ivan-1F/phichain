@@ -43,7 +43,10 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
                 .layout_no_wrap(name.clone(), Default::default(), Default::default());
 
         let badge_rect = egui::Rect::from_center_size(
-            egui::Pos2::new(item.viewport.center().x, item.viewport.top() + item.viewport.height() * 0.1),
+            egui::Pos2::new(
+                item.viewport.center().x,
+                item.viewport.top() + item.viewport.height() * 0.1,
+            ),
             galley.size(),
         );
 
