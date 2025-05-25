@@ -11,6 +11,7 @@ use bevy::prelude::{ChildOf, Entity, EventWriter, Query, Res, World};
 use egui::{Align2, Color32, FontId, Rangef, Rect, Sense, Stroke, StrokeKind, Ui};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{LineEvent, LineEventKind};
+use phichain_chart::line::Line;
 use std::iter;
 
 #[derive(Debug, Clone)]
@@ -429,5 +430,20 @@ impl Timeline for EventTimeline {
             })
             .map(|x| x.2)
             .collect()
+    }
+
+    fn name(&self, world: &World) -> String {
+        match self.0 {
+            None => format!(
+                "{} {}",
+                egui_phosphor::regular::DIAMOND,
+                t!("tab.timeline_setting.timelines.binding")
+            ),
+            Some(entity) => format!(
+                "{} {}",
+                egui_phosphor::regular::DIAMOND,
+                world.get::<Line>(entity).unwrap().name
+            ),
+        }
     }
 }

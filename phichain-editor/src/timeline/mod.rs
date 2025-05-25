@@ -112,6 +112,8 @@ pub trait Timeline {
     ///
     /// The return value of this function will be a vector contains all entities that are selected
     fn on_drag_selection(&self, world: &mut World, viewport: Rect, selection: Rect) -> Vec<Entity>;
+
+    fn name(&self, world: &World) -> String;
 }
 
 #[enum_dispatch]
@@ -132,11 +134,77 @@ impl TimelineItem {
 
 pub mod common {
     use crate::constants::INDICATOR_POSITION;
+    use crate::timeline::container::AllocatedTimeline;
+    use crate::timeline::settings::TimelineSettings;
+    use crate::timeline::Timeline;
     use crate::timeline::TimelineContext;
     use bevy::ecs::system::SystemState;
     use bevy::prelude::*;
-    use egui::{Align2, Color32, FontId, Sense, Ui};
+    use egui::{epaint, Align2, Color32, FontId, Id, Sense, Ui};
     use phichain_chart::bpm_list::BpmList;
+
+    pub fn timeline_badge_ui(
+        ui: &mut Ui,
+        world: &mut World,
+        item: &AllocatedTimeline,
+        index: usize,
+    ) {
+        let mut swap = None;
+
+        let name = item.timeline.name(world);
+        let galley =
+            ui.painter()
+                .layout_no_wrap(name.clone(), Default::default(), Default::default());
+
+        let badge_rect = egui::Rect::from_center_size(
+            egui::Pos2::new(
+                item.viewport.center().x,
+                item.viewport.top() + item.viewport.height() * 0.1,
+            ),
+            galley.size(),
+        );
+
+        let visuals = ui.style().visuals.widgets.inactive;
+
+        ui.put(badge_rect, |ui: &mut Ui| {
+            ui.dnd_drag_source(Id::new(&name).with(index), index, |ui| {
+                ui.painter().rect(
+                    badge_rect,
+                    visuals.corner_radius,
+                    visuals.weak_bg_fill,
+                    visuals.bg_stroke,
+                    epaint::StrokeKind::Inside,
+                );
+                ui.add(
+                    egui::Label::new(egui::RichText::new(&name).color(Color32::WHITE))
+                        .truncate()
+                        .selectable(false),
+                )
+            })
+            .response
+        });
+
+        // dropzone
+        let response = ui.allocate_rect(item.viewport, Sense::hover());
+        if let Some(dragged_payload) = response.dnd_release_payload::<usize>() {
+            swap = Some((*dragged_payload, index));
+        }
+
+        if let Some(hovered_payload) = response.dnd_hover_payload::<usize>() {
+            if *hovered_payload != index {
+                ui.painter().rect_filled(
+                    item.viewport,
+                    0.0,
+                    egui_dock::Style::default().overlay.selection_color,
+                );
+            }
+        }
+
+        if let Some((from, to)) = swap {
+            let mut timeline_settings = world.resource_mut::<TimelineSettings>();
+            timeline_settings.container.swap(from, to);
+        }
+    }
 
     pub fn beat_line_ui(ui: &mut Ui, world: &mut World) {
         let mut state: SystemState<TimelineContext> = SystemState::new(world);

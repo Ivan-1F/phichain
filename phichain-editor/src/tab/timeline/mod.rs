@@ -28,9 +28,15 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
 
     let timelines = timeline_settings.container.clone();
 
-    for item in &timelines.allocate(viewport.0.into_egui()) {
+    for (index, item) in timelines
+        .allocate(viewport.0.into_egui())
+        .iter()
+        .enumerate()
+    {
         item.timeline.ui(&mut ui, world, item.viewport);
+        timeline::common::timeline_badge_ui(&mut ui, world, item, index);
     }
+
     timeline::common::beat_line_ui(&mut ui, world);
     timeline::common::indicator_ui(&mut ui, world);
     timeline::common::separator_ui(&mut ui, world);

@@ -14,6 +14,7 @@ use egui::{Color32, Pos2, Rangef, Rect, Sense, Ui};
 use phichain_assets::ImageAssets;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::CANVAS_WIDTH;
+use phichain_chart::line::Line;
 use phichain_chart::note::{Note, NoteKind};
 use phichain_game::curve_note_track::{CurveNote, CurveNoteTrack};
 use phichain_game::highlight::Highlighted;
@@ -375,5 +376,20 @@ impl Timeline for NoteTimeline {
             })
             .map(|x| x.2)
             .collect()
+    }
+
+    fn name(&self, world: &World) -> String {
+        match self.0 {
+            None => format!(
+                "{} {}",
+                egui_phosphor::regular::MUSIC_NOTE,
+                t!("tab.timeline_setting.timelines.binding")
+            ),
+            Some(entity) => format!(
+                "{} {}",
+                egui_phosphor::regular::MUSIC_NOTE,
+                world.get::<Line>(entity).unwrap().name
+            ),
+        }
     }
 }
