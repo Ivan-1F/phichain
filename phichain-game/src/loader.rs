@@ -1,7 +1,7 @@
 pub mod nonblocking;
 
 use crate::curve_note_track::CurveNoteTrack;
-use crate::illustration::load_illustration;
+use crate::illustration::{load_illustration, open_illustration};
 use anyhow::Context;
 use bevy::prelude::*;
 use phichain_chart::event::LineEventBundle;
@@ -29,7 +29,10 @@ pub fn load_project(project: &Project, commands: &mut Commands) -> anyhow::Resul
     load(file, commands)?;
 
     if let Some(illustration_path) = project.path.illustration_path() {
-        load_illustration(illustration_path, commands);
+        // TODO: handle error
+        if let Ok(illustration) = open_illustration(illustration_path) {
+            load_illustration(illustration, commands);
+        }
     }
 
     Ok(())

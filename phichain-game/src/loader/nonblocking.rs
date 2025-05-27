@@ -1,10 +1,11 @@
-use crate::illustration::load_illustration;
+use crate::illustration::{load_illustration, open_illustration};
 use crate::loader::load_line;
 use anyhow::{Context, Result};
 use bevy::app::App;
 use bevy::prelude::{Commands, Component, Entity, Event, Plugin, Query, Update};
 use bevy::tasks::futures_lite::future;
 use bevy::tasks::{block_on, IoTaskPool, Task};
+use image::{DynamicImage, ImageResult};
 use phichain_chart::migration::migrate;
 use phichain_chart::project::Project;
 use phichain_chart::serialization::PhichainChart;
@@ -16,6 +17,7 @@ pub struct ProjectData {
     duration: Duration,
     project: Project,
     chart: PhichainChart,
+    illustration: Option<ImageResult<DynamicImage>>,
 }
 
 pub type LoadingProjectTask = Task<Result<ProjectData>>;
@@ -62,10 +64,13 @@ pub fn load_project(project: &Project, commands: &mut Commands) {
         let chart: PhichainChart =
             serde_json::from_value(migrated).context("Failed to deserialize chart")?;
 
+        let illustration = project.path.illustration_path().map(open_illustration);
+
         Ok(ProjectData {
             duration: start.elapsed(),
             project: project.clone(),
             chart,
+            illustration,
         })
     });
 
@@ -95,8 +100,9 @@ pub fn handle_tasks_system(
                         }
                     }
 
-                    if let Some(illustration_path) = data.project.path.illustration_path() {
-                        load_illustration(illustration_path, &mut commands);
+                    // TODO: handle Some(Err)
+                    if let Some(Ok(ref illustration)) = data.illustration {
+                        load_illustration(illustration.clone(), &mut commands);
                     }
 
                     commands.trigger(ProjectLoaded(data));
