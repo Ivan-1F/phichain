@@ -5,7 +5,7 @@ pub mod highlight;
 mod hit_effect;
 pub mod illustration;
 mod layer;
-mod loader;
+pub mod loader;
 pub mod scale;
 mod score;
 mod ui;
@@ -18,6 +18,7 @@ use crate::curve_note_track::CurveNoteTrackPlugin;
 use crate::highlight::HighlightPlugin;
 use crate::hit_effect::HitEffectPlugin;
 use crate::illustration::IllustrationPlugin;
+use crate::loader::nonblocking::NonblockingLoaderPlugin;
 use crate::scale::ScalePlugin;
 use crate::score::ScorePlugin;
 use crate::ui::GameUiPlugin;
@@ -94,6 +95,7 @@ impl Plugin for GamePlugin {
             .insert_resource(ChartTime(0.0))
             .insert_resource(GameConfig::default())
             .insert_resource(Paused(true))
+            .add_plugins(NonblockingLoaderPlugin)
             .add_plugins(HighlightPlugin)
             .add_plugins(ScalePlugin)
             .add_plugins(CoreGamePlugin)

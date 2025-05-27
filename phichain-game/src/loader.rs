@@ -1,3 +1,5 @@
+pub mod nonblocking;
+
 use crate::curve_note_track::CurveNoteTrack;
 use crate::illustration::load_illustration;
 use anyhow::Context;
