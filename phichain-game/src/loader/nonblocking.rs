@@ -20,7 +20,7 @@ pub struct ProjectData {
     illustration: Option<ImageResult<DynamicImage>>,
 }
 
-pub type LoadingProjectTask = Task<Result<ProjectData>>;
+type LoadingProjectTask = Task<Result<ProjectData>>;
 
 #[derive(Component)]
 pub struct LoadingProject(LoadingProjectTask);
