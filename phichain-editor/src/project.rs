@@ -20,7 +20,6 @@ use phichain_chart::serialization::PhichainChart;
 use phichain_game::loader::nonblocking::ProjectLoaded;
 use serde_json::json;
 use std::path::PathBuf;
-use std::time::Instant;
 
 /// A [Condition] represents the project is loaded
 pub fn project_loaded() -> impl Condition<()> {
@@ -144,15 +143,14 @@ fn handle_project_loaded_system(
 
     mut commands: Commands,
     mut recent_projects: ResMut<Persistent<RecentProjects>>,
-    // mut telemetry: EventWriter<PushTelemetryEvent>,
+    mut telemetry: EventWriter<PushTelemetryEvent>,
 ) {
     let data = trigger.event();
 
-    // TODO
-    // telemetry.write(PushTelemetryEvent::new(
-    //     "phichain.editor.project.loaded",
-    //     json!({ "duration": start.elapsed().as_millis() }),
-    // ));
+    telemetry.write(PushTelemetryEvent::new(
+        "phichain.editor.project.loaded",
+        json!({ "duration": data.duration().as_millis() }),
+    ));
     recent_projects.push(RecentProject::new(
         data.project().meta.name.clone(),
         data.project().path.0.clone(),

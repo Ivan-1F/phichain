@@ -9,8 +9,10 @@ use phichain_chart::project::Project;
 use phichain_chart::serialization::PhichainChart;
 use serde_json::Value;
 use std::fs::File;
+use std::time::{Duration, Instant};
 
 pub struct ProjectData {
+    duration: Duration,
     project: Project,
     chart: PhichainChart,
 }
@@ -24,6 +26,10 @@ pub struct LoadingProject(LoadingProjectTask);
 pub struct ProjectLoaded(ProjectData);
 
 impl ProjectLoaded {
+    pub fn duration(&self) -> Duration {
+        self.0.duration
+    }
+
     pub fn project(&self) -> &Project {
         &self.0.project
     }
@@ -47,6 +53,8 @@ pub fn load_project(project: &Project, commands: &mut Commands) {
     let thread_pool = IoTaskPool::get();
 
     let task: LoadingProjectTask = thread_pool.spawn(async move {
+        let start = Instant::now();
+
         let file = File::open(project.path.chart_path())?;
         let chart: Value = serde_json::from_reader(file).context("Failed to load chart")?;
         let migrated = migrate(&chart).context("Migration failed")?;
@@ -54,6 +62,7 @@ pub fn load_project(project: &Project, commands: &mut Commands) {
             serde_json::from_value(migrated).context("Failed to deserialize chart")?;
 
         Ok(ProjectData {
+            duration: start.elapsed(),
             project: project.clone(),
             chart,
         })
