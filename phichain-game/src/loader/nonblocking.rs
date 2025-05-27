@@ -1,3 +1,4 @@
+use crate::illustration::load_illustration;
 use crate::loader::load_line;
 use anyhow::{Context, Result};
 use bevy::app::App;
@@ -92,6 +93,10 @@ pub fn handle_tasks_system(
                         if first_line_id.is_none() {
                             first_line_id = Some(id)
                         }
+                    }
+
+                    if let Some(illustration_path) = data.project.path.illustration_path() {
+                        load_illustration(illustration_path, &mut commands);
                     }
 
                     commands.trigger(ProjectLoaded(data));
