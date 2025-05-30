@@ -17,7 +17,7 @@ use bevy_persistent::Persistent;
 use phichain_chart::line::Line;
 pub use phichain_chart::project::{Project, ProjectMeta, ProjectPath};
 use phichain_chart::serialization::PhichainChart;
-use phichain_game::loader::nonblocking::ProjectLoaded;
+use phichain_game::loader::nonblocking::ProjectLoadingResult;
 use serde_json::json;
 use std::path::PathBuf;
 
@@ -39,7 +39,7 @@ impl Plugin for ProjectPlugin {
             .add_systems(Update, load_project_system.run_if(project_not_loaded()))
             .add_event::<UnloadProjectEvent>()
             .add_systems(PreUpdate, unload_project_system.run_if(project_loaded()))
-            .add_observer(handle_project_loaded_system)
+            .add_observer(handle_project_loading_result_system)
             .add_action(
                 "phichain.save_project",
                 save_project_system,
@@ -118,7 +118,7 @@ fn load_project_system(
         match Project::load(event.0.clone()) {
             Ok(project) => {
                 phichain_game::loader::nonblocking::load_project(&project, &mut commands);
-                // results will be handled in `handle_project_loaded_system`
+                // results will be handled in `handle_project_loading_result_system`
             }
             Err(error) => {
                 toasts.error(format!("Failed to open project: {:?}", error));
@@ -129,36 +129,48 @@ fn load_project_system(
     events.clear();
 }
 
-fn handle_project_loaded_system(
-    trigger: Trigger<ProjectLoaded>,
+fn handle_project_loading_result_system(
+    trigger: Trigger<ProjectLoadingResult>,
 
     mut commands: Commands,
     mut recent_projects: ResMut<Persistent<RecentProjects>>,
     mut telemetry: EventWriter<PushTelemetryEvent>,
+    mut toasts: ResMut<ToastsStorage>,
 ) {
     let data = trigger.event();
 
-    telemetry.write(PushTelemetryEvent::new(
-        "phichain.editor.project.loaded",
-        json!({ "duration": data.duration().as_millis() }),
-    ));
-    recent_projects.push(RecentProject::new(
-        data.project().meta.name.clone(),
-        data.project().path.0.clone(),
-    ));
+    match &data.0 {
+        Ok(data) => {
+            telemetry.write(PushTelemetryEvent::new(
+                "phichain.editor.project.loaded",
+                json!({ "duration": data.duration.as_millis() }),
+            ));
+            recent_projects.push(RecentProject::new(
+                data.project.meta.name.clone(),
+                data.project.path.0.clone(),
+            ));
 
-    commands.queue(|world: &mut World| {
-        let mut query = world.query_filtered::<Entity, With<Line>>();
-        if let Some(first) = query.iter(world).next() {
-            world.insert_resource(crate::selection::SelectedLine(first));
+            commands.queue(|world: &mut World| {
+                let mut query = world.query_filtered::<Entity, With<Line>>();
+                if let Some(first) = query.iter(world).next() {
+                    world.insert_resource(crate::selection::SelectedLine(first));
+                }
+            });
+
+            // TODO: move audio to phichain-game
+            // unwrap: if Project::load is ok, music_path() must return Some
+            let audio_path = data.project.path.music_path().unwrap();
+            load_audio(audio_path, &mut commands);
+            commands.insert_resource(data.project.clone());
         }
-    });
-
-    // TODO: move audio to phichain-game
-    // unwrap: if Project::load is ok, music_path() must return Some
-    let audio_path = data.project().path.music_path().unwrap();
-    load_audio(audio_path, &mut commands);
-    commands.insert_resource(data.project().clone());
+        Err(error) => {
+            toasts.error(format!("Failed to load chart: {:?}", error));
+            telemetry.write(PushTelemetryEvent::new(
+                "phichain.editor.project.load.failed",
+                json!({}),
+            ));
+        }
+    }
 }
 
 #[derive(Event, Debug)]

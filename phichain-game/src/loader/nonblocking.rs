@@ -14,9 +14,9 @@ use std::fs::File;
 use std::time::{Duration, Instant};
 
 pub struct ProjectData {
-    duration: Duration,
-    project: Project,
-    chart: PhichainChart,
+    pub duration: Duration,
+    pub project: Project,
+    pub chart: PhichainChart,
     illustration: Option<ImageResult<DynamicImage>>,
 }
 
@@ -26,21 +26,7 @@ type LoadingProjectTask = Task<Result<ProjectData>>;
 pub struct LoadingProject(LoadingProjectTask);
 
 #[derive(Event)]
-pub struct ProjectLoaded(ProjectData);
-
-impl ProjectLoaded {
-    pub fn duration(&self) -> Duration {
-        self.0.duration
-    }
-
-    pub fn project(&self) -> &Project {
-        &self.0.project
-    }
-
-    pub fn chart(&self) -> &PhichainChart {
-        &self.0.chart
-    }
-}
+pub struct ProjectLoadingResult(pub Result<ProjectData>);
 
 pub struct NonblockingLoaderPlugin;
 
@@ -105,10 +91,10 @@ pub fn handle_tasks_system(
                         load_illustration(illustration.clone(), &mut commands);
                     }
 
-                    commands.trigger(ProjectLoaded(data));
+                    commands.trigger(ProjectLoadingResult(Ok(data)));
                 }
-                Err(_) => {
-                    // TODO: handle error
+                Err(error) => {
+                    commands.trigger(ProjectLoadingResult(Err(error)));
                 }
             }
         }
