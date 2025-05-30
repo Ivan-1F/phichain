@@ -115,19 +115,10 @@ fn load_project_system(
     }
 
     if let Some(event) = events.read().last() {
-        // let start = Instant::now();
         match Project::load(event.0.clone()) {
             Ok(project) => {
                 phichain_game::loader::nonblocking::load_project(&project, &mut commands);
-
-                // if let Err(error) = phichain_game::load_project(&project, &mut commands) {
-                //     toasts.error(format!("Failed to load chart: {:?}", error));
-                //     telemetry.write(PushTelemetryEvent::new(
-                //         "phichain.editor.project.load.failed",
-                //         json!({ "duration": start.elapsed().as_millis() }),
-                //     ));
-                // } else {
-                // }
+                // results will be handled in `handle_project_loaded_system`
             }
             Err(error) => {
                 toasts.error(format!("Failed to open project: {:?}", error));
