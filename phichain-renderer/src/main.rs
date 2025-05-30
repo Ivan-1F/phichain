@@ -210,7 +210,7 @@ fn setup_system(
         IsDefaultUiCamera,
     ));
 
-    phichain_game::load_project(&project, &mut commands)
+    phichain_game::loader::load_project(&project, &mut commands)
         .expect("Failed to load project into the world");
 }
 
