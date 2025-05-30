@@ -82,16 +82,16 @@ serde_yaml = "0.9.34"
 # Misc Dependencies
 
 num = { version = "0.4.3", features = ["serde"] }
-rfd = "0.14.1"
+rfd = "0.15.3"
 futures-lite = "2.3.0"
 anyhow = "1.0.83"
 rust-i18n = "3.0.1"
 clap = { version = "4.5.4", features = ["derive"] }
-strum = { version = "0.26.2", features = ["derive"] }
+strum = { version = "0.27.1", features = ["derive"] }
 chrono = { version = "0.4.38", features = ["serde"] }
-undo = "0.51.0"
+undo = "0.52.0"
 enum_dispatch = "0.3.13"
-zip = "2.1.0"
+zip = "4.0.0"
 
 bon = "3.0.1"
 indexmap = "2.7.0"
@@ -104,7 +104,7 @@ smallvec = "1.13.2"
 uuid = { version = "1.13.1", features = ["v4"] }
 
 os_info = "3.10.0"
-sysinfo = "0.33.1"
+sysinfo = "0.35.1"
 machine-uid = "0.5.3"
 sha2 = "0.10"
 flate2 = "1.1.1"

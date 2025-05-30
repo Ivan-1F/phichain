@@ -231,14 +231,14 @@ pub struct HitParticleBundle {
 
 impl HitParticleBundle {
     pub fn new(position: Vec2, factor: f32) -> Self {
-        let size = rand::thread_rng().gen_range(7.0..=10.0) * factor;
+        let size = rand::rng().random_range(7.0..=10.0) * factor;
         let shape = shapes::Rectangle {
             extents: Vec2::splat(size),
             origin: Default::default(),
             ..default()
         };
 
-        let angle = rand::thread_rng().gen_range(-std::f32::consts::PI..=std::f32::consts::PI);
+        let angle = rand::rng().random_range(-std::f32::consts::PI..=std::f32::consts::PI);
         let quat = Quat::from_rotation_z(angle);
 
         Self {

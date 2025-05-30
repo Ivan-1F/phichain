@@ -79,7 +79,7 @@ fn save_project_system(world: &mut World) -> Result {
             match chart_result.and(meta_result) {
                 Ok(_) => {
                     toasts.success(t!("project.save.succeed"));
-                    history.0.set_saved(true);
+                    history.0.set_saved();
                 }
                 Err(error) => {
                     toasts.error(t!("project.save.failed", error = error));
