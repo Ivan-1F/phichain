@@ -11,8 +11,6 @@ mod score;
 mod ui;
 pub mod utils;
 
-pub use crate::loader::load_project;
-
 use crate::core::CoreGamePlugin;
 use crate::curve_note_track::CurveNoteTrackPlugin;
 use crate::highlight::HighlightPlugin;
