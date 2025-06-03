@@ -68,7 +68,7 @@ fn ui_system(world: &mut World) {
         egui::Modal::new(Id::new("home.loading")).show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.spinner();
-                ui.add(egui::Label::new("Loading project...").selectable(false));
+                ui.add(egui::Label::new(t!("home.loading_project")).selectable(false));
             });
         });
     }

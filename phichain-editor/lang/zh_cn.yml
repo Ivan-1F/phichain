@@ -209,6 +209,7 @@ home:
     create: 创建项目
 
     music_unselected: 未选择音乐
+  loading_project: 正在加载项目...
   settings: 编辑器设置
   telemetry: 遥测
 
