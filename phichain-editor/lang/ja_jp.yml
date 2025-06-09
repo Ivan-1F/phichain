@@ -1,0 +1,273 @@
+menu_bar:
+  file:
+    title: ファイル
+    save: プロジェクトを保存
+    close: プロジェクトを閉じる
+    quit: 終了
+  tabs:
+    title: ウィンドウ
+  export:
+    title: エクスポート
+    as_official: 公式譜面としてエクスポート
+
+tab:
+  game:
+    title: プレビュー
+  timeline:
+    title: タイムライン
+    event:
+      jump_to_event: このイベントにジャンプ
+  inspector:
+    title: インスペクター
+    curve_note_track:
+      start: ここからカーブノーツトラックを新規作成
+      removed:
+        incomplete: カーブノーツトラックが削除されました：始点または終点がありません
+        invalid: カーブノーツトラックが削除されました：始点または終点が無効です
+        empty: カーブノーツトラックが削除されました：ノーツが含まれていません
+      instructions:
+        select_destination: 終点を選択してください
+        select_origin: 始点を選択してください
+        select_origin_destination: 始点と終点を選択してください
+      density: 密度
+      kind: 種類
+      curve: カーブ
+    single_note:
+      x: X
+      beat: 時間 (拍)
+      hold_beat: Hold時間
+      above: 上側ノーツ
+      speed: 速度
+    single_event:
+      start_beat: 開始時間
+      end_beat: 終了時間
+      value_type: 値の種類
+      transition: トランジション
+      constant: 定数
+      start_value: 開始値
+      end_value: 終了値
+      easing: イージング
+      value: 値
+    multiple_notes:
+      flip_by_x: X軸中心で反転
+      flip_by_selection: 選択範囲の中心で反転
+      flip_side: 向きを反転
+      into_tap: Tapに変換
+      into_drag: Dragに変換
+      into_flick: Flickに変換
+      into_hold: Holdに変換
+    multiple_events:
+      negate: 数値を反転 (透明度イベントを除く)
+    line:
+      name: 名前
+  timeline_setting:
+    title: タイムライン設定
+    zoom: タイムラインのズーム
+    density: 拍子線密度
+    lane: 垂直ガイドライン
+    timelines:
+      new_note_timeline: + ノーツタイムライン
+      new_event_timeline: + イベントタイムライン
+      note_timeline:
+        for_line: '%{line} のノーツタイムライン'
+        binding: ノーツタイムラインをバインド
+      event_timeline:
+        for_line: '%{line} のイベントタイムライン'
+        binding: イベントタイムラインをバインド
+      binding: バインド
+    note_side_filter:
+      title: ノーツの配置側
+      all: すべて
+      above: 上側
+      below: 下側
+  audio_setting:
+    title: オーディオ設定
+    music_volume: BGM音量
+    hit_sound_volume: タップ音量
+  chart_basic_setting:
+    title: 譜面の基本設定
+    offset: オフセット (ms)
+    name: 名前
+    level: 難易度
+    composer: 作曲者
+    charter: 譜面制作者
+    illustrator: イラストレーター
+  line_list:
+    title: 判定ラインリスト
+    create_line: 判定ラインを作成
+    note: ノーツ
+    event: イベント
+    position: 位置
+    rotation: 回転
+    opacity: 透明度
+    speed: 速度
+    index: 番号
+    remove: 削除
+    hierarchy:
+      as_child_of_current_line: 現在の判定ラインの子ラインとして設定
+      move_to_root: ルートに移動
+      add_parent: 親ラインを作成
+      add_child: 子ラインを作成
+  bpm_list:
+    title: BPMリスト
+    new: 新規BPMポイント
+    zero_beat_not_editable: 各プロジェクトには、拍数0のBPMポイントが必ず1つ必要です。
+    point:
+      beat: 時間 (拍)
+      bpm: BPM
+  settings:
+    title: 設定
+    category:
+      general:
+        title: 一般
+        timeline_scroll_sensitivity: 
+          label: タイムラインのスクロール感度
+          description: マウスホイールやタッチパッドでタイムラインをスクロールする際の感度。数値が大きいほど速くスクロールします。
+        highlight_selected_line: 
+          label: 選択中の判定ラインをハイライト
+          description: 選択中の判定ラインをハイライト表示するかどうか。
+        show_line_anchor:
+          label: 判定ラインのアンカーを表示
+          description: どのルールで判定ラインのアンカーを表示するか。
+          never: 表示しない
+          always: 常に表示
+          visible: 表示中の判定ラインのみ
+        send_telemetry:
+          label: テレメトリを送信
+          description: テレメトリデータを送信するかどうか。テレメトリに関する詳細情報は https://phicha.in/telemetry をご覧ください。
+          disabled_by_env_var: テレメトリは環境変数により無効化されています
+          debug_enabled: テレメトリのデバッグが有効です
+        language:
+          label: 言語
+          description: エディタが使用する言語
+      audio:
+        title: オーディオ
+        music_volume: 
+          label: BGM音量
+          description: BGMの音量です。
+        hit_sound_volume: 
+          label: タップ音量
+          description: タップ音の音量です。
+        playback_rate:
+          label: 再生速度
+          description: 音楽の再生速度を制御します。これはエディタ全体の速度に影響します。
+      game:
+        title: ゲーム
+        fc_ap_indicator: 
+          label: FC/APインジケーター
+          description: エディタには判定機能がありません。チェックを入れると判定ラインが常に黄色になり、入れないと常に白色になります。
+        hide_hit_effect: 
+          label: ヒットエフェクトを非表示
+          description: ヒットエフェクトを非表示にするかどうか。
+        note_scale: 
+          label: ノーツの拡大率
+          description: ノーツの拡大率です。
+        multi_highlight: 
+          label: 同時押しハイライト
+          description: 同時押しハイライトを有効にするか。有効にすると、同じタイミングのノーツがすべてハイライトされます。
+        hit_effect_follow_game_time: 
+          label: ヒットエフェクトをゲーム内時間で再生 (デバッグ用)
+          description: ヒットエフェクトをゲーム内時間に追従させるか。有効にすると、ヒットエフェクトの描画はゲームのグローバル時間ではなく、譜面時間に基づきます。デバッグ環境でのみ利用可能です。
+      hotkey:
+        title: ショートカットキー
+        record: 記録
+        recording: 記録中
+        cancel: キャンセル
+        reset: リセット
+
+project:
+  save:
+    succeed: プロジェクトを保存しました
+    failed: 'プロジェクトの保存中にエラーが発生しました: %{error}'
+
+screenshot:
+  save:
+    succeed: 'スクリーンショットを %{path} に保存しました'
+    failed: 'スクリーンショットの撮影中にエラーが発生しました: %{error}'
+    locale_failed: 'スクリーンショットの保存先フォルダが見つかりません: %{error}'
+
+illustration:
+  load:
+    failed: 'イラストの読み込み中にエラーが発生しました: %{error}'
+
+home:
+  recent_projects:
+    last_opened: '最終起動日時: %{time}'
+    empty: 最近開いたプロジェクトはありません
+  open_project:
+    load: プロジェクトを開く
+  create_project:
+    label: 新しい空のプロジェクトを作成
+    select_music: 楽曲を選択
+    select_illustration: イラストを選択 (任意)
+    unselected: 未選択
+    back: 戻る
+
+    name: 名前
+    level: 難易度
+    composer: 作曲者
+    charter: 譜面制作者
+    illustrator: イラストレーター
+
+    create: プロジェクトを作成
+
+    music_unselected: 楽曲が選択されていません
+  settings: エディタ設定
+  telemetry: テレメトリ
+
+audio_setting:
+  save:
+    failed: 'オーディオ設定の保存中にエラーが発生しました: %{error}'
+
+export:
+  official:
+    success: '%{path} にエクスポートしました'
+    failed: '公式譜面としてエクスポート中にエラーが発生しました: %{path}'
+
+game:
+  aspect_ratio:
+    free: フリー
+
+hotkey:
+  phichain.place_tap: Tapを配置
+  phichain.place_drag: Dragを配置
+  phichain.place_flick: Flickを配置
+  phichain.place_hold: Holdを配置
+  phichain.place_transition_event: トランジションイベントを配置
+  phichain.place_constant_event: 定数イベントを配置
+  phichain.forward: 進む
+  phichain.backward: 戻る
+
+action:
+  phichain.save_project: プロジェクトを保存
+  phichain.close_project: プロジェクトを閉じる
+  phichain.copy: コピー
+  phichain.paste: 貼り付け
+  phichain.cut: 切り取り
+  phichain.undo: 元に戻す
+  phichain.redo: やり直す
+  phichain.pause_resume: 一時停止/再生
+  phichain.take_screenshot: スクリーンショットを撮る
+  phichain.delete_selected: 選択項目を削除
+  phichain.open_action_panel: コマンドパネルを開く
+  
+  phichain.zoom_in: 25% 拡大
+  phichain.zoom_out: 25% 縮小
+  phichain.reset_zoom: ズームを100%にリセット
+
+  phichain.export_as_official: 公式譜面としてエクスポート
+
+  phichain.create_line: 新規判定ライン
+
+  phichain.open_in_file_manager: プロジェクトをファイルマネージャーで開く
+
+  phichain.select_line_1: '判定ライン 1 を選択'
+  phichain.select_line_2: '判定ライン 2 を選択'
+  phichain.select_line_3: '判定ライン 3 を選択'
+  phichain.select_line_4: '判定ライン 4 を選択'
+  phichain.select_line_5: '判定ライン 5 を選択'
+  phichain.select_line_6: '判定ライン 6 を選択'
+  phichain.select_line_7: '判定ライン 7 を選択'
+  phichain.select_line_8: '判定ライン 8 を選択'
+  phichain.select_line_9: '判定ライン 9 を選択'
+  phichain.select_line_0: '判定ライン 10 を選択'
