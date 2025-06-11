@@ -3,7 +3,7 @@
 
 ## Phichain
 
-**中文** | [English](https://github.com/Ivan-1F/phichain/blob/master/README_en.md)
+**中文** | [日本語](https://github.com/Ivan-1F/phichain/blob/master/README_ja.md) | [English](https://github.com/Ivan-1F/phichain/blob/master/README_en.md)
 
 [![GitHub License](https://img.shields.io/github/license/Ivan-1F/phichain)](https://github.com/Ivan-1F/phichain/blob/master/LICENSE)
 [![Dev Builds](https://github.com/Ivan-1F/phichain/actions/workflows/cargo.yml/badge.svg)](https://github.com/Ivan-1F/phichain/actions/workflows/cargo.yml)
