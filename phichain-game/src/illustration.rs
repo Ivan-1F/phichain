@@ -1,11 +1,11 @@
 use std::path::PathBuf;
 
-use bevy::{prelude::*, render::render_asset::RenderAssetUsages};
-
 use crate::{
     constants::{ILLUSTRATION_ALPHA, ILLUSTRATION_BLUR},
     GameSet,
 };
+use bevy::{prelude::*, render::render_asset::RenderAssetUsages};
+use image::{DynamicImage, ImageResult};
 
 use super::GameViewport;
 
@@ -32,8 +32,11 @@ pub struct IllustrationAssetId(pub AssetId<Image>);
 #[derive(Component)]
 pub struct Illustration;
 
-pub fn load_illustration(path: PathBuf, commands: &mut Commands) {
-    let image = image::open(path).unwrap().blur(ILLUSTRATION_BLUR);
+pub fn open_illustration(path: PathBuf) -> ImageResult<DynamicImage> {
+    image::open(path).map(|i| i.blur(ILLUSTRATION_BLUR))
+}
+
+pub fn load_illustration(image: DynamicImage, commands: &mut Commands) {
     let is_srgb = matches!(
         image.color(),
         image::ColorType::Rgb8 | image::ColorType::Rgba8

@@ -209,6 +209,7 @@ home:
     create: Create Project
 
     music_unselected: Music is not selected
+  loading_project: Loading project...
   settings: Editor Settings
   telemetry: Telemetry
 
