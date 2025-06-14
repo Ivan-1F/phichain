@@ -112,19 +112,28 @@ fn handle_resume_system(
 
 fn update_seek_system(
     handle: Res<InstanceHandle>,
-    mut audio_instances: ResMut<Assets<AudioInstance>>,
+    paused: Res<Paused>,
     time: Res<Time>,
+    settings: Res<Persistent<EditorSettings>>,
+    mut audio_instances: ResMut<Assets<AudioInstance>>,
     mut seek_delta_time: ResMut<SeekDeltaTime>,
 
     mut timing: ResMut<Timing>,
 ) {
     let delta = time.delta_secs();
     let now = timing.now();
-    timing.seek_to(now + seek_delta_time.0 * delta * 10.);
-    if let Some(instance) = audio_instances.get_mut(&handle.0) {
-        instance.seek_to(timing.now() as f64);
+    let seek_delta = seek_delta_time.0 * delta * 10.;
+    timing.seek_to(now + seek_delta);
+    seek_delta_time.0 -= seek_delta;
+    // We directly seek the audio instance if it is not paused or if smooth scrolling is disabled
+    if (!paused.0 || !settings.general.timeline_smooth_scroll) && seek_delta_time.0.abs() > 0.0 {
+        let now = timing.now();
+        timing.seek_to(now + seek_delta_time.0);
+        if let Some(instance) = audio_instances.get_mut(&handle.0) {
+            instance.seek_to((now + seek_delta_time.0) as f64);
+        }
+        seek_delta_time.0 = 0.0;
     }
-    seek_delta_time.0 -= seek_delta_time.0 * delta * 10.;
 }
 
 // TODO: move this to separate plugin
