@@ -52,6 +52,19 @@ impl SettingCategory for General {
             ui.separator();
 
             finished |= ui.item(
+                t!("tab.settings.category.general.timeline_smooth_scroll.label"),
+                Some(t!(
+                    "tab.settings.category.general.timeline_smooth_scroll.description"
+                )),
+                |ui| {
+                    let response = ui.checkbox(&mut settings.general.timeline_smooth_scroll, "");
+                    response.changed()
+                },
+            );
+
+            ui.separator();
+
+            finished |= ui.item(
                 t!("tab.settings.category.general.highlight_selected_line.label"),
                 Some(t!(
                     "tab.settings.category.general.highlight_selected_line.description"
