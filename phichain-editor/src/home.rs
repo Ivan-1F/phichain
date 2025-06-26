@@ -13,6 +13,7 @@ use bevy::prelude::*;
 use bevy_egui::EguiContext;
 use bevy_persistent::Persistent;
 use egui::{Color32, CursorIcon, Id, RichText, ScrollArea, Sense};
+use phichain_game::loader::nonblocking::LoadingProject;
 use rfd::FileDialog;
 use std::path::PathBuf;
 
@@ -63,6 +64,15 @@ fn ui_system(world: &mut World) {
     // even though there's no game preview in home page, we disable this for consistency
     ctx.options_mut(|options| options.zoom_with_keyboard = false);
 
+    if world.query::<&LoadingProject>().single(world).is_ok() {
+        egui::Modal::new(Id::new("home.loading")).show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.spinner();
+                ui.add(egui::Label::new(t!("home.loading_project")).selectable(false));
+            });
+        });
+    }
+
     egui::CentralPanel::default().show(ctx, |ui| {
         let frame_time = ui.ctx().input(|i| i.time);
         if frame_time == 0.0 {
@@ -92,7 +102,7 @@ fn ui_system(world: &mut World) {
         ui.separator();
 
         if world.contains_resource::<CreatingProject>() {
-            let modal = egui::Modal::new(Id::new("home.settings")).show(ctx, |ui| {
+            let modal = egui::Modal::new(Id::new("home.create_project")).show(ctx, |ui| {
                 ui.set_width(400.0);
                 ui.heading(t!("home.create_project.label"));
                 ui.separator();
