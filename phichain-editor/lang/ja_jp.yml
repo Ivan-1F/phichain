@@ -68,12 +68,6 @@ tab:
     timelines:
       new_note_timeline: + ノーツタイムライン
       new_event_timeline: + イベントタイムライン
-      note_timeline:
-        for_line: '%{line} のノーツタイムライン'
-        binding: ノーツタイムラインをバインド
-      event_timeline:
-        for_line: '%{line} のイベントタイムライン'
-        binding: イベントタイムラインをバインド
       binding: バインド
     note_side_filter:
       title: ノーツの配置側
@@ -132,6 +126,9 @@ tab:
           never: 表示しない
           always: 常に表示
           visible: 表示中の判定ラインのみ
+        pause_when_scroll:
+          label: スクロール時に一時停止
+          description: タイムラインのスクロール中にエディターを一時停止する
         send_telemetry:
           label: テレメトリを送信
           description: テレメトリデータを送信するかどうか。テレメトリに関する詳細情報は https://phicha.in/telemetry をご覧ください。
@@ -212,6 +209,7 @@ home:
     create: プロジェクトを作成
 
     music_unselected: 楽曲が選択されていません
+  loading_project: プロジェクトを読み込んでいます...
   settings: エディタ設定
   telemetry: テレメトリ
 
@@ -271,3 +269,10 @@ action:
   phichain.select_line_8: '判定ライン 8 を選択'
   phichain.select_line_9: '判定ライン 9 を選択'
   phichain.select_line_0: '判定ライン 10 を選択'
+
+  phichain.move_up: 上に移動
+  phichain.move_down: 下に移動
+  phichain.move_left: 左に移動
+  phichain.move_right: 右に移動
+
+  phichain.unselect_all: すべての選択を解除
