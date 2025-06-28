@@ -377,7 +377,7 @@ fn handle_create_project_system(
                 load_project_events.write(LoadProjectEvent(root_path.clone()));
                 commands.remove_resource::<CreatingProject>();
             }
-            Err(error) => toasts.error(format!("{:?}", error)),
+            Err(error) => toasts.error(format!("{error:?}")),
         }
     }
 }

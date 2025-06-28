@@ -46,7 +46,7 @@ fn get_export_path(path: &Path, index: usize) -> Option<PathBuf> {
         let zip_path = path.join(if index == 0 {
             "chart.zip".to_string()
         } else {
-            format!("chart({}).zip", index)
+            format!("chart({index}).zip")
         });
 
         if zip_path.exists() {

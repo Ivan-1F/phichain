@@ -25,9 +25,9 @@ impl SettingCategory for Hotkey {
 
         for (id, default) in ctx.registry.0.clone().iter() {
             let key = if actions.0.contains_key(id) {
-                format!("action.{}", id)
+                format!("action.{id}")
             } else {
-                format!("hotkey.{}", id)
+                format!("hotkey.{id}")
             };
 
             ui.item(t!(key.as_str()), None::<&str>, |ui| {
@@ -79,7 +79,7 @@ impl SettingCategory for Hotkey {
                                 .collect::<Vec<_>>();
 
                             if let Some(key) = recording.key {
-                                keys.push(format!("{:?}", key))
+                                keys.push(format!("{key:?}"))
                             }
 
                             ui.label(if keys.is_empty() {

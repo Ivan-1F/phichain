@@ -32,7 +32,7 @@ impl Plugin for SelectionPlugin {
 
         for i in 1..10 {
             app.add_action(
-                format!("phichain.select_line_{}", i).as_str(),
+                format!("phichain.select_line_{i}").as_str(),
                 move |world: &mut World| {
                     if let Some(entity) = query_ordered_lines(world).get(i - 1) {
                         world.resource_mut::<SelectedLine>().0 = *entity;

@@ -86,7 +86,7 @@ pub fn quick_action(ui: &mut Ui, world: &mut World) {
                     match editor_settings.persist() {
                         Ok(_) => {}
                         Err(error) => {
-                            toasts.error(format!("Failed to persist editor settings: {}", error))
+                            toasts.error(format!("Failed to persist editor settings: {error}"))
                         }
                     }
                 }
@@ -109,7 +109,7 @@ pub fn quick_action(ui: &mut Ui, world: &mut World) {
                 vec2(55.0, 18.0),
                 egui::DragValue::new(&mut second_binding)
                     .speed(0.05)
-                    .custom_formatter(|x, _| format!("{:.2}", x))
+                    .custom_formatter(|x, _| format!("{x:.2}"))
                     .range(0.0..=duration.0.as_secs_f32()),
             );
             let max_beat = bpm_list.beat_at(duration.0.as_secs_f32());
@@ -117,7 +117,7 @@ pub fn quick_action(ui: &mut Ui, world: &mut World) {
                 vec2(55.0, 18.0),
                 egui::DragValue::new(&mut beat_binding)
                     .speed(0.05)
-                    .custom_formatter(|x, _| format!("{:.2}", x))
+                    .custom_formatter(|x, _| format!("{x:.2}"))
                     .range(0.0..=max_beat.value()),
             );
         });

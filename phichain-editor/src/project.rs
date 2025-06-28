@@ -121,7 +121,7 @@ fn load_project_system(
                 // results will be handled in `handle_project_loading_result_system`
             }
             Err(error) => {
-                toasts.error(format!("Failed to open project: {:?}", error));
+                toasts.error(format!("Failed to open project: {error:?}"));
             }
         }
     }
@@ -164,7 +164,7 @@ fn handle_project_loading_result_system(
             commands.insert_resource(data.project.clone());
         }
         Err(error) => {
-            toasts.error(format!("Failed to load chart: {:?}", error));
+            toasts.error(format!("Failed to load chart: {error:?}"));
             telemetry.write(PushTelemetryEvent::new(
                 "phichain.editor.project.load.failed",
                 json!({}),

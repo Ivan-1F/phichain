@@ -42,7 +42,7 @@ pub fn roll_latest() -> io::Result<()> {
 
     let mut n = 1u32;
     loop {
-        let candidate = dir.join(format!("{}-{}.log.gz", date, n));
+        let candidate = dir.join(format!("{date}-{n}.log.gz"));
         if !candidate.exists() {
             let mut src = File::open(&latest)?;
             let mut encoder = GzEncoder::new(File::create(candidate)?, Compression::default());

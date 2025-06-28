@@ -185,7 +185,7 @@ impl Display for Easing {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Easing::Custom(_, _, _, _) => write!(f, "Custom"),
-            _ => write!(f, "{:?}", self),
+            _ => write!(f, "{self:?}"),
         }
     }
 }

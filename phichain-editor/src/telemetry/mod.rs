@@ -30,7 +30,7 @@ fn get_device_id() -> String {
     let mut hasher = Sha256::new();
     hasher.update(machine_id.as_bytes());
     let hash_result = hasher.finalize();
-    format!("{:x}", hash_result)
+    format!("{hash_result:x}")
 }
 
 #[derive(Debug, Clone, Resource)]

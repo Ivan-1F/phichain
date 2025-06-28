@@ -107,8 +107,7 @@ pub fn settings_ui(ui: &mut Ui, world: &mut World) {
                                 match editor_settings.persist() {
                                     Ok(_) => {}
                                     Err(error) => toasts.error(format!(
-                                        "Failed to persist editor settings: {}",
-                                        error
+                                        "Failed to persist editor settings: {error}"
                                     )),
                                 }
                             }

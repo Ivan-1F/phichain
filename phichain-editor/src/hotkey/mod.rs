@@ -59,7 +59,7 @@ impl Display for Hotkey {
             .collect::<Vec<String>>()
             .join(" + ");
 
-        write!(f, "{}", content)
+        write!(f, "{content}")
     }
 }
 

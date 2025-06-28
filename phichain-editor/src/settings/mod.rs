@@ -97,7 +97,7 @@ impl fmt::Display for AspectRatio {
         match self {
             AspectRatio::Free => f.write_str(&t!("game.aspect_ratio.free")),
             AspectRatio::Fixed { width, height } => {
-                write!(f, "{}:{}", width, height)
+                write!(f, "{width}:{height}")
             }
         }
     }

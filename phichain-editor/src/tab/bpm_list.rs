@@ -26,45 +26,43 @@ pub fn bpm_list_tab(
             let point = bpm_list.0.get_mut(index).unwrap();
 
             ui.horizontal_top(|ui| {
-                egui::Grid::new(format!("bpm_list_grid_{}", index))
+                egui::Grid::new(format!("bpm_list_grid_{index}"))
                     .num_columns(2)
                     .spacing([20.0, 2.0])
                     .striped(true)
                     .show(ui, |ui| {
-                        let result =
-                            latch::latch(ui, format!("bpm_point_{}", index), *point, |ui| {
-                                let mut finished = false;
-                                let mut beat = point.beat;
+                        let result = latch::latch(ui, format!("bpm_point_{index}"), *point, |ui| {
+                            let mut finished = false;
+                            let mut beat = point.beat;
 
-                                ui.label(t!("tab.bpm_list.point.beat"));
-                                ui.add_enabled_ui(point.beat != Beat::ZERO, |ui| {
-                                    let start = previous_beat
-                                        .map(|x| x + beat!(0, 1, 32))
-                                        .unwrap_or(Beat::MIN);
-                                    let range = start..=next_beat.unwrap_or(Beat::MAX);
-                                    let response = ui
-                                        .add(BeatValue::new(&mut beat).range(range))
-                                        .on_disabled_hover_text(t!(
-                                            "tab.bpm_list.zero_beat_not_editable"
-                                        ));
-                                    finished |= response.drag_stopped() || response.lost_focus();
-                                });
-                                ui.end_row();
-
-                                ui.label(t!("tab.bpm_list.point.bpm"));
-                                let response = ui.add(
-                                    egui::DragValue::new(&mut point.bpm).range(0.01..=f32::MAX),
-                                );
+                            ui.label(t!("tab.bpm_list.point.beat"));
+                            ui.add_enabled_ui(point.beat != Beat::ZERO, |ui| {
+                                let start = previous_beat
+                                    .map(|x| x + beat!(0, 1, 32))
+                                    .unwrap_or(Beat::MIN);
+                                let range = start..=next_beat.unwrap_or(Beat::MAX);
+                                let response = ui
+                                    .add(BeatValue::new(&mut beat).range(range))
+                                    .on_disabled_hover_text(t!(
+                                        "tab.bpm_list.zero_beat_not_editable"
+                                    ));
                                 finished |= response.drag_stopped() || response.lost_focus();
-                                ui.end_row();
-
-                                if beat != point.beat {
-                                    point.beat = beat;
-                                    changes.push((index, beat));
-                                }
-
-                                finished
                             });
+                            ui.end_row();
+
+                            ui.label(t!("tab.bpm_list.point.bpm"));
+                            let response =
+                                ui.add(egui::DragValue::new(&mut point.bpm).range(0.01..=f32::MAX));
+                            finished |= response.drag_stopped() || response.lost_focus();
+                            ui.end_row();
+
+                            if beat != point.beat {
+                                point.beat = beat;
+                                changes.push((index, beat));
+                            }
+
+                            finished
+                        });
 
                         if let Some(from) = result {
                             if from != *point {

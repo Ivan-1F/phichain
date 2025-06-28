@@ -17,7 +17,7 @@ impl fmt::Debug for NoteKind {
         match self {
             NoteKind::Tap => write!(f, "Tap"),
             NoteKind::Drag => write!(f, "Drag"),
-            NoteKind::Hold { hold_beat } => write!(f, "Hold({:?})", hold_beat),
+            NoteKind::Hold { hold_beat } => write!(f, "Hold({hold_beat:?})"),
             NoteKind::Flick => write!(f, "Flick"),
         }
     }

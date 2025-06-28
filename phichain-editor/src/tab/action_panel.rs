@@ -91,7 +91,7 @@ fn action_panel_ui_system(
         entries.push(ActionPanelEntry {
             kind: ActionPanelEntryKind::Action,
             id: id.clone(),
-            title: t!(format!("action.{}", id).as_str()).to_string(),
+            title: t!(format!("action.{id}").as_str()).to_string(),
             hotkey: hotkeys.0.get(id).cloned(),
         })
     }
@@ -100,7 +100,7 @@ fn action_panel_ui_system(
         entries.push(ActionPanelEntry {
             kind: ActionPanelEntryKind::Tab,
             id: id.clone(),
-            title: t!(format!("tab.{}.title", id).as_str()).to_string(),
+            title: t!(format!("tab.{id}.title").as_str()).to_string(),
             hotkey: None,
         })
     }

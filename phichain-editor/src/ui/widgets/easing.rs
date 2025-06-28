@@ -289,7 +289,7 @@ impl Widget for EasingValue<'_> {
                                     ui,
                                     easing,
                                     selected,
-                                    format!("{}", easing).trim_start_matches("Ease"),
+                                    format!("{easing}").trim_start_matches("Ease"),
                                 );
 
                                 if response.clicked() {

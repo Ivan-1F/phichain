@@ -271,7 +271,7 @@ impl egui_dock::TabViewer for TabViewer<'_> {
     type Tab = Identifier;
 
     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
-        t!(format!("tab.{}.title", tab).as_str()).into()
+        t!(format!("tab.{tab}.title").as_str()).into()
     }
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
         self.registry.tab_ui(ui, self.world, tab);
@@ -350,7 +350,7 @@ fn ui_system(world: &mut World) {
                                 .collect::<Vec<_>>()
                                 .contains(&tab);
                             if ui
-                                .selectable_label(opened, t!(format!("tab.{}.title", tab).as_str()))
+                                .selectable_label(opened, t!(format!("tab.{tab}.title").as_str()))
                                 .clicked()
                             {
                                 if opened {
@@ -414,14 +414,14 @@ fn ui_system(world: &mut World) {
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 0.0;
                 ui.label("FPS: ");
-                ui.label(RichText::new(format!("{:.2}", fps)).monospace());
+                ui.label(RichText::new(format!("{fps:.2}")).monospace());
             });
 
-            ui.label(format!("Notes: {}", notes));
-            ui.label(format!("Events: {}", events));
+            ui.label(format!("Notes: {notes}"));
+            ui.label(format!("Events: {events}"));
 
-            ui.label(format!("Selected Notes: {}", selected_notes));
-            ui.label(format!("Selected Events: {}", selected_events));
+            ui.label(format!("Selected Notes: {selected_notes}"));
+            ui.label(format!("Selected Events: {selected_events}"));
 
             world.resource_scope(|_world: &mut World, history: Mut<EditorHistory>| {
                 if !history.0.is_saved() {
