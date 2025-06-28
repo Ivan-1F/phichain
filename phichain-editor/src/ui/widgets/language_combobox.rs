@@ -1,10 +1,10 @@
-use bevy::platform::collections::HashMap;
 use egui::Ui;
+use indexmap::IndexMap;
 use rust_i18n::set_locale;
 
 pub fn language_combobox(
     ui: &mut Ui,
-    languages: HashMap<String, String>,
+    languages: IndexMap<String, String>,
     value: &mut String,
 ) -> bool {
     let mut combobox_changed = false;
