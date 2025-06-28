@@ -2,6 +2,7 @@ use crate::action::{ActionRegistrationExt, ActionRegistry, RunActionEvent};
 use crate::hotkey::modifier::Modifier;
 use crate::hotkey::{Hotkey, HotkeyRegistry};
 use crate::identifier::Identifier;
+use crate::l10n::pronunciation::match_pronunciation;
 use crate::tab::TabRegistry;
 use crate::UiState;
 use bevy::app::App;
@@ -119,10 +120,7 @@ fn action_panel_ui_system(
         let entries = entries
             .iter()
             .filter(|entry| {
-                entry
-                    .title
-                    .to_ascii_lowercase()
-                    .contains(panel.query.to_ascii_lowercase().as_str())
+                match_pronunciation(&panel.query.to_ascii_lowercase(), &entry.title)
                     || entry
                         .id
                         .to_string()

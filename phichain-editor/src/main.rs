@@ -15,6 +15,7 @@ mod home;
 mod hotkey;
 mod identifier;
 mod ime;
+mod l10n;
 mod logging;
 mod misc;
 mod notification;
