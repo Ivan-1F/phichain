@@ -90,7 +90,7 @@ tab:
     title: 判定ラインリスト
     create_line: 判定ラインを作成
     note: ノーツ
-    event: イベント
+    event: イベ
     position: 位置
     rotation: 回転
     opacity: 透明度
@@ -114,7 +114,7 @@ tab:
     category:
       general:
         title: 一般
-        timeline_scroll_sensitivity: 
+        timeline_scroll_sensitivity:
           label: タイムラインのスクロール感度
           description: マウスホイールやタッチパッドでタイムラインをスクロールする際の感度。数値が大きいほど速くスクロールします。
         timeline_smooth_scroll:
