@@ -1,3 +1,4 @@
+use std::f32;
 use std::time::Duration;
 use std::{io::Cursor, path::PathBuf};
 
@@ -19,6 +20,9 @@ pub struct InstanceHandle(pub Handle<AudioInstance>);
 #[derive(Resource)]
 pub struct AudioAssetId(pub AssetId<AudioSource>);
 
+#[derive(Resource)]
+pub struct SeekDeltaTime(f32);
+
 /// The duration of the audio
 #[derive(Resource, Debug)]
 pub struct AudioDuration(pub Duration);
@@ -27,18 +31,21 @@ pub struct AudioPlugin;
 
 impl Plugin for AudioPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(bevy_kira_audio::AudioPlugin).add_systems(
-            Update,
-            (
-                handle_pause_system,
-                handle_resume_system,
-                handle_seek_system,
-                handle_seek_to_system,
-                update_volume_system,
-                update_playback_rate_system,
-            )
-                .run_if(project_loaded().and(resource_exists::<InstanceHandle>)),
-        );
+        app.insert_resource(SeekDeltaTime(0.0))
+            .add_plugins(bevy_kira_audio::AudioPlugin)
+            .add_systems(
+                Update,
+                (
+                    handle_pause_system,
+                    handle_resume_system,
+                    handle_seek_system,
+                    handle_seek_to_system,
+                    update_seek_system,
+                    update_volume_system,
+                    update_playback_rate_system,
+                )
+                    .run_if(project_loaded().and(resource_exists::<InstanceHandle>)),
+            );
     }
 }
 
@@ -103,6 +110,32 @@ fn handle_resume_system(
     }
 }
 
+fn update_seek_system(
+    handle: Res<InstanceHandle>,
+    paused: Res<Paused>,
+    time: Res<Time>,
+    settings: Res<Persistent<EditorSettings>>,
+    mut audio_instances: ResMut<Assets<AudioInstance>>,
+    mut seek_delta_time: ResMut<SeekDeltaTime>,
+
+    mut timing: ResMut<Timing>,
+) {
+    let delta = time.delta_secs();
+    let now = timing.now();
+    let seek_delta = seek_delta_time.0 * delta * 10.;
+    timing.seek_to(now + seek_delta);
+    seek_delta_time.0 -= seek_delta;
+    // We directly seek the audio instance if it is not paused or if smooth scrolling is disabled
+    if (!paused.0 || !settings.general.timeline_smooth_scroll) && seek_delta_time.0.abs() > 0.0 {
+        let now = timing.now();
+        timing.seek_to(now + seek_delta_time.0);
+        if let Some(instance) = audio_instances.get_mut(&handle.0) {
+            instance.seek_to((now + seek_delta_time.0) as f64);
+        }
+        seek_delta_time.0 = 0.0;
+    }
+}
+
 // TODO: move this to separate plugin
 /// When receiving [SeekEvent], seek the audio instance
 fn handle_seek_system(
@@ -110,8 +143,7 @@ fn handle_seek_system(
     mut audio_instances: ResMut<Assets<AudioInstance>>,
     mut events: EventReader<SeekEvent>,
     keyboard: Res<ButtonInput<KeyCode>>,
-
-    mut timing: ResMut<Timing>,
+    mut seek_target_time: ResMut<SeekDeltaTime>,
 ) {
     if let Some(instance) = audio_instances.get_mut(&handle.0) {
         for event in events.read() {
@@ -124,9 +156,8 @@ fn handle_seek_system(
                 factor /= 2.0;
             }
             if let Some(position) = instance.state().position() {
-                let target = (position as f32 + event.0 * factor).max(0.0);
-                instance.seek_to(target as f64);
-                timing.seek_to(target);
+                seek_target_time.0 = event.0 * factor;
+                instance.seek_to(position + seek_target_time.0 as f64);
             }
         }
     }
@@ -138,6 +169,7 @@ fn handle_seek_to_system(
     handle: Res<InstanceHandle>,
     mut audio_instances: ResMut<Assets<AudioInstance>>,
     mut events: EventReader<SeekToEvent>,
+    mut seek_delta_time: ResMut<SeekDeltaTime>,
 
     mut timing: ResMut<Timing>,
 ) {
@@ -145,6 +177,9 @@ fn handle_seek_to_system(
         for event in events.read() {
             instance.seek_to(event.0.max(0.0).into());
             timing.seek_to(event.0.max(0.0));
+            if seek_delta_time.0 > 0.0 {
+                seek_delta_time.0 = 0.0;
+            }
         }
     }
 }

@@ -117,6 +117,9 @@ tab:
         timeline_scroll_sensitivity:
           label: Timeline Scroll Sensitivity
           description: Sensitivity when scrolling the timeline with mouse wheel or touchpad. Higher values make scrolling faster
+        timeline_smooth_scroll:
+          label: Timeline Smooth Scroll
+          description: Whether to enable smooth scrolling for the timeline
         highlight_selected_line:
           label: Highlight Selected Line
           description: Whether to highlight the selected line
