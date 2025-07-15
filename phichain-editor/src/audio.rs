@@ -19,6 +19,10 @@ pub struct InstanceHandle(pub Handle<AudioInstance>);
 #[derive(Resource)]
 pub struct AudioAssetId(pub AssetId<AudioSource>);
 
+/// Accumulated time delta (in seconds) for pending seek operations
+///
+/// When timeline_smooth_scroll is enabled, the delta is applied gradually;
+/// when disabled, it's applied immediately.
 #[derive(Resource)]
 pub struct SeekDeltaTime(f32);
 
@@ -109,14 +113,15 @@ fn handle_resume_system(
     }
 }
 
+/// Apply accumulated [`SeekDeltaTime`] to [`Timing`] and the audio instance
 fn update_seek_system(
     handle: Res<InstanceHandle>,
     paused: Res<Paused>,
     time: Res<Time>,
     settings: Res<Persistent<EditorSettings>>,
+
     mut audio_instances: ResMut<Assets<AudioInstance>>,
     mut seek_delta_time: ResMut<SeekDeltaTime>,
-
     mut timing: ResMut<Timing>,
 ) {
     let delta = time.delta_secs();
@@ -136,10 +141,13 @@ fn update_seek_system(
 }
 
 // TODO: move this to separate plugin
-/// When receiving [SeekEvent], seek the audio instance
+/// Accumulates relative seek deltas to [`SeekDeltaTime`]
+///
+/// No immediate seeking occurs here - all timing changes are processed by [`update_seek_system`]
 fn handle_seek_system(
-    mut events: EventReader<SeekEvent>,
     keyboard: Res<ButtonInput<KeyCode>>,
+
+    mut events: EventReader<SeekEvent>,
     mut seek_target_time: ResMut<SeekDeltaTime>,
 ) {
     for event in events.read() {
@@ -156,7 +164,11 @@ fn handle_seek_system(
 }
 
 // TODO: move this to separate plugin
-/// When receiving [SeekToEvent], seek the audio instance
+/// Handles absolute timeline position changes with immediate synchronization.
+///
+/// This system:
+/// 1. Immediately seeks both audio instance and editor timing to the target position
+/// 2. Clears pending [`SeekDeltaTime`]
 fn handle_seek_to_system(
     handle: Res<InstanceHandle>,
     mut audio_instances: ResMut<Assets<AudioInstance>>,
