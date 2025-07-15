@@ -52,12 +52,12 @@ impl SettingCategory for General {
             ui.separator();
 
             finished |= ui.item(
-                t!("tab.settings.category.general.timeline_smooth_scroll.label"),
+                t!("tab.settings.category.general.timeline_smooth_seeking.label"),
                 Some(t!(
-                    "tab.settings.category.general.timeline_smooth_scroll.description"
+                    "tab.settings.category.general.timeline_smooth_seeking.description"
                 )),
                 |ui| {
-                    let response = ui.checkbox(&mut settings.general.timeline_smooth_scroll, "");
+                    let response = ui.checkbox(&mut settings.general.timeline_smooth_seeking, "");
                     response.changed()
                 },
             );

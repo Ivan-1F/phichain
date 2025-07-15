@@ -117,9 +117,9 @@ tab:
         timeline_scroll_sensitivity:
           label: 时间线滚动灵敏度
           description: 使用鼠标滚轮或触控板滚动时间线时的灵明度。数值越大滚动越快
-        timeline_smooth_scroll:
-          label: 时间线平滑滚动
-          description: 是否启用时间线平滑滚动
+        timeline_smooth_seeking:
+          label: 时间线平滑寻位
+          description: 启用后，时间线的位置变化（滚动、前进/后退快捷键等）会平滑过渡；禁用后会立即跳转
         highlight_selected_line:
           label: 高亮选中判定线
           description: 是否高亮选中的判定线

@@ -21,7 +21,7 @@ pub struct AudioAssetId(pub AssetId<AudioSource>);
 
 /// Accumulated time delta (in seconds) for pending seek operations
 ///
-/// When timeline_smooth_scroll is enabled, the delta is applied gradually;
+/// When timeline_smooth_seeking is enabled, the delta is applied gradually;
 /// when disabled, it's applied immediately.
 #[derive(Resource)]
 pub struct SeekDeltaTime(f32);
@@ -129,8 +129,8 @@ fn update_seek_system(
     let seek_delta = seek_delta_time.0 * delta * 10.;
     timing.seek_to(now + seek_delta);
     seek_delta_time.0 -= seek_delta;
-    // We directly seek the audio instance if it is not paused or if smooth scrolling is disabled
-    if (!paused.0 || !settings.general.timeline_smooth_scroll) && seek_delta_time.0.abs() > 0.0 {
+    // We directly seek the audio instance if it is not paused or if smooth seeking is disabled
+    if (!paused.0 || !settings.general.timeline_smooth_seeking) && seek_delta_time.0.abs() > 0.0 {
         let final_time = timing.now() + seek_delta_time.0;
         timing.seek_to(final_time);
         if let Some(instance) = audio_instances.get_mut(&handle.0) {

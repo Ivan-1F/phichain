@@ -117,9 +117,9 @@ tab:
         timeline_scroll_sensitivity:
           label: タイムラインのスクロール感度
           description: マウスホイールやタッチパッドでタイムラインをスクロールする際の感度。数値が大きいほど速くスクロールします。
-        timeline_smooth_scroll:
-          label: タイムラインのスムーズスクロール
-          description: タイムラインのスムーズスクロールを有効にするかどうか。
+        timeline_smooth_seeking:
+          label: タイムラインのスムーズシーク
+          description: 有効にすると、タイムラインの位置変更（スクロール、進む/戻るショートカットキーなど）が滑らかに遷移します
         highlight_selected_line: 
           label: 選択中の判定ラインをハイライト
           description: 選択中の判定ラインをハイライト表示するかどうか。

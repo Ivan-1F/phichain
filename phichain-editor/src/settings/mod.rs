@@ -41,7 +41,7 @@ pub enum ShowLineAnchorOption {
 pub struct GeneralSettings {
     pub language: String,
     pub timeline_scroll_sensitivity: f32,
-    pub timeline_smooth_scroll: bool,
+    pub timeline_smooth_seeking: bool,
     pub highlight_selected_line: bool,
     pub show_line_anchor: ShowLineAnchorOption,
     pub pause_when_scroll: bool,
@@ -54,7 +54,7 @@ impl Default for GeneralSettings {
         Self {
             language: "en_us".to_owned(),
             timeline_scroll_sensitivity: 10.0,
-            timeline_smooth_scroll: true,
+            timeline_smooth_seeking: true,
             highlight_selected_line: true,
             show_line_anchor: ShowLineAnchorOption::Always,
             pause_when_scroll: false,
