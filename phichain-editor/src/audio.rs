@@ -1,4 +1,3 @@
-use std::f32;
 use std::time::Duration;
 use std::{io::Cursor, path::PathBuf};
 
@@ -127,10 +126,10 @@ fn update_seek_system(
     seek_delta_time.0 -= seek_delta;
     // We directly seek the audio instance if it is not paused or if smooth scrolling is disabled
     if (!paused.0 || !settings.general.timeline_smooth_scroll) && seek_delta_time.0.abs() > 0.0 {
-        let now = timing.now();
-        timing.seek_to(now + seek_delta_time.0);
+        let final_time = timing.now() + seek_delta_time.0;
+        timing.seek_to(final_time);
         if let Some(instance) = audio_instances.get_mut(&handle.0) {
-            instance.seek_to((now + seek_delta_time.0) as f64);
+            instance.seek_to(final_time as f64);
         }
         seek_delta_time.0 = 0.0;
     }
@@ -139,27 +138,20 @@ fn update_seek_system(
 // TODO: move this to separate plugin
 /// When receiving [SeekEvent], seek the audio instance
 fn handle_seek_system(
-    handle: Res<InstanceHandle>,
-    mut audio_instances: ResMut<Assets<AudioInstance>>,
     mut events: EventReader<SeekEvent>,
     keyboard: Res<ButtonInput<KeyCode>>,
     mut seek_target_time: ResMut<SeekDeltaTime>,
 ) {
-    if let Some(instance) = audio_instances.get_mut(&handle.0) {
-        for event in events.read() {
-            // holding Control will seek faster and holding Alt will seek slower
-            let mut factor = 1.0;
-            if keyboard.pressed(KeyCode::control()) {
-                factor *= 2.0;
-            }
-            if keyboard.pressed(KeyCode::AltLeft) {
-                factor /= 2.0;
-            }
-            if let Some(position) = instance.state().position() {
-                seek_target_time.0 = event.0 * factor;
-                instance.seek_to(position + seek_target_time.0 as f64);
-            }
+    for event in events.read() {
+        // holding Control will seek faster and holding Alt will seek slower
+        let mut factor = 1.0;
+        if keyboard.pressed(KeyCode::control()) {
+            factor *= 2.0;
         }
+        if keyboard.pressed(KeyCode::AltLeft) {
+            factor /= 2.0;
+        }
+        seek_target_time.0 += event.0 * factor;
     }
 }
 
