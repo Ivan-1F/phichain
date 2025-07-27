@@ -88,6 +88,9 @@ tab:
     illustrator: Illustrator
   line_list:
     title: Line List
+    view:
+      state: State
+      preview: Preview
     create_line: Create Line
     note: Not
     event: Evt
