@@ -458,13 +458,14 @@ fn ui_system(world: &mut World) {
 }
 
 fn setup_system(mut commands: Commands) {
-    commands.spawn((Camera2d, GameCamera));
+    // this is the camera which renders the game content, including the game ui. its viewport will be limited to game_tab's clip_rect
+    commands.spawn((Camera2d, GameCamera, IsDefaultUiCamera));
 }
 
 fn setup_egui_system(mut commands: Commands, mut egui_global_settings: ResMut<EguiGlobalSettings>) {
-    // Disable the automatic creation of a primary context to set it up manually for the camera we need.
     egui_global_settings.auto_create_primary_context = false;
 
+    // this is the camera which renders egui. its viewport will be the entire screen
     commands.spawn((
         // The `PrimaryEguiContext` component requires everything needed to render a primary context.
         PrimaryEguiContext,
