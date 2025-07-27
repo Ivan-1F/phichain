@@ -90,7 +90,10 @@ tab:
     title: 判定ラインリスト
     view:
       state: 状態
-      preview: プレビュー
+      preview: 表示
+    preview:
+      position: 位置
+      opacity: 透明度
     create_line: 判定ラインを作成
     note: ノーツ
     event: イベ

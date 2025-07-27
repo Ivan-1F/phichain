@@ -90,24 +90,41 @@ impl<'a> LineList<'a> {
             });
 
             ui.add_space(ui.available_width() - LINE_STATE_COLUMN_WIDTH);
-            ui.columns_const(|[note_event, x_y, op_rot, spd]| {
-                note_event.vertical_centered(|ui| {
-                    ui.add(trunc_label!(t!("tab.line_list.note")));
-                    ui.add(trunc_label!(t!("tab.line_list.event")));
-                });
-                x_y.vertical_centered(|ui| {
-                    ui.add(trunc_label!("X"));
-                    ui.add(trunc_label!("Y"));
-                });
-                op_rot.vertical_centered(|ui| {
-                    ui.add(trunc_label!(t!("tab.line_list.opacity")));
-                    ui.add(trunc_label!(t!("tab.line_list.rotation")));
-                });
-                spd.vertical_centered(|ui| {
-                    ui.add(trunc_label!(t!("tab.line_list.speed")));
-                    ui.add(trunc_label!(t!("tab.line_list.index")));
-                });
+
+            let show = ui.data(|data| {
+                data.get_temp("line_list_view".into())
+                    .unwrap_or(LineListView::State)
             });
+
+            if show == LineListView::State {
+                ui.columns_const(|[note_event, x_y, op_rot, spd]| {
+                    note_event.vertical_centered(|ui| {
+                        ui.add(trunc_label!(t!("tab.line_list.note")));
+                        ui.add(trunc_label!(t!("tab.line_list.event")));
+                    });
+                    x_y.vertical_centered(|ui| {
+                        ui.add(trunc_label!("X"));
+                        ui.add(trunc_label!("Y"));
+                    });
+                    op_rot.vertical_centered(|ui| {
+                        ui.add(trunc_label!(t!("tab.line_list.opacity")));
+                        ui.add(trunc_label!(t!("tab.line_list.rotation")));
+                    });
+                    spd.vertical_centered(|ui| {
+                        ui.add(trunc_label!(t!("tab.line_list.speed")));
+                        ui.add(trunc_label!(t!("tab.line_list.index")));
+                    });
+                });
+            } else {
+                ui.columns_const(|[position, opacity]| {
+                    position.centered_and_justified(|ui| {
+                        ui.label(t!("tab.line_list.preview.position"));
+                    });
+                    opacity.centered_and_justified(|ui| {
+                        ui.label(t!("tab.line_list.preview.opacity"));
+                    });
+                });
+            }
         });
 
         ui.separator();

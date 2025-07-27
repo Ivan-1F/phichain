@@ -91,6 +91,9 @@ tab:
     view:
       state: State
       preview: Preview
+    preview:
+      position: Position
+      opacity: Opacity
     create_line: Create Line
     note: Not
     event: Evt

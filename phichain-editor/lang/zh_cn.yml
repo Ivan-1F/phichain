@@ -91,6 +91,9 @@ tab:
     view:
       state: 状态
       preview: 预览
+    preview:
+      position: 位置
+      opacity: 透明度
     create_line: 创建判定线
     note: 音符
     event: 事件
