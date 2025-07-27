@@ -7,8 +7,8 @@ use bevy_egui::EguiContexts;
 pub fn mute_keyboard_for_bevy_when_egui_wants_system(
     mut contexts: EguiContexts,
     mut keyboard: ResMut<ButtonInput<KeyCode>>,
-) {
-    let ctx = contexts.ctx_mut();
+) -> Result {
+    let ctx = contexts.ctx_mut()?;
     if ctx.wants_keyboard_input() {
         let modifiers = [
             KeyCode::SuperLeft,
@@ -29,4 +29,6 @@ pub fn mute_keyboard_for_bevy_when_egui_wants_system(
             keyboard.press(key);
         }
     }
+
+    Ok(())
 }

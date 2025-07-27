@@ -52,7 +52,7 @@ bevy_kira_audio = { version = "0.23.0", features = [
     "flac",
     "wav",
 ] }
-bevy_egui = { version = "0.34.1", features = ["immutable_ctx"] }
+bevy_egui = { version = "0.35.1", features = ["immutable_ctx"] }
 # TODO: revert this when bevy_prototype_lyon release support for bevy 0.16
 bevy_prototype_lyon = { git = "https://github.com/rparrett/bevy_prototype_lyon", branch = "fix-dynamic-examples" }
 bevy-persistent = { version = "0.8.0", features = ["yaml"] }

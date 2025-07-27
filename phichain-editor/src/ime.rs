@@ -15,7 +15,7 @@ fn update_ime_system(
     mut contexts: EguiContexts,
     mut window_query: Query<&mut Window, With<PrimaryWindow>>,
 ) -> Result {
-    let ctx = contexts.ctx_mut();
+    let ctx = contexts.ctx_mut()?;
     window_query.single_mut()?.ime_enabled = ctx.wants_keyboard_input();
 
     Ok(())

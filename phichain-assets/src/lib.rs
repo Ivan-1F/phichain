@@ -83,7 +83,7 @@ impl Plugin for AssetsPlugin {
             .init_collection::<AudioAssets>();
 
         #[cfg(feature = "egui")]
-        app.add_systems(Startup, load_assets_system);
+        app.add_systems(bevy_egui::EguiPrimaryContextPass, load_assets_system);
     }
 }
 

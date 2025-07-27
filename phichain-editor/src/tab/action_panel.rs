@@ -8,7 +8,7 @@ use crate::UiState;
 use bevy::app::App;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
-use bevy_egui::EguiContext;
+use bevy_egui::{EguiContext, EguiPrimaryContextPass};
 use egui::{Sense, TextEdit, UiBuilder, Widget};
 use phichain_game::GameSet;
 
@@ -21,7 +21,7 @@ impl Plugin for ActionPanelPlugin {
             open_action_panel_system,
             Some(Hotkey::new(KeyCode::KeyK, vec![Modifier::Control])),
         )
-        .add_systems(Update, action_panel_ui_system.in_set(GameSet));
+        .add_systems(EguiPrimaryContextPass, action_panel_ui_system.in_set(GameSet));
     }
 }
 

@@ -10,7 +10,7 @@ use crate::{
     project::{create_project, project_not_loaded, LoadProjectEvent, ProjectMeta},
 };
 use bevy::prelude::*;
-use bevy_egui::EguiContext;
+use bevy_egui::{EguiContext, EguiPrimaryContextPass};
 use bevy_persistent::Persistent;
 use egui::{Color32, CursorIcon, Id, RichText, ScrollArea, Sense};
 use phichain_game::loader::nonblocking::LoadingProject;
@@ -39,7 +39,7 @@ pub struct HomePlugin;
 impl Plugin for HomePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(CreateProjectForm::default())
-            .add_systems(Update, ui_system.run_if(project_not_loaded()))
+            .add_systems(EguiPrimaryContextPass, ui_system.run_if(project_not_loaded()))
             .add_systems(Update, load_project_system.run_if(project_not_loaded()))
             .add_systems(
                 Update,

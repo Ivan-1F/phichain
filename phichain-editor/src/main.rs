@@ -73,9 +73,12 @@ use crate::zoom::ZoomPlugin;
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::log::LogPlugin;
 use bevy::prelude::*;
+use bevy::render::view::RenderLayers;
 use bevy::render::RenderPlugin;
 use bevy_egui::egui::{Color32, Frame};
-use bevy_egui::{EguiContext, EguiPlugin};
+use bevy_egui::{
+    EguiContext, EguiGlobalSettings, EguiPlugin, EguiPrimaryContextPass, PrimaryEguiContext,
+};
 use bevy_mod_reqwest::ReqwestPlugin;
 use bevy_persistent::Persistent;
 use egui::RichText;
@@ -145,9 +148,7 @@ fn main() {
         .add_plugins(HitSoundPlugin)
         .add_plugins(GameTabPlugin)
         .add_plugins(TimelinePlugin)
-        .add_plugins(EguiPlugin {
-            enable_multipass_for_primary_context: false,
-        })
+        .add_plugins(EguiPlugin::default())
         .add_plugins(ProjectPlugin)
         .add_plugins(ExportPlugin)
         .add_plugins(selection::SelectionPlugin)
@@ -159,10 +160,17 @@ fn main() {
         .add_plugins(FilePickingPlugin)
         .add_plugins(EventPlugin)
         .add_plugins(ZoomPlugin)
-        .add_systems(Startup, setup_egui_image_loader_system)
-        .add_systems(Startup, setup_egui_font_system)
         .add_systems(Startup, setup_system)
-        .add_systems(Update, ui_system.run_if(project_loaded()))
+        .add_systems(Startup, setup_egui_system)
+        .add_systems(
+            EguiPrimaryContextPass,
+            setup_egui_image_loader_system.run_if(run_once),
+        )
+        .add_systems(
+            EguiPrimaryContextPass,
+            setup_egui_font_system.run_if(run_once),
+        )
+        .add_systems(EguiPrimaryContextPass, ui_system.run_if(project_loaded()))
         .add_systems(
             Startup,
             (apply_args_config_system, apply_editor_settings_system),
@@ -182,12 +190,14 @@ fn apply_args_config_system(args: Res<Args>, mut events: EventWriter<LoadProject
     }
 }
 
-fn setup_egui_image_loader_system(mut contexts: bevy_egui::EguiContexts) {
-    egui_extras::install_image_loaders(contexts.ctx_mut());
+fn setup_egui_image_loader_system(mut contexts: bevy_egui::EguiContexts) -> Result {
+    egui_extras::install_image_loaders(contexts.ctx_mut()?);
+
+    Ok(())
 }
 
-fn setup_egui_font_system(mut contexts: bevy_egui::EguiContexts) {
-    let ctx = contexts.ctx_mut();
+fn setup_egui_font_system(mut contexts: bevy_egui::EguiContexts) -> Result {
+    let ctx = contexts.ctx_mut()?;
 
     let font_file = utils::assets::get_base_path()
         .join("assets/font/MiSans-Regular.ttf")
@@ -213,6 +223,8 @@ fn setup_egui_font_system(mut contexts: bevy_egui::EguiContexts) {
     egui_phosphor::add_to_fonts(&mut font_def, egui_phosphor::Variant::Regular);
 
     ctx.set_fonts(font_def);
+
+    Ok(())
 }
 
 struct TabViewer<'a> {
@@ -447,4 +459,21 @@ fn ui_system(world: &mut World) {
 
 fn setup_system(mut commands: Commands) {
     commands.spawn((Camera2d, GameCamera));
+}
+
+fn setup_egui_system(mut commands: Commands, mut egui_global_settings: ResMut<EguiGlobalSettings>) {
+    // Disable the automatic creation of a primary context to set it up manually for the camera we need.
+    egui_global_settings.auto_create_primary_context = false;
+
+    commands.spawn((
+        // The `PrimaryEguiContext` component requires everything needed to render a primary context.
+        PrimaryEguiContext,
+        Camera2d,
+        // Setting RenderLayers to none makes sure we won't render anything apart from the UI.
+        RenderLayers::none(),
+        Camera {
+            order: 1,
+            ..default()
+        },
+    ));
 }
