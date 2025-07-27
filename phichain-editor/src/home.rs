@@ -39,7 +39,10 @@ pub struct HomePlugin;
 impl Plugin for HomePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(CreateProjectForm::default())
-            .add_systems(EguiPrimaryContextPass, ui_system.run_if(project_not_loaded()))
+            .add_systems(
+                EguiPrimaryContextPass,
+                ui_system.run_if(project_not_loaded()),
+            )
             .add_systems(Update, load_project_system.run_if(project_not_loaded()))
             .add_systems(
                 Update,

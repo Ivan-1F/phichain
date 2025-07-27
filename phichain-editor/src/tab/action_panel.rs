@@ -21,7 +21,10 @@ impl Plugin for ActionPanelPlugin {
             open_action_panel_system,
             Some(Hotkey::new(KeyCode::KeyK, vec![Modifier::Control])),
         )
-        .add_systems(EguiPrimaryContextPass, action_panel_ui_system.in_set(GameSet));
+        .add_systems(
+            EguiPrimaryContextPass,
+            action_panel_ui_system.in_set(GameSet),
+        );
     }
 }
 
