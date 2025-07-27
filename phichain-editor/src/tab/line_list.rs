@@ -17,6 +17,12 @@ const LINE_STATE_COLUMN_WIDTH: f32 = 140.0;
 
 const PREVIEW_HEIGHT: f32 = 36.0;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum LineListView {
+    State,
+    Preview,
+}
+
 struct LineList<'w> {
     world: &'w mut World,
     index: usize,
@@ -58,10 +64,10 @@ impl<'a> LineList<'a> {
             ui.scope(|ui| {
                 ui.style_mut().spacing.item_spacing = egui::Vec2::ZERO;
                 let mut show =
-                    ui.data(|data| data.get_temp("show_preview".into()).unwrap_or("state"));
-                ui.selectable_value(&mut show, "state", t!("tab.line_list.view.state"));
-                ui.selectable_value(&mut show, "preview", t!("tab.line_list.view.preview"));
-                ui.data_mut(|data| data.insert_temp("show_preview".into(), show));
+                    ui.data(|data| data.get_temp("line_list_view".into()).unwrap_or(LineListView::State));
+                ui.selectable_value(&mut show, LineListView::State, t!("tab.line_list.view.state"));
+                ui.selectable_value(&mut show, LineListView::Preview, t!("tab.line_list.view.preview"));
+                ui.data_mut(|data| data.insert_temp("line_list_view".into(), show));
             });
 
             ui.add_space(ui.available_width() - LINE_STATE_COLUMN_WIDTH);
@@ -221,9 +227,9 @@ impl<'a> LineList<'a> {
 
                 ui.style_mut().spacing.item_spacing = egui::Vec2::ZERO;
 
-                let show = ui.data(|data| data.get_temp("show_preview".into()).unwrap_or("state"));
+                let view = ui.data(|data| data.get_temp("line_list_view".into()).unwrap_or(LineListView::State));
 
-                if show == "preview" {
+                if view == LineListView::State {
                     ui.columns(3, |columns| {
                         let x = position.0.x / CANVAS_WIDTH + 0.5;
                         let y = 1.0 - (position.0.y / CANVAS_HEIGHT + 0.5);
