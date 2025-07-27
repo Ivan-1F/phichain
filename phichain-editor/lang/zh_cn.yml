@@ -126,6 +126,14 @@ tab:
         timeline_smooth_seeking:
           label: 时间线平滑寻位
           description: 启用后，时间线的位置变化（滚动、前进/后退快捷键等）会平滑过渡；禁用后会立即跳转
+        ui_scale:
+          label: 界面缩放
+          description: 调整整体界面大小。可能需要调整窗口大小才能生效
+          xl: 超大
+          large: 大
+          base: 标准
+          small: 小
+          xs: 超小
         highlight_selected_line:
           label: 高亮选中判定线
           description: 是否高亮选中的判定线

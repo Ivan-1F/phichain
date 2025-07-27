@@ -34,6 +34,49 @@ impl SettingCategory for General {
             ui.separator();
 
             finished |= ui.item(
+                t!("tab.settings.category.general.ui_scale.label"),
+                Some(t!("tab.settings.category.general.ui_scale.description")),
+                |ui| {
+                    ui.selectable_value(
+                        &mut settings.general.ui_scale,
+                        3.0,
+                        t!("tab.settings.category.general.ui_scale.xl"),
+                    )
+                    .clicked()
+                        || ui
+                            .selectable_value(
+                                &mut settings.general.ui_scale,
+                                2.5,
+                                t!("tab.settings.category.general.ui_scale.large"),
+                            )
+                            .clicked()
+                        || ui
+                            .selectable_value(
+                                &mut settings.general.ui_scale,
+                                2.0,
+                                t!("tab.settings.category.general.ui_scale.base"),
+                            )
+                            .clicked()
+                        || ui
+                            .selectable_value(
+                                &mut settings.general.ui_scale,
+                                1.5,
+                                t!("tab.settings.category.general.ui_scale.small"),
+                            )
+                            .clicked()
+                        || ui
+                            .selectable_value(
+                                &mut settings.general.ui_scale,
+                                1.0,
+                                t!("tab.settings.category.general.ui_scale.xs"),
+                            )
+                            .clicked()
+                },
+            );
+
+            ui.separator();
+
+            finished |= ui.item(
                 t!("tab.settings.category.general.timeline_scroll_sensitivity.label"),
                 Some(t!(
                     "tab.settings.category.general.timeline_scroll_sensitivity.description"

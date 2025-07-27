@@ -126,6 +126,14 @@ tab:
         timeline_smooth_seeking:
           label: タイムラインのスムーズシーク
           description: 有効にすると、タイムラインの位置変更（スクロール、進む/戻るショートカットキーなど）が滑らかに遷移します
+        ui_scale:
+          label: UIスケール
+          description: 全体的なインターフェースサイズを調整します。ウィンドウのリサイズが必要な場合があります
+          xl: 特大
+          large: 大
+          base: 標準
+          small: 小
+          xs: 極小
         highlight_selected_line: 
           label: 選択中の判定ラインをハイライト
           description: 選択中の判定ラインをハイライト表示するかどうか。

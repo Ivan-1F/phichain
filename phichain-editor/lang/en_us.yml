@@ -126,6 +126,14 @@ tab:
         timeline_smooth_seeking:
           label: Timeline Smooth Seeking
           description: When enabled, timeline position changes (scrolling, forward/backward shortcuts, etc.) transition smoothly
+        ui_scale:
+          label: UI Scale
+          description: Adjusts the overall interface size. May require window resize to take effect
+          xl: XL
+          large: Large
+          base: Base
+          small: Small
+          xs: XS
         highlight_selected_line:
           label: Highlight Selected Line
           description: Whether to highlight the selected line
