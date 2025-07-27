@@ -63,10 +63,20 @@ impl<'a> LineList<'a> {
         ui.horizontal(|ui| {
             ui.scope(|ui| {
                 ui.style_mut().spacing.item_spacing = egui::Vec2::ZERO;
-                let mut show =
-                    ui.data(|data| data.get_temp("line_list_view".into()).unwrap_or(LineListView::State));
-                ui.selectable_value(&mut show, LineListView::State, t!("tab.line_list.view.state"));
-                ui.selectable_value(&mut show, LineListView::Preview, t!("tab.line_list.view.preview"));
+                let mut show = ui.data(|data| {
+                    data.get_temp("line_list_view".into())
+                        .unwrap_or(LineListView::State)
+                });
+                ui.selectable_value(
+                    &mut show,
+                    LineListView::State,
+                    t!("tab.line_list.view.state"),
+                );
+                ui.selectable_value(
+                    &mut show,
+                    LineListView::Preview,
+                    t!("tab.line_list.view.preview"),
+                );
                 ui.data_mut(|data| data.insert_temp("line_list_view".into(), show));
             });
 
@@ -227,10 +237,13 @@ impl<'a> LineList<'a> {
 
                 ui.style_mut().spacing.item_spacing = egui::Vec2::ZERO;
 
-                let view = ui.data(|data| data.get_temp("line_list_view".into()).unwrap_or(LineListView::State));
+                let view = ui.data(|data| {
+                    data.get_temp("line_list_view".into())
+                        .unwrap_or(LineListView::State)
+                });
 
                 if view == LineListView::State {
-                    ui.columns(3, |columns| {
+                    ui.columns_const(|[preview_ui, position_ui, opacity_ui]| {
                         let x = position.0.x / CANVAS_WIDTH + 0.5;
                         let y = 1.0 - (position.0.y / CANVAS_HEIGHT + 0.5);
 
@@ -242,8 +255,7 @@ impl<'a> LineList<'a> {
                                 + rect.min.to_vec2()
                         };
 
-                        columns[0].vertical_centered(|ui| {
-                            // Preview
+                        preview_ui.vertical_centered(|ui| {
                             let (response, painter) =
                                 ui.allocate_painter(egui::Vec2::new(width, height), Sense::hover());
                             painter.rect_stroke(
@@ -277,8 +289,7 @@ impl<'a> LineList<'a> {
                             );
                         });
 
-                        columns[1].vertical_centered(|ui| {
-                            // Position
+                        position_ui.vertical_centered(|ui| {
                             let (response, painter) =
                                 ui.allocate_painter(egui::Vec2::new(width, height), Sense::hover());
                             painter.rect_stroke(
@@ -295,8 +306,7 @@ impl<'a> LineList<'a> {
                             );
                         });
 
-                        columns[2].vertical_centered(|ui| {
-                            // Opacity
+                        opacity_ui.vertical_centered(|ui| {
                             let (response, painter) =
                                 ui.allocate_painter(egui::Vec2::new(width, height), Sense::hover());
                             painter.rect_stroke(
