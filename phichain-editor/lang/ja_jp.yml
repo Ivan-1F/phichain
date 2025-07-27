@@ -88,6 +88,9 @@ tab:
     illustrator: イラストレーター
   line_list:
     title: 判定ラインリスト
+    view:
+      state: 状態
+      preview: プレビュー
     create_line: 判定ラインを作成
     note: ノーツ
     event: イベ
