@@ -61,22 +61,31 @@ impl<'a> LineList<'a> {
         });
 
         ui.horizontal(|ui| {
-            ui.scope(|ui| {
+            ui.vertical(|ui| {
                 ui.style_mut().spacing.item_spacing = egui::Vec2::ZERO;
+                ui.spacing_mut().interact_size.y = 10.0;
                 let mut show = ui.data(|data| {
                     data.get_temp("line_list_view".into())
                         .unwrap_or(LineListView::State)
                 });
-                ui.selectable_value(
-                    &mut show,
-                    LineListView::State,
-                    t!("tab.line_list.view.state"),
-                );
-                ui.selectable_value(
-                    &mut show,
-                    LineListView::Preview,
-                    t!("tab.line_list.view.preview"),
-                );
+                if ui
+                    .selectable_label(
+                        show == LineListView::State,
+                        RichText::new(t!("tab.line_list.view.state")).small(),
+                    )
+                    .clicked()
+                {
+                    show = LineListView::State;
+                }
+                if ui
+                    .selectable_label(
+                        show == LineListView::Preview,
+                        RichText::new(t!("tab.line_list.view.preview")).small(),
+                    )
+                    .clicked()
+                {
+                    show = LineListView::Preview;
+                }
                 ui.data_mut(|data| data.insert_temp("line_list_view".into(), show));
             });
 
