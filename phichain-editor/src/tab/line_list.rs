@@ -243,6 +243,29 @@ impl<'a> LineList<'a> {
                 });
 
                 if view == LineListView::State {
+                    ui.columns_const(|[note_event, x_y, op_rot, spd]| {
+                        note_event.vertical_centered(|ui| {
+                            ui.add(trunc_label!(format!("{:.2}", notes)));
+                            ui.add(trunc_label!(format!("{:.2}", events)));
+                        });
+                        x_y.vertical_centered(|ui| {
+                            ui.add(trunc_label!(format!("{:.2}", position.0.x)));
+                            ui.add(trunc_label!(format!("{:.2}", position.0.y)));
+                        });
+                        op_rot.vertical_centered(|ui| {
+                            ui.add(trunc_label!(format!("{:.2}", opacity.0)));
+                            ui.add(trunc_label!(format!("{:.2}", rotation.0)));
+                        });
+                        spd.vertical_centered(|ui| {
+                            ui.add(trunc_label!(format!("{:.2}", speed.0)));
+                            ui.label(
+                                RichText::new(format!("#{}", self.index))
+                                    .small()
+                                    .color(Color32::WHITE),
+                            );
+                        });
+                    });
+                } else {
                     ui.columns_const(|[preview_ui, position_ui, opacity_ui]| {
                         let x = position.0.x / CANVAS_WIDTH + 0.5;
                         let y = 1.0 - (position.0.y / CANVAS_HEIGHT + 0.5);
@@ -335,29 +358,6 @@ impl<'a> LineList<'a> {
                                 ),
                                 0.0,
                                 Color32::WHITE,
-                            );
-                        });
-                    });
-                } else {
-                    ui.columns_const(|[note_event, x_y, op_rot, spd]| {
-                        note_event.vertical_centered(|ui| {
-                            ui.add(trunc_label!(format!("{:.2}", notes)));
-                            ui.add(trunc_label!(format!("{:.2}", events)));
-                        });
-                        x_y.vertical_centered(|ui| {
-                            ui.add(trunc_label!(format!("{:.2}", position.0.x)));
-                            ui.add(trunc_label!(format!("{:.2}", position.0.y)));
-                        });
-                        op_rot.vertical_centered(|ui| {
-                            ui.add(trunc_label!(format!("{:.2}", opacity.0)));
-                            ui.add(trunc_label!(format!("{:.2}", rotation.0)));
-                        });
-                        spd.vertical_centered(|ui| {
-                            ui.add(trunc_label!(format!("{:.2}", speed.0)));
-                            ui.label(
-                                RichText::new(format!("#{}", self.index))
-                                    .small()
-                                    .color(Color32::WHITE),
                             );
                         });
                     });
