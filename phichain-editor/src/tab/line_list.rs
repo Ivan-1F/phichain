@@ -292,7 +292,7 @@ impl<'a> LineList<'a> {
                         });
                     });
                 } else {
-                    ui.columns_const(|[preview_ui, position_ui, opacity_ui]| {
+                    ui.columns_const(|[position_ui, opacity_ui]| {
                         let x = position.0.x / CANVAS_WIDTH + 0.5;
                         let y = 1.0 - (position.0.y / CANVAS_HEIGHT + 0.5);
 
@@ -304,7 +304,7 @@ impl<'a> LineList<'a> {
                                 + rect.min.to_vec2()
                         };
 
-                        preview_ui.vertical_centered(|ui| {
+                        position_ui.vertical_centered(|ui| {
                             let (response, painter) =
                                 ui.allocate_painter(egui::Vec2::new(width, height), Sense::hover());
                             painter.rect_stroke(
@@ -336,22 +336,11 @@ impl<'a> LineList<'a> {
                                     ),
                                 ),
                             );
-                        });
-
-                        position_ui.vertical_centered(|ui| {
-                            let (response, painter) =
-                                ui.allocate_painter(egui::Vec2::new(width, height), Sense::hover());
-                            painter.rect_stroke(
-                                response.rect,
-                                0.0,
-                                Stroke::new(1.0, Color32::WHITE),
-                                StrokeKind::Middle,
-                            );
 
                             painter.circle_filled(
                                 pos(egui::Pos2::new(x, y), response.rect),
                                 2.0,
-                                Color32::WHITE,
+                                Color32::YELLOW,
                             );
                         });
 
