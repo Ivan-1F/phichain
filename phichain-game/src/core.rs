@@ -113,42 +113,44 @@ pub fn compute_line_system(
     bpm_list: Res<BpmList>,
 ) {
     let beat: f32 = bpm_list.beat_at(time.0).into();
-    for (mut position, mut rotation, mut opacity, mut speed, children) in &mut line_query {
-        let mut x_value = EventEvaluationResult::Unaffected;
-        let mut y_value = EventEvaluationResult::Unaffected;
-        let mut rotation_value = EventEvaluationResult::Unaffected;
-        let mut opacity_value = EventEvaluationResult::Unaffected;
-        let mut speed_value = EventEvaluationResult::Unaffected;
+    line_query.par_iter_mut().for_each(
+        |(mut position, mut rotation, mut opacity, mut speed, children)| {
+            let mut x_value = EventEvaluationResult::Unaffected;
+            let mut y_value = EventEvaluationResult::Unaffected;
+            let mut rotation_value = EventEvaluationResult::Unaffected;
+            let mut opacity_value = EventEvaluationResult::Unaffected;
+            let mut speed_value = EventEvaluationResult::Unaffected;
 
-        for event in children.iter().filter_map(|x| event_query.get(x).ok()) {
-            let value = event.evaluate(beat);
-            match event.kind {
-                LineEventKind::X => x_value = x_value.max(value),
-                LineEventKind::Y => y_value = y_value.max(value),
-                LineEventKind::Rotation => rotation_value = rotation_value.max(value),
-                LineEventKind::Opacity => opacity_value = opacity_value.max(value),
-                LineEventKind::Speed => speed_value = speed_value.max(value),
+            for event in children.iter().filter_map(|x| event_query.get(x).ok()) {
+                let value = event.evaluate(beat);
+                match event.kind {
+                    LineEventKind::X => x_value = x_value.max(value),
+                    LineEventKind::Y => y_value = y_value.max(value),
+                    LineEventKind::Rotation => rotation_value = rotation_value.max(value),
+                    LineEventKind::Opacity => opacity_value = opacity_value.max(value),
+                    LineEventKind::Speed => speed_value = speed_value.max(value),
+                }
             }
-        }
 
-        if let Some(x_value) = x_value.value() {
-            position.0.x = x_value;
-        }
-        if let Some(y_value) = y_value.value() {
-            position.0.y = y_value;
-        }
-        if let Some(rotation_value) = rotation_value.value() {
-            rotation.0 = rotation_value.to_radians();
-        }
-        if keyboard.pressed(KeyCode::KeyT) {
-            opacity.0 = 1.0;
-        } else if let Some(opacity_value) = opacity_value.value() {
-            opacity.0 = opacity_value / 255.0;
-        }
-        if let Some(speed_value) = speed_value.value() {
-            speed.0 = speed_value;
-        }
-    }
+            if let Some(x_value) = x_value.value() {
+                position.0.x = x_value;
+            }
+            if let Some(y_value) = y_value.value() {
+                position.0.y = y_value;
+            }
+            if let Some(rotation_value) = rotation_value.value() {
+                rotation.0 = rotation_value.to_radians();
+            }
+            if keyboard.pressed(KeyCode::KeyT) {
+                opacity.0 = 1.0;
+            } else if let Some(opacity_value) = opacity_value.value() {
+                opacity.0 = opacity_value / 255.0;
+            }
+            if let Some(speed_value) = speed_value.value() {
+                speed.0 = speed_value;
+            }
+        },
+    );
 }
 
 pub fn update_line_system(
