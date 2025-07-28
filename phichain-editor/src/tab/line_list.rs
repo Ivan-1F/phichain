@@ -14,6 +14,7 @@ use phichain_chart::line::{
 use phichain_chart::note::Note;
 
 const LINE_STATE_COLUMN_WIDTH: f32 = 140.0;
+const LINE_PREVIEW_COLUMN_WIDTH: f32 = 100.0;
 
 const PREVIEW_HEIGHT: f32 = 36.0;
 
@@ -89,14 +90,20 @@ impl<'a> LineList<'a> {
                 ui.data_mut(|data| data.insert_temp("line_list_view".into(), show));
             });
 
-            ui.add_space(ui.available_width() - LINE_STATE_COLUMN_WIDTH);
-
-            let show = ui.data(|data| {
+            let view = ui.data(|data| {
                 data.get_temp("line_list_view".into())
                     .unwrap_or(LineListView::State)
             });
 
-            if show == LineListView::State {
+            let width = if view == LineListView::State {
+                LINE_STATE_COLUMN_WIDTH
+            } else {
+                LINE_PREVIEW_COLUMN_WIDTH
+            };
+
+            ui.add_space(ui.available_width() - width);
+
+            if view == LineListView::State {
                 ui.columns_const(|[note_event, x_y, op_rot, spd]| {
                     note_event.vertical_centered(|ui| {
                         ui.add(trunc_label!(t!("tab.line_list.note")));
@@ -257,16 +264,22 @@ impl<'a> LineList<'a> {
                     .collect::<Vec<_>>()
                     .len();
 
-                ui.add_space(ui.available_width() - LINE_STATE_COLUMN_WIDTH);
-
-                let prev_item_spacing = ui.style().spacing.item_spacing;
-
-                ui.style_mut().spacing.item_spacing = egui::Vec2::ZERO;
-
                 let view = ui.data(|data| {
                     data.get_temp("line_list_view".into())
                         .unwrap_or(LineListView::State)
                 });
+
+                let width = if view == LineListView::State {
+                    LINE_STATE_COLUMN_WIDTH
+                } else {
+                    LINE_PREVIEW_COLUMN_WIDTH
+                };
+
+                ui.add_space(ui.available_width() - width);
+
+                let prev_item_spacing = ui.style().spacing.item_spacing;
+
+                ui.style_mut().spacing.item_spacing = egui::Vec2::ZERO;
 
                 if view == LineListView::State {
                     ui.columns_const(|[note_event, x_y, op_rot, spd]| {
