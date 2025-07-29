@@ -337,18 +337,7 @@ impl<'a> LineList<'a> {
 
                             let p1 = pos(egui::Pos2::new(-x1 + x, y1 + y), response.rect);
                             let p2 = pos(egui::Pos2::new(-x2 + x, y2 + y), response.rect);
-                            painter.line_segment(
-                                [p1, p2],
-                                Stroke::new(
-                                    1.0,
-                                    Color32::from_rgba_unmultiplied(
-                                        255,
-                                        255,
-                                        255,
-                                        (opacity.0 * 255.0).round() as u8,
-                                    ),
-                                ),
-                            );
+                            painter.line_segment([p1, p2], Stroke::new(1.0, Color32::WHITE));
 
                             painter.circle_filled(
                                 pos(egui::Pos2::new(x, y), response.rect),
