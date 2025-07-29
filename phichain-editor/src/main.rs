@@ -10,6 +10,7 @@ mod events;
 mod export;
 mod exporter;
 mod file;
+mod fps;
 mod hit_sound;
 mod home;
 mod hotkey;
@@ -43,6 +44,7 @@ use crate::editing::EditingPlugin;
 use crate::events::EventPlugin;
 use crate::export::ExportPlugin;
 use crate::file::FilePickingPlugin;
+use crate::fps::{FpsDisplay, FpsPlugin};
 use crate::hit_sound::HitSoundPlugin;
 use crate::home::HomePlugin;
 use crate::hotkey::HotkeyPlugin;
@@ -70,7 +72,7 @@ use crate::timing::TimingPlugin;
 use crate::translation::TranslationPlugin;
 use crate::ui::UiPlugin;
 use crate::zoom::ZoomPlugin;
-use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
+use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use bevy::render::view::RenderLayers;
@@ -160,6 +162,7 @@ fn main() {
         .add_plugins(FilePickingPlugin)
         .add_plugins(EventPlugin)
         .add_plugins(ZoomPlugin)
+        .add_plugins(FpsPlugin)
         .add_systems(Startup, setup_system)
         .add_systems(Startup, setup_egui_system)
         .add_systems(
@@ -341,14 +344,8 @@ fn ui_system(world: &mut World) {
     // ctrl+plus / ctrl+minus / ctrl+zero is used for game viewport zooming in phichain. enabling this will cause ui glitch when using these hotkeys
     ctx.options_mut(|options| options.zoom_with_keyboard = false);
 
-    let diagnostics = world.resource::<DiagnosticsStore>();
-    let mut fps = 0.0;
-    if let Some(value) = diagnostics
-        .get(&FrameTimeDiagnosticsPlugin::FPS)
-        .and_then(|fps| fps.smoothed())
-    {
-        fps = value;
-    }
+    let fps_display = world.resource::<FpsDisplay>();
+    let fps = fps_display.displayed_fps;
 
     egui::TopBottomPanel::top("phichain.MenuBar").show(ctx, |ui| {
         egui::menu::bar(ui, |ui| {
@@ -445,7 +442,7 @@ fn ui_system(world: &mut World) {
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 0.0;
                 ui.label("FPS: ");
-                ui.label(RichText::new(format!("{fps:.2}")).monospace());
+                ui.label(RichText::new(format!("{fps:.1}")).monospace());
             });
 
             ui.label(format!("Notes: {notes}"));
