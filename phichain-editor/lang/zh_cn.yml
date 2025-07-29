@@ -125,7 +125,7 @@ tab:
           description: 使用鼠标滚轮或触控板滚动时间线时的灵明度。数值越大滚动越快
         timeline_smooth_seeking:
           label: 时间线平滑寻位
-          description: 启用后，时间线的位置变化（滚动、前进/后退快捷键等）会平滑过渡；禁用后会立即跳转
+          description: 启用后，时间线的位置变化（滚动、前进/后退快捷键等）会平滑过渡
         ui_scale:
           label: 界面缩放
           description: 调整整体界面大小。可能需要调整窗口大小才能生效
