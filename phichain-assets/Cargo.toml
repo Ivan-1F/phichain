@@ -4,7 +4,7 @@ version = "1.0.0-beta.4"
 edition = "2021"
 
 [dependencies]
-bevy = { version = "0.16.0", default-features = false, features = [
+bevy = { version = "0.16.1", default-features = false, features = [
     "animation",
     "bevy_asset",
     "bevy_color",

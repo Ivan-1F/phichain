@@ -10,7 +10,7 @@ too_many_arguments = "allow"
 [dependencies]
 phichain-chart = { path = "../phichain-chart", features = ["bevy"] }
 phichain-assets = { path = "../phichain-assets" }
-bevy = { version = "0.16.0", default-features = false, features = [
+bevy = { version = "0.16.1", default-features = false, features = [
     "animation",
     "bevy_asset",
     "bevy_color",

@@ -17,7 +17,7 @@ load-path = "lang"
 [dependencies]
 # Bevy Dependencies: Update according to Bevy version
 
-bevy = { version = "0.16.0", default-features = false, features = [
+bevy = { version = "0.16.1", default-features = false, features = [
     "animation",
     "bevy_asset",
     "bevy_color",
