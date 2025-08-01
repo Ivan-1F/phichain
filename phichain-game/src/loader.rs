@@ -7,7 +7,6 @@ use bevy::prelude::*;
 use phichain_chart::event::LineEventBundle;
 use phichain_chart::line::LineBundle;
 use phichain_chart::migration::migrate;
-use phichain_chart::note::NoteBundle;
 use phichain_chart::project::Project;
 use phichain_chart::serialization::{PhichainChart, SerializedLine};
 use serde_json::Value;
@@ -45,7 +44,7 @@ fn load_line(line: SerializedLine, commands: &mut Commands, parent: Option<Entit
             let mut note_entity_order = vec![];
 
             for note in line.notes {
-                let id = parent.spawn(NoteBundle::new(note)).id();
+                let id = parent.spawn(note).id();
                 note_entity_order.push(id);
             }
             for event in line.events {

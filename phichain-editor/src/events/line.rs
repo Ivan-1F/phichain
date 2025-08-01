@@ -6,7 +6,6 @@ use bevy::prelude::*;
 use bon::Builder;
 use phichain_chart::event::LineEventBundle;
 use phichain_chart::line::{Line, LineBundle};
-use phichain_chart::note::NoteBundle;
 use phichain_chart::serialization::SerializedLine;
 
 pub struct LineEventPlugin;
@@ -107,7 +106,7 @@ impl EditorEvent for SpawnLineEvent {
 
         world.entity_mut(id).with_children(|parent| {
             for note in self.line.notes {
-                parent.spawn(NoteBundle::new(note));
+                parent.spawn(note);
             }
             for event in self.line.events {
                 parent.spawn(LineEventBundle::new(event));

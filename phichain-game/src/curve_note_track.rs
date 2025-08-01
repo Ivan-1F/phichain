@@ -1,7 +1,7 @@
 use crate::GameSet;
 use bevy::prelude::*;
 use phichain_chart::curve_note_track::{generate_notes, CurveNoteTrackOptions};
-use phichain_chart::note::{Note, NoteBundle};
+use phichain_chart::note::Note;
 
 /// Represents a curve note track
 #[derive(Debug, Clone, Component)]
@@ -116,7 +116,7 @@ pub fn update_curve_note_track_system(
             }
             commands.entity(from.1.parent()).with_children(|p| {
                 for note in notes {
-                    p.spawn((NoteBundle::new(note), CurveNote(entity)));
+                    p.spawn((note, CurveNote(entity)));
                 }
             });
         }

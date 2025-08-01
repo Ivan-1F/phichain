@@ -125,7 +125,7 @@ mod tests {
     use crate::editing::command::EditorCommand;
     use phichain_chart::beat::Beat;
     use phichain_chart::line::LineBundle;
-    use phichain_chart::note::{Note, NoteBundle, NoteKind};
+    use phichain_chart::note::{Note, NoteKind};
     use undo::History;
 
     fn test_remove_note_system(world: &mut World) {
@@ -133,7 +133,7 @@ mod tests {
 
         let line = world.spawn(LineBundle::default()).id();
         let note = Note::new(NoteKind::Tap, true, Beat::ZERO, 0.0, 1.0);
-        let entity = world.spawn(NoteBundle::new(note)).id();
+        let entity = world.spawn(note).id();
         world.entity_mut(line).add_child(entity);
 
         assert!(world.query::<&Note>().single(world).is_ok());

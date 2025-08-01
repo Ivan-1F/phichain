@@ -40,6 +40,7 @@ impl NoteKind {
 
 #[derive(Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(bevy::prelude::Component))]
+#[cfg_attr(feature = "bevy", require(bevy::prelude::Sprite))]
 pub struct Note {
     pub kind: NoteKind,
     pub above: bool,
@@ -116,25 +117,6 @@ impl Note {
     pub fn set_end_beat(&mut self, end_beat: Beat) {
         if let NoteKind::Hold { ref mut hold_beat } = self.kind {
             *hold_beat = end_beat - self.beat
-        }
-    }
-}
-
-// TODO: types below should be moved to phichain-game
-
-#[cfg(feature = "bevy")]
-#[derive(bevy::prelude::Bundle)]
-pub struct NoteBundle {
-    sprite: bevy::prelude::Sprite,
-    note: Note,
-}
-
-#[cfg(feature = "bevy")]
-impl NoteBundle {
-    pub fn new(note: Note) -> Self {
-        Self {
-            sprite: bevy::prelude::Sprite::default(),
-            note,
         }
     }
 }

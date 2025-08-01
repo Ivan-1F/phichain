@@ -4,7 +4,7 @@ use bevy::app::{App, Plugin};
 use bevy::log::debug;
 use bevy::prelude::{ChildOf, Entity, Event, World};
 use bon::Builder;
-use phichain_chart::note::{Note, NoteBundle};
+use phichain_chart::note::Note;
 
 pub struct NoteEventPlugin;
 
@@ -40,7 +40,7 @@ impl EditorEvent for SpawnNoteEvent {
         };
         world
             .entity_mut(id)
-            .insert(NoteBundle::new(self.note))
+            .insert(self.note)
             .insert(ChildOf(self.line_entity))
             .id()
     }
