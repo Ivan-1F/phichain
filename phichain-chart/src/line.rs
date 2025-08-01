@@ -2,6 +2,17 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(bevy::prelude::Component))]
+#[cfg_attr(
+    feature = "bevy",
+    require(
+        bevy::prelude::Sprite,
+        LinePosition,
+        LineRotation,
+        LineOpacity,
+        LineSpeed,
+        LineTimestamp
+    )
+)]
 pub struct Line {
     pub name: String,
 }
@@ -37,33 +48,16 @@ pub struct LineSpeed(pub f32);
 ///
 /// TODO: remove this when game-object-id is merged
 #[cfg(feature = "bevy")]
-#[derive(bevy::prelude::Component, Debug, Default, Clone, Copy, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(bevy::prelude::Component, Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq)]
 pub struct LineTimestamp(pub u64);
 
-#[cfg(feature = "bevy")]
-#[derive(bevy::prelude::Bundle, Default)]
-pub struct LineBundle {
-    sprite: bevy::prelude::Sprite,
-    line: Line,
-    position: LinePosition,
-    rotation: LineRotation,
-    opacity: LineOpacity,
-    speed: LineSpeed,
-    timestamp: LineTimestamp,
-}
-
-#[cfg(feature = "bevy")]
-impl LineBundle {
-    pub fn new(line: Line) -> Self {
-        Self {
-            line,
-            timestamp: LineTimestamp(
-                std::time::SystemTime::now()
-                    .duration_since(std::time::SystemTime::UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs(),
-            ),
-            ..bevy::utils::default()
-        }
+impl Default for LineTimestamp {
+    fn default() -> Self {
+        Self(
+            std::time::SystemTime::now()
+                .duration_since(std::time::SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_secs(),
+        )
     }
 }

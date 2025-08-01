@@ -5,7 +5,6 @@ use crate::illustration::{load_illustration, open_illustration};
 use anyhow::Context;
 use bevy::prelude::*;
 use phichain_chart::event::LineEventBundle;
-use phichain_chart::line::LineBundle;
 use phichain_chart::migration::migrate;
 use phichain_chart::project::Project;
 use phichain_chart::serialization::{PhichainChart, SerializedLine};
@@ -22,7 +21,7 @@ use std::fs::File;
 ///
 /// - [phichain_chart::offset::Offset] will be inserted into the world
 /// - [phichain_chart::bpm_list::BpmList] will be inserted into the world
-/// - Entities with components [`LineBundle`] and [`NoteBundle`] will be spawned into the world, with parent-child relationship
+/// - Entities with components [`Line`] and [`Note`] will be spawned into the world, with parent-child relationship
 pub fn load_project(project: &Project, commands: &mut Commands) -> anyhow::Result<()> {
     let file = File::open(project.path.chart_path())?;
     load(file, commands)?;
@@ -39,7 +38,7 @@ pub fn load_project(project: &Project, commands: &mut Commands) -> anyhow::Resul
 
 fn load_line(line: SerializedLine, commands: &mut Commands, parent: Option<Entity>) -> Entity {
     let id = commands
-        .spawn(LineBundle::new(line.line))
+        .spawn(line.line)
         .with_children(|parent| {
             let mut note_entity_order = vec![];
 

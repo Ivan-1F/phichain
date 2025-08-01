@@ -5,7 +5,7 @@ use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use bon::Builder;
 use phichain_chart::event::LineEventBundle;
-use phichain_chart::line::{Line, LineBundle};
+use phichain_chart::line::Line;
 use phichain_chart::serialization::SerializedLine;
 
 pub struct LineEventPlugin;
@@ -97,11 +97,8 @@ impl EditorEvent for SpawnLineEvent {
     // TODO: move part of the logic to phichain-game utils, duplication of phichain_game::loader::load_line()
     fn run(self, world: &mut World) -> Self::Output {
         let id = match self.target {
-            None => world.spawn(LineBundle::new(self.line.line)).id(),
-            Some(target) => world
-                .entity_mut(target)
-                .insert(LineBundle::new(self.line.line))
-                .id(),
+            None => world.spawn(self.line.line).id(),
+            Some(target) => world.entity_mut(target).insert(self.line.line).id(),
         };
 
         world.entity_mut(id).with_children(|parent| {
