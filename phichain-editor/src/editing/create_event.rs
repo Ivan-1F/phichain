@@ -12,7 +12,7 @@ use crate::schedule::EditorSet;
 use crate::selection::SelectedLine;
 use crate::timeline::{TimelineContext, TimelineItem};
 use crate::utils::convert::BevyEguiConvert;
-use phichain_chart::event::{LineEvent, LineEventBundle, LineEventKind, LineEventValue};
+use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 
 enum CreateEventHotkeys {
     PlaceTransitionEvent,
@@ -156,12 +156,12 @@ fn create_event_system(
                             LineEventValue::constant(0.0)
                         };
                         parent.spawn((
-                            LineEventBundle::new(LineEvent {
+                            LineEvent {
                                 kind,
                                 value,
                                 start_beat: beat,
                                 end_beat: beat + ctx.settings.minimum_beat(),
-                            }),
+                            },
                             Pending,
                         ));
                     });

@@ -4,7 +4,6 @@ use crate::curve_note_track::CurveNoteTrack;
 use crate::illustration::{load_illustration, open_illustration};
 use anyhow::Context;
 use bevy::prelude::*;
-use phichain_chart::event::LineEventBundle;
 use phichain_chart::migration::migrate;
 use phichain_chart::project::Project;
 use phichain_chart::serialization::{PhichainChart, SerializedLine};
@@ -47,7 +46,7 @@ fn load_line(line: SerializedLine, commands: &mut Commands, parent: Option<Entit
                 note_entity_order.push(id);
             }
             for event in line.events {
-                parent.spawn(LineEventBundle::new(event));
+                parent.spawn(event);
             }
             for track in line.curve_note_tracks {
                 if let (Some(from), Some(to)) = (

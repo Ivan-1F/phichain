@@ -2,7 +2,7 @@ use crate::events::{EditorEvent, EditorEventAppExt};
 use crate::utils::entity::replace_with_empty;
 use bevy::prelude::*;
 use bon::Builder;
-use phichain_chart::event::{LineEvent, LineEventBundle};
+use phichain_chart::event::LineEvent;
 
 pub struct LineEventEventPlugin;
 
@@ -38,7 +38,7 @@ impl EditorEvent for SpawnLineEventEvent {
         };
         world
             .entity_mut(id)
-            .insert(LineEventBundle::new(self.event))
+            .insert(self.event)
             .insert(ChildOf(self.line_entity))
             .id()
     }

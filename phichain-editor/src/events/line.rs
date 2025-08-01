@@ -4,7 +4,6 @@ use crate::utils::entity::replace_with_empty;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use bon::Builder;
-use phichain_chart::event::LineEventBundle;
 use phichain_chart::line::Line;
 use phichain_chart::serialization::SerializedLine;
 
@@ -106,7 +105,7 @@ impl EditorEvent for SpawnLineEvent {
                 parent.spawn(note);
             }
             for event in self.line.events {
-                parent.spawn(LineEventBundle::new(event));
+                parent.spawn(event);
             }
         });
 
