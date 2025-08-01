@@ -270,51 +270,25 @@ pub fn update_note_texture_system(
 }
 
 #[derive(Debug, Component, Default, Clone)]
+#[require(
+    Sprite {
+        anchor: Anchor::TopCenter,
+        ..default()
+    },
+    HoldComponent,
+)]
 pub struct HoldHead;
 #[derive(Debug, Component, Default, Clone)]
+#[require(
+    Sprite {
+        anchor: Anchor::BottomCenter,
+        ..default()
+    },
+    HoldComponent,
+)]
 pub struct HoldTail;
 #[derive(Debug, Component, Default, Clone)]
 pub struct HoldComponent;
-
-#[derive(Bundle)]
-struct HoldHeadBundle {
-    sprite: Sprite,
-    hold_head: HoldHead,
-    hold_component: HoldComponent,
-}
-
-impl HoldHeadBundle {
-    fn new() -> Self {
-        Self {
-            sprite: Sprite {
-                anchor: Anchor::TopCenter,
-                ..default()
-            },
-            hold_head: Default::default(),
-            hold_component: Default::default(),
-        }
-    }
-}
-
-#[derive(Bundle)]
-struct HoldTailBundle {
-    sprite: Sprite,
-    hold_tail: HoldTail,
-    hold_component: HoldComponent,
-}
-
-impl HoldTailBundle {
-    fn new() -> Self {
-        Self {
-            sprite: Sprite {
-                anchor: Anchor::BottomCenter,
-                ..default()
-            },
-            hold_tail: Default::default(),
-            hold_component: Default::default(),
-        }
-    }
-}
 
 pub fn spawn_hold_component_system(
     mut commands: Commands,
@@ -330,19 +304,19 @@ pub fn spawn_hold_component_system(
         match children {
             None => {
                 commands.entity(entity).with_children(|p| {
-                    p.spawn(HoldHeadBundle::new());
-                    p.spawn(HoldTailBundle::new());
+                    p.spawn(HoldHead);
+                    p.spawn(HoldTail);
                 });
             }
             Some(children) => {
                 if children.iter().all(|c| head_query.get(c).is_err()) {
                     commands.entity(entity).with_children(|p| {
-                        p.spawn(HoldHeadBundle::new());
+                        p.spawn(HoldHead);
                     });
                 }
                 if children.iter().all(|c| tail_query.get(c).is_err()) {
                     commands.entity(entity).with_children(|p| {
-                        p.spawn(HoldTailBundle::new());
+                        p.spawn(HoldTail);
                     });
                 }
             }
