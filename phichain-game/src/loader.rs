@@ -1,6 +1,7 @@
 pub mod nonblocking;
 
 use crate::curve_note_track::CurveNoteTrack;
+use crate::event::EventOf;
 use crate::illustration::{load_illustration, open_illustration};
 use anyhow::Context;
 use bevy::prelude::*;
@@ -45,9 +46,7 @@ fn load_line(line: SerializedLine, commands: &mut Commands, parent: Option<Entit
                 let id = parent.spawn(note).id();
                 note_entity_order.push(id);
             }
-            for event in line.events {
-                parent.spawn(event);
-            }
+
             for track in line.curve_note_tracks {
                 if let (Some(from), Some(to)) = (
                     note_entity_order.get(track.from),
@@ -64,6 +63,10 @@ fn load_line(line: SerializedLine, commands: &mut Commands, parent: Option<Entit
             }
         })
         .id();
+
+    for event in line.events {
+        commands.spawn((event, EventOf(id)));
+    }
 
     if let Some(parent) = parent {
         commands.entity(id).insert(ChildOf(parent));

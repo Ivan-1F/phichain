@@ -1,6 +1,7 @@
 pub mod constants;
 pub mod core;
 pub mod curve_note_track;
+pub mod event;
 pub mod highlight;
 mod hit_effect;
 pub mod illustration;

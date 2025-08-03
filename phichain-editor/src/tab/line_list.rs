@@ -7,11 +7,11 @@ use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use egui::{Color32, Layout, RichText, Sense, Stroke, StrokeKind, Ui};
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
-use phichain_chart::event::LineEvent;
 use phichain_chart::line::{
     Line, LineOpacity, LinePosition, LineRotation, LineSpeed, LineTimestamp,
 };
 use phichain_chart::note::Note;
+use phichain_game::event::Events;
 
 const LINE_STATE_COLUMN_WIDTH: f32 = 140.0;
 const LINE_PREVIEW_COLUMN_WIDTH: f32 = 100.0;
@@ -155,10 +155,10 @@ impl<'a> LineList<'a> {
 
         let mut state: SystemState<(
             Query<&Note>,
-            Query<&LineEvent>,
             Query<(
                 &Line,
                 &Children,
+                &Events,
                 Option<&ChildOf>,
                 &LinePosition,
                 &LineRotation,
@@ -170,13 +170,14 @@ impl<'a> LineList<'a> {
             EventWriter<DoCommandEvent>,
         )> = SystemState::new(self.world);
 
-        let (note_query, event_query, query, parent_query, mut selected_line, mut do_command_event) =
+        let (note_query, query, parent_query, mut selected_line, mut do_command_event) =
             state.get_mut(self.world);
 
         let mut add_parent: Option<Option<Entity>> = None;
         let mut add_child = false;
 
-        if let Ok((line, children, parent, position, rotation, opacity, speed)) = query.get(entity)
+        if let Ok((line, children, events, parent, position, rotation, opacity, speed)) =
+            query.get(entity)
         {
             let selected = selected_line.0 == entity;
 
@@ -258,11 +259,7 @@ impl<'a> LineList<'a> {
                     .filter(|child| note_query.get(*child).is_ok())
                     .collect::<Vec<_>>()
                     .len();
-                let events = children
-                    .iter()
-                    .filter(|child| event_query.get(*child).is_ok())
-                    .collect::<Vec<_>>()
-                    .len();
+                let events = events.len();
 
                 let view = ui.data(|data| {
                     data.get_temp("line_list_view".into())

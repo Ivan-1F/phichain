@@ -7,11 +7,12 @@ use crate::selection::{SelectEvent, Selected, SelectedLine};
 use crate::timeline::{Timeline, TimelineContext};
 use crate::timing::SeekToEvent;
 use bevy::ecs::system::SystemState;
-use bevy::prelude::{ChildOf, Entity, EventWriter, Query, Res, World};
+use bevy::prelude::{Entity, EventWriter, Query, Res, World};
 use egui::{Align2, Color32, FontId, Rangef, Rect, Sense, Stroke, StrokeKind, Ui};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{LineEvent, LineEventKind};
 use phichain_chart::line::Line;
+use phichain_game::event::{EventOf, Events};
 use std::iter;
 
 #[derive(Debug, Clone)]
@@ -105,21 +106,23 @@ impl Timeline for EventTimeline {
 
         let mut state: SystemState<(
             TimelineContext,
-            Query<(
-                &mut LineEvent,
-                &ChildOf,
-                Entity,
-                Option<&Selected>,
-                Option<&Pending>,
-            )>,
+            Query<(&mut LineEvent, Entity, Option<&Selected>, Option<&Pending>)>,
+            Query<&Events>,
             Res<BpmList>,
             EventWriter<SelectEvent>,
             EventWriter<DoCommandEvent>,
             EventWriter<SeekToEvent>,
         )> = SystemState::new(world);
 
-        let (ctx, mut event_query, bpm_list, mut select_events, mut event_writer, mut seek_to) =
-            state.get_mut(world);
+        let (
+            ctx,
+            mut event_query,
+            events_query,
+            bpm_list,
+            mut select_events,
+            mut event_writer,
+            mut seek_to,
+        ) = state.get_mut(world);
 
         let compute_x = |track: u8| -> f32 {
             viewport.width() / 5.0 * track as f32 - viewport.width() / 5.0 / 2.0 + viewport.min.x
@@ -153,12 +156,14 @@ impl Timeline for EventTimeline {
         let mut first_events_outside_top = EventTrackData::splat(None::<Entity>);
         let mut first_events_outside_top_y = EventTrackData::splat(f32::MIN);
 
-        for (event, child_of, entity, _, _) in &event_query {
-            if child_of.parent() != line_entity {
-                continue;
-            }
+        let Ok(events) = events_query.get(line_entity) else {
+            return;
+        };
 
-            let rect = get_event_rect(event);
+        for entity in events.iter() {
+            let (mut event, entity, selected, pending) = event_query.get_mut(*entity).unwrap();
+
+            let rect = get_event_rect(&event);
 
             if rect.bottom() >= viewport.bottom() && rect.top() <= viewport.bottom() {
                 // in viewport, but start value outside bottom
@@ -184,12 +189,6 @@ impl Timeline for EventTimeline {
                     *first_events_outside_top_y.get_mut(event.kind) = rect.bottom();
                     *first_events_outside_top.get_mut(event.kind) = Some(entity);
                 }
-            }
-        }
-
-        for (mut event, child_of, entity, selected, pending) in &mut event_query {
-            if child_of.parent() != line_entity {
-                continue;
             }
 
             let mut color = if selected.is_some() {
@@ -414,13 +413,13 @@ impl Timeline for EventTimeline {
         let x_range = selection.x_range();
         let time_range = selection.y_range();
 
-        let mut state: SystemState<(Query<(&LineEvent, &ChildOf, Entity)>, Res<BpmList>)> =
+        let mut state: SystemState<(Query<(&LineEvent, &EventOf, Entity)>, Res<BpmList>)> =
             SystemState::new(world);
         let (event_query, bpm_list) = state.get_mut(world);
 
         event_query
             .iter()
-            .filter(|x| x.1.parent() == line_entity)
+            .filter(|x| x.1.target() == line_entity)
             .filter(|x| {
                 let event = x.0;
                 let track: u8 = event.kind.into();
