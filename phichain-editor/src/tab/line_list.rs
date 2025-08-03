@@ -1,9 +1,8 @@
-use crate::action::ActionRegistry;
 use crate::editing::command::line::{CreateLine, MoveLineAsChild, RemoveLine};
 use crate::editing::command::{CommandSequence, EditorCommand};
 use crate::editing::DoCommandEvent;
 use crate::selection::SelectedLine;
-use bevy::ecs::system::SystemState;
+use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use egui::{Color32, Layout, RichText, Sense, Stroke, StrokeKind, Ui};
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
@@ -24,8 +23,8 @@ enum LineListView {
     Preview,
 }
 
-struct LineList<'w> {
-    world: &'w mut World,
+struct LineList<'w, 's> {
+    params: LineListParams<'w, 's>,
     index: usize,
 }
 
@@ -35,18 +34,40 @@ macro_rules! trunc_label {
     };
 }
 
-impl<'a> LineList<'a> {
-    fn new(world: &'a mut World) -> Self {
-        Self { world, index: 0 }
+#[derive(SystemParam)]
+pub struct LineListParams<'w, 's> {
+    commands: Commands<'w, 's>,
+    note_query: Query<'w, 's, &'static Note>,
+    root_line_query:
+        Query<'w, 's, (Entity, &'static LineTimestamp), (Without<ChildOf>, With<Line>)>,
+    line_query: Query<
+        'w,
+        's,
+        (
+            &'static Line,
+            &'static Children,
+            &'static Events,
+            Option<&'static ChildOf>,
+            &'static LinePosition,
+            &'static LineRotation,
+            &'static LineOpacity,
+            &'static LineSpeed,
+        ),
+    >,
+    child_of_query: Query<'w, 's, &'static ChildOf>,
+    selected_line: ResMut<'w, SelectedLine>,
+    do_command_event: EventWriter<'w, DoCommandEvent>,
+}
+
+impl<'w, 's> LineList<'w, 's> {
+    fn new(params: LineListParams<'w, 's>) -> Self {
+        Self { params, index: 0 }
     }
 
     fn show(&mut self, ui: &mut Ui) {
         self.index = 0;
 
-        let mut query = self
-            .world
-            .query_filtered::<(Entity, &LineTimestamp), (Without<ChildOf>, With<Line>)>();
-        let mut entities = query.iter(self.world).collect::<Vec<_>>();
+        let mut entities = self.params.root_line_query.iter().collect::<Vec<_>>();
         entities.sort_by_key(|(_, timestamp)| **timestamp);
         let entities = entities
             .iter()
@@ -143,47 +164,29 @@ impl<'a> LineList<'a> {
         });
 
         if create_line {
-            self.world
-                .resource_scope(|world, mut actions: Mut<ActionRegistry>| {
-                    actions.run_action(world, "phichain.create_line");
-                });
+            // self.world
+            //     .resource_scope(|world, mut actions: Mut<ActionRegistry>| {
+            //         actions.run_action(world, "phichain.create_line");
+            //     });
         }
     }
 
     fn entity_ui(&mut self, ui: &mut Ui, entity: Entity, level: u32) {
         self.index += 1;
 
-        let mut state: SystemState<(
-            Query<&Note>,
-            Query<(
-                &Line,
-                &Children,
-                &Events,
-                Option<&ChildOf>,
-                &LinePosition,
-                &LineRotation,
-                &LineOpacity,
-                &LineSpeed,
-            )>,
-            Query<&ChildOf>,
-            ResMut<SelectedLine>,
-            EventWriter<DoCommandEvent>,
-        )> = SystemState::new(self.world);
-
-        let (note_query, query, parent_query, mut selected_line, mut do_command_event) =
-            state.get_mut(self.world);
-
         let mut add_parent: Option<Option<Entity>> = None;
         let mut add_child = false;
 
         if let Ok((line, children, events, parent, position, rotation, opacity, speed)) =
-            query.get(entity)
+            self.params.line_query.get(entity)
         {
-            let selected = selected_line.0 == entity;
+            let selected = self.params.selected_line.0 == entity;
 
-            let under_selected_node = parent_query
+            let under_selected_node = self
+                .params
+                .child_of_query
                 .iter_ancestors(entity)
-                .any(|ancestor| ancestor == selected_line.0);
+                .any(|ancestor| ancestor == self.params.selected_line.0);
 
             ui.horizontal(|ui| {
                 ui.horizontal(|ui| {
@@ -203,10 +206,10 @@ impl<'a> LineList<'a> {
                                 .button(t!("tab.line_list.hierarchy.as_child_of_current_line"))
                                 .clicked()
                             {
-                                do_command_event.write(DoCommandEvent(
+                                self.params.do_command_event.write(DoCommandEvent(
                                     EditorCommand::MoveLineAsChild(MoveLineAsChild::new(
                                         entity,
-                                        Some(selected_line.0),
+                                        Some(self.params.selected_line.0),
                                     )),
                                 ));
                                 ui.close_menu();
@@ -218,7 +221,7 @@ impl<'a> LineList<'a> {
                                 .button(t!("tab.line_list.hierarchy.move_to_root"))
                                 .clicked()
                             {
-                                do_command_event.write(DoCommandEvent(
+                                self.params.do_command_event.write(DoCommandEvent(
                                     EditorCommand::MoveLineAsChild(MoveLineAsChild::new(
                                         entity, None,
                                     )),
@@ -241,22 +244,22 @@ impl<'a> LineList<'a> {
                         ui.separator();
                         ui.add_enabled_ui(!under_selected_node && !selected, |ui| {
                             if ui.button(t!("tab.line_list.remove")).clicked() {
-                                do_command_event.write(DoCommandEvent(EditorCommand::RemoveLine(
-                                    RemoveLine::new(entity),
-                                )));
+                                self.params.do_command_event.write(DoCommandEvent(
+                                    EditorCommand::RemoveLine(RemoveLine::new(entity)),
+                                ));
                                 ui.close_menu();
                             }
                         });
                     });
 
                     if response.clicked() {
-                        selected_line.0 = entity;
+                        self.params.selected_line.0 = entity;
                     }
                 });
 
                 let notes = children
                     .iter()
-                    .filter(|child| note_query.get(*child).is_ok())
+                    .filter(|child| self.params.note_query.get(*child).is_ok())
                     .collect::<Vec<_>>()
                     .len();
                 let events = events.len();
@@ -384,7 +387,7 @@ impl<'a> LineList<'a> {
 
             let children_lines = children
                 .iter()
-                .filter(|x| query.get(*x).is_ok())
+                .filter(|x| self.params.line_query.get(*x).is_ok())
                 .collect::<Vec<_>>();
             for child in children_lines {
                 self.entity_ui(ui, child, level + 1);
@@ -392,7 +395,7 @@ impl<'a> LineList<'a> {
         }
 
         if let Some(current_parent) = add_parent {
-            let mut new_line_entity = self.world.spawn_empty();
+            let mut new_line_entity = self.params.commands.spawn_empty();
 
             if let Some(current_parent) = current_parent {
                 new_line_entity.insert(ChildOf(current_parent));
@@ -400,7 +403,8 @@ impl<'a> LineList<'a> {
 
             let new_line_entity = new_line_entity.id();
 
-            self.world
+            self.params
+                .commands
                 .send_event(DoCommandEvent(EditorCommand::CommandSequence(
                     CommandSequence(vec![
                         EditorCommand::CreateLine(CreateLine::with_target(new_line_entity)),
@@ -413,8 +417,9 @@ impl<'a> LineList<'a> {
         }
 
         if add_child {
-            let new_line_entity = self.world.spawn_empty().id();
-            self.world
+            let new_line_entity = self.params.commands.spawn_empty().id();
+            self.params
+                .commands
                 .send_event(DoCommandEvent(EditorCommand::CommandSequence(
                     CommandSequence(vec![
                         EditorCommand::CreateLine(CreateLine::with_target(new_line_entity)),
@@ -428,6 +433,6 @@ impl<'a> LineList<'a> {
     }
 }
 
-pub fn line_list_tab(In(mut ui): In<Ui>, world: &mut World) {
-    LineList::new(world).show(&mut ui);
+pub fn line_list_tab(In(mut ui): In<Ui>, param: LineListParams) {
+    LineList::new(param).show(&mut ui);
 }
