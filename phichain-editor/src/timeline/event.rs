@@ -160,10 +160,19 @@ impl Timeline for EventTimeline {
             return;
         };
 
+        let viewport_margin = 100.0;
+
         for entity in events.iter() {
             let (mut event, entity, selected, pending) = event_query.get_mut(*entity).unwrap();
 
             let rect = get_event_rect(&event);
+
+            // skip processing events far outside viewport
+            if rect.bottom() < viewport.top() - viewport_margin
+                || rect.top() > viewport.bottom() + viewport_margin
+            {
+                continue;
+            }
 
             if rect.bottom() >= viewport.bottom() && rect.top() <= viewport.bottom() {
                 // in viewport, but start value outside bottom
@@ -206,8 +215,6 @@ impl Timeline for EventTimeline {
                     entity, old_event, new_event,
                 ))));
             };
-
-            let rect = get_event_rect(&event);
 
             let response = ui.allocate_rect(rect, Sense::click());
             if ui.is_rect_visible(rect)
