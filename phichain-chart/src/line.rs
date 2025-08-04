@@ -51,6 +51,7 @@ pub struct LineSpeed(pub f32);
 #[derive(bevy::prelude::Component, Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq)]
 pub struct LineTimestamp(pub u64);
 
+#[cfg(feature = "bevy")]
 impl Default for LineTimestamp {
     fn default() -> Self {
         Self(
