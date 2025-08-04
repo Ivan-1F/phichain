@@ -45,7 +45,7 @@ pub struct LineListParams<'w, 's> {
         's,
         (
             &'static Line,
-            &'static Children,
+            Option<&'static Children>,
             &'static Events,
             Option<&'static ChildOf>,
             &'static LinePosition,
@@ -177,6 +177,8 @@ impl<'w, 's> LineList<'w, 's> {
         let mut add_parent: Option<Option<Entity>> = None;
         let mut add_child = false;
 
+        ui.label(format!("{:?}", self.params.line_query.get(entity).is_ok()));
+
         if let Ok((line, children, events, parent, position, rotation, opacity, speed)) =
             self.params.line_query.get(entity)
         {
@@ -258,10 +260,14 @@ impl<'w, 's> LineList<'w, 's> {
                 });
 
                 let notes = children
-                    .iter()
-                    .filter(|child| self.params.note_query.get(*child).is_ok())
-                    .collect::<Vec<_>>()
-                    .len();
+                    .map(|children| {
+                        children
+                            .iter()
+                            .filter(|child| self.params.note_query.get(*child).is_ok())
+                            .collect::<Vec<_>>()
+                            .len()
+                    })
+                    .unwrap_or(0);
                 let events = events.len();
 
                 let view = ui.data(|data| {
@@ -386,9 +392,13 @@ impl<'w, 's> LineList<'w, 's> {
             ui.separator();
 
             let children_lines = children
-                .iter()
-                .filter(|x| self.params.line_query.get(*x).is_ok())
-                .collect::<Vec<_>>();
+                .map(|children| {
+                    children
+                        .iter()
+                        .filter(|x| self.params.line_query.get(*x).is_ok())
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default();
             for child in children_lines {
                 self.entity_ui(ui, child, level + 1);
             }
