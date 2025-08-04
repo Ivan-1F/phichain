@@ -102,6 +102,26 @@ impl<T: PartialEq> EventTrackData<T> {
 
 impl Timeline for EventTimeline {
     fn ui(&self, ui: &mut Ui, world: &mut World, viewport: Rect) {
+        // lane
+        // [0.2, 0.4, 0.6, 0.8]
+        let lane_percents = iter::repeat_n(0.0, 5 - 1)
+            .enumerate()
+            .map(|(i, _)| (i + 1) as f32 * 1.0 / 5.0)
+            .collect::<Vec<_>>();
+        for percent in lane_percents {
+            ui.painter().rect_filled(
+                Rect::from_center_size(
+                    egui::Pos2::new(
+                        viewport.min.x + viewport.width() * percent,
+                        viewport.center().y,
+                    ),
+                    egui::Vec2::new(2.0, viewport.height()),
+                ),
+                0.0,
+                Color32::from_rgba_unmultiplied(255, 255, 255, 40),
+            );
+        }
+
         let line_entity = self.line_entity(world);
 
         let mut state: SystemState<(
@@ -392,26 +412,6 @@ impl Timeline for EventTimeline {
             );
         }
         ui.style_mut().interaction.selectable_labels = true;
-
-        // lane
-        // [0.2, 0.4, 0.6, 0.8]
-        let lane_percents = iter::repeat_n(0.0, 5 - 1)
-            .enumerate()
-            .map(|(i, _)| (i + 1) as f32 * 1.0 / 5.0)
-            .collect::<Vec<_>>();
-        for percent in lane_percents {
-            ui.painter().rect_filled(
-                Rect::from_center_size(
-                    egui::Pos2::new(
-                        viewport.min.x + viewport.width() * percent,
-                        viewport.center().y,
-                    ),
-                    egui::Vec2::new(2.0, viewport.height()),
-                ),
-                0.0,
-                Color32::from_rgba_unmultiplied(255, 255, 255, 40),
-            );
-        }
     }
 
     fn on_drag_selection(&self, world: &mut World, viewport: Rect, selection: Rect) -> Vec<Entity> {
