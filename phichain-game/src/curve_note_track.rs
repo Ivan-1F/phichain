@@ -58,7 +58,12 @@ pub struct CurveNoteCache(Vec<Note>);
 
 /// Inner value is the attached entity ID of [`CurveNoteTrack`]
 #[derive(Component)]
+#[relationship(relationship_target = CurveNotes)]
 pub struct CurveNote(pub Entity);
+
+#[derive(Component)]
+#[relationship_target(relationship = CurveNote)]
+pub struct CurveNotes(Vec<Entity>);
 
 /// For each existing [`CurveNoteTrack`], calculate its note sequence and compare it with the cached version.
 ///
