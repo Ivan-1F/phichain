@@ -46,7 +46,7 @@ impl Plugin for CurveNoteTrackPlugin {
             Update,
             (
                 update_curve_note_track_system,
-                despawn_dangle_curve_note_system,
+                // despawn_dangle_curve_note_system,
             )
                 .in_set(GameSet),
         );
@@ -128,6 +128,11 @@ pub fn update_curve_note_track_system(
     }
 }
 
+// TODO: this should be removed as we use relationship for CNTs
+// CurveNotes has linked_spawn, so despawning a CurveNoteTrack will also despawn all CurveNotes
+// This works when **despawning** the CurveNoteTrack, but will not work with deletion of undo/redo
+// we are still using `replace_with_empty` based undo/redo, so ** CurveNoteTrack will be removed from the entity** instead of **despawning the CurveNoteTrack entity**
+// TODO: remove this after merging disabled-based-undo
 /// Search for [`CurveNote`] with an invalid associated [`CurveNoteTrack`] and despawn them
 pub fn despawn_dangle_curve_note_system(
     mut commands: Commands,
