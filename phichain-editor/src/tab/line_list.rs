@@ -47,7 +47,7 @@ pub struct LineListParams<'w, 's> {
         (
             &'static Line,
             Option<&'static Children>,
-            &'static Events,
+            Option<&'static Events>,
             Option<&'static ChildOf>,
             &'static LinePosition,
             &'static LineRotation,
@@ -177,8 +177,6 @@ impl<'w, 's> LineList<'w, 's> {
         let mut add_parent: Option<Option<Entity>> = None;
         let mut add_child = false;
 
-        ui.label(format!("{:?}", self.params.line_query.get(entity).is_ok()));
-
         if let Ok((line, children, events, parent, position, rotation, opacity, speed)) =
             self.params.line_query.get(entity)
         {
@@ -268,7 +266,7 @@ impl<'w, 's> LineList<'w, 's> {
                             .len()
                     })
                     .unwrap_or(0);
-                let events = events.len();
+                let events = events.map(|events| events.len()).unwrap_or(0);
 
                 let view = ui.data(|data| {
                     data.get_temp("line_list_view".into())
