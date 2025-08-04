@@ -6,6 +6,7 @@ use bevy::prelude::*;
 use bon::Builder;
 use phichain_chart::line::Line;
 use phichain_chart::serialization::SerializedLine;
+use phichain_game::event::EventOf;
 
 pub struct LineEventPlugin;
 
@@ -100,14 +101,13 @@ impl EditorEvent for SpawnLineEvent {
             Some(target) => world.entity_mut(target).insert(self.line.line).id(),
         };
 
-        world.entity_mut(id).with_children(|parent| {
-            for note in self.line.notes {
-                parent.spawn(note);
-            }
-            for event in self.line.events {
-                parent.spawn(event);
-            }
-        });
+        for event in self.line.notes {
+            world.spawn((event, ChildOf(id)));
+        }
+
+        for event in self.line.events {
+            world.spawn((event, EventOf(id)));
+        }
 
         if let Some(parent) = self.parent {
             world.entity_mut(id).insert(ChildOf(parent));
