@@ -62,7 +62,7 @@ pub struct CurveNoteCache(Vec<Note>);
 pub struct CurveNote(pub Entity);
 
 #[derive(Component)]
-#[relationship_target(relationship = CurveNote)]
+#[relationship_target(relationship = CurveNote, linked_spawn)]
 pub struct CurveNotes(Vec<Entity>);
 
 /// For each existing [`CurveNoteTrack`], calculate its note sequence and compare it with the cached version.

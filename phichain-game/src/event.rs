@@ -13,5 +13,5 @@ impl EventOf {
 }
 
 #[derive(Component, Deref)]
-#[relationship_target(relationship = EventOf)]
+#[relationship_target(relationship = EventOf, linked_spawn)]
 pub struct Events(Vec<Entity>);
