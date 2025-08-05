@@ -18,13 +18,12 @@ pub fn single_event_inspector(
     let (mut event, entity) = event.into_inner();
     let event = event.as_mut();
 
-    // TODO: i18n
     let kind = match event.kind {
-        LineEventKind::X => "X",
-        LineEventKind::Y => "Y",
-        LineEventKind::Rotation => "Rotation",
-        LineEventKind::Opacity => "Opacity",
-        LineEventKind::Speed => "Speed",
+        LineEventKind::X => t!("game.event.kind.x"),
+        LineEventKind::Y => t!("game.event.kind.y"),
+        LineEventKind::Rotation => t!("game.event.kind.rotation"),
+        LineEventKind::Opacity => t!("game.event.kind.opacity"),
+        LineEventKind::Speed => t!("game.event.kind.speed"),
     };
 
     ui.label(t!("tab.inspector.single_event.title", kind = kind));

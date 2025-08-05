@@ -250,6 +250,13 @@ export:
 game:
   aspect_ratio:
     free: Free
+  event:
+    kind:
+      x: X
+      y: Y
+      rotation: Rotation
+      opacity: Opacity
+      speed: Speed
 
 hotkey:
   phichain.place_tap: Place Tap
