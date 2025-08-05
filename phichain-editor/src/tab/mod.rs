@@ -14,7 +14,7 @@ use crate::tab::action_panel::ActionPanelPlugin;
 use crate::tab::bpm_list::bpm_list_tab;
 use crate::tab::chart_basic_setting::chart_basic_setting_tab;
 use crate::tab::game::game_tab;
-use crate::tab::inspector::inspector_ui_system;
+use crate::tab::inspector::{inspector_ui_system, InspectorPlugin};
 use crate::tab::line_list::line_list_tab;
 use crate::tab::settings::settings_tab;
 use crate::tab::timeline::timeline_tab;
@@ -94,6 +94,8 @@ impl Plugin for TabPlugin {
             .register_tab(EditorTab::BpmList, bpm_list_tab)
             .register_tab(EditorTab::LineList, line_list_tab)
             .register_tab(EditorTab::Settings, settings_tab)
+            // TODO: move this upper
+            .add_plugins(InspectorPlugin)
             .add_plugins(ActionPanelPlugin);
     }
 }
