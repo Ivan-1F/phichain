@@ -17,6 +17,9 @@ pub fn single_note_inspector(
 ) -> Result {
     let (mut note, entity) = note.into_inner();
 
+    ui.label(t!("tab.inspector.single_note.title", kind = note.kind));
+    ui.separator();
+
     let result = latch::latch(&mut ui, "note", *note, |ui| {
         let mut finished = false;
 

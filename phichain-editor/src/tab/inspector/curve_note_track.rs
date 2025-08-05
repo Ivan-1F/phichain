@@ -10,6 +10,16 @@ pub fn curve_note_track_inspector(
     In(mut ui): In<Ui>,
     mut track: Single<&mut CurveNoteTrack, With<Selected>>,
 ) -> Result {
+    match (track.from, track.to) {
+        (Some(_), Some(_)) => {
+            ui.label(t!("tab.inspector.curve_note_track.title.selected"));
+        }
+        _ => {
+            ui.label(t!("tab.inspector.curve_note_track.title.pending"));
+        }
+    }
+    ui.separator();
+
     match (track.from.is_some(), track.to.is_some()) {
         (true, true) => {}
         (true, false) => {

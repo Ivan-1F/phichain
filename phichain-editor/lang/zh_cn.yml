@@ -20,6 +20,9 @@ tab:
   inspector:
     title: 检查器
     curve_note_track:
+      title:
+        pending: 正在创建的曲线音符轨迹
+        selected: 选中的曲线音符轨迹
       start: 从这里开始新建曲线音符轨迹
       removed:
         incomplete: 一条曲线音符轨迹被移除：缺失起点或终点
@@ -33,12 +36,14 @@ tab:
       kind: 类型
       curve: 曲线
     single_note:
+      title: 单个 %{kind} 音符
       x: X
       beat: 时间
       hold_beat: Hold 时间
       above: 是否在上方
       speed: 速度
     single_event:
+      title: 单个 %{kind} 事件
       start_beat: 开始时间
       end_beat: 结束时间
       value_type: 值类型
@@ -49,6 +54,7 @@ tab:
       easing: 缓动
       value: 值
     multiple_notes:
+      title: "%{amount} 个音符"
       flip_by_x: 沿 X 轴中心镜像
       flip_by_selection: 沿选区中心镜像
       flip_side: 翻转朝向
@@ -57,8 +63,10 @@ tab:
       into_flick: 转换为 Flick
       into_hold: 转换为 Hold
     multiple_events:
+      title: "%{amount} 个事件"
       negate: 数值取反 (除透明度事件外)
     line:
+      title: 选中的判定线
       name: 名称
   timeline_setting:
     title: 时间线设置

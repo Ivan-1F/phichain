@@ -2,6 +2,7 @@ use crate::beat::Beat;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::fmt;
+use std::fmt::Formatter;
 
 #[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -18,6 +19,17 @@ impl fmt::Debug for NoteKind {
             NoteKind::Tap => write!(f, "Tap"),
             NoteKind::Drag => write!(f, "Drag"),
             NoteKind::Hold { hold_beat } => write!(f, "Hold({hold_beat:?})"),
+            NoteKind::Flick => write!(f, "Flick"),
+        }
+    }
+}
+
+impl fmt::Display for NoteKind {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            NoteKind::Tap => write!(f, "Tap"),
+            NoteKind::Drag => write!(f, "Drag"),
+            NoteKind::Hold { .. } => write!(f, "Hold"),
             NoteKind::Flick => write!(f, "Flick"),
         }
     }

@@ -12,6 +12,12 @@ pub fn multiple_notes_inspector(
     query: Query<(&Note, Entity), With<Selected>>,
     mut event_writer: EventWriter<DoCommandEvent>,
 ) -> Result {
+    ui.label(t!(
+        "tab.inspector.multiple_notes.title",
+        amount = query.iter().len()
+    ));
+    ui.separator();
+
     ui.with_layout(Layout::top_down_justified(Align::LEFT), |ui| {
         if ui
             .button(t!("tab.inspector.multiple_notes.flip_by_x"))

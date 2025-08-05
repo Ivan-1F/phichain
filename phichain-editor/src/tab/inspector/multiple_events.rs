@@ -1,15 +1,22 @@
 use crate::editing::command::event::EditEvent;
 use crate::editing::command::{CommandSequence, EditorCommand};
 use crate::editing::DoCommandEvent;
+use crate::selection::Selected;
 use bevy::prelude::*;
 use egui::{Align, Layout, Ui};
 use phichain_chart::event::{LineEvent, LineEventKind};
 
 pub fn multiple_events_inspector(
     In(mut ui): In<Ui>,
-    query: Query<(&LineEvent, Entity)>,
+    query: Query<(&LineEvent, Entity), With<Selected>>,
     mut event_writer: EventWriter<DoCommandEvent>,
 ) -> Result {
+    ui.label(t!(
+        "tab.inspector.multiple_events.title",
+        amount = query.iter().len()
+    ));
+    ui.separator();
+
     ui.with_layout(Layout::top_down_justified(Align::LEFT), |ui| {
         if ui
             .button(t!("tab.inspector.multiple_events.negate"))

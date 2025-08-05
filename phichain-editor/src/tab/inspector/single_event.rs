@@ -18,6 +18,18 @@ pub fn single_event_inspector(
     let (mut event, entity) = event.into_inner();
     let event = event.as_mut();
 
+    // TODO: i18n
+    let kind = match event.kind {
+        LineEventKind::X => "X",
+        LineEventKind::Y => "Y",
+        LineEventKind::Rotation => "Rotation",
+        LineEventKind::Opacity => "Opacity",
+        LineEventKind::Speed => "Speed",
+    };
+
+    ui.label(t!("tab.inspector.single_event.title", kind = kind));
+    ui.separator();
+
     let result = latch::latch(&mut ui, "event", *event, |ui| {
         let mut finished = false;
 

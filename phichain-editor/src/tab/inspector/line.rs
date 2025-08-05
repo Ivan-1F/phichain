@@ -11,6 +11,9 @@ pub fn line_inspector(
 ) -> Result {
     let mut line = line_query.get_mut(selected_line.0)?;
 
+    ui.label(t!("tab.inspector.line.title"));
+    ui.separator();
+
     egui::Grid::new("inspector_grid")
         .num_columns(2)
         .spacing([20.0, 2.0])
