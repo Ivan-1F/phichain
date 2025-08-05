@@ -142,7 +142,7 @@ tab:
           base: 標準
           small: 小
           xs: 極小
-        highlight_selected_line: 
+        highlight_selected_line:
           label: 選択中の判定ラインをハイライト
           description: 選択中の判定ラインをハイライト表示するかどうか。
         show_line_anchor:
@@ -164,10 +164,10 @@ tab:
           description: エディタが使用する言語
       audio:
         title: オーディオ
-        music_volume: 
+        music_volume:
           label: BGM音量
           description: BGMの音量です。
-        hit_sound_volume: 
+        hit_sound_volume:
           label: タップ音量
           description: タップ音の音量です。
         playback_rate:
@@ -175,19 +175,19 @@ tab:
           description: 音楽の再生速度を制御します。これはエディタ全体の速度に影響します。
       game:
         title: ゲーム
-        fc_ap_indicator: 
+        fc_ap_indicator:
           label: FC/APインジケーター
           description: エディタには判定機能がありません。チェックを入れると判定ラインが常に黄色になり、入れないと常に白色になります。
-        hide_hit_effect: 
+        hide_hit_effect:
           label: ヒットエフェクトを非表示
           description: ヒットエフェクトを非表示にするかどうか。
-        note_scale: 
+        note_scale:
           label: ノーツの拡大率
           description: ノーツの拡大率です。
-        multi_highlight: 
+        multi_highlight:
           label: 同時押しハイライト
           description: 同時押しハイライトを有効にするか。有効にすると、同じタイミングのノーツがすべてハイライトされます。
-        hit_effect_follow_game_time: 
+        hit_effect_follow_game_time:
           label: ヒットエフェクトをゲーム内時間で再生 (デバッグ用)
           description: ヒットエフェクトをゲーム内時間に追従させるか。有効にすると、ヒットエフェクトの描画はゲームのグローバル時間ではなく、譜面時間に基づきます。デバッグ環境でのみ利用可能です。
       hotkey:
