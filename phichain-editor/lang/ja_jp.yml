@@ -20,6 +20,9 @@ tab:
   inspector:
     title: インスペクター
     curve_note_track:
+      title:
+        pending: 作成中のカーブノーツトラック
+        selected: 選択されたカーブノーツトラック
       start: ここからカーブノーツトラックを新規作成
       removed:
         incomplete: カーブノーツトラックが削除されました：始点または終点がありません
@@ -33,12 +36,14 @@ tab:
       kind: 種類
       curve: カーブ
     single_note:
+      title: 単一の %{kind} ノーツ
       x: X
       beat: 時間 (拍)
       hold_beat: Hold時間
       above: 上側ノーツ
       speed: 速度
     single_event:
+      title: 単一の %{kind} イベント
       start_beat: 開始時間
       end_beat: 終了時間
       value_type: 値の種類
@@ -49,6 +54,7 @@ tab:
       easing: イージング
       value: 値
     multiple_notes:
+      title: "%{amount} 個のノーツ"
       flip_by_x: X軸中心で反転
       flip_by_selection: 選択範囲の中心で反転
       flip_side: 向きを反転
@@ -57,8 +63,10 @@ tab:
       into_flick: Flickに変換
       into_hold: Holdに変換
     multiple_events:
+      title: "%{amount} 個のイベント"
       negate: 数値を反転 (透明度イベントを除く)
     line:
+      title: 選択された判定ライン
       name: 名前
   timeline_setting:
     title: タイムライン設定
@@ -134,7 +142,7 @@ tab:
           base: 標準
           small: 小
           xs: 極小
-        highlight_selected_line: 
+        highlight_selected_line:
           label: 選択中の判定ラインをハイライト
           description: 選択中の判定ラインをハイライト表示するかどうか。
         show_line_anchor:
@@ -156,10 +164,10 @@ tab:
           description: エディタが使用する言語
       audio:
         title: オーディオ
-        music_volume: 
+        music_volume:
           label: BGM音量
           description: BGMの音量です。
-        hit_sound_volume: 
+        hit_sound_volume:
           label: タップ音量
           description: タップ音の音量です。
         playback_rate:
@@ -167,19 +175,19 @@ tab:
           description: 音楽の再生速度を制御します。これはエディタ全体の速度に影響します。
       game:
         title: ゲーム
-        fc_ap_indicator: 
+        fc_ap_indicator:
           label: FC/APインジケーター
           description: エディタには判定機能がありません。チェックを入れると判定ラインが常に黄色になり、入れないと常に白色になります。
-        hide_hit_effect: 
+        hide_hit_effect:
           label: ヒットエフェクトを非表示
           description: ヒットエフェクトを非表示にするかどうか。
-        note_scale: 
+        note_scale:
           label: ノーツの拡大率
           description: ノーツの拡大率です。
-        multi_highlight: 
+        multi_highlight:
           label: 同時押しハイライト
           description: 同時押しハイライトを有効にするか。有効にすると、同じタイミングのノーツがすべてハイライトされます。
-        hit_effect_follow_game_time: 
+        hit_effect_follow_game_time:
           label: ヒットエフェクトをゲーム内時間で再生 (デバッグ用)
           description: ヒットエフェクトをゲーム内時間に追従させるか。有効にすると、ヒットエフェクトの描画はゲームのグローバル時間ではなく、譜面時間に基づきます。デバッグ環境でのみ利用可能です。
       hotkey:
@@ -242,6 +250,13 @@ export:
 game:
   aspect_ratio:
     free: フリー
+  event:
+    kind:
+      x: X
+      y: Y
+      rotation: 回転
+      opacity: 透明度
+      speed: 速度
 
 hotkey:
   phichain.place_tap: Tapを配置

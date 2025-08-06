@@ -20,6 +20,9 @@ tab:
   inspector:
     title: Inspector
     curve_note_track:
+      title:
+        pending: Pending Curve Note Track
+        selected: Selected Curve Note Track
       start: Start Curve Note Track from Here
       removed:
         incomplete: 'A curve note track has been removed: missing origin or destination'
@@ -33,12 +36,14 @@ tab:
       kind: Kind
       curve: Curve
     single_note:
+      title: Single %{kind}
       x: X
       beat: Beat
       hold_beat: Hold Beat
       above: Is Above
       speed: Speed
     single_event:
+      title: Single %{kind} Event
       start_beat: Start Beat
       end_beat: End Beat
       value_type: Value Type
@@ -49,6 +54,7 @@ tab:
       easing: Easing
       value: Value
     multiple_notes:
+      title: "%{amount} Notes"
       flip_by_x: Flip by X
       flip_by_selection: Flip by Selection
       flip_side: Flip Sides
@@ -57,8 +63,10 @@ tab:
       into_flick: Into Flick
       into_hold: Into Hold
     multiple_events:
+      title: "%{amount} Events"
       negate: Negate values (except opacity events)
     line:
+      title: Selected Line
       name: Name
   timeline_setting:
     title: Timeline Setting
@@ -242,6 +250,13 @@ export:
 game:
   aspect_ratio:
     free: Free
+  event:
+    kind:
+      x: X
+      y: Y
+      rotation: Rotation
+      opacity: Opacity
+      speed: Speed
 
 hotkey:
   phichain.place_tap: Place Tap
