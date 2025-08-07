@@ -69,8 +69,6 @@ fn action_panel_ui_system(
 
     tab_registry: Res<TabRegistry>,
     mut ui_state: ResMut<UiState>,
-
-    mut run: EventWriter<RunActionEvent>,
 ) -> Result {
     let Ok((entity, mut panel)) = query.single_mut() else {
         return Ok(());
@@ -172,7 +170,7 @@ fn action_panel_ui_system(
                         commands.entity(entity).despawn();
                         match entry.kind {
                             ActionPanelEntryKind::Action => {
-                                run.write(RunActionEvent(entry.id.clone()));
+                                commands.trigger(RunActionEvent(entry.id.clone()));
                             }
                             ActionPanelEntryKind::Tab => {
                                 let id = entry.id.clone();
@@ -225,7 +223,7 @@ fn action_panel_ui_system(
                         commands.entity(entity).despawn();
                         match entry.kind {
                             ActionPanelEntryKind::Action => {
-                                run.write(RunActionEvent(entry.id.clone()));
+                                commands.trigger(RunActionEvent(entry.id.clone()));
                             }
                             ActionPanelEntryKind::Tab => {
                                 let id = entry.id.clone();

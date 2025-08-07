@@ -2,6 +2,8 @@ use crate::editing::pending::Pending;
 use crate::project::project_loaded;
 use crate::selection::{Selected, SelectedLine};
 use crate::settings::{EditorSettings, ShowLineAnchorOption};
+use bevy::ecs::component::HookContext;
+use bevy::ecs::world::DeferredWorld;
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
 use bevy_prototype_lyon::prelude::*;
@@ -30,10 +32,11 @@ impl Plugin for CoreGamePlugin {
                     .after(phichain_game::core::update_line_system)
                     .run_if(project_loaded()),
             )
-            .add_systems(
-                Update,
-                (create_anchor_marker_system, update_anchor_marker_system).run_if(project_loaded()),
-            );
+            .add_systems(Update, update_anchor_marker_system.run_if(project_loaded()));
+
+        app.world_mut()
+            .register_component_hooks::<Line>()
+            .on_add(create_anchor_marker);
     }
 }
 
@@ -110,23 +113,21 @@ fn update_line_tint_system(
 #[derive(Debug, Component)]
 struct AnchorMarker;
 
-fn create_anchor_marker_system(mut commands: Commands, query: Query<Entity, Added<Line>>) {
+fn create_anchor_marker(mut world: DeferredWorld, context: HookContext) {
     let shape = shapes::Circle {
         radius: 4.0,
         ..default()
     };
 
-    for line in &query {
-        commands.entity(line).with_children(|parent| {
-            parent.spawn((
-                AnchorMarker,
-                ShapeBuilder::with(&shape)
-                    .fill(Color::WHITE)
-                    .stroke(Stroke::color(bevy::color::palettes::css::LIMEGREEN))
-                    .build(),
-            ));
-        });
-    }
+    world.commands().entity(context.entity).with_children(|p| {
+        p.spawn((
+            AnchorMarker,
+            ShapeBuilder::with(&shape)
+                .fill(Color::WHITE)
+                .stroke(Stroke::color(bevy::color::palettes::css::LIMEGREEN))
+                .build(),
+        ));
+    });
 }
 
 fn update_anchor_marker_system(

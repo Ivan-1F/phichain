@@ -81,6 +81,7 @@ use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{
     EguiContext, EguiGlobalSettings, EguiPlugin, EguiPrimaryContextPass, PrimaryEguiContext,
 };
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_mod_reqwest::ReqwestPlugin;
 use bevy_persistent::Persistent;
 use egui::RichText;
@@ -102,8 +103,9 @@ fn main() {
 
     phichain_assets::setup_assets();
 
-    App::new()
-        .configure_sets(Update, GameSet.run_if(project_loaded()))
+    let mut app = App::new();
+
+    app.configure_sets(Update, GameSet.run_if(project_loaded()))
         .configure_sets(
             Update,
             (EditorSet::Edit, EditorSet::Update)
@@ -178,8 +180,12 @@ fn main() {
             Startup,
             (apply_args_config_system, apply_editor_settings_system),
         )
-        .add_systems(Update, update_ui_scale_changes_system)
-        .run();
+        .add_systems(Update, update_ui_scale_changes_system);
+
+    #[cfg(debug_assertions)]
+    app.add_plugins(WorldInspectorPlugin::new());
+
+    app.run();
 }
 
 fn apply_editor_settings_system(settings: Res<Persistent<EditorSettings>>) {

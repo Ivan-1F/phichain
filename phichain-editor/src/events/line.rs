@@ -4,10 +4,9 @@ use crate::utils::entity::replace_with_empty;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use bon::Builder;
-use phichain_chart::event::LineEventBundle;
-use phichain_chart::line::{Line, LineBundle};
-use phichain_chart::note::NoteBundle;
+use phichain_chart::line::Line;
 use phichain_chart::serialization::SerializedLine;
+use phichain_game::event::EventOf;
 
 pub struct LineEventPlugin;
 
@@ -98,21 +97,17 @@ impl EditorEvent for SpawnLineEvent {
     // TODO: move part of the logic to phichain-game utils, duplication of phichain_game::loader::load_line()
     fn run(self, world: &mut World) -> Self::Output {
         let id = match self.target {
-            None => world.spawn(LineBundle::new(self.line.line)).id(),
-            Some(target) => world
-                .entity_mut(target)
-                .insert(LineBundle::new(self.line.line))
-                .id(),
+            None => world.spawn(self.line.line).id(),
+            Some(target) => world.entity_mut(target).insert(self.line.line).id(),
         };
 
-        world.entity_mut(id).with_children(|parent| {
-            for note in self.line.notes {
-                parent.spawn(NoteBundle::new(note));
-            }
-            for event in self.line.events {
-                parent.spawn(LineEventBundle::new(event));
-            }
-        });
+        for event in self.line.notes {
+            world.spawn((event, ChildOf(id)));
+        }
+
+        for event in self.line.events {
+            world.spawn((event, EventOf(id)));
+        }
 
         if let Some(parent) = self.parent {
             world.entity_mut(id).insert(ChildOf(parent));

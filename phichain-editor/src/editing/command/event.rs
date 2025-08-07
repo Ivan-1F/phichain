@@ -2,6 +2,7 @@ use crate::events::event::{DespawnLineEventEvent, SpawnLineEventEvent};
 use crate::events::EditorEvent;
 use bevy::prelude::*;
 use phichain_chart::event::LineEvent;
+use phichain_game::event::EventOf;
 use undo::Edit;
 
 #[derive(Debug, Copy, Clone)]
@@ -67,11 +68,11 @@ impl Edit for RemoveEvent {
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
         let event = target.entity(self.entity).get::<LineEvent>().copied();
-        let parent = target
+        let line = target
             .entity(self.entity)
-            .get::<ChildOf>()
-            .map(|x| x.parent());
-        self.event = Some((event.unwrap(), parent.unwrap()));
+            .get::<EventOf>()
+            .map(|x| x.target());
+        self.event = Some((event.unwrap(), line.unwrap()));
         DespawnLineEventEvent::builder()
             .target(self.entity)
             .keep_entity(true)

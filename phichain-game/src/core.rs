@@ -7,6 +7,7 @@ use phichain_chart::event::{EventEvaluationResult, LineEvent, LineEventKind};
 use phichain_chart::line::{Line, LineOpacity, LinePosition, LineRotation};
 
 use crate::constants::PERFECT_COLOR;
+use crate::event::{EventOf, Events};
 use crate::highlight::Highlighted;
 use crate::layer::{HOLD_LAYER, NOTE_LAYER};
 use crate::scale::NoteScale;
@@ -105,7 +106,7 @@ pub fn compute_line_system(
             &mut LineRotation,
             &mut LineOpacity,
             &mut LineSpeed,
-            &Children,
+            &Events,
         ),
         With<Line>,
     >,
@@ -114,14 +115,14 @@ pub fn compute_line_system(
 ) {
     let beat: f32 = bpm_list.beat_at(time.0).into();
     line_query.par_iter_mut().for_each(
-        |(mut position, mut rotation, mut opacity, mut speed, children)| {
+        |(mut position, mut rotation, mut opacity, mut speed, events)| {
             let mut x_value = EventEvaluationResult::Unaffected;
             let mut y_value = EventEvaluationResult::Unaffected;
             let mut rotation_value = EventEvaluationResult::Unaffected;
             let mut opacity_value = EventEvaluationResult::Unaffected;
             let mut speed_value = EventEvaluationResult::Unaffected;
 
-            for event in children.iter().filter_map(|x| event_query.get(x).ok()) {
+            for event in events.iter().filter_map(|x| event_query.get(x).ok()) {
                 let value = event.evaluate(beat);
                 match event.kind {
                     LineEventKind::X => x_value = x_value.max(value),
@@ -190,7 +191,7 @@ pub fn update_line_system(
 pub fn update_note_y_system(
     query: Query<(&Children, Entity), With<Line>>,
     game_viewport: Res<GameViewport>,
-    speed_event_query: Query<(&SpeedEvent, &LineEvent, &ChildOf)>,
+    speed_event_query: Query<(&SpeedEvent, &LineEvent, &EventOf)>,
     mut note_query: Query<(&mut Transform, &mut Sprite, &mut Visibility, &Note)>,
     time: Res<ChartTime>,
     bpm_list: Res<BpmList>,
@@ -199,7 +200,7 @@ pub fn update_note_y_system(
     for (children, entity) in &query {
         let mut speed_events: Vec<&SpeedEvent> = all_speed_events
             .iter()
-            .filter(|(_, _, child_of)| child_of.parent() == entity)
+            .filter(|(_, _, event_of)| event_of.target() == entity)
             .map(|(s, _, _)| *s)
             .collect();
         speed_events.sort_by(|a, b| {
@@ -270,51 +271,25 @@ pub fn update_note_texture_system(
 }
 
 #[derive(Debug, Component, Default, Clone)]
+#[require(
+    Sprite {
+        anchor: Anchor::TopCenter,
+        ..default()
+    },
+    HoldComponent,
+)]
 pub struct HoldHead;
 #[derive(Debug, Component, Default, Clone)]
+#[require(
+    Sprite {
+        anchor: Anchor::BottomCenter,
+        ..default()
+    },
+    HoldComponent,
+)]
 pub struct HoldTail;
 #[derive(Debug, Component, Default, Clone)]
 pub struct HoldComponent;
-
-#[derive(Bundle)]
-struct HoldHeadBundle {
-    sprite: Sprite,
-    hold_head: HoldHead,
-    hold_component: HoldComponent,
-}
-
-impl HoldHeadBundle {
-    fn new() -> Self {
-        Self {
-            sprite: Sprite {
-                anchor: Anchor::TopCenter,
-                ..default()
-            },
-            hold_head: Default::default(),
-            hold_component: Default::default(),
-        }
-    }
-}
-
-#[derive(Bundle)]
-struct HoldTailBundle {
-    sprite: Sprite,
-    hold_tail: HoldTail,
-    hold_component: HoldComponent,
-}
-
-impl HoldTailBundle {
-    fn new() -> Self {
-        Self {
-            sprite: Sprite {
-                anchor: Anchor::BottomCenter,
-                ..default()
-            },
-            hold_tail: Default::default(),
-            hold_component: Default::default(),
-        }
-    }
-}
 
 pub fn spawn_hold_component_system(
     mut commands: Commands,
@@ -330,19 +305,19 @@ pub fn spawn_hold_component_system(
         match children {
             None => {
                 commands.entity(entity).with_children(|p| {
-                    p.spawn(HoldHeadBundle::new());
-                    p.spawn(HoldTailBundle::new());
+                    p.spawn(HoldHead);
+                    p.spawn(HoldTail);
                 });
             }
             Some(children) => {
                 if children.iter().all(|c| head_query.get(c).is_err()) {
                     commands.entity(entity).with_children(|p| {
-                        p.spawn(HoldHeadBundle::new());
+                        p.spawn(HoldHead);
                     });
                 }
                 if children.iter().all(|c| tail_query.get(c).is_err()) {
                     commands.entity(entity).with_children(|p| {
-                        p.spawn(HoldTailBundle::new());
+                        p.spawn(HoldTail);
                     });
                 }
             }

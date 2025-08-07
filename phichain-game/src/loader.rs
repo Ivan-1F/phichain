@@ -1,13 +1,11 @@
 pub mod nonblocking;
 
 use crate::curve_note_track::CurveNoteTrack;
+use crate::event::EventOf;
 use crate::illustration::{load_illustration, open_illustration};
 use anyhow::Context;
 use bevy::prelude::*;
-use phichain_chart::event::LineEventBundle;
-use phichain_chart::line::LineBundle;
 use phichain_chart::migration::migrate;
-use phichain_chart::note::NoteBundle;
 use phichain_chart::project::Project;
 use phichain_chart::serialization::{PhichainChart, SerializedLine};
 use serde_json::Value;
@@ -23,7 +21,7 @@ use std::fs::File;
 ///
 /// - [phichain_chart::offset::Offset] will be inserted into the world
 /// - [phichain_chart::bpm_list::BpmList] will be inserted into the world
-/// - Entities with components [`LineBundle`] and [`NoteBundle`] will be spawned into the world, with parent-child relationship
+/// - Entities with components [`Line`] and [`Note`] will be spawned into the world, with parent-child relationship
 pub fn load_project(project: &Project, commands: &mut Commands) -> anyhow::Result<()> {
     let file = File::open(project.path.chart_path())?;
     load(file, commands)?;
@@ -40,17 +38,15 @@ pub fn load_project(project: &Project, commands: &mut Commands) -> anyhow::Resul
 
 fn load_line(line: SerializedLine, commands: &mut Commands, parent: Option<Entity>) -> Entity {
     let id = commands
-        .spawn(LineBundle::new(line.line))
+        .spawn(line.line)
         .with_children(|parent| {
             let mut note_entity_order = vec![];
 
             for note in line.notes {
-                let id = parent.spawn(NoteBundle::new(note)).id();
+                let id = parent.spawn(note).id();
                 note_entity_order.push(id);
             }
-            for event in line.events {
-                parent.spawn(LineEventBundle::new(event));
-            }
+
             for track in line.curve_note_tracks {
                 if let (Some(from), Some(to)) = (
                     note_entity_order.get(track.from),
@@ -67,6 +63,10 @@ fn load_line(line: SerializedLine, commands: &mut Commands, parent: Option<Entit
             }
         })
         .id();
+
+    for event in line.events {
+        commands.spawn((event, EventOf(id)));
+    }
 
     if let Some(parent) = parent {
         commands.entity(id).insert(ChildOf(parent));

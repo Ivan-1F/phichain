@@ -13,7 +13,6 @@ use crate::schedule::EditorSet;
 use crate::timeline::{TimelineContext, TimelineItem};
 use crate::utils::convert::BevyEguiConvert;
 use crate::{constants::CANVAS_WIDTH, selection::SelectedLine};
-use phichain_chart::note::NoteBundle;
 
 #[allow(clippy::enum_variant_names)]
 enum CreateNoteHotkeys {
@@ -156,7 +155,7 @@ fn create_note_system(
                     let (x, beat) = calc_note_attrs();
                     commands.entity(line_entity).with_children(|parent| {
                         parent.spawn((
-                            NoteBundle::new(Note::new(
+                            Note::new(
                                 NoteKind::Hold {
                                     hold_beat: Beat::ONE,
                                 },
@@ -164,7 +163,7 @@ fn create_note_system(
                                 beat,
                                 x,
                                 1.0,
-                            )),
+                            ),
                             Pending,
                         ));
                     });

@@ -1,7 +1,7 @@
 use crate::GameSet;
 use bevy::prelude::*;
 use phichain_chart::curve_note_track::{generate_notes, CurveNoteTrackOptions};
-use phichain_chart::note::{Note, NoteBundle};
+use phichain_chart::note::Note;
 
 /// Represents a curve note track
 #[derive(Debug, Clone, Component)]
@@ -46,7 +46,7 @@ impl Plugin for CurveNoteTrackPlugin {
             Update,
             (
                 update_curve_note_track_system,
-                despawn_dangle_curve_note_system,
+                // despawn_dangle_curve_note_system,
             )
                 .in_set(GameSet),
         );
@@ -58,7 +58,12 @@ pub struct CurveNoteCache(Vec<Note>);
 
 /// Inner value is the attached entity ID of [`CurveNoteTrack`]
 #[derive(Component)]
+#[relationship(relationship_target = CurveNotes)]
 pub struct CurveNote(pub Entity);
+
+#[derive(Component)]
+#[relationship_target(relationship = CurveNote, linked_spawn)]
+pub struct CurveNotes(Vec<Entity>);
 
 /// For each existing [`CurveNoteTrack`], calculate its note sequence and compare it with the cached version.
 ///
@@ -116,13 +121,18 @@ pub fn update_curve_note_track_system(
             }
             commands.entity(from.1.parent()).with_children(|p| {
                 for note in notes {
-                    p.spawn((NoteBundle::new(note), CurveNote(entity)));
+                    p.spawn((note, CurveNote(entity)));
                 }
             });
         }
     }
 }
 
+// TODO: this should be removed as we use relationship for CNTs
+// CurveNotes has linked_spawn, so despawning a CurveNoteTrack will also despawn all CurveNotes
+// This works when **despawning** the CurveNoteTrack, but will not work with deletion of undo/redo
+// we are still using `replace_with_empty` based undo/redo, so ** CurveNoteTrack will be removed from the entity** instead of **despawning the CurveNoteTrack entity**
+// TODO: remove this after merging disabled-based-undo
 /// Search for [`CurveNote`] with an invalid associated [`CurveNoteTrack`] and despawn them
 pub fn despawn_dangle_curve_note_system(
     mut commands: Commands,

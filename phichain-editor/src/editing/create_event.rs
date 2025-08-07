@@ -12,7 +12,8 @@ use crate::schedule::EditorSet;
 use crate::selection::SelectedLine;
 use crate::timeline::{TimelineContext, TimelineItem};
 use crate::utils::convert::BevyEguiConvert;
-use phichain_chart::event::{LineEvent, LineEventBundle, LineEventKind, LineEventValue};
+use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
+use phichain_game::event::EventOf;
 
 enum CreateEventHotkeys {
     PlaceTransitionEvent,
@@ -61,7 +62,7 @@ fn create_event_system(
 
     mut pending_event_query: Query<(&mut LineEvent, Entity), With<Pending>>,
 
-    event_query: Query<(&LineEvent, &ChildOf), Without<Pending>>,
+    event_query: Query<(&LineEvent, &EventOf), Without<Pending>>,
 ) -> Result {
     let window = window_query.single()?;
     let Some(cursor_position) = window.cursor_position() else {
@@ -108,7 +109,7 @@ fn create_event_system(
                     if let Some(last_event) = events
                         .iter()
                         .filter(|(e, _)| e.kind == pending_event.kind)
-                        .filter(|(_, c)| c.parent() == line_entity)
+                        .filter(|(_, e)| e.target() == line_entity)
                         .take_while(|(e, _)| e.end_beat <= pending_event.start_beat)
                         .map(|x| x.0)
                         .last()
@@ -126,7 +127,7 @@ fn create_event_system(
                     if let Some(next_event) = events
                         .iter()
                         .filter(|(e, _)| e.kind == pending_event.kind)
-                        .filter(|(_, c)| c.parent() == line_entity)
+                        .filter(|(_, e)| e.target() == line_entity)
                         .take_while(|(e, _)| e.start_beat >= pending_event.end_beat)
                         .map(|x| x.0)
                         .last()
@@ -156,12 +157,12 @@ fn create_event_system(
                             LineEventValue::constant(0.0)
                         };
                         parent.spawn((
-                            LineEventBundle::new(LineEvent {
+                            LineEvent {
                                 kind,
                                 value,
                                 start_beat: beat,
                                 end_beat: beat + ctx.settings.minimum_beat(),
-                            }),
+                            },
                             Pending,
                         ));
                     });

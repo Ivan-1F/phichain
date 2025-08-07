@@ -7,11 +7,12 @@ use crate::selection::{SelectEvent, Selected, SelectedLine};
 use crate::timeline::{Timeline, TimelineContext};
 use crate::timing::SeekToEvent;
 use bevy::ecs::system::SystemState;
-use bevy::prelude::{ChildOf, Entity, EventWriter, Query, Res, World};
+use bevy::prelude::{Entity, EventWriter, Query, Res, World};
 use egui::{Align2, Color32, FontId, Rangef, Rect, Sense, Stroke, StrokeKind, Ui};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{LineEvent, LineEventKind};
 use phichain_chart::line::Line;
+use phichain_game::event::{EventOf, Events};
 use std::iter;
 
 #[derive(Debug, Clone)]
@@ -101,25 +102,47 @@ impl<T: PartialEq> EventTrackData<T> {
 
 impl Timeline for EventTimeline {
     fn ui(&self, ui: &mut Ui, world: &mut World, viewport: Rect) {
+        // lane
+        // [0.2, 0.4, 0.6, 0.8]
+        let lane_percents = iter::repeat_n(0.0, 5 - 1)
+            .enumerate()
+            .map(|(i, _)| (i + 1) as f32 * 1.0 / 5.0)
+            .collect::<Vec<_>>();
+        for percent in lane_percents {
+            ui.painter().rect_filled(
+                Rect::from_center_size(
+                    egui::Pos2::new(
+                        viewport.min.x + viewport.width() * percent,
+                        viewport.center().y,
+                    ),
+                    egui::Vec2::new(2.0, viewport.height()),
+                ),
+                0.0,
+                Color32::from_rgba_unmultiplied(255, 255, 255, 40),
+            );
+        }
+
         let line_entity = self.line_entity(world);
 
         let mut state: SystemState<(
             TimelineContext,
-            Query<(
-                &mut LineEvent,
-                &ChildOf,
-                Entity,
-                Option<&Selected>,
-                Option<&Pending>,
-            )>,
+            Query<(&mut LineEvent, Entity, Option<&Selected>, Option<&Pending>)>,
+            Query<&Events>,
             Res<BpmList>,
             EventWriter<SelectEvent>,
             EventWriter<DoCommandEvent>,
             EventWriter<SeekToEvent>,
         )> = SystemState::new(world);
 
-        let (ctx, mut event_query, bpm_list, mut select_events, mut event_writer, mut seek_to) =
-            state.get_mut(world);
+        let (
+            ctx,
+            mut event_query,
+            events_query,
+            bpm_list,
+            mut select_events,
+            mut event_writer,
+            mut seek_to,
+        ) = state.get_mut(world);
 
         let compute_x = |track: u8| -> f32 {
             viewport.width() / 5.0 * track as f32 - viewport.width() / 5.0 / 2.0 + viewport.min.x
@@ -153,12 +176,23 @@ impl Timeline for EventTimeline {
         let mut first_events_outside_top = EventTrackData::splat(None::<Entity>);
         let mut first_events_outside_top_y = EventTrackData::splat(f32::MIN);
 
-        for (event, child_of, entity, _, _) in &event_query {
-            if child_of.parent() != line_entity {
+        let Ok(events) = events_query.get(line_entity) else {
+            return;
+        };
+
+        let viewport_margin = 100.0;
+
+        for entity in events.iter() {
+            let (mut event, entity, selected, pending) = event_query.get_mut(*entity).unwrap();
+
+            let rect = get_event_rect(&event);
+
+            // skip processing events far outside viewport
+            if rect.bottom() < viewport.top() - viewport_margin
+                || rect.top() > viewport.bottom() + viewport_margin
+            {
                 continue;
             }
-
-            let rect = get_event_rect(event);
 
             if rect.bottom() >= viewport.bottom() && rect.top() <= viewport.bottom() {
                 // in viewport, but start value outside bottom
@@ -185,12 +219,6 @@ impl Timeline for EventTimeline {
                     *first_events_outside_top.get_mut(event.kind) = Some(entity);
                 }
             }
-        }
-
-        for (mut event, child_of, entity, selected, pending) in &mut event_query {
-            if child_of.parent() != line_entity {
-                continue;
-            }
 
             let mut color = if selected.is_some() {
                 Color32::LIGHT_GREEN
@@ -207,8 +235,6 @@ impl Timeline for EventTimeline {
                     entity, old_event, new_event,
                 ))));
             };
-
-            let rect = get_event_rect(&event);
 
             let response = ui.allocate_rect(rect, Sense::click());
             if ui.is_rect_visible(rect)
@@ -386,26 +412,6 @@ impl Timeline for EventTimeline {
             );
         }
         ui.style_mut().interaction.selectable_labels = true;
-
-        // lane
-        // [0.2, 0.4, 0.6, 0.8]
-        let lane_percents = iter::repeat_n(0.0, 5 - 1)
-            .enumerate()
-            .map(|(i, _)| (i + 1) as f32 * 1.0 / 5.0)
-            .collect::<Vec<_>>();
-        for percent in lane_percents {
-            ui.painter().rect_filled(
-                Rect::from_center_size(
-                    egui::Pos2::new(
-                        viewport.min.x + viewport.width() * percent,
-                        viewport.center().y,
-                    ),
-                    egui::Vec2::new(2.0, viewport.height()),
-                ),
-                0.0,
-                Color32::from_rgba_unmultiplied(255, 255, 255, 40),
-            );
-        }
     }
 
     fn on_drag_selection(&self, world: &mut World, viewport: Rect, selection: Rect) -> Vec<Entity> {
@@ -414,13 +420,13 @@ impl Timeline for EventTimeline {
         let x_range = selection.x_range();
         let time_range = selection.y_range();
 
-        let mut state: SystemState<(Query<(&LineEvent, &ChildOf, Entity)>, Res<BpmList>)> =
+        let mut state: SystemState<(Query<(&LineEvent, &EventOf, Entity)>, Res<BpmList>)> =
             SystemState::new(world);
         let (event_query, bpm_list) = state.get_mut(world);
 
         event_query
             .iter()
-            .filter(|x| x.1.parent() == line_entity)
+            .filter(|x| x.1.target() == line_entity)
             .filter(|x| {
                 let event = x.0;
                 let track: u8 = event.kind.into();
