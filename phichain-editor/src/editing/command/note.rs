@@ -1,6 +1,6 @@
 use crate::removed::RemovedExt;
 use bevy::prelude::*;
-use phichain_chart::note::{Note, NoteBundle};
+use phichain_chart::note::Note;
 use undo::Edit;
 
 #[derive(Debug, Copy, Clone)]
@@ -31,11 +31,7 @@ impl Edit for CreateNote {
                 .entity_mut(note_entity)
                 .decrease_removed::<Children>();
         } else {
-            self.note_entity = Some(
-                target
-                    .spawn((NoteBundle::new(self.note), ChildOf(self.line_entity)))
-                    .id(),
-            );
+            self.note_entity = Some(target.spawn((self.note, ChildOf(self.line_entity))).id());
         }
     }
 
