@@ -18,6 +18,7 @@ mod identifier;
 mod ime;
 mod l10n;
 mod logging;
+mod metronome;
 mod misc;
 mod notification;
 mod project;
@@ -51,6 +52,7 @@ use crate::hotkey::HotkeyPlugin;
 use crate::identifier::{Identifier, IntoIdentifier};
 use crate::ime::ImeCompatPlugin;
 use crate::logging::custom_layer;
+use crate::metronome::MetronomePlugin;
 use crate::misc::MiscPlugin;
 use crate::notification::NotificationPlugin;
 use crate::project::project_loaded;
@@ -150,6 +152,7 @@ fn main() {
         .add_plugins(AudioPlugin)
         .add_plugins(EditorSettingsPlugin)
         .add_plugins(HitSoundPlugin)
+        .add_plugins(MetronomePlugin)
         .add_plugins(GameTabPlugin)
         .add_plugins(TimelinePlugin)
         .add_plugins(EguiPlugin::default())
