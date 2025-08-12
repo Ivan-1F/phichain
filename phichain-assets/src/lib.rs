@@ -42,6 +42,8 @@ pub struct AudioAssets {
     pub drag: Handle<AudioSource>,
     #[asset(path = "audio/flick.ogg")]
     pub flick: Handle<AudioSource>,
+    #[asset(path = "audio/metronome.wav")]
+    pub metronome: Handle<AudioSource>,
 }
 
 /// Setup bevy asset root environment variable
