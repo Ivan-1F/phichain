@@ -49,6 +49,36 @@ impl SettingCategory for Audio {
             ui.separator();
 
             finished |= ui.item(
+                t!("tab.settings.category.audio.metronome_enabled.label"),
+                Some(t!(
+                    "tab.settings.category.audio.metronome_enabled.description"
+                )),
+                |ui| {
+                    ui.checkbox(&mut settings.audio.metronome_enabled, "")
+                        .changed()
+                },
+            );
+
+            ui.separator();
+
+            finished |= ui.item(
+                t!("tab.settings.category.audio.metronome_volume.label"),
+                Some(t!(
+                    "tab.settings.category.audio.metronome_volume.description"
+                )),
+                |ui| {
+                    let response = ui.add(
+                        egui::DragValue::new(&mut settings.audio.metronome_volume)
+                            .range(0.00..=1.2)
+                            .speed(0.01),
+                    );
+                    response.drag_stopped() || response.lost_focus()
+                },
+            );
+
+            ui.separator();
+
+            finished |= ui.item(
                 t!("tab.settings.category.audio.playback_rate.label"),
                 Some(t!("tab.settings.category.audio.playback_rate.description")),
                 |ui| {
