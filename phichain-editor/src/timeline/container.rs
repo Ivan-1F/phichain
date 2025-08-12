@@ -115,7 +115,7 @@ impl TimelineContainer {
     }
 
     /// Allocate all the timelines in the given viewport
-    pub fn allocate(&self, viewport: Rect) -> Vec<AllocatedTimeline> {
+    pub fn allocate(&self, viewport: Rect) -> Vec<AllocatedTimeline<'_>> {
         self.timelines
             .iter()
             .enumerate()
