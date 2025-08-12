@@ -30,6 +30,13 @@ pub fn quick_action(ui: &mut Ui, world: &mut World) {
                 .speed(0.01),
         );
 
+        ui.separator();
+
+        ui.checkbox(
+            &mut editor_settings.audio.metronome_enabled,
+            t!("tab.settings.category.audio.metronome_enabled.label"),
+        );
+
         let space = ui.available_width() - 300.0;
         if space > 0.0 {
             ui.add_space(space)
