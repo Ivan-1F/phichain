@@ -1,8 +1,8 @@
 use crate::events::line::{DespawnLineEvent, SpawnLineEvent};
 use crate::events::EditorEvent;
-use crate::serialization::SerializeLine;
 use bevy::prelude::*;
 use phichain_chart::serialization::SerializedLine;
+use phichain_game::serialization::SerializeLine;
 use undo::Edit;
 
 #[derive(Debug, Copy, Clone)]

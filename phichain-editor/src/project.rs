@@ -4,8 +4,6 @@ use bevy::prelude::*;
 use crate::action::ActionRegistrationExt;
 use crate::audio::load_audio;
 use crate::editing::history::EditorHistory;
-use crate::exporter::phichain::PhichainExporter;
-use crate::exporter::Exporter;
 use crate::hotkey::modifier::Modifier;
 use crate::hotkey::Hotkey;
 use crate::notification::{ToastsExt, ToastsStorage};
@@ -18,6 +16,7 @@ use phichain_chart::line::Line;
 pub use phichain_chart::project::{Project, ProjectMeta, ProjectPath};
 use phichain_chart::serialization::PhichainChart;
 use phichain_game::loader::nonblocking::ProjectLoadingResult;
+use phichain_game::serialization::serialize_chart;
 use serde_json::json;
 use std::path::PathBuf;
 
@@ -67,27 +66,30 @@ impl Plugin for ProjectPlugin {
 }
 
 fn save_project_system(world: &mut World) -> Result {
-    world.resource_scope(|world, mut history: Mut<EditorHistory>| {
-        if let Ok(chart) = PhichainExporter::export(world) {
-            let project = world.resource::<Project>();
-            let chart_result = std::fs::write(project.path.chart_path(), chart);
-            let meta_result = std::fs::write(
-                project.path.meta_path(),
-                serde_json::to_string(&project.meta).unwrap(),
-            );
+    let result: anyhow::Result<()> = {
+        let chart = serialize_chart(world);
+        let chart_string = serde_json::to_string(&chart)?;
+        let project = world.resource::<Project>();
+        std::fs::write(project.path.chart_path(), chart_string)?;
+        std::fs::write(
+            project.path.meta_path(),
+            serde_json::to_string(&project.meta).unwrap(),
+        )?;
 
-            let mut toasts = world.resource_mut::<ToastsStorage>();
-            match chart_result.and(meta_result) {
-                Ok(_) => {
-                    toasts.success(t!("project.save.succeed"));
-                    history.0.set_saved();
-                }
-                Err(error) => {
-                    toasts.error(t!("project.save.failed", error = error));
-                }
-            }
+        Ok(())
+    };
+
+    let mut toasts = world.resource_mut::<ToastsStorage>();
+    match result {
+        Ok(_) => {
+            toasts.success(t!("project.save.succeed"));
+            let mut history = world.resource_mut::<EditorHistory>();
+            history.0.set_saved();
         }
-    });
+        Err(error) => {
+            toasts.error(t!("project.save.failed", error = error));
+        }
+    }
 
     Ok(())
 }

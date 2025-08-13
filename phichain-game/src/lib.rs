@@ -10,6 +10,7 @@ pub mod line;
 pub mod loader;
 pub mod scale;
 mod score;
+pub mod serialization;
 mod ui;
 pub mod utils;
 
