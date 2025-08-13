@@ -170,6 +170,12 @@ tab:
         hit_sound_volume:
           label: 打击音效音量
           description: 打击音效的音量
+        metronome_volume:
+          label: 节拍器音量
+          description: 节拍器的音量
+        metronome_enabled:
+          label: 节拍器
+          description: 播放时启用节拍器
         playback_rate:
           label: 播放速率
           description: 控制音乐的播放速率，这将影响编辑器的全局速度
@@ -277,6 +283,7 @@ action:
   phichain.undo: 撤销
   phichain.redo: 重做
   phichain.pause_resume: 暂停/播放
+  phichain.metronome.toggle: 开关节拍器
   phichain.take_screenshot: 截屏
   phichain.delete_selected: 删除选中
   phichain.open_action_panel: 打开命令面板

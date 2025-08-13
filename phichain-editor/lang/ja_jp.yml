@@ -170,6 +170,12 @@ tab:
         hit_sound_volume:
           label: タップ音量
           description: タップ音の音量です。
+        metronome_volume:
+          label: メトロノーム音量
+          description: メトロノームの音量です。
+        metronome_enabled:
+          label: メトロノーム
+          description: 再生中にメトロノームを有効にします。
         playback_rate:
           label: 再生速度
           description: 音楽の再生速度を制御します。これはエディタ全体の速度に影響します。
@@ -277,6 +283,7 @@ action:
   phichain.undo: 元に戻す
   phichain.redo: やり直す
   phichain.pause_resume: 一時停止/再生
+  phichain.metronome.toggle: メトロノーム切り替え
   phichain.take_screenshot: スクリーンショットを撮る
   phichain.delete_selected: 選択項目を削除
   phichain.open_action_panel: コマンドパネルを開く

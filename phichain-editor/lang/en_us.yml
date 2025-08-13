@@ -170,6 +170,12 @@ tab:
         hit_sound_volume:
           label: Hit Sound Volume
           description: Volume of the hit sound effects
+        metronome_volume:
+          label: Metronome Volume
+          description: Volume of the metronome
+        metronome_enabled:
+          label: Metronome
+          description: Enable metronome during playback
         playback_rate:
           label: Playback Rate
           description: Controls the playback rate of music, which affects the global speed of the editor
@@ -277,6 +283,7 @@ action:
   phichain.undo: Undo
   phichain.redo: Repo
   phichain.pause_resume: Pause/Resume
+  phichain.metronome.toggle: Toggle Metronome
   phichain.take_screenshot: Take Screenshot
   phichain.delete_selected: Delete Selected
   phichain.open_action_panel: Open Action Panel
