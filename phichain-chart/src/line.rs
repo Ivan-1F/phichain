@@ -10,7 +10,6 @@ use serde::{Deserialize, Serialize};
         LineRotation,
         LineOpacity,
         LineSpeed,
-        LineTimestamp
     )
 )]
 pub struct Line {
@@ -43,22 +42,3 @@ pub struct LineOpacity(pub f32);
 #[cfg(feature = "bevy")]
 #[derive(bevy::prelude::Component, Debug, Default)]
 pub struct LineSpeed(pub f32);
-
-/// This is a temporary workaround to maintain line order
-///
-/// TODO: remove this when game-object-id is merged
-#[cfg(feature = "bevy")]
-#[derive(bevy::prelude::Component, Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq)]
-pub struct LineTimestamp(pub u64);
-
-#[cfg(feature = "bevy")]
-impl Default for LineTimestamp {
-    fn default() -> Self {
-        Self(
-            std::time::SystemTime::now()
-                .duration_since(std::time::SystemTime::UNIX_EPOCH)
-                .unwrap()
-                .as_secs(),
-        )
-    }
-}

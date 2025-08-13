@@ -7,11 +7,10 @@ use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use egui::{Color32, Layout, RichText, Sense, Stroke, StrokeKind, Ui};
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
-use phichain_chart::line::{
-    Line, LineOpacity, LinePosition, LineRotation, LineSpeed, LineTimestamp,
-};
+use phichain_chart::line::{Line, LineOpacity, LinePosition, LineRotation, LineSpeed};
 use phichain_chart::note::Note;
 use phichain_game::event::Events;
+use phichain_game::line::LineOrder;
 
 const LINE_STATE_COLUMN_WIDTH: f32 = 140.0;
 const LINE_PREVIEW_COLUMN_WIDTH: f32 = 100.0;
@@ -39,8 +38,7 @@ macro_rules! trunc_label {
 pub struct LineListParams<'w, 's> {
     commands: Commands<'w, 's>,
     note_query: Query<'w, 's, &'static Note>,
-    root_line_query:
-        Query<'w, 's, (Entity, &'static LineTimestamp), (Without<ChildOf>, With<Line>)>,
+    root_line_query: Query<'w, 's, (Entity, &'static LineOrder), (Without<ChildOf>, With<Line>)>,
     line_query: Query<
         'w,
         's,
