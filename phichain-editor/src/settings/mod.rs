@@ -82,7 +82,7 @@ impl Default for AudioSettings {
         Self {
             music_volume: 1.0,
             hit_sound_volume: 1.0,
-            metronome_volume: 0.5,
+            metronome_volume: 1.0,
             metronome_enabled: true,
             playback_rate: 1.0,
         }
