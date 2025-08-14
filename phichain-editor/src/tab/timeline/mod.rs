@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use bevy_persistent::Persistent;
 use egui::Ui;
 
+use crate::spectrogram::draw;
 use crate::settings::EditorSettings;
 use crate::timeline;
 use crate::timeline::settings::TimelineSettings;
@@ -11,6 +12,8 @@ use crate::utils::convert::BevyEguiConvert;
 use phichain_chart::note::Note;
 
 pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
+    draw(ui.painter(), world);
+
     let mut timeline_viewport = world.resource_mut::<TimelineViewport>();
     let clip_rect = ui.clip_rect();
     timeline_viewport.0 = Rect::from_corners(
