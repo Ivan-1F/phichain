@@ -34,6 +34,14 @@ struct Args {
 }
 
 fn convert(args: Args) -> anyhow::Result<()> {
+    if !args.path.exists() {
+        anyhow::bail!("No such file: {}", args.path.display());
+    }
+
+    if args.path.is_dir() {
+        anyhow::bail!("Expected a file, got a directory: {}", args.path.display());
+    }
+
     let file = std::fs::File::open(&args.path)?;
 
     println!("Converting chart into primitive chart...");
