@@ -4,8 +4,6 @@ use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
 use crate::identifier::{Identifier, IntoIdentifier};
 use crate::project::project_loaded;
 use crate::settings::EditorSettings;
-use crate::tab::timeline::TimelineViewport;
-use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
 use bevy::prelude::*;
 use bevy_kira_audio::AudioInstance;
 use bevy_persistent::Persistent;
@@ -73,10 +71,6 @@ impl Plugin for TimingPlugin {
                 Update,
                 compute_bpm_list_system.run_if(project_loaded().and(resource_changed::<BpmList>)),
             )
-            .add_systems(
-                Update,
-                scroll_progress_control_system.run_if(project_loaded()),
-            )
             .insert_resource(Timing::new())
             .add_systems(
                 PreUpdate,
@@ -111,42 +105,6 @@ fn progress_control_system(hotkey: HotkeyContext, mut events: EventWriter<SeekEv
     }
     if hotkey.pressed(TimingHotkeys::Forward) {
         events.write(SeekEvent(0.02));
-    }
-}
-
-/// Scroll on the timeline to control the progress
-fn scroll_progress_control_system(
-    mut wheel_events: EventReader<MouseWheel>,
-    mut seek_events: EventWriter<SeekEvent>,
-    viewport: Res<TimelineViewport>,
-    window_query: Query<&Window>,
-
-    paused: Res<Paused>,
-    mut pause_events: EventWriter<PauseEvent>,
-
-    settings: Res<Persistent<EditorSettings>>,
-) {
-    let Ok(window) = window_query.single() else {
-        return;
-    };
-    if window
-        .cursor_position()
-        .is_some_and(|p| viewport.0.contains(p))
-    {
-        for ev in wheel_events.read() {
-            let multiplier = match ev.unit {
-                MouseScrollUnit::Line => 40.0, // mouse
-                MouseScrollUnit::Pixel => 1.0, // touchpad
-            };
-
-            seek_events.write(SeekEvent(
-                ev.y / 5000.0 * settings.general.timeline_scroll_sensitivity * multiplier,
-            ));
-
-            if settings.general.pause_when_scroll && !paused.0 {
-                pause_events.write_default();
-            }
-        }
     }
 }
 
