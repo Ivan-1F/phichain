@@ -4,6 +4,7 @@ use crate::hotkey::modifier::Modifier;
 use crate::hotkey::Hotkey;
 use crate::project::project_loaded;
 use crate::utils::compat::ControlKeyExt;
+use anyhow::Context;
 use bevy::prelude::*;
 use phichain_game::curve_note_track::CurveNote;
 use phichain_game::utils::query_ordered_lines;
@@ -29,6 +30,38 @@ impl Plugin for SelectionPlugin {
                 unselect_all_system,
                 Some(Hotkey::new(KeyCode::Escape, vec![])),
             );
+
+        let select_line_by_offset = |offset: isize| {
+            move |world: &mut World| {
+                let ordered_lines = query_ordered_lines(world);
+                let current_selected = world.resource::<SelectedLine>().0;
+
+                let current_index = ordered_lines
+                    .iter()
+                    .position(|x| x == &current_selected)
+                    .context("Failed to find index of the current selected line")?;
+
+                let new_index = (current_index as isize).saturating_add(offset);
+                if new_index >= 0 {
+                    if let Some(&new_line) = ordered_lines.get(new_index as usize) {
+                        world.resource_mut::<SelectedLine>().0 = new_line;
+                    }
+                }
+
+                Ok(())
+            }
+        };
+
+        app.add_action(
+            "phichain.select_next_line",
+            select_line_by_offset(1),
+            Some(Hotkey::new(KeyCode::ArrowDown, vec![Modifier::Control])),
+        );
+        app.add_action(
+            "phichain.select_prev_line",
+            select_line_by_offset(-1),
+            Some(Hotkey::new(KeyCode::ArrowUp, vec![Modifier::Control])),
+        );
 
         for i in 1..10 {
             app.add_action(

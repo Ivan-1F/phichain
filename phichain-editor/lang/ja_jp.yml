@@ -298,6 +298,9 @@ action:
 
   phichain.open_in_file_manager: プロジェクトをファイルマネージャーで開く
 
+  phichain.select_prev_line: 前の判定ラインを選択
+  phichain.select_next_line: 次の判定ラインを選択
+
   phichain.select_line_1: '判定ライン 1 を選択'
   phichain.select_line_2: '判定ライン 2 を選択'
   phichain.select_line_3: '判定ライン 3 を選択'

@@ -298,6 +298,9 @@ action:
 
   phichain.open_in_file_manager: Open Project in File Manager
 
+  phichain.select_prev_line: Select Previous Line
+  phichain.select_next_line: Select Next Line
+
   phichain.select_line_1: 'Select Line #1'
   phichain.select_line_2: 'Select Line #2'
   phichain.select_line_3: 'Select Line #3'

@@ -298,6 +298,9 @@ action:
 
   phichain.open_in_file_manager: 在文件管理器中打开项目
 
+  phichain.select_prev_line: 选中上一条判定线
+  phichain.select_next_line: 选中下一条判定线
+
   phichain.select_line_1: '选中 1 号判定线'
   phichain.select_line_2: '选中 2 号判定线'
   phichain.select_line_3: '选中 3 号判定线'
