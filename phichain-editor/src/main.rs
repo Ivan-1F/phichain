@@ -3,6 +3,7 @@ extern crate rust_i18n;
 
 mod action;
 mod audio;
+mod autosave;
 mod cli;
 mod constants;
 mod editing;
@@ -37,6 +38,7 @@ mod zoom;
 
 use crate::action::{ActionPlugin, ActionRegistry};
 use crate::audio::AudioPlugin;
+use crate::autosave::AutoSavePlugin;
 use crate::cli::{Args, CliPlugin};
 use crate::editing::history::EditorHistory;
 use crate::editing::EditingPlugin;
@@ -145,6 +147,7 @@ fn main() {
         .add_plugins(ImeCompatPlugin)
         .add_plugins(GamePlugin)
         .add_plugins(ActionPlugin)
+        .add_plugins(AutoSavePlugin)
         .add_plugins(ScreenshotPlugin)
         .add_plugins(TimingPlugin)
         .add_plugins(AudioPlugin)
