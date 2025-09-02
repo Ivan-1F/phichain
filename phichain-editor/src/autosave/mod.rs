@@ -1,18 +1,14 @@
 use bevy::prelude::*;
-use bevy::time::common_conditions::on_timer;
-use std::time::Duration;
+use bevy_persistent::Persistent;
 use undo::At;
 
 mod backup;
 
 use crate::editing::history::EditorHistory;
 use crate::project::project_loaded;
+use crate::settings::EditorSettings;
 pub use backup::BackupManager;
 use phichain_chart::project::Project;
-
-const AUTO_SAVE_INTERVAL_SECS: f32 = 20.0;
-const MAX_BACKUP_COUNT: usize = 5;
-const IDLE_SAVE_DELAY_SECS: f32 = 3.0;
 
 pub struct AutoSavePlugin;
 
@@ -21,48 +17,55 @@ impl Plugin for AutoSavePlugin {
         app.init_resource::<LastEditTime>()
             .init_resource::<AutoSaveState>()
             .add_systems(Update, track_edit_time_system.run_if(project_loaded()))
-            .add_systems(
-                Update,
-                auto_save_system.run_if(
-                    on_timer(Duration::from_secs_f32(AUTO_SAVE_INTERVAL_SECS))
-                        .and(project_loaded()),
-                ),
-            );
+            .add_systems(Update, auto_save_system.run_if(project_loaded()));
     }
 }
 
 #[derive(Resource, Default)]
 pub struct LastEditTime {
-    time: Option<f64>,
+    time: Option<f32>,
 }
 
 impl LastEditTime {
-    pub fn update(&mut self, time: f64) {
+    pub fn update(&mut self, time: f32) {
         self.time = Some(time);
     }
 
-    pub fn elapsed(&self, current_time: f64) -> f64 {
+    pub fn elapsed(&self, current_time: f32) -> f32 {
         match self.time {
             Some(time) => current_time - time,
-            None => f64::INFINITY, // Never trigger idle save if no edit has happened
+            None => f32::INFINITY, // Never trigger idle save if no edit has happened
         }
     }
 }
 
 #[derive(Resource, Default)]
 pub struct AutoSaveState {
-    pub last_save_time: Option<f64>,
+    pub last_save_time: Option<f32>,
     pub last_auto_saved_head: Option<At>,
     pub is_saving: bool,
 }
 
-fn auto_save_system(world: &mut World) {
-    debug!("Triggering autosave...");
-    let current_time = world.resource::<Time>().elapsed_secs_f64();
+fn auto_save_system(world: &mut World, mut last_triggered_time: Local<Option<f32>>) {
+    let current_time = world.resource::<Time>().elapsed_secs();
 
+    let settings = world.resource::<Persistent<EditorSettings>>().autosave;
+
+    if !settings.enabled {
+        return;
+    }
+
+    if current_time - last_triggered_time.unwrap_or_default() < settings.interval_secs {
+        return;
+    }
+
+    last_triggered_time.replace(current_time);
+
+    debug!("Triggering autosave...");
+
+    let state = world.resource::<AutoSaveState>();
     let history = world.resource::<EditorHistory>();
     let last_edit = world.resource::<LastEditTime>();
-    let state = world.resource::<AutoSaveState>();
 
     if state.is_saving || history.0.is_saved() {
         debug!("Skipping auto-save: is saving or already saved");
@@ -81,7 +84,7 @@ fn auto_save_system(world: &mut World) {
     }
 
     let idle =
-        last_edit.elapsed(current_time) >= IDLE_SAVE_DELAY_SECS as f64 && last_edit.time.is_some();
+        last_edit.elapsed(current_time) >= settings.idle_delay_secs && last_edit.time.is_some();
 
     if !idle {
         debug!("Skipping auto-save: not idle");
@@ -98,7 +101,7 @@ fn auto_save_system(world: &mut World) {
         let backup_manager = BackupManager::new(&project_path);
         backup_manager
             .create_backup(&chart)
-            .and_then(|_| backup_manager.cleanup_old_backups(MAX_BACKUP_COUNT))
+            .and_then(|_| backup_manager.cleanup_old_backups(settings.max_backup_count))
     };
 
     let mut state = world.resource_mut::<AutoSaveState>();
@@ -122,6 +125,6 @@ fn track_edit_time_system(
     history: Res<EditorHistory>,
 ) {
     if history.is_changed() && !history.0.is_saved() {
-        last_edit.update(time.elapsed_secs_f64());
+        last_edit.update(time.elapsed_secs());
     }
 }

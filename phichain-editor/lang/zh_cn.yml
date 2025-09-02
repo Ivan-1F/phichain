@@ -196,6 +196,22 @@ tab:
         hit_effect_follow_game_time:
           label: 打击特效使用游戏时间 (调试)
           description: 打击特效是否跟随游戏时间。启用后，打击特效的渲染将不再基于游戏全局时间，而是基于谱面时间。仅在调试环境中存在
+      autosave:
+        title: 自动保存
+        enabled: 启用自动保存
+        interval:
+          label: 自动保存间隔
+          description: 当有未保存更改时自动保存项目的频率
+          suffix: " 秒"
+        idle_delay:
+          label: 空闲保存延时
+          description: 停止编辑后等待多长时间再自动保存
+          suffix: " 秒"
+        max_backups:
+          label: 最大备份文件数
+          description: 在 .autosave 文件夹中保留的自动保存备份文件的最大数量
+          suffix: " 个文件"
+        note: 自动保存会在 .autosave 文件夹中创建备份文件，不会覆盖项目文件 (chart.json)
       hotkey:
         title: 快捷键
         record: 录制

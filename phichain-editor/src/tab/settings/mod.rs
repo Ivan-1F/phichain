@@ -1,4 +1,5 @@
 mod audio;
+mod autosave;
 mod game;
 mod general;
 mod hotkey;
@@ -6,6 +7,7 @@ mod hotkey;
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::settings::EditorSettings;
 use crate::tab::settings::audio::Audio;
+use crate::tab::settings::autosave::AutoSave;
 use crate::tab::settings::game::Game;
 use crate::tab::settings::general::General;
 use crate::tab::settings::hotkey::Hotkey;
@@ -60,6 +62,7 @@ enum SettingCategories {
     General,
     Audio,
     Game,
+    AutoSave,
     Hotkey,
 }
 

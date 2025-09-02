@@ -196,6 +196,22 @@ tab:
         hit_effect_follow_game_time:
           label: Hit Effect Follow Game Time (DEBUG)
           description: Whether hit effects follow game time. When enabled, hit effect rendering will be based on chart time instead of global time. DEBUG ONLY
+      autosave:
+        title: Auto-Save
+        enabled: Enable Auto-Save
+        interval:
+          label: Auto-Save Interval
+          description: How often to automatically save your project when there are unsaved changes
+          suffix: " seconds"
+        idle_delay:
+          label: Idle Save Delay
+          description: How long to wait after stopping editing before auto-saving
+          suffix: " seconds"
+        max_backups:
+          label: Maximum Backup Files
+          description: Maximum number of auto-save backup files to keep in the .autosave folder
+          suffix: " files"
+        note: Auto-save creates backup files in the .autosave folder without overwriting project files (chart.json)
       hotkey:
         title: Hotkey
         record: Record

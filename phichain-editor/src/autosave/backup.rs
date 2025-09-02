@@ -94,6 +94,7 @@ impl BackupManager {
         Ok(backup_files)
     }
 
+    #[allow(dead_code)]
     pub fn get_latest_backup(&self) -> Result<Option<(PathBuf, DateTime<Local>)>> {
         let backup_files = self.list_backup_files()?;
 

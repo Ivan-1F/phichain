@@ -196,6 +196,22 @@ tab:
         hit_effect_follow_game_time:
           label: ヒットエフェクトをゲーム内時間で再生 (デバッグ用)
           description: ヒットエフェクトをゲーム内時間に追従させるか。有効にすると、ヒットエフェクトの描画はゲームのグローバル時間ではなく、譜面時間に基づきます。デバッグ環境でのみ利用可能です。
+      autosave:
+        title: オートセーブ
+        enabled: オートセーブを有効化
+        interval:
+          label: オートセーブ間隔
+          description: 未保存の変更がある場合にプロジェクトを自動保存する頻度
+          suffix: " 秒"
+        idle_delay:
+          label: アイドル保存遅延
+          description: 編集を停止してからオートセーブを実行するまでの待機時間
+          suffix: " 秒"
+        max_backups:
+          label: 最大バックアップファイル数
+          description: .autosave フォルダに保持するオートセーブバックアップファイルの最大数
+          suffix: " ファイル"
+        note: オートセーブはプロジェクトファイル (chart.json) を上書きせずに .autosave フォルダにバックアップファイルを作成します
       hotkey:
         title: ショートカットキー
         record: 記録
