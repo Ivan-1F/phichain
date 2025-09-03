@@ -318,3 +318,7 @@ action:
   phichain.move_right: 右移
 
   phichain.unselect_all: 取消选择
+
+key:
+  space: 空格
+  enter: 回车

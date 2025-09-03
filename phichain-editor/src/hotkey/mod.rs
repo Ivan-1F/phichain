@@ -50,7 +50,7 @@ impl Hotkey {
 
 impl Display for Hotkey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let key_name = format!("{:?}", self.key);
+        let key_name = display_key_code(self.key);
         let content = AVAILABLE_MODIFIERS
             .iter()
             .filter(|modifier| self.modifiers.contains(modifier))
@@ -60,6 +60,55 @@ impl Display for Hotkey {
             .join(" + ");
 
         write!(f, "{content}")
+    }
+}
+
+fn display_key_code(key: KeyCode) -> String {
+    match key {
+        // Arrow keys
+        KeyCode::ArrowUp => "↑".to_string(),
+        KeyCode::ArrowDown => "↓".to_string(),
+        KeyCode::ArrowLeft => "←".to_string(),
+        KeyCode::ArrowRight => "→".to_string(),
+
+        // Numbers - strip "Digit" prefix
+        KeyCode::Digit0 => "0".to_string(),
+        KeyCode::Digit1 => "1".to_string(),
+        KeyCode::Digit2 => "2".to_string(),
+        KeyCode::Digit3 => "3".to_string(),
+        KeyCode::Digit4 => "4".to_string(),
+        KeyCode::Digit5 => "5".to_string(),
+        KeyCode::Digit6 => "6".to_string(),
+        KeyCode::Digit7 => "7".to_string(),
+        KeyCode::Digit8 => "8".to_string(),
+        KeyCode::Digit9 => "9".to_string(),
+
+        // Letters - strip "Key" prefix
+        key if format!("{:?}", key).starts_with("Key") => format!("{:?}", key)
+            .strip_prefix("Key")
+            .unwrap_or(&format!("{:?}", key))
+            .to_string(),
+
+        KeyCode::Space => t!("key.space").to_string(),
+        KeyCode::Enter => t!("key.enter").to_string(),
+        KeyCode::Escape => "Esc".to_string(),
+        KeyCode::Tab => "Tab".to_string(),
+        KeyCode::Backspace => "Backspace".to_string(),
+        KeyCode::Delete => "Del".to_string(),
+
+        KeyCode::BracketLeft => "[".to_string(),
+        KeyCode::BracketRight => "]".to_string(),
+        KeyCode::Comma => ",".to_string(),
+        KeyCode::Period => ".".to_string(),
+        KeyCode::Semicolon => ";".to_string(),
+        KeyCode::Quote => "'".to_string(),
+        KeyCode::Backquote => "`".to_string(),
+        KeyCode::Slash => "/".to_string(),
+        KeyCode::Backslash => "\\".to_string(),
+        KeyCode::Minus => "-".to_string(),
+        KeyCode::Equal => "=".to_string(),
+
+        _ => format!("{:?}", key),
     }
 }
 
