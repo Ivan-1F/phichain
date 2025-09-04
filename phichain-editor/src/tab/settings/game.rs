@@ -12,6 +12,10 @@ impl SettingCategory for Game {
         "tab.settings.category.game.title"
     }
 
+    fn description(&self) -> &str {
+        "tab.settings.category.game.description"
+    }
+
     fn ui(&self, ui: &mut Ui, settings: &mut EditorSettings, _world: &mut World) -> bool {
         latch::latch(ui, "game-settings", settings.game.clone(), |ui| {
             let mut finished = false;

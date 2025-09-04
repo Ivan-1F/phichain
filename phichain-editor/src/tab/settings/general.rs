@@ -14,6 +14,10 @@ impl SettingCategory for General {
         "tab.settings.category.general.title"
     }
 
+    fn description(&self) -> &str {
+        "tab.settings.category.general.description"
+    }
+
     fn ui(&self, ui: &mut Ui, settings: &mut EditorSettings, world: &mut World) -> bool {
         latch::latch(ui, "general-settings", settings.general.clone(), |ui| {
             let mut finished = false;

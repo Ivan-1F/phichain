@@ -12,10 +12,11 @@ impl SettingCategory for AutoSave {
         "tab.settings.category.autosave.title"
     }
 
-    fn ui(&self, ui: &mut Ui, settings: &mut EditorSettings, _world: &mut World) -> bool {
-        ui.label(t!("tab.settings.category.autosave.note"));
-        ui.separator();
+    fn description(&self) -> &str {
+        "tab.settings.category.autosave.description"
+    }
 
+    fn ui(&self, ui: &mut Ui, settings: &mut EditorSettings, _world: &mut World) -> bool {
         latch::latch(ui, "autosave-settings", settings.autosave, |ui| {
             let mut finished = false;
             finished |= ui.item(

@@ -128,6 +128,7 @@ tab:
     category:
       general:
         title: 常规
+        description: 编辑器常规设置
         timeline_scroll_sensitivity:
           label: 时间线滚动灵敏度
           description: 使用鼠标滚轮或触控板滚动时间线时的灵明度。数值越大滚动越快
@@ -164,6 +165,7 @@ tab:
           description: 编辑器使用的语言
       audio:
         title: 音频
+        description: 编辑器的音频设置
         music_volume:
           label: 音乐音量
           description: 音乐的音量
@@ -181,6 +183,7 @@ tab:
           description: 控制音乐的播放速率，这将影响编辑器的全局速度
       game:
         title: 游戏
+        description: 游戏预览设置，自定义预览画面的视觉效果
         fc_ap_indicator:
           label: FC/AP 指示器
           description: 是否启用 FC/AP 指示器。编辑器不含判定，即勾选后判定线恒定为黄色，不勾选则恒定为白色
@@ -198,6 +201,7 @@ tab:
           description: 打击特效是否跟随游戏时间。启用后，打击特效的渲染将不再基于游戏全局时间，而是基于谱面时间。仅在调试环境中存在
       autosave:
         title: 自动保存
+        description: 定期自动备份谱面文件以防止修改丢失。自动保存会在 .autosave 文件夹中创建备份文件，不会覆盖项目文件 (chart.json)
         enabled: 启用自动保存
         interval:
           label: 自动保存间隔
@@ -211,9 +215,9 @@ tab:
           label: 最大备份文件数
           description: 在 .autosave 文件夹中保留的自动保存备份文件的最大数量
           suffix: " 个文件"
-        note: 自动保存会在 .autosave 文件夹中创建备份文件，不会覆盖项目文件 (chart.json)
       hotkey:
         title: 快捷键
+        description: 编辑器的键盘快捷键和按键绑定
         record: 录制
         recording: 正在录制
         cancel: 取消

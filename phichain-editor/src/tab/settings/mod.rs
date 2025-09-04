@@ -53,6 +53,7 @@ impl SettingUi for &mut Ui {
 #[enum_dispatch(SettingCategories)]
 pub trait SettingCategory {
     fn name(&self) -> &str;
+    fn description(&self) -> &str;
     fn ui(&self, ui: &mut Ui, settings: &mut EditorSettings, world: &mut World) -> bool;
 }
 
@@ -104,6 +105,7 @@ pub fn settings_ui(ui: &mut Ui, world: &mut World) {
 
                     ui.vertical(|ui| {
                         ui.heading(t!(category.name()));
+                        ui.label(t!(category.description()));
                         ui.separator();
                         egui::ScrollArea::vertical().show(ui, |ui| {
                             if category.ui(ui, &mut editor_settings, world) {
