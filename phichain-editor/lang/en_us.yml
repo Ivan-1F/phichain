@@ -227,6 +227,9 @@ project:
   save:
     succeed: Project saved
     failed: 'Failed to save project: %{error}'
+  autosave:
+    succeed: Auto-saved backup created
+    failed: 'Auto-save failed: %{error}'
 
 screenshot:
   save:

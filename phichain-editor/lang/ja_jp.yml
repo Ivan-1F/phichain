@@ -227,6 +227,9 @@ project:
   save:
     succeed: プロジェクトを保存しました
     failed: 'プロジェクトの保存中にエラーが発生しました: %{error}'
+  autosave:
+    succeed: オートセーブバックアップを作成しました
+    failed: 'オートセーブに失敗しました: %{error}'
 
 screenshot:
   save:

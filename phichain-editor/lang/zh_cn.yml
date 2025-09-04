@@ -227,6 +227,9 @@ project:
   save:
     succeed: 项目已保存
     failed: '保存项目时发生错误: %{error}'
+  autosave:
+    succeed: 已创建自动保存备份
+    failed: '自动保存失败: %{error}'
 
 screenshot:
   save:

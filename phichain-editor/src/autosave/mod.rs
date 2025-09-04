@@ -5,6 +5,7 @@ use undo::At;
 mod backup;
 
 use crate::editing::history::EditorHistory;
+use crate::notification::{ToastsExt, ToastsStorage};
 use crate::project::project_loaded;
 use crate::settings::EditorSettings;
 pub use backup::BackupManager;
@@ -104,19 +105,29 @@ fn auto_save_system(world: &mut World, mut last_triggered_time: Local<Option<f32
             .and_then(|_| backup_manager.cleanup_old_backups(settings.max_backup_count))
     };
 
-    let mut state = world.resource_mut::<AutoSaveState>();
     match result {
         Ok(_) => {
+            let mut state = world.resource_mut::<AutoSaveState>();
             state.last_save_time = Some(current_time);
             state.last_auto_saved_head = Some(current_head);
+            state.is_saving = false;
+
+            world
+                .resource_mut::<ToastsStorage>()
+                .info(t!("project.autosave.succeed"));
+
             info!("Auto-save completed successfully");
         }
         Err(e) => {
+            world.resource_mut::<AutoSaveState>().is_saving = false;
+
+            world
+                .resource_mut::<ToastsStorage>()
+                .error(t!("project.autosave.failed", error = e));
+
             warn!("Auto-save failed: {}", e);
         }
     }
-
-    state.is_saving = false;
 }
 
 fn track_edit_time_system(
