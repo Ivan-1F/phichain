@@ -16,7 +16,9 @@ use phichain_chart::line::Line;
 pub use phichain_chart::project::{Project, ProjectMeta, ProjectPath};
 use phichain_chart::serialization::PhichainChart;
 use phichain_game::loader::nonblocking::ProjectLoadingResult;
-use phichain_game::serialization::serialize_chart;
+use phichain_game::serialization::{
+    serialize_chart, SerializeChartParam, SerializeLineParam,
+};
 use serde_json::json;
 use std::path::PathBuf;
 
@@ -65,11 +67,17 @@ impl Plugin for ProjectPlugin {
     }
 }
 
-fn save_project_system(world: &mut World) -> Result {
+fn save_project_system(
+    project: Res<Project>,
+    mut toasts: ResMut<ToastsStorage>,
+    mut history: ResMut<EditorHistory>,
+
+    chart_params: SerializeChartParam,
+    line_params: SerializeLineParam,
+) -> Result {
     let result: anyhow::Result<()> = {
-        let chart = serialize_chart(world);
+        let chart = serialize_chart(chart_params, line_params);
         let chart_string = serde_json::to_string(&chart)?;
-        let project = world.resource::<Project>();
         std::fs::write(project.path.chart_path(), chart_string)?;
         std::fs::write(
             project.path.meta_path(),
@@ -79,11 +87,9 @@ fn save_project_system(world: &mut World) -> Result {
         Ok(())
     };
 
-    let mut toasts = world.resource_mut::<ToastsStorage>();
     match result {
         Ok(_) => {
             toasts.success(t!("project.save.succeed"));
-            let mut history = world.resource_mut::<EditorHistory>();
             history.0.set_saved();
         }
         Err(error) => {

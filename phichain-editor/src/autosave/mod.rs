@@ -107,7 +107,7 @@ fn auto_save_system(
     state.is_saving = true;
 
     let result = {
-        let chart = phichain_game::serialization::serialize_chart_with_params(
+        let chart = phichain_game::serialization::serialize_chart(
             serialize_chart_param,
             serialize_line_param,
         );

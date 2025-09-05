@@ -1,8 +1,9 @@
 use crate::events::line::{DespawnLineEvent, SpawnLineEvent};
 use crate::events::EditorEvent;
+use bevy::ecs::system::RunSystemOnce;
 use bevy::prelude::*;
 use phichain_chart::serialization::SerializedLine;
-use phichain_game::serialization::SerializeLine;
+use phichain_game::serialization::{SerializeChartParam, SerializeLine, SerializeLineParam};
 use undo::Edit;
 
 #[derive(Debug, Copy, Clone)]
@@ -61,11 +62,19 @@ impl Edit for RemoveLine {
     // Instead, we retain the entity, despawn all its children and remove all components
     // When undoing, we restore the line entity and its children
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
+        let entity = self.entity;
         let parent = target
             .entity(self.entity)
             .get::<ChildOf>()
             .map(|x| x.parent());
-        self.line = Some((SerializedLine::serialize_line(target, self.entity), parent));
+
+        let serialized_line = target
+            .run_system_once(move |line_params: SerializeLineParam| {
+                SerializedLine::serialize_line(&line_params, entity)
+            })
+            .expect("Failed to serialize line");
+
+        self.line = Some((serialized_line, parent));
         DespawnLineEvent::builder()
             .target(self.entity)
             .keep_entity(true)
