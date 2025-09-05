@@ -18,7 +18,6 @@ impl Plugin for ScreenshotPlugin {
     }
 }
 
-// FIXME: this is not working in Bevy 0.15, see https://github.com/bevyengine/bevy/issues/16689
 fn take_screenshot_system(
     mut commands: Commands,
     mut toasts: ResMut<ToastsStorage>,
