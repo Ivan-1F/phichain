@@ -10,6 +10,7 @@ use crate::project::project_loaded;
 use crate::settings::EditorSettings;
 pub use backup::BackupManager;
 use phichain_chart::project::Project;
+use phichain_game::serialization::{SerializeChartParam, SerializeLineParam};
 
 pub struct AutoSavePlugin;
 
@@ -47,26 +48,35 @@ pub struct AutoSaveState {
     pub is_saving: bool,
 }
 
-fn auto_save_system(world: &mut World, mut last_triggered_time: Local<Option<f32>>) {
-    let current_time = world.resource::<Time>().elapsed_secs();
+fn auto_save_system(
+    mut last_triggered_time: Local<Option<f32>>,
 
-    let settings = world.resource::<Persistent<EditorSettings>>().autosave;
+    time: Res<Time>,
+    settings: Res<Persistent<EditorSettings>>,
+    history: Res<EditorHistory>,
+    last_edit: Res<LastEditTime>,
+    project: Res<Project>,
+    mut state: ResMut<AutoSaveState>,
+    mut toasts: ResMut<ToastsStorage>,
 
-    if !settings.enabled {
+    serialize_chart_param: SerializeChartParam,
+    serialize_line_param: SerializeLineParam,
+) {
+    let current_time = time.elapsed_secs();
+
+    let autosave_settings = settings.autosave;
+
+    if !autosave_settings.enabled {
         return;
     }
 
-    if current_time - last_triggered_time.unwrap_or_default() < settings.interval_secs {
+    if current_time - last_triggered_time.unwrap_or_default() < autosave_settings.interval_secs {
         return;
     }
 
     last_triggered_time.replace(current_time);
 
     debug!("Triggering autosave...");
-
-    let state = world.resource::<AutoSaveState>();
-    let history = world.resource::<EditorHistory>();
-    let last_edit = world.resource::<LastEditTime>();
 
     if state.is_saving || history.0.is_saved() {
         debug!("Skipping auto-save: is saving or already saved");
@@ -84,46 +94,43 @@ fn auto_save_system(world: &mut World, mut last_triggered_time: Local<Option<f32
         return;
     }
 
-    let idle =
-        last_edit.elapsed(current_time) >= settings.idle_delay_secs && last_edit.time.is_some();
+    let idle = last_edit.elapsed(current_time) >= autosave_settings.idle_delay_secs
+        && last_edit.time.is_some();
 
     if !idle {
         debug!("Skipping auto-save: not idle");
         return;
     }
 
-    let project = world.resource::<Project>();
     let project_path = project.path.0.clone();
 
-    world.resource_mut::<AutoSaveState>().is_saving = true;
+    state.is_saving = true;
 
     let result = {
-        let chart = phichain_game::serialization::serialize_chart(world);
+        let chart = phichain_game::serialization::serialize_chart_with_params(
+            serialize_chart_param,
+            serialize_line_param,
+        );
         let backup_manager = BackupManager::new(&project_path);
         backup_manager
             .create_backup(&chart)
-            .and_then(|_| backup_manager.cleanup_old_backups(settings.max_backup_count))
+            .and_then(|_| backup_manager.cleanup_old_backups(autosave_settings.max_backup_count))
     };
 
     match result {
         Ok(_) => {
-            let mut state = world.resource_mut::<AutoSaveState>();
             state.last_save_time = Some(current_time);
             state.last_auto_saved_head = Some(current_head);
             state.is_saving = false;
 
-            world
-                .resource_mut::<ToastsStorage>()
-                .info(t!("project.autosave.succeed"));
+            toasts.info(t!("project.autosave.succeed"));
 
             info!("Auto-save completed successfully");
         }
         Err(e) => {
-            world.resource_mut::<AutoSaveState>().is_saving = false;
+            state.is_saving = false;
 
-            world
-                .resource_mut::<ToastsStorage>()
-                .error(t!("project.autosave.failed", error = e));
+            toasts.error(t!("project.autosave.failed", error = e));
 
             warn!("Auto-save failed: {}", e);
         }
