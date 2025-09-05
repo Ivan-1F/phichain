@@ -16,9 +16,7 @@ use phichain_chart::line::Line;
 pub use phichain_chart::project::{Project, ProjectMeta, ProjectPath};
 use phichain_chart::serialization::PhichainChart;
 use phichain_game::loader::nonblocking::ProjectLoadingResult;
-use phichain_game::serialization::{
-    serialize_chart, SerializeChartParam, SerializeLineParam,
-};
+use phichain_game::serialization::{serialize_chart, SerializeChartParam, SerializeLineParam};
 use serde_json::json;
 use std::path::PathBuf;
 

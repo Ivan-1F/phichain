@@ -3,7 +3,7 @@ use crate::events::EditorEvent;
 use bevy::ecs::system::RunSystemOnce;
 use bevy::prelude::*;
 use phichain_chart::serialization::SerializedLine;
-use phichain_game::serialization::{SerializeChartParam, SerializeLine, SerializeLineParam};
+use phichain_game::serialization::{SerializeLine, SerializeLineParam};
 use undo::Edit;
 
 #[derive(Debug, Copy, Clone)]
