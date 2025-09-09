@@ -128,6 +128,7 @@ tab:
     category:
       general:
         title: 一般
+        description: エディタの一般設定
         timeline_scroll_sensitivity:
           label: タイムラインのスクロール感度
           description: マウスホイールやタッチパッドでタイムラインをスクロールする際の感度。数値が大きいほど速くスクロールします。
@@ -164,6 +165,7 @@ tab:
           description: エディタが使用する言語
       audio:
         title: オーディオ
+        description: エディタのオーディオ設定
         music_volume:
           label: BGM音量
           description: BGMの音量です。
@@ -181,6 +183,7 @@ tab:
           description: 音楽の再生速度を制御します。これはエディタ全体の速度に影響します。
       game:
         title: ゲーム
+        description: ゲームプレビュー設定、プレビュー画面の視覚効果をカスタマイズ
         fc_ap_indicator:
           label: FC/APインジケーター
           description: エディタには判定機能がありません。チェックを入れると判定ラインが常に黄色になり、入れないと常に白色になります。
@@ -196,8 +199,25 @@ tab:
         hit_effect_follow_game_time:
           label: ヒットエフェクトをゲーム内時間で再生 (デバッグ用)
           description: ヒットエフェクトをゲーム内時間に追従させるか。有効にすると、ヒットエフェクトの描画はゲームのグローバル時間ではなく、譜面時間に基づきます。デバッグ環境でのみ利用可能です。
+      autosave:
+        title: オートセーブ
+        description: 修正の紛失を防ぐため定期的に譜面ファイルを自動バックアップします。オートセーブはプロジェクトファイル (chart.json) を上書きせずに .autosave フォルダにバックアップファイルを作成します
+        enabled: オートセーブを有効化
+        interval:
+          label: オートセーブ間隔
+          description: 未保存の変更がある場合にプロジェクトを自動保存する頻度
+          suffix: " 秒"
+        idle_delay:
+          label: アイドル保存遅延
+          description: 編集を停止してからオートセーブを実行するまでの待機時間
+          suffix: " 秒"
+        max_backups:
+          label: 最大バックアップファイル数
+          description: .autosave フォルダに保持するオートセーブバックアップファイルの最大数
+          suffix: " ファイル"
       hotkey:
         title: ショートカットキー
+        description: エディタのキーボードショートカットとキーバインディング
         record: 記録
         recording: 記録中
         cancel: キャンセル
@@ -207,6 +227,9 @@ project:
   save:
     succeed: プロジェクトを保存しました
     failed: 'プロジェクトの保存中にエラーが発生しました: %{error}'
+  autosave:
+    succeed: オートセーブバックアップを作成しました
+    failed: 'オートセーブに失敗しました: %{error}'
 
 screenshot:
   save:

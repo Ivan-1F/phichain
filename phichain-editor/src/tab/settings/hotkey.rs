@@ -16,6 +16,10 @@ impl SettingCategory for Hotkey {
         "tab.settings.category.hotkey.title"
     }
 
+    fn description(&self) -> &str {
+        "tab.settings.category.hotkey.description"
+    }
+
     fn ui(&self, ui: &mut Ui, _: &mut EditorSettings, world: &mut World) -> bool {
         let mut state: SystemState<(HotkeyContext, Res<ActionRegistry>)> = SystemState::new(world);
         let (mut ctx, actions) = state.get_mut(world);

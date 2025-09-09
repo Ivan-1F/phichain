@@ -128,6 +128,7 @@ tab:
     category:
       general:
         title: General
+        description: General editor settings
         timeline_scroll_sensitivity:
           label: Timeline Scroll Sensitivity
           description: Sensitivity when scrolling the timeline with mouse wheel or touchpad. Higher values make scrolling faster
@@ -164,6 +165,7 @@ tab:
           description: The language used by the editor
       audio:
         title: Audio
+        description: Editor audio settings
         music_volume:
           label: Music Volume
           description: Volume of the music
@@ -181,6 +183,7 @@ tab:
           description: Controls the playback rate of music, which affects the global speed of the editor
       game:
         title: Game
+        description: Game preview settings, customize visual effects in the preview screen
         fc_ap_indicator:
           label: FC/AP Indicator
           description: Whether to enable FC/AP indicator. The editor doesn't include judgment, so enabling this will make judgment lines always yellow, and disabling will make them always white
@@ -196,8 +199,25 @@ tab:
         hit_effect_follow_game_time:
           label: Hit Effect Follow Game Time (DEBUG)
           description: Whether hit effects follow game time. When enabled, hit effect rendering will be based on chart time instead of global time. DEBUG ONLY
+      autosave:
+        title: Auto-Save
+        description: Automatically backup chart files periodically to prevent loss of modifications. Auto-save creates backup files in the .autosave folder without overwriting project files (chart.json)
+        enabled: Enable Auto-Save
+        interval:
+          label: Auto-Save Interval
+          description: How often to automatically save your project when there are unsaved changes
+          suffix: " seconds"
+        idle_delay:
+          label: Idle Save Delay
+          description: How long to wait after stopping editing before auto-saving
+          suffix: " seconds"
+        max_backups:
+          label: Maximum Backup Files
+          description: Maximum number of auto-save backup files to keep in the .autosave folder
+          suffix: " files"
       hotkey:
         title: Hotkey
+        description: Keyboard shortcuts and key bindings for the editor
         record: Record
         recording: Recording
         cancel: Cancel
@@ -207,6 +227,9 @@ project:
   save:
     succeed: Project saved
     failed: 'Failed to save project: %{error}'
+  autosave:
+    succeed: Auto-saved backup created
+    failed: 'Auto-save failed: %{error}'
 
 screenshot:
   save:

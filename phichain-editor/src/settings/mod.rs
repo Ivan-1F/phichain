@@ -137,10 +137,31 @@ impl Default for GameSettings {
     }
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(default)]
+pub struct AutoSaveSettings {
+    pub enabled: bool,
+    pub interval_secs: f32,
+    pub max_backup_count: usize,
+    pub idle_delay_secs: f32,
+}
+
+impl Default for AutoSaveSettings {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            interval_secs: 120.0,
+            max_backup_count: 5,
+            idle_delay_secs: 3.0,
+        }
+    }
+}
+
 #[derive(Resource, Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct EditorSettings {
     pub general: GeneralSettings,
     pub audio: AudioSettings,
     pub game: GameSettings,
+    pub autosave: AutoSaveSettings,
 }
