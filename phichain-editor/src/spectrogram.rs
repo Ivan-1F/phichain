@@ -65,7 +65,7 @@ pub fn draw(painter: &Painter, world: &mut World) {
     render_spectrogram_egui(
         painter,
         rect,
-        &spec,
+        spec,
         &INFERNO,
         &y_to_time,
         RenderOpts {
@@ -170,9 +170,9 @@ pub struct RenderOpts {
 
 fn lut256(cmap: &Gradient) -> [Color32; 256] {
     let mut out = [Color32::BLACK; 256];
-    for i in 0..256 {
+    for (i, px) in out.iter_mut().enumerate() {
         let c = cmap.eval_continuous(i as f64 / 255.0);
-        out[i] = Color32::from_rgb(c.r, c.g, c.b);
+        *px = Color32::from_rgb(c.r, c.g, c.b);
     }
     out
 }
@@ -247,9 +247,9 @@ pub fn render_spectrogram_egui(
         let span = (hi - lo).max(1) as f32;
 
         let base = mesh.vertices.len() as u32;
-        for cx in 0..cols {
+        for (cx, bf) in x_to_bin.iter().enumerate() {
             let x = rect.left() + cx as f32 * dx;
-            let bf = x_to_bin[cx];
+            let bf = *bf;
 
             let g = if opts.time_aa <= 0.0 {
                 let f0 = lo;
