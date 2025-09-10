@@ -1,9 +1,8 @@
 use crate::curve_note_track::{CurveNote, CurveNoteTrack};
 use crate::event::Events;
 use crate::line::LineOrder;
-use bevy::ecs::entity_disabling::Disabled;
-use bevy::prelude::{ChildOf, Children, Entity, With, Without, World};
 use bevy::ecs::system::SystemParam;
+use bevy::prelude::{ChildOf, Children, Entity, Query, Res, With, Without};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::LineEvent;
 use phichain_chart::line::Line;
