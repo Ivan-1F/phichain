@@ -41,11 +41,8 @@ pub struct SpectrogramU8 {
     pub n_frames: usize,
     pub n_bins: usize,
     pub data: Vec<u8>,
-    pub min_db: f32,
-    pub top_db: f32,
     pub sample_rate: u32,
     pub hop_length: u32,
-    pub n_fft: u32,
 }
 
 pub fn draw(painter: &Painter, world: &mut World) {
@@ -96,11 +93,8 @@ pub fn make_spectrogram_u8(
             n_frames: 0,
             n_bins: nb,
             data: vec![],
-            min_db: 0.0,
-            top_db,
             sample_rate: audio.sample_rate,
             hop_length: hop as u32,
-            n_fft: n_fft as u32,
         };
     }
     let n_frames = 1 + (audio.data.len() - n_fft) / hop;
@@ -127,7 +121,7 @@ pub fn make_spectrogram_u8(
         for b in 0..nb {
             let c: Complex32 = outbuf[b];
             let p = (c.re * c.re + c.im * c.im) * pow_norm; // 功率 ~ 能量
-            let db = 10.0 * (p.max(1e-12)).log10(); // dB
+            let db = 10.0 * p.max(1e-12).log10(); // dB
             row[b] = db;
             if db > max_db {
                 max_db = db;
@@ -146,15 +140,13 @@ pub fn make_spectrogram_u8(
         n_frames,
         n_bins: nb,
         data: out_u8,
-        min_db,
-        top_db,
         sample_rate: audio.sample_rate,
         hop_length: hop as u32,
-        n_fft: n_fft as u32,
     }
 }
 
 pub enum FreqScale {
+    #[allow(dead_code)]
     Linear,
     Log { fmin_hz: f32, fmax_hz: f32 },
 }
@@ -235,7 +227,7 @@ pub fn render_spectrogram_egui(
         let (lo, hi) = if opts.time_aa > 0.0 {
             let half = 0.5 * opts.time_aa;
             (
-                ((ff - half).floor().max(0.0)) as usize,
+                (ff - half).floor().max(0.0) as usize,
                 ((ff + half).ceil() as usize).min(spec.n_frames),
             )
         } else {
