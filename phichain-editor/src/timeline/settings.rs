@@ -14,6 +14,9 @@ pub struct TimelineSettings {
     pub container: TimelineContainer,
 
     pub note_side_filter: NoteSideFilter,
+
+    pub show_spectrogram: bool,
+    pub spectrogram_opacity: f32,
 }
 
 impl Default for TimelineSettings {
@@ -26,6 +29,9 @@ impl Default for TimelineSettings {
             container: TimelineContainer::default(),
 
             note_side_filter: NoteSideFilter::default(),
+
+            show_spectrogram: false,
+            spectrogram_opacity: 0.5,
         }
     }
 }

@@ -50,6 +50,11 @@ pub fn draw(painter: &Painter, world: &mut World) {
     let (ctx, spectrogram, offset): (TimelineContext, Res<Spectrogram>, Res<Offset>) =
         state.get_mut(world);
 
+    let opacity = ctx.settings.spectrogram_opacity.clamp(0.0, 1.0);
+    if !ctx.settings.show_spectrogram || opacity <= 0.01 {
+        return;
+    }
+
     let spec = &spectrogram.0;
     let rect = ctx.viewport.0.into_egui();
     let y_to_time = |x: f32| ctx.y_to_time(x) + offset.0 / 1000.0;
@@ -71,6 +76,7 @@ pub fn draw(painter: &Painter, world: &mut World) {
                 fmax_hz: spec.sample_rate as f32 * 0.5,
             },
             time_aa: 0.0,
+            opacity,
         },
     );
 }
@@ -148,7 +154,10 @@ pub fn make_spectrogram_u8(
 pub enum FreqScale {
     #[allow(dead_code)]
     Linear,
-    Log { fmin_hz: f32, fmax_hz: f32 },
+    Log {
+        fmin_hz: f32,
+        fmax_hz: f32,
+    },
 }
 
 pub struct RenderOpts {
@@ -156,6 +165,7 @@ pub struct RenderOpts {
     pub rows: usize,
     pub freq: FreqScale,
     pub time_aa: f32,
+    pub opacity: f32,
 }
 
 fn lut256(cmap: &Gradient) -> [Color32; 256] {
@@ -256,7 +266,13 @@ pub fn render_spectrogram_egui(
                 (acc / span).round() as u8
             };
 
-            let c = lut[g as usize];
+            let base = lut[g as usize];
+            let c = Color32::from_rgba_unmultiplied(
+                base.r(),
+                base.g(),
+                base.b(),
+                (opts.opacity * 255.0) as u8,
+            );
             mesh.vertices.push(Vertex {
                 pos: Pos2::new(x, y0),
                 uv: WHITE_UV,

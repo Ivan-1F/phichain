@@ -73,6 +73,8 @@ tab:
     zoom: Timeline Zoom
     density: Timeline Density
     lane: Vertical Lane
+    show_spectrogram: Show Spectrogram
+    spectrogram_opacity: Spectrogram Opacity
     note_side_filter:
       title: Note Side
       all: All

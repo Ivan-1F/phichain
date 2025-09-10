@@ -12,8 +12,6 @@ use crate::utils::convert::BevyEguiConvert;
 use phichain_chart::note::Note;
 
 pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
-    draw(ui.painter(), world);
-
     let mut timeline_viewport = world.resource_mut::<TimelineViewport>();
     let clip_rect = ui.clip_rect();
     timeline_viewport.0 = Rect::from_corners(
@@ -26,6 +24,9 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
             y: clip_rect.max.y,
         },
     );
+
+    // draw spectrogram background after viewport is updated
+    draw(ui.painter(), world);
 
     let is_hovering = ui.rect_contains_pointer(clip_rect);
     if is_hovering {

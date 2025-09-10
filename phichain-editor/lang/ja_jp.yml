@@ -73,6 +73,8 @@ tab:
     zoom: タイムラインのズーム
     density: 拍子線密度
     lane: 垂直ガイドライン
+    show_spectrogram: スペクトログラムを表示
+    spectrogram_opacity: スペクトログラムの不透明度
     timelines:
       new_note_timeline: + ノーツタイムライン
       new_event_timeline: + イベントタイムライン
