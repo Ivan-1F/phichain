@@ -1,8 +1,7 @@
-use crate::events::line::{DespawnLineEvent, SpawnLineEvent};
-use crate::events::EditorEvent;
 use crate::removed::RemovedExt;
 use bevy::prelude::*;
 use phichain_chart::serialization::SerializedLine;
+use phichain_game::line::line_bundle;
 use undo::Edit;
 
 #[derive(Debug, Copy, Clone)]
@@ -22,21 +21,17 @@ impl Edit for CreateLine {
     type Output = ();
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
-        let entity = SpawnLineEvent::builder()
-            .line(SerializedLine::default())
-            .maybe_target(self.0)
-            .build()
-            .run(target);
-        self.0 = Some(entity);
+        if let Some(entity) = self.0 {
+            target.entity_mut(entity).decrease_removed::<Children>();
+        } else {
+            self.0
+                .replace(target.spawn(line_bundle(SerializedLine::default())).id());
+        }
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
         if let Some(entity) = self.0 {
-            DespawnLineEvent::builder()
-                .target(entity)
-                .keep_entity(true)
-                .build()
-                .run(target);
+            target.entity_mut(entity).increase_removed::<Children>();
         }
     }
 }
@@ -56,10 +51,8 @@ impl Edit for RemoveLine {
     type Target = World;
     type Output = ();
 
-    // To persist entity ID for each line, we do not despawn the line entity directly
-    // Instead, we retain the entity, despawn all its children and remove all components
-    // When undoing, we restore the line entity and its children
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
+        // TODO (disabled-based-undo): now this does not trigger DespawnLineEvent's logic to update SelectedLine, may cause selecting a disabled line
         target
             .entity_mut(self.entity)
             .increase_removed::<Children>();

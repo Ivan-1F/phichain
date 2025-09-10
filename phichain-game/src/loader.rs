@@ -1,13 +1,12 @@
 pub mod nonblocking;
 
-use crate::curve_note_track::CurveNoteTrack;
-use crate::event::EventOf;
 use crate::illustration::{load_illustration, open_illustration};
+use crate::line::line_bundle;
 use anyhow::Context;
 use bevy::prelude::*;
 use phichain_chart::migration::migrate;
 use phichain_chart::project::Project;
-use phichain_chart::serialization::{PhichainChart, SerializedLine};
+use phichain_chart::serialization::PhichainChart;
 use serde_json::Value;
 use std::fs::File;
 
@@ -36,49 +35,6 @@ pub fn load_project(project: &Project, commands: &mut Commands) -> anyhow::Resul
     Ok(())
 }
 
-fn load_line(line: SerializedLine, commands: &mut Commands, parent: Option<Entity>) -> Entity {
-    let id = commands
-        .spawn(line.line)
-        .with_children(|parent| {
-            let mut note_entity_order = vec![];
-
-            for note in line.notes {
-                let id = parent.spawn(note).id();
-                note_entity_order.push(id);
-            }
-
-            for track in line.curve_note_tracks {
-                if let (Some(from), Some(to)) = (
-                    note_entity_order.get(track.from),
-                    note_entity_order.get(track.to),
-                ) {
-                    parent.spawn(CurveNoteTrack {
-                        from: Some(*from),
-                        to: Some(*to),
-                        options: track.options,
-                    });
-                } else {
-                    warn!("invalid curve note track detected: {:?}", track);
-                }
-            }
-        })
-        .id();
-
-    for event in line.events {
-        commands.spawn((event, EventOf(id)));
-    }
-
-    if let Some(parent) = parent {
-        commands.entity(id).insert(ChildOf(parent));
-    }
-
-    for child in line.children {
-        load_line(child, commands, Some(id));
-    }
-
-    id
-}
-
 /// Load a chart to the world using a [`Commands`]
 fn load(file: File, commands: &mut Commands) -> anyhow::Result<()> {
     let chart: Value = serde_json::from_reader(file).context("Failed to load chart")?;
@@ -91,7 +47,7 @@ fn load(file: File, commands: &mut Commands) -> anyhow::Result<()> {
 
     let mut first_line_id: Option<Entity> = None;
     for line in chart.lines {
-        let id = load_line(line, commands, None);
+        let id = commands.spawn(line_bundle(line)).id();
         if first_line_id.is_none() {
             first_line_id = Some(id)
         }

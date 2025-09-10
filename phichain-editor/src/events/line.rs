@@ -6,7 +6,7 @@ use bevy::prelude::*;
 use bon::Builder;
 use phichain_chart::line::Line;
 use phichain_chart::serialization::SerializedLine;
-use phichain_game::event::EventOf;
+use phichain_game::line::line_bundle;
 
 pub struct LineEventPlugin;
 
@@ -85,42 +85,12 @@ impl EditorEvent for DespawnLineEvent {
 pub struct SpawnLineEvent {
     /// The line data
     line: SerializedLine,
-    /// The entity of the parent line
-    parent: Option<Entity>,
-    /// The target entity to spawn the line. If given, components will be inserted to this entity instead of a new entity
-    target: Option<Entity>,
 }
 
 impl EditorEvent for SpawnLineEvent {
     type Output = Entity;
 
-    // TODO: move part of the logic to phichain-game utils, duplication of phichain_game::loader::load_line()
     fn run(self, world: &mut World) -> Self::Output {
-        let id = match self.target {
-            None => world.spawn(self.line.line).id(),
-            Some(target) => world.entity_mut(target).insert(self.line.line).id(),
-        };
-
-        for event in self.line.notes {
-            world.spawn((event, ChildOf(id)));
-        }
-
-        for event in self.line.events {
-            world.spawn((event, EventOf(id)));
-        }
-
-        if let Some(parent) = self.parent {
-            world.entity_mut(id).insert(ChildOf(parent));
-        }
-
-        for child in self.line.children {
-            SpawnLineEvent::builder()
-                .line(child)
-                .parent(id)
-                .build()
-                .run(world);
-        }
-
-        id
+        world.spawn(line_bundle(self.line)).id()
     }
 }

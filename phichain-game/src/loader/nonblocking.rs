@@ -1,5 +1,5 @@
 use crate::illustration::{load_illustration, open_illustration};
-use crate::loader::load_line;
+use crate::line::line_bundle;
 use anyhow::{Context, Result};
 use bevy::app::App;
 use bevy::prelude::{Commands, Component, Entity, Event, Plugin, Query, Update};
@@ -80,7 +80,7 @@ pub fn handle_tasks_system(
 
                     let mut first_line_id: Option<Entity> = None;
                     for line in &data.chart.lines {
-                        let id = load_line(line.clone(), &mut commands, None);
+                        let id = commands.spawn(line_bundle(line.clone())).id();
                         if first_line_id.is_none() {
                             first_line_id = Some(id)
                         }
