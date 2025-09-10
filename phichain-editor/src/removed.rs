@@ -99,7 +99,7 @@ impl RemovedExt for EntityWorldMut<'_> {
 
     fn decrease_removed<S: RelationshipTarget>(&mut self) -> &mut Self {
         if let Some(mut removed) = self.get_mut::<Removed>() {
-            removed.as_mut().count -= 1;
+            removed.count = removed.count.saturating_sub(1);
         }
 
         if let Some(relationship_target) = self.get::<S>() {
