@@ -187,13 +187,6 @@ impl Timeline for EventTimeline {
 
             let rect = get_event_rect(&event);
 
-            // skip processing events far outside viewport
-            if rect.bottom() < viewport.top() - viewport_margin
-                || rect.top() > viewport.bottom() + viewport_margin
-            {
-                continue;
-            }
-
             if rect.bottom() >= viewport.bottom() && rect.top() <= viewport.bottom() {
                 // in viewport, but start value outside bottom
                 *start_outside_bottom.get_mut(event.kind) = Some(entity);
@@ -218,6 +211,19 @@ impl Timeline for EventTimeline {
                     *first_events_outside_top_y.get_mut(event.kind) = rect.bottom();
                     *first_events_outside_top.get_mut(event.kind) = Some(entity);
                 }
+            }
+
+            // skip rendering work for events far outside of the viewport unless they are
+            // referenced by one of the boundary helpers (next/previous event indicators).
+            let is_far_outside = rect.bottom() < viewport.top() - viewport_margin
+                || rect.top() > viewport.bottom() + viewport_margin;
+            if is_far_outside
+                && !start_outside_bottom.contains(&Some(entity))
+                && !end_outside_bottom.contains(&Some(entity))
+                && !first_events_outside_bottom.contains(&Some(entity))
+                && !first_events_outside_top.contains(&Some(entity))
+            {
+                continue;
             }
 
             let mut color = if selected.is_some() {
