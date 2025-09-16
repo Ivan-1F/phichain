@@ -9,6 +9,7 @@ use egui::{Color32, Mesh, Painter, Pos2, Rect};
 use phichain_chart::offset::Offset;
 use realfft::num_complex::Complex32;
 use realfft::RealFftPlanner;
+use std::sync::OnceLock;
 
 #[derive(Debug)]
 pub struct AudioMono {
@@ -70,7 +71,6 @@ pub fn draw(painter: &Painter, world: &mut World) {
         painter,
         rect,
         spec,
-        &INFERNO,
         &y_to_time,
         RenderOpts {
             cols,
@@ -180,7 +180,6 @@ pub fn render_spectrogram_egui(
     painter: &Painter,
     rect: Rect,
     spec: &SpectrogramU8,
-    cmap: &Gradient,
     y_to_time: &dyn Fn(f32) -> f32,
     opts: RenderOpts,
 ) {
@@ -191,7 +190,8 @@ pub fn render_spectrogram_egui(
     let dx = w / cols as f32;
     let dy = h / rows as f32;
 
-    let lut = lut256(cmap);
+    static INFERNO_LUT: OnceLock<[Color32; 256]> = OnceLock::new();
+    let lut = INFERNO_LUT.get_or_init(|| lut256(&INFERNO));
 
     let nb = (spec.n_bins - 1) as f32;
     let x_to_bin: Vec<f32> = match opts.freq {
