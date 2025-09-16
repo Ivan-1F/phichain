@@ -205,6 +205,10 @@ fn unload_project_system(
         let audio = world.resource::<Audio>();
         audio.stop();
 
+        // unload spectrogram resource
+        use crate::spectrogram::Spectrogram;
+        world.remove_resource::<Spectrogram>();
+
         // unload illustration
         use phichain_game::illustration::{Illustration, IllustrationAssetId};
         let mut illustration_query = world.query_filtered::<Entity, With<Illustration>>();

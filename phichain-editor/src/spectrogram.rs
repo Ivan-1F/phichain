@@ -56,6 +56,10 @@ pub fn draw(painter: &Painter, world: &mut World) {
     }
 
     let spec = &spectrogram.0;
+    // Avoid rendering when there are not enough frames for interpolation
+    if spec.n_frames < 2 {
+        return;
+    }
     let rect = ctx.viewport.0.into_egui();
     let y_to_time = |x: f32| ctx.y_to_time(x) + offset.0 / 1000.0;
 
