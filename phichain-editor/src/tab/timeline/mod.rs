@@ -2,13 +2,13 @@ use bevy::prelude::*;
 use bevy_persistent::Persistent;
 use egui::Ui;
 
-use crate::spectrogram::draw;
 use crate::settings::EditorSettings;
 use crate::timeline;
 use crate::timeline::settings::TimelineSettings;
 use crate::timeline::Timeline;
 use crate::timing::{PauseEvent, Paused, SeekEvent};
 use crate::utils::convert::BevyEguiConvert;
+use crate::{spectrogram, timeline};
 use phichain_chart::note::Note;
 
 pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
@@ -26,7 +26,7 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
     );
 
     // draw spectrogram background after viewport is updated
-    draw(ui.painter(), world);
+    spectrogram::draw(ui.painter(), world);
 
     let is_hovering = ui.rect_contains_pointer(clip_rect);
     if is_hovering {

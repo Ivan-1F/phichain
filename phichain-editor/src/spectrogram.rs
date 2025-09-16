@@ -16,7 +16,12 @@ pub struct AudioMono {
     pub data: Vec<f32>,   // mono [-1.0, 1.0]
 }
 
-pub fn load_audio(source: &AudioSource) -> AudioMono {
+pub fn make_spectrogram(source: &AudioSource) -> SpectrogramU8 {
+    let mono = load_audio(source);
+    make_spectrogram_u8(&mono, 2048, 512, 80.0)
+}
+
+fn load_audio(source: &AudioSource) -> AudioMono {
     AudioMono {
         sample_rate: source.sound.sample_rate,
         data: source
@@ -26,11 +31,6 @@ pub fn load_audio(source: &AudioSource) -> AudioMono {
             .map(|frame| frame.as_mono().left)
             .collect(),
     }
-}
-
-pub fn make_spectrogram(source: &AudioSource) -> SpectrogramU8 {
-    let mono = load_audio(source);
-    make_spectrogram_u8(&mono, 2048, 512, 80.0)
 }
 
 #[derive(Debug, Resource)]
@@ -85,12 +85,7 @@ pub fn draw(painter: &Painter, world: &mut World) {
     );
 }
 
-pub fn make_spectrogram_u8(
-    audio: &AudioMono,
-    n_fft: usize,
-    hop: usize,
-    top_db: f32,
-) -> SpectrogramU8 {
+fn make_spectrogram_u8(audio: &AudioMono, n_fft: usize, hop: usize, top_db: f32) -> SpectrogramU8 {
     assert!(n_fft >= 16 && hop >= 1 && hop <= n_fft);
 
     let win: Vec<f32> = (0..n_fft)
