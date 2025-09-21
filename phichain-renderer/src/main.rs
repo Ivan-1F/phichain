@@ -509,7 +509,7 @@ fn update_system(
     chart_time.0 = from + *frame as f32 / args.video.fps as f32;
     let total_frames = (args.video.fps as f32 * (to - from)) as u32;
     let estimate = total_frames.saturating_sub(*frame).max(1) as f32 / *last_fps as f32;
-    if *frame % 100 == 0 && *frame != 0 {
+    if (*frame).is_multiple_of(100) && *frame != 0 {
         info!(
             "{} / {} ({:.2}%), {}fps ({:.2}x), estimate to end {:.2}s",
             *frame,
