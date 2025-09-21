@@ -27,6 +27,7 @@ mod schedule;
 mod screenshot;
 mod selection;
 mod settings;
+mod spectrogram;
 mod tab;
 mod telemetry;
 mod timeline;

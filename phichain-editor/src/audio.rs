@@ -6,10 +6,12 @@ use bevy_kira_audio::prelude::*;
 use bevy_persistent::prelude::*;
 
 use crate::settings::EditorSettings;
+use crate::spectrogram::Spectrogram;
 use crate::timing::{SeekToEvent, Timing};
 use crate::utils::compat::ControlKeyExt;
 use crate::{
     project::project_loaded,
+    spectrogram,
     timing::{PauseEvent, Paused, ResumeEvent, SeekEvent},
 };
 
@@ -57,6 +59,9 @@ pub fn load_audio(path: PathBuf, commands: &mut Commands) {
     let source = AudioSource {
         sound: StaticSoundData::from_cursor(Cursor::new(sound_data)).unwrap(),
     };
+
+    commands.insert_resource(Spectrogram(spectrogram::make_spectrogram(&source)));
+
     commands.queue(|world: &mut World| {
         world.insert_resource(AudioDuration(source.sound.duration()));
         world.resource_scope(|world, mut audios: Mut<Assets<AudioSource>>| {

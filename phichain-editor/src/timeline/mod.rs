@@ -237,7 +237,7 @@ pub mod common {
         }
 
         for (index, beat_time) in ctx.secondary_beat_times().iter().enumerate() {
-            if index as u32 % ctx.settings.density == 0 {
+            if (index as u32).is_multiple_of(ctx.settings.density) {
                 continue;
             }
             let rect = egui::Rect::from_center_size(
