@@ -3,7 +3,6 @@ use bevy_persistent::Persistent;
 use egui::Ui;
 
 use crate::settings::EditorSettings;
-use crate::timeline;
 use crate::timeline::settings::TimelineSettings;
 use crate::timeline::Timeline;
 use crate::timing::{PauseEvent, Paused, SeekEvent};
