@@ -8,7 +8,9 @@ pub mod note;
 use crate::editing::command::bpm_list::{CreateBpmPoint, EditBpmPoint, RemoveBpmPoint};
 use crate::editing::command::curve_note_track::{CreateCurveNoteTrack, RemoveCurveNoteTrack};
 use crate::editing::command::event::{CreateEvent, EditEvent, RemoveEvent};
-use crate::editing::command::line::{CreateLine, MoveLineAsChild, RemoveLine};
+use crate::editing::command::line::{
+    CreateLine, CreateLineFromSelected, MoveLineAsChild, RemoveLine,
+};
 use crate::editing::command::meta::{EditMeta, EditOffset};
 use crate::editing::command::note::{CreateNote, EditNote, RemoveNote};
 use bevy::prelude::*;
@@ -25,6 +27,7 @@ pub enum EditorCommand {
     EditEvent(EditEvent),
 
     CreateLine(CreateLine),
+    CreateLineFromSelected(CreateLineFromSelected),
     RemoveLine(RemoveLine),
     MoveLineAsChild(MoveLineAsChild),
 
@@ -95,6 +98,7 @@ impl_edit_for_command!(
     RemoveEvent,
     EditEvent,
     CreateLine,
+    CreateLineFromSelected,
     RemoveLine,
     MoveLineAsChild,
     CreateCurveNoteTrack,

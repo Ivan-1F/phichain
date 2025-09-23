@@ -320,6 +320,7 @@ action:
   phichain.export_as_official: Export as Official
 
   phichain.create_line: Create Line
+  phichain.create_line_from_selected: Create Line from Selected Line State
 
   phichain.open_in_file_manager: Open Project in File Manager
 
