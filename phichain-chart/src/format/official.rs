@@ -278,6 +278,20 @@ impl Format for OfficialChart {
                     .chain(rotate_event_iter)
                     .chain(opacity_event_iter)
                     .chain(speed_event_iter)
+                    .map(|event| {
+                        // FIXME: filtering speed events out, seems like current speed evaluation is not correct
+                        if event.start == event.end
+                            && event.end_beat - event.start_beat > beat!(1, 4)
+                            && !matches!(event.kind, LineEventKind::Speed)
+                        {
+                            let mut new_event = event;
+                            new_event.end_beat = event.start_beat + beat!(1, 4);
+
+                            new_event
+                        } else {
+                            event
+                        }
+                    })
                     .collect(),
             };
 
