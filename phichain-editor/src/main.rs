@@ -84,7 +84,6 @@ use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{
     EguiContext, EguiGlobalSettings, EguiPlugin, EguiPrimaryContextPass, PrimaryEguiContext,
 };
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_mod_reqwest::ReqwestPlugin;
 use bevy_persistent::Persistent;
 use egui::RichText;
@@ -187,8 +186,8 @@ fn main() {
         )
         .add_systems(Update, update_ui_scale_changes_system);
 
-    #[cfg(debug_assertions)]
-    app.add_plugins(WorldInspectorPlugin::new());
+    // #[cfg(debug_assertions)]
+    // app.add_plugins(bevy_inspector_egui::quick::WorldInspectorPlugin::new());
 
     app.run();
 }
