@@ -65,6 +65,17 @@ fn convert(args: Args) -> anyhow::Result<()> {
         }
     };
 
+    println!(
+        "Converted to primitive chart: {} lines, {} notes, {} events",
+        primitive.lines.len(),
+        primitive.lines.iter().map(|l| l.notes.len()).sum::<usize>(),
+        primitive
+            .lines
+            .iter()
+            .map(|l| l.events.len())
+            .sum::<usize>(),
+    );
+
     println!("Converting chart into `{}` chart...", args.output);
 
     let output = match args.output {
