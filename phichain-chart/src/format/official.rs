@@ -122,6 +122,44 @@ impl Format for OfficialChart {
             ..Default::default()
         };
 
+        fn merge_constant_move_events(
+            events: Vec<primitive::event::LineEvent>,
+        ) -> Vec<primitive::event::LineEvent> {
+            let mut merged = Vec::with_capacity(events.len());
+            let mut last_x: Option<usize> = None;
+            let mut last_y: Option<usize> = None;
+
+            for event in events {
+                let target_index = match event.kind {
+                    LineEventKind::X => &mut last_x,
+                    LineEventKind::Y => &mut last_y,
+                    _ => {
+                        merged.push(event);
+                        continue;
+                    }
+                };
+
+                if let Some(idx) = *target_index {
+                    if let Some(last) = merged.get_mut(idx) {
+                        if last.start == last.end
+                            && event.start == event.end
+                            && last.end == event.start
+                            && last.end_beat == event.start_beat
+                        {
+                            last.end_beat = event.end_beat;
+                            continue;
+                        }
+                    }
+                }
+
+                let idx = merged.len();
+                *target_index = Some(idx);
+                merged.push(event);
+            }
+
+            merged
+        }
+
         for line in self.lines {
             let t: fn(f32) -> Beat = |x| Beat::from(x * 1.875 / 60.0);
             let x: fn(f32) -> f32 = |x| (x - 0.5) * CANVAS_WIDTH;
@@ -146,11 +184,12 @@ impl Format for OfficialChart {
                 )
             };
 
-            let move_event_iter = line.move_events.iter().flat_map(|event| {
-                // reference: https://github.com/MisaLiu/phi-chart-render/blob/master/src/chart/convert/official.js#L203
-                match self.format_version {
-                    1 => {
-                        vec![
+            let move_events = merge_constant_move_events(
+                line.move_events
+                    .iter()
+                    .flat_map(|event| match self.format_version {
+                        // reference: https://github.com/MisaLiu/phi-chart-render/blob/master/src/chart/convert/official.js#L203
+                        1 => vec![
                             primitive::event::LineEvent {
                                 kind: LineEventKind::X,
                                 start: x((event.start_x / 1e3).round() / 880.0),
@@ -167,10 +206,8 @@ impl Format for OfficialChart {
                                 start_beat: t(event.start_time),
                                 end_beat: t(event.end_time),
                             },
-                        ]
-                    }
-                    3 => {
-                        vec![
+                        ],
+                        3 => vec![
                             primitive::event::LineEvent {
                                 kind: LineEventKind::X,
                                 start: x(event.start_x),
@@ -187,11 +224,11 @@ impl Format for OfficialChart {
                                 start_beat: t(event.start_time),
                                 end_beat: t(event.end_time),
                             },
-                        ]
-                    }
-                    _ => unreachable!(),
-                }
-            });
+                        ],
+                        _ => unreachable!(),
+                    })
+                    .collect(),
+            );
 
             let rotate_event_iter =
                 line.rotate_events
@@ -236,7 +273,8 @@ impl Format for OfficialChart {
                     .map(|x| create_note(true, x))
                     .chain(line.notes_below.iter().map(|x| create_note(false, x)))
                     .collect(),
-                events: move_event_iter
+                events: move_events
+                    .into_iter()
                     .chain(rotate_event_iter)
                     .chain(opacity_event_iter)
                     .chain(speed_event_iter)
