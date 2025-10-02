@@ -153,6 +153,23 @@ pub fn fit_easing(
     Err(events.to_vec())
 }
 
+/// Remove events that satisfy the predicate
+///
+/// ```text
+/// In:  [A, B, C, D, E]
+/// Predicate: is_even
+/// Out: [A, C, E]
+/// ```
+pub fn remove_if<P>(events: &[LineEvent], mut predicate: P) -> Vec<LineEvent>
+where
+    P: FnMut(&LineEvent) -> bool,
+{
+    events.iter()
+        .copied()
+        .filter(|e| !predicate(e))
+        .collect()
+}
+
 /// Map events conditionally: if predicate returns true, apply the function; otherwise keep the event unchanged
 ///
 /// ```text
