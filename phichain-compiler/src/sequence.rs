@@ -152,3 +152,23 @@ pub fn fit_easing(
 
     Err(events.to_vec())
 }
+
+/// Map events conditionally: if predicate returns true, apply the function; otherwise keep the event unchanged
+///
+/// ```text
+/// In:  [A, B, C, D, E]
+/// Predicate: is_even
+/// Transform: to_uppercase
+/// Out: [A, B_UPPER, C, D_UPPER, E]
+/// ```
+pub fn map_if<P, F>(events: &[LineEvent], mut predicate: P, mut f: F) -> Vec<LineEvent>
+where
+    P: FnMut(&LineEvent) -> bool,
+    F: FnMut(LineEvent) -> LineEvent,
+{
+    events
+        .iter()
+        .copied()
+        .map(|e| if predicate(&e) { f(e) } else { e })
+        .collect()
+}
