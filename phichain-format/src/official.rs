@@ -473,13 +473,7 @@ pub fn official_to_phichain(
             ..Default::default()
         };
 
-        let speed_events = line
-            .events
-            .iter()
-            .filter(|e| matches!(e.kind, LineEventKind::Speed))
-            .copied()
-            .collect::<Vec<_>>()
-            .sorted();
+        let speed_events = line.events.speed().sorted();
 
         for note in &mut line.notes {
             if let NoteKind::Hold { .. } = note.kind {
