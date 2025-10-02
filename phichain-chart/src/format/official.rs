@@ -196,6 +196,124 @@ impl Format for OfficialChart {
             merged
         }
 
+        fn flush_buffer(
+            buffer: &mut Vec<primitive::event::LineEvent>,
+            fitted_events: &mut Vec<primitive::event::LineEvent>,
+            success: &mut i32,
+            failed: &mut i32,
+        ) {
+            if buffer.len() == 1 {
+                fitted_events.push(buffer[0])
+            } else if buffer.len() > 1 {
+                let mut fitted = false;
+
+                let first = *buffer.first().unwrap();
+                let last = *buffer.last().unwrap();
+
+                'easing: for easing in EASING_FITTING_POSSIBLE_EASINGS {
+                    let target_event = crate::event::LineEvent {
+                        kind: first.kind,
+                        start_beat: first.start_beat,
+                        end_beat: last.end_beat,
+                        value: crate::event::LineEventValue::transition(
+                            first.start,
+                            last.end,
+                            easing,
+                        ),
+                    };
+
+                    for event in buffer.iter() {
+                        let expected_start = target_event
+                            .evaluate(event.start_beat.value())
+                            .value()
+                            .unwrap();
+                        let expected_end = target_event
+                            .evaluate(event.end_beat.value())
+                            .value()
+                            .unwrap();
+
+                        if (expected_start - event.start).abs() > EASING_FITTING_EPSILON
+                            || (expected_end - event.end).abs() > EASING_FITTING_EPSILON
+                        {
+                            continue 'easing;
+                        }
+                    }
+
+                    *success += 1;
+
+                    fitted_events.push(primitive::event::LineEvent {
+                        kind: first.kind,
+                        start_beat: first.start_beat,
+                        end_beat: last.end_beat,
+                        start: first.start,
+                        end: last.end,
+                        easing,
+                    });
+
+                    fitted = true;
+                    break 'easing;
+                }
+
+                if !fitted {
+                    *failed += 1;
+                    fitted_events.append(buffer);
+                }
+            }
+        }
+
+        fn fit_events(
+            mut events: Vec<primitive::event::LineEvent>,
+            kind: LineEventKind,
+        ) -> Vec<primitive::event::LineEvent> {
+            if events.is_empty() {
+                return vec![];
+            }
+
+            events.sort_by_key(|e| e.start_beat);
+
+            let mut fitted_events = vec![];
+            let mut buffer: Vec<primitive::event::LineEvent> = vec![];
+            let mut expected_duration = None;
+            let mut success = 0;
+            let mut failed = 0;
+
+            for event in events.iter().copied() {
+                if let Some(last) = buffer.last() {
+                    if last.end_beat == event.start_beat
+                        && last.end == event.start
+                        && event.end_beat - event.start_beat == expected_duration.unwrap()
+                    {
+                        buffer.push(event);
+                    } else {
+                        flush_buffer(&mut buffer, &mut fitted_events, &mut success, &mut failed);
+                        buffer.clear();
+                        buffer.push(event);
+                        expected_duration.replace(event.end_beat - event.start_beat);
+                    }
+                } else {
+                    buffer.push(event);
+                    expected_duration.replace(event.end_beat - event.start_beat);
+                }
+            }
+
+            // Flush remaining buffer
+            flush_buffer(&mut buffer, &mut fitted_events, &mut success, &mut failed);
+
+            println!(
+                "{:?}: success {}, failed {}, success rate {:.2}%",
+                kind,
+                success,
+                failed,
+                if success + failed > 0 {
+                    (success as f32 / (success + failed) as f32) * 100.0
+                } else {
+                    0.0
+                }
+            );
+
+            fitted_events
+        }
+
         for line in self.lines {
             let t: fn(f32) -> Beat = |x| Beat::from(x * 1.875 / 60.0);
             let x: fn(f32) -> f32 = |x| (x - 0.5) * CANVAS_WIDTH;
@@ -323,118 +441,29 @@ impl Format for OfficialChart {
                 })
                 .collect();
 
-            // println!("init events len: {}", events.len());
+            // Group events by kind
+            let mut events_by_kind: std::collections::HashMap<LineEventKind, Vec<_>> =
+                std::collections::HashMap::new();
 
-            let mut fitted_events = vec![];
-            let mut x_events = events
-                .iter()
-                .filter(|e| e.kind.is_x())
-                .copied()
-                .collect::<Vec<_>>();
-            for event in events.iter().filter(|e| !e.kind.is_x()).copied() {
-                fitted_events.push(event);
+            for event in events {
+                events_by_kind
+                    .entry(event.kind)
+                    .or_insert_with(Vec::new)
+                    .push(event);
             }
 
-            // println!("exclude x len: {}", fitted_events.len());
+            // Fit events for each kind (except speed)
+            let mut fitted_events = vec![];
 
-            x_events.sort_by_key(|e| e.start_beat);
-
-            let mut buffer: Vec<primitive::event::LineEvent> = vec![];
-
-            let mut expected_duration = None;
-
-            let mut success = 0;
-            let mut failed = 0;
-
-            for event in x_events.iter().copied() {
-                if let Some(last) = buffer.last() {
-                    if last.end_beat == event.start_beat
-                        && last.end == event.start
-                        && event.end_beat - event.start_beat == expected_duration.unwrap()
-                    {
-                        buffer.push(event);
-                    } else {
-                        // flush the buffer
-
-                        if buffer.len() == 1 {
-                            fitted_events.push(buffer[0])
-                        } else {
-                            let mut fitted = false;
-
-                            let first = *buffer.first().unwrap();
-                            let last = *buffer.last().unwrap();
-
-                            'easing: for easing in EASING_FITTING_POSSIBLE_EASINGS {
-                                let target_event = crate::event::LineEvent {
-                                    kind: LineEventKind::X,
-                                    start_beat: first.start_beat,
-                                    end_beat: last.end_beat,
-                                    value: crate::event::LineEventValue::transition(
-                                        first.start,
-                                        last.end,
-                                        easing,
-                                    ),
-                                };
-
-                                for event in &buffer {
-                                    let expected_start = target_event
-                                        .evaluate(event.start_beat.value())
-                                        .value()
-                                        .unwrap();
-                                    let expected_end = target_event
-                                        .evaluate(event.end_beat.value())
-                                        .value()
-                                        .unwrap();
-
-                                    if (expected_start - event.start).abs() > EASING_FITTING_EPSILON
-                                        || (expected_end - event.end).abs() > EASING_FITTING_EPSILON
-                                    {
-                                        continue 'easing;
-                                    }
-                                }
-
-                                // println!("Successful!!! {}", easing);
-                                success += 1;
-
-                                fitted_events.push(primitive::event::LineEvent {
-                                    kind: LineEventKind::X,
-                                    start_beat: first.start_beat,
-                                    end_beat: last.end_beat,
-                                    start: first.start,
-                                    end: last.end,
-                                    easing,
-                                });
-
-                                fitted = true;
-
-                                break 'easing;
-                            }
-
-                            if !fitted {
-                                // println!("Fitting failed, appending {} elements", buffer.len());
-                                failed += 1;
-                                fitted_events.append(&mut buffer);
-                            }
-                        }
-                        buffer.clear();
-
-                        buffer.push(event);
-                        expected_duration.replace(event.end_beat - event.start_beat);
-                    }
+            for (kind, events) in events_by_kind {
+                if kind.is_speed() {
+                    // Don't fit speed events, just add them
+                    fitted_events.extend(events);
                 } else {
-                    buffer.push(event);
-                    expected_duration.replace(event.end_beat - event.start_beat);
+                    let mut fitted = fit_events(events, kind);
+                    fitted_events.append(&mut fitted);
                 }
             }
-
-            // println!("after fit len: {}", fitted_events.len());
-
-            println!(
-                "success {}, failed: {}, success rate {}%",
-                success,
-                failed,
-                (success as f32 / (success + failed) as f32) * 100.0
-            );
 
             println!("=========");
 
