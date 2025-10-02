@@ -103,6 +103,42 @@ pub struct OfficialChart {
     lines: Vec<Line>,
 }
 
+const EASING_FITTING_EPSILON: f32 = 1e-4;
+
+const EASING_FITTING_POSSIBLE_EASINGS: [Easing; 31] = [
+    Easing::Linear,
+    Easing::EaseInSine,
+    Easing::EaseOutSine,
+    Easing::EaseInOutSine,
+    Easing::EaseInQuad,
+    Easing::EaseOutQuad,
+    Easing::EaseInOutQuad,
+    Easing::EaseInCubic,
+    Easing::EaseOutCubic,
+    Easing::EaseInOutCubic,
+    Easing::EaseInQuart,
+    Easing::EaseOutQuart,
+    Easing::EaseInOutQuart,
+    Easing::EaseInQuint,
+    Easing::EaseOutQuint,
+    Easing::EaseInOutQuint,
+    Easing::EaseInExpo,
+    Easing::EaseOutExpo,
+    Easing::EaseInOutExpo,
+    Easing::EaseInCirc,
+    Easing::EaseOutCirc,
+    Easing::EaseInOutCirc,
+    Easing::EaseInBack,
+    Easing::EaseOutBack,
+    Easing::EaseInOutBack,
+    Easing::EaseInElastic,
+    Easing::EaseOutElastic,
+    Easing::EaseInOutElastic,
+    Easing::EaseInBounce,
+    Easing::EaseOutBounce,
+    Easing::EaseInOutBounce,
+];
+
 impl Format for OfficialChart {
     fn into_primitive(self) -> anyhow::Result<PrimitiveChart> {
         if self.lines.is_empty() {
@@ -266,6 +302,142 @@ impl Format for OfficialChart {
                         end_beat: t(event.end_time),
                     });
 
+            let events: Vec<_> = move_events
+                .into_iter()
+                .chain(rotate_event_iter)
+                .chain(opacity_event_iter)
+                .chain(speed_event_iter)
+                .map(|event| {
+                    // FIXME: filtering speed events out, seems like current speed evaluation is not correct
+                    if event.start == event.end
+                        && event.end_beat - event.start_beat > beat!(1, 4)
+                        && !event.kind.is_speed()
+                    {
+                        let mut new_event = event;
+                        new_event.end_beat = event.start_beat + beat!(1, 4);
+
+                        new_event
+                    } else {
+                        event
+                    }
+                })
+                .collect();
+
+            // println!("init events len: {}", events.len());
+
+            let mut fitted_events = vec![];
+            let mut x_events = events
+                .iter()
+                .filter(|e| e.kind.is_x())
+                .copied()
+                .collect::<Vec<_>>();
+            for event in events.iter().filter(|e| !e.kind.is_x()).copied() {
+                fitted_events.push(event);
+            }
+
+            // println!("exclude x len: {}", fitted_events.len());
+
+            x_events.sort_by_key(|e| e.start_beat);
+
+            let mut buffer: Vec<primitive::event::LineEvent> = vec![];
+
+            let mut expected_duration = None;
+
+            let mut success = 0;
+            let mut failed = 0;
+
+            for event in x_events.iter().copied() {
+                if let Some(last) = buffer.last() {
+                    if last.end_beat == event.start_beat
+                        && last.end == event.start
+                        && event.end_beat - event.start_beat == expected_duration.unwrap()
+                    {
+                        buffer.push(event);
+                    } else {
+                        // flush the buffer
+
+                        if buffer.len() == 1 {
+                            fitted_events.push(buffer[0])
+                        } else {
+                            let mut fitted = false;
+
+                            let first = *buffer.first().unwrap();
+                            let last = *buffer.last().unwrap();
+
+                            'easing: for easing in EASING_FITTING_POSSIBLE_EASINGS {
+                                let target_event = crate::event::LineEvent {
+                                    kind: LineEventKind::X,
+                                    start_beat: first.start_beat,
+                                    end_beat: last.end_beat,
+                                    value: crate::event::LineEventValue::transition(
+                                        first.start,
+                                        last.end,
+                                        easing,
+                                    ),
+                                };
+
+                                for event in &buffer {
+                                    let expected_start = target_event
+                                        .evaluate(event.start_beat.value())
+                                        .value()
+                                        .unwrap();
+                                    let expected_end = target_event
+                                        .evaluate(event.end_beat.value())
+                                        .value()
+                                        .unwrap();
+
+                                    if (expected_start - event.start).abs() > EASING_FITTING_EPSILON
+                                        || (expected_end - event.end).abs() > EASING_FITTING_EPSILON
+                                    {
+                                        continue 'easing;
+                                    }
+                                }
+
+                                // println!("Successful!!! {}", easing);
+                                success += 1;
+
+                                fitted_events.push(primitive::event::LineEvent {
+                                    kind: LineEventKind::X,
+                                    start_beat: first.start_beat,
+                                    end_beat: last.end_beat,
+                                    start: first.start,
+                                    end: last.end,
+                                    easing,
+                                });
+
+                                fitted = true;
+
+                                break 'easing;
+                            }
+
+                            if !fitted {
+                                // println!("Fitting failed, appending {} elements", buffer.len());
+                                failed += 1;
+                                fitted_events.append(&mut buffer);
+                            }
+                        }
+                        buffer.clear();
+
+                        buffer.push(event);
+                        expected_duration.replace(event.end_beat - event.start_beat);
+                    }
+                } else {
+                    buffer.push(event);
+                    expected_duration.replace(event.end_beat - event.start_beat);
+                }
+            }
+
+            // println!("after fit len: {}", fitted_events.len());
+
+            println!(
+                "success {}, failed: {}, success rate {}%",
+                success,
+                failed,
+                (success as f32 / (success + failed) as f32) * 100.0
+            );
+
+            println!("=========");
+
             let mut line = primitive::line::Line {
                 notes: line
                     .notes_above
@@ -273,26 +445,7 @@ impl Format for OfficialChart {
                     .map(|x| create_note(true, x))
                     .chain(line.notes_below.iter().map(|x| create_note(false, x)))
                     .collect(),
-                events: move_events
-                    .into_iter()
-                    .chain(rotate_event_iter)
-                    .chain(opacity_event_iter)
-                    .chain(speed_event_iter)
-                    .map(|event| {
-                        // FIXME: filtering speed events out, seems like current speed evaluation is not correct
-                        if event.start == event.end
-                            && event.end_beat - event.start_beat > beat!(1, 4)
-                            && !matches!(event.kind, LineEventKind::Speed)
-                        {
-                            let mut new_event = event;
-                            new_event.end_beat = event.start_beat + beat!(1, 4);
-
-                            new_event
-                        } else {
-                            event
-                        }
-                    })
-                    .collect(),
+                events: fitted_events,
             };
 
             let mut speed_events = line
