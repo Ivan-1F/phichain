@@ -103,7 +103,7 @@ pub struct OfficialChart {
     lines: Vec<Line>,
 }
 
-const EASING_FITTING_EPSILON: f32 = 1e-4;
+const EASING_FITTING_EPSILON: f32 = 1e-1;
 
 const EASING_FITTING_POSSIBLE_EASINGS: [Easing; 31] = [
     Easing::Linear,
@@ -280,7 +280,8 @@ impl Format for OfficialChart {
             for event in events.iter().copied() {
                 if let Some(last) = buffer.last() {
                     if last.end_beat == event.start_beat
-                        && last.end == event.start
+                        && (last.end - event.start).abs() <= EASING_FITTING_EPSILON
+                        && event.start != event.end
                         && event.end_beat - event.start_beat == expected_duration.unwrap()
                     {
                         buffer.push(event);
