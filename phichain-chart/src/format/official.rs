@@ -273,27 +273,41 @@ impl Format for OfficialChart {
 
             let mut fitted_events = vec![];
             let mut buffer: Vec<primitive::event::LineEvent> = vec![];
-            let mut expected_duration = None;
+
+            let mut expected_duration: Option<Beat> = None;
+            let mut is_increasing: Option<bool> = None;
+
             let mut success = 0;
             let mut failed = 0;
 
             for event in events.iter().copied() {
                 if let Some(last) = buffer.last() {
+                    let event_is_increasing = event.end > event.start;
+                    let direction_matches =
+                        is_increasing.map_or(true, |inc| inc == event_is_increasing);
+
+                    let duration_matches =
+                        event.end_beat - event.start_beat == expected_duration.unwrap();
+
                     if last.end_beat == event.start_beat
                         && (last.end - event.start).abs() <= EASING_FITTING_EPSILON
                         && event.start != event.end
-                        && event.end_beat - event.start_beat == expected_duration.unwrap()
+                        && duration_matches
+                        && direction_matches
                     {
                         buffer.push(event);
+                        is_increasing.get_or_insert(event_is_increasing);
                     } else {
                         flush_buffer(&mut buffer, &mut fitted_events, &mut success, &mut failed);
                         buffer.clear();
                         buffer.push(event);
                         expected_duration.replace(event.end_beat - event.start_beat);
+                        is_increasing = None;
                     }
                 } else {
                     buffer.push(event);
                     expected_duration.replace(event.end_beat - event.start_beat);
+                    is_increasing = None;
                 }
             }
 
