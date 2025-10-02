@@ -1,8 +1,8 @@
 pub mod steps;
 
 use crate::compile::steps::{evaluate_curve_note_tracks, merge_children_line};
-use phichain_chart::format::Format;
-use phichain_chart::primitive::PrimitiveChart;
+use crate::primitive::PrimitiveChart;
+use crate::Format;
 use phichain_chart::serialization::PhichainChart;
 
 /// Compile a Phichain chart into a primitive chart
