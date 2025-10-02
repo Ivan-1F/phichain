@@ -1,6 +1,7 @@
 use itertools::Itertools;
 use phichain_chart::beat::Beat;
-use phichain_chart::event::{LineEvent, LineEventKind};
+use phichain_chart::easing::Easing;
+use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use std::collections::HashMap;
 
 pub trait EventSequence: Sized {
@@ -86,4 +87,68 @@ impl EventSequence for Vec<LineEvent> {
             .copied()
             .collect()
     }
+}
+
+/// Try to fit a sequence of linear events into a single eased event
+///
+/// Returns the fitted event if successful, or the original events if fitting fails.
+/// The fitting considers:
+/// - All events must have the same duration
+/// - All events must be increasing or all decreasing
+/// - All events must be consecutive (end_beat == next.start_beat)
+/// - Values must be continuous (last.end ≈ next.start)
+///
+/// ```text
+/// In:  |----|----|----|----|----| (many small linear segments)
+/// Out: |~~~~~~~~~~~~~~~~~~~~~~~~| (single eased event)
+/// ```
+pub fn fit_easing(
+    events: &[LineEvent],
+    possible_easings: &[Easing],
+    epsilon: f32,
+) -> Result<LineEvent, Vec<LineEvent>> {
+    if events.is_empty() {
+        return Err(vec![]);
+    }
+
+    if events.len() == 1 {
+        return Err(events.to_vec());
+    }
+
+    let first = events[0];
+    let last = events[events.len() - 1];
+
+    for &easing in possible_easings {
+        let target_event = LineEvent {
+            kind: first.kind,
+            start_beat: first.start_beat,
+            end_beat: last.end_beat,
+            value: LineEventValue::transition(first.value.start(), last.value.end(), easing),
+        };
+
+        let mut fits = true;
+        for event in events {
+            let expected_start = target_event
+                .evaluate(event.start_beat.value())
+                .value()
+                .unwrap();
+            let expected_end = target_event
+                .evaluate(event.end_beat.value())
+                .value()
+                .unwrap();
+
+            if (expected_start - event.value.start()).abs() > epsilon
+                || (expected_end - event.value.end()).abs() > epsilon
+            {
+                fits = false;
+                break;
+            }
+        }
+
+        if fits {
+            return Ok(target_event);
+        }
+    }
+
+    Err(events.to_vec())
 }

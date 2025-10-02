@@ -9,7 +9,7 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::easing::Easing;
 use phichain_chart::event::LineEventKind;
-use phichain_compiler::sequence::EventSequence;
+use phichain_compiler::sequence::{fit_easing, EventSequence};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
@@ -210,63 +210,20 @@ pub fn official_to_phichain(
         success: &mut i32,
         failed: &mut i32,
     ) {
-        if buffer.len() == 1 {
-            fitted_events.push(buffer[0])
-        } else if buffer.len() > 1 {
-            let mut fitted = false;
-
-            let first = *buffer.first().unwrap();
-            let last = *buffer.last().unwrap();
-
-            'easing: for easing in EASING_FITTING_POSSIBLE_EASINGS {
-                let target_event = LineEvent {
-                    kind: first.kind,
-                    start_beat: first.start_beat,
-                    end_beat: last.end_beat,
-                    value: LineEventValue::transition(
-                        first.value.start(),
-                        last.value.end(),
-                        easing,
-                    ),
-                };
-
-                for event in buffer.iter() {
-                    let expected_start = target_event
-                        .evaluate(event.start_beat.value())
-                        .value()
-                        .unwrap();
-                    let expected_end = target_event
-                        .evaluate(event.end_beat.value())
-                        .value()
-                        .unwrap();
-
-                    if (expected_start - event.value.start()).abs() > EASING_FITTING_EPSILON
-                        || (expected_end - event.value.end()).abs() > EASING_FITTING_EPSILON
-                    {
-                        continue 'easing;
-                    }
-                }
-
+        match fit_easing(
+            buffer,
+            &EASING_FITTING_POSSIBLE_EASINGS,
+            EASING_FITTING_EPSILON,
+        ) {
+            Ok(fitted) => {
                 *success += 1;
-
-                fitted_events.push(LineEvent {
-                    kind: first.kind,
-                    start_beat: first.start_beat,
-                    end_beat: last.end_beat,
-                    value: LineEventValue::transition(
-                        first.value.start(),
-                        last.value.end(),
-                        easing,
-                    ),
-                });
-
-                fitted = true;
-                break 'easing;
+                fitted_events.push(fitted);
             }
-
-            if !fitted {
-                *failed += 1;
-                fitted_events.append(buffer);
+            Err(mut original) => {
+                if original.len() > 1 {
+                    *failed += 1;
+                }
+                fitted_events.append(&mut original);
             }
         }
     }
