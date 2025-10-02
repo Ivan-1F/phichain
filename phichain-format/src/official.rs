@@ -9,7 +9,7 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::easing::Easing;
 use phichain_chart::event::LineEventKind;
-use phichain_compiler::sequence::{fit_easing, map_if, EventSequence};
+use phichain_compiler::sequence::{fit_easing, map_if, remove_if, EventSequence};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
@@ -435,17 +435,21 @@ pub fn official_to_phichain(
         for (_, events) in fitted_events.group_by_kind() {
             let events = events.sorted();
 
-            let mut filtered = vec![];
-            for (i, event) in events.iter().enumerate() {
-                if event.value.start() == event.value.end()
-                    && i > 0
-                    && (events[i - 1].value.end() - event.value.start()).abs() < EVENT_VALUE_EPSILON
-                {
-                    // skip this redundant suffix constant event
-                    continue;
-                }
-                filtered.push(*event);
-            }
+            // remove redundant constant suffix events
+            let mut last_end_value: Option<f32> = None;
+            let filtered = remove_if(&events, |event| {
+                let is_redundant = match last_end_value {
+                    None => false,
+                    Some(last_end_value) => {
+                        event.value.start() == event.value.end()
+                            && (last_end_value - event.value.start()).abs() < EVENT_VALUE_EPSILON
+                    }
+                };
+
+                last_end_value.replace(event.value.end());
+
+                is_redundant
+            });
 
             cleaned_events.extend(filtered);
         }
