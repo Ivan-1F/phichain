@@ -1,4 +1,4 @@
-use crate::utils::EventSequence;
+use crate::sequence::EventSequence;
 use nalgebra::{Isometry2, Rotation2, Vector2};
 use phichain_chart::beat;
 use phichain_chart::easing::Easing;
