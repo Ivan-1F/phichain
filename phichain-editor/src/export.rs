@@ -8,7 +8,7 @@ use anyhow::Context;
 use bevy::app::App;
 use bevy::prelude::*;
 use phichain_chart::format::official::OfficialChart;
-use phichain_chart::primitive::Format;
+use phichain_chart::format::Format;
 use phichain_chart::serialization::PhichainChart;
 use rfd::FileDialog;
 use std::fs;
