@@ -2,8 +2,9 @@
 
 use crate::bpm_list::BpmList;
 use crate::easing::Easing;
+use crate::format::Format;
 use crate::primitive;
-use crate::primitive::{Format, PrimitiveChart};
+use crate::primitive::PrimitiveChart;
 use num::{Num, Rational32};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
