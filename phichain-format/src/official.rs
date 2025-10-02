@@ -14,7 +14,7 @@ use serde_repr::{Deserialize_repr, Serialize_repr};
 
 #[derive(Serialize_repr, Deserialize_repr, Debug)]
 #[repr(u8)]
-enum NoteKind {
+enum OfficialNoteKind {
     Tap = 1,
     Drag = 2,
     Hold = 3,
@@ -22,9 +22,9 @@ enum NoteKind {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct Note {
+struct OfficialNote {
     #[serde(rename = "type")]
-    kind: NoteKind,
+    kind: OfficialNoteKind,
     time: f32,
     #[serde(rename = "holdTime")]
     hold_time: f32,
@@ -37,7 +37,7 @@ struct Note {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct NumericLineEvent {
+struct OfficialNumericLineEvent {
     #[serde(rename = "startTime")]
     start_time: f32,
     #[serde(rename = "endTime")]
@@ -47,7 +47,7 @@ struct NumericLineEvent {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct PositionLineEvent {
+struct OfficialPositionLineEvent {
     #[serde(rename = "startTime")]
     start_time: f32,
     #[serde(rename = "endTime")]
@@ -65,7 +65,7 @@ struct PositionLineEvent {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct SpeedEvent {
+struct OfficialSpeedEvent {
     #[serde(rename = "startTime")]
     start_time: f32,
     #[serde(rename = "endTime")]
@@ -77,22 +77,22 @@ struct SpeedEvent {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct Line {
+struct OfficialLine {
     bpm: f32,
 
     #[serde(rename = "judgeLineMoveEvents")]
-    move_events: Vec<PositionLineEvent>,
+    move_events: Vec<OfficialPositionLineEvent>,
     #[serde(rename = "judgeLineRotateEvents")]
-    rotate_events: Vec<NumericLineEvent>,
+    rotate_events: Vec<OfficialNumericLineEvent>,
     #[serde(rename = "judgeLineDisappearEvents")]
-    opacity_events: Vec<NumericLineEvent>,
+    opacity_events: Vec<OfficialNumericLineEvent>,
     #[serde(rename = "speedEvents")]
-    speed_events: Vec<SpeedEvent>,
+    speed_events: Vec<OfficialSpeedEvent>,
 
     #[serde(rename = "notesAbove")]
-    notes_above: Vec<Note>,
+    notes_above: Vec<OfficialNote>,
     #[serde(rename = "notesBelow")]
-    notes_below: Vec<Note>,
+    notes_below: Vec<OfficialNote>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -101,7 +101,7 @@ pub struct OfficialChart {
     format_version: u32,
     offset: f32,
     #[serde(rename = "judgeLineList")]
-    lines: Vec<Line>,
+    lines: Vec<OfficialLine>,
 }
 
 const EVENT_VALUE_EPSILON: f32 = 1e-4;
@@ -336,14 +336,14 @@ impl Format for OfficialChart {
             let x: fn(f32) -> f32 = |x| (x - 0.5) * CANVAS_WIDTH;
             let y: fn(f32) -> f32 = |x| (x - 0.5) * CANVAS_HEIGHT;
 
-            let create_note = |above: bool, note: &Note| {
+            let create_note = |above: bool, note: &OfficialNote| {
                 let kind: phichain_chart::note::NoteKind = match note.kind {
-                    NoteKind::Tap => phichain_chart::note::NoteKind::Tap,
-                    NoteKind::Drag => phichain_chart::note::NoteKind::Drag,
-                    NoteKind::Hold => phichain_chart::note::NoteKind::Hold {
+                    OfficialNoteKind::Tap => phichain_chart::note::NoteKind::Tap,
+                    OfficialNoteKind::Drag => phichain_chart::note::NoteKind::Drag,
+                    OfficialNoteKind::Hold => phichain_chart::note::NoteKind::Hold {
                         hold_beat: t(note.hold_time),
                     },
-                    NoteKind::Flick => phichain_chart::note::NoteKind::Flick,
+                    OfficialNoteKind::Flick => phichain_chart::note::NoteKind::Flick,
                 };
 
                 phichain_chart::note::Note::new(
@@ -607,7 +607,7 @@ impl Format for OfficialChart {
         };
 
         for line in phichain.lines {
-            let mut official_line = Line {
+            let mut official_line = OfficialLine {
                 bpm,
                 move_events: vec![],
                 rotate_events: vec![],
@@ -688,7 +688,7 @@ impl Format for OfficialChart {
             process_events(
                 &line,
                 LineEventKind::Rotation,
-                |e| NumericLineEvent {
+                |e| OfficialNumericLineEvent {
                     start_time: time(e.start_beat),
                     end_time: time(e.end_beat),
                     start: e.start,
@@ -700,7 +700,7 @@ impl Format for OfficialChart {
             process_events(
                 &line,
                 LineEventKind::Opacity,
-                |e| NumericLineEvent {
+                |e| OfficialNumericLineEvent {
                     start_time: time(e.start_beat),
                     end_time: time(e.end_beat),
                     start: e.start / 255.0,
@@ -712,7 +712,7 @@ impl Format for OfficialChart {
             process_events(
                 &line,
                 LineEventKind::Speed,
-                |e| SpeedEvent {
+                |e| OfficialSpeedEvent {
                     start_time: time(e.start_beat),
                     end_time: time(e.end_beat),
                     value: e.start / 9.0 * 2.0,
@@ -789,7 +789,7 @@ impl Format for OfficialChart {
                 let start_y = evaluate(&y_events, start_beat, true) / CANVAS_HEIGHT + 0.5;
                 let end_y = evaluate(&y_events, end_beat, false) / CANVAS_HEIGHT + 0.5;
 
-                official_line.move_events.push(PositionLineEvent {
+                official_line.move_events.push(OfficialPositionLineEvent {
                     start_time: time(start_beat),
                     end_time: time(end_beat),
                     start_x,
@@ -813,10 +813,10 @@ impl Format for OfficialChart {
 
             for note in notes {
                 let kind = match note.kind {
-                    phichain_chart::note::NoteKind::Tap => NoteKind::Tap,
-                    phichain_chart::note::NoteKind::Drag => NoteKind::Drag,
-                    phichain_chart::note::NoteKind::Hold { .. } => NoteKind::Hold,
-                    phichain_chart::note::NoteKind::Flick => NoteKind::Flick,
+                    phichain_chart::note::NoteKind::Tap => OfficialNoteKind::Tap,
+                    phichain_chart::note::NoteKind::Drag => OfficialNoteKind::Drag,
+                    phichain_chart::note::NoteKind::Hold { .. } => OfficialNoteKind::Hold,
+                    phichain_chart::note::NoteKind::Flick => OfficialNoteKind::Flick,
                 };
 
                 let above = note.above;
@@ -835,7 +835,7 @@ impl Format for OfficialChart {
                     note.speed
                 };
 
-                let note = Note {
+                let note = OfficialNote {
                     kind,
                     time: time(note.beat),
                     hold_time: match note.kind {
