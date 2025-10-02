@@ -9,7 +9,7 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::easing::Easing;
 use phichain_chart::event::LineEventKind;
-use phichain_compiler::sequence::{fit_easing, EventSequence};
+use phichain_compiler::sequence::{fit_easing, map_if, EventSequence};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
@@ -402,21 +402,20 @@ pub fn official_to_phichain(
             .chain(rotate_event_iter)
             .chain(opacity_event_iter)
             .chain(speed_event_iter)
-            .map(|event| {
-                // FIXME: filtering speed events out, seems like current speed evaluation is not correct
-                if event.value.start() == event.value.end()
-                    && event.end_beat - event.start_beat > beat!(1, 4)
-                    && !event.kind.is_speed()
-                {
-                    let mut new_event = event;
-                    new_event.end_beat = event.start_beat + beat!(1, 4);
-
-                    new_event
-                } else {
-                    event
-                }
-            })
             .collect();
+
+        let events = map_if(
+            &events,
+            |event| {
+                event.value.start() == event.value.end()
+                    && event.end_beat - event.start_beat > beat!(1, 4)
+                    && !event.kind.is_speed() // FIXME: filtering speed events out, seems like current speed evaluation is not correct
+            },
+            |mut event| {
+                event.end_beat = event.start_beat + beat!(1, 4);
+                event
+            },
+        );
 
         // Fit events for each kind (except speed)
         let mut fitted_events = vec![];
@@ -451,24 +450,14 @@ pub fn official_to_phichain(
             cleaned_events.extend(filtered);
         }
 
-        fitted_events = cleaned_events
-            .iter()
-            .copied()
-            .map(|event| match event.value {
-                LineEventValue::Transition { start, end, .. } => {
-                    if start == end {
-                        LineEvent {
-                            value: LineEventValue::constant(start),
-                            ..event
-                        }
-                    } else {
-                        event
-                    }
-                }
-
-                _ => event,
-            })
-            .collect();
+        fitted_events = map_if(
+            &cleaned_events,
+            |event| matches!(event.value, LineEventValue::Transition { start, end, .. } if start == end),
+            |event| LineEvent {
+                value: LineEventValue::constant(event.value.start()),
+                ..event
+            },
+        );
 
         println!("=========");
 
