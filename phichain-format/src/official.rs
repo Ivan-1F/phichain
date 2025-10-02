@@ -271,12 +271,10 @@ pub fn official_to_phichain(
         }
     }
 
-    fn fit_events(mut events: Vec<LineEvent>, kind: LineEventKind) -> Vec<LineEvent> {
+    fn fit_events(events: Vec<LineEvent>, kind: LineEventKind) -> Vec<LineEvent> {
         if events.is_empty() {
             return vec![];
         }
-
-        events.sort_by_key(|e| e.start_beat);
 
         let mut fitted_events = vec![];
         let mut buffer: Vec<LineEvent> = vec![];
@@ -287,7 +285,7 @@ pub fn official_to_phichain(
         let mut success = 0;
         let mut failed = 0;
 
-        for event in events.iter().copied() {
+        for event in events.sorted().iter().copied() {
             if let Some(last) = buffer.last() {
                 let event_is_increasing = event.value.end() > event.value.start();
                 let direction_matches = is_increasing.is_none_or(|inc| inc == event_is_increasing);
@@ -478,8 +476,8 @@ pub fn official_to_phichain(
 
         let mut cleaned_events = vec![];
 
-        for (_, mut events) in fitted_events.group_by_kind() {
-            events.sort_by_key(|e| e.start_beat);
+        for (_, events) in fitted_events.group_by_kind() {
+            let events = events.sorted();
 
             let mut filtered = vec![];
             for (i, event) in events.iter().enumerate() {
@@ -529,12 +527,13 @@ pub fn official_to_phichain(
             ..Default::default()
         };
 
-        let mut speed_events = line
+        let speed_events = line
             .events
             .iter()
             .filter(|e| matches!(e.kind, LineEventKind::Speed))
-            .collect::<Vec<_>>();
-        speed_events.sort_by_key(|e| e.start_beat);
+            .copied()
+            .collect::<Vec<_>>()
+            .sorted();
 
         for note in &mut line.notes {
             if let NoteKind::Hold { .. } = note.kind {
