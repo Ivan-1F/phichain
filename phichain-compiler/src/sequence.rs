@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use phichain_chart::beat::Beat;
 use phichain_chart::event::{LineEvent, LineEventKind};
 use std::collections::HashMap;
@@ -13,6 +14,8 @@ pub trait EventSequence: Sized {
     fn speed(&self) -> Self;
 
     fn group_by_kind(&self) -> HashMap<LineEventKind, Self>;
+
+    fn sorted(&self) -> Self;
 }
 
 impl EventSequence for Vec<LineEvent> {
@@ -75,5 +78,12 @@ impl EventSequence for Vec<LineEvent> {
             map.entry(event.kind).or_insert_with(Vec::new).push(*event);
         }
         map
+    }
+
+    fn sorted(&self) -> Self {
+        self.iter()
+            .sorted_by_key(|x| x.start_beat)
+            .copied()
+            .collect()
     }
 }

@@ -5548,6 +5548,7 @@ name = "phichain-compiler"
 version = "1.0.0-beta.5"
 dependencies = [
  "anyhow",
+ "itertools 0.14.0",
  "nalgebra 0.33.1",
  "num",
  "phichain-chart",
