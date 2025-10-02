@@ -1,11 +1,11 @@
 //! Re:PhiEdit json format
 
-use crate::bpm_list::BpmList;
-use crate::easing::Easing;
-use crate::format::Format;
 use crate::primitive;
 use crate::primitive::PrimitiveChart;
+use crate::Format;
 use num::{Num, Rational32};
+use phichain_chart::bpm_list::BpmList;
+use phichain_chart::easing::Easing;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use tracing::warn;
@@ -25,14 +25,14 @@ enum NoteKind {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 struct Beat(i32, i32, i32);
 
-impl From<Beat> for crate::beat::Beat {
+impl From<Beat> for phichain_chart::beat::Beat {
     fn from(val: Beat) -> Self {
-        crate::beat::Beat::new(val.0, Rational32::new(val.1, val.2))
+        phichain_chart::beat::Beat::new(val.0, Rational32::new(val.1, val.2))
     }
 }
 
-impl From<crate::beat::Beat> for Beat {
-    fn from(value: crate::beat::Beat) -> Self {
+impl From<phichain_chart::beat::Beat> for Beat {
+    fn from(value: phichain_chart::beat::Beat) -> Self {
         Beat(value.beat(), value.numer(), value.denom())
     }
 }
@@ -168,7 +168,9 @@ impl Format for RpeChart {
             bpm_list: BpmList::new(
                 self.bpm_list
                     .iter()
-                    .map(|x| crate::bpm_list::BpmPoint::new(x.start_time.clone().into(), x.bpm))
+                    .map(|x| {
+                        phichain_chart::bpm_list::BpmPoint::new(x.start_time.clone().into(), x.bpm)
+                    })
                     .collect(),
             ),
             lines: vec![],
@@ -188,7 +190,7 @@ impl Format for RpeChart {
                 .iter()
                 .flat_map(|layer| layer.move_xevents.clone())
                 .map(|event| primitive::event::LineEvent {
-                    kind: crate::event::LineEventKind::X,
+                    kind: phichain_chart::event::LineEventKind::X,
                     start_beat: event.start_time.into(),
                     end_beat: event.end_time.into(),
                     start: event.start,
@@ -200,7 +202,7 @@ impl Format for RpeChart {
                 .iter()
                 .flat_map(|layer| layer.move_yevents.clone())
                 .map(|event| primitive::event::LineEvent {
-                    kind: crate::event::LineEventKind::Y,
+                    kind: phichain_chart::event::LineEventKind::Y,
                     start_beat: event.start_time.into(),
                     end_beat: event.end_time.into(),
                     start: event.start,
@@ -212,7 +214,7 @@ impl Format for RpeChart {
                 .iter()
                 .flat_map(|layer| layer.rotate_events.clone())
                 .map(|event| primitive::event::LineEvent {
-                    kind: crate::event::LineEventKind::Rotation,
+                    kind: phichain_chart::event::LineEventKind::Rotation,
                     start_beat: event.start_time.into(),
                     end_beat: event.end_time.into(),
                     // negate value for rotation
@@ -225,7 +227,7 @@ impl Format for RpeChart {
                 .iter()
                 .flat_map(|layer| layer.alpha_events.clone())
                 .map(|event| primitive::event::LineEvent {
-                    kind: crate::event::LineEventKind::Opacity,
+                    kind: phichain_chart::event::LineEventKind::Opacity,
                     start_beat: event.start_time.into(),
                     end_beat: event.end_time.into(),
                     start: event.start as f32,
@@ -237,7 +239,7 @@ impl Format for RpeChart {
                 .iter()
                 .flat_map(|layer| layer.speed_events.clone())
                 .map(|event| primitive::event::LineEvent {
-                    kind: crate::event::LineEventKind::Speed,
+                    kind: phichain_chart::event::LineEventKind::Speed,
                     start_beat: event.start_time.into(),
                     end_beat: event.end_time.into(),
                     start: event.start,
@@ -250,18 +252,18 @@ impl Format for RpeChart {
                     .notes
                     .iter()
                     .map(|note| {
-                        let start_beat = crate::beat::Beat::from(note.start_time.clone());
-                        let end_beat = crate::beat::Beat::from(note.end_time.clone());
-                        let kind: crate::note::NoteKind = match note.kind {
-                            NoteKind::Tap => crate::note::NoteKind::Tap,
-                            NoteKind::Drag => crate::note::NoteKind::Drag,
-                            NoteKind::Hold => crate::note::NoteKind::Hold {
+                        let start_beat = phichain_chart::beat::Beat::from(note.start_time.clone());
+                        let end_beat = phichain_chart::beat::Beat::from(note.end_time.clone());
+                        let kind: phichain_chart::note::NoteKind = match note.kind {
+                            NoteKind::Tap => phichain_chart::note::NoteKind::Tap,
+                            NoteKind::Drag => phichain_chart::note::NoteKind::Drag,
+                            NoteKind::Hold => phichain_chart::note::NoteKind::Hold {
                                 hold_beat: end_beat - start_beat,
                             },
-                            NoteKind::Flick => crate::note::NoteKind::Flick,
+                            NoteKind::Flick => phichain_chart::note::NoteKind::Flick,
                         };
 
-                        crate::note::Note::new(
+                        phichain_chart::note::Note::new(
                             kind,
                             note.above == 1,
                             start_beat,
@@ -317,13 +319,13 @@ impl Format for RpeChart {
             let mut line = JudgeLine::default();
             for note in notes {
                 let kind = match note.kind {
-                    crate::note::NoteKind::Tap => NoteKind::Tap,
-                    crate::note::NoteKind::Drag => NoteKind::Drag,
-                    crate::note::NoteKind::Hold { .. } => NoteKind::Hold,
-                    crate::note::NoteKind::Flick => NoteKind::Flick,
+                    phichain_chart::note::NoteKind::Tap => NoteKind::Tap,
+                    phichain_chart::note::NoteKind::Drag => NoteKind::Drag,
+                    phichain_chart::note::NoteKind::Hold { .. } => NoteKind::Hold,
+                    phichain_chart::note::NoteKind::Flick => NoteKind::Flick,
                 };
                 let end_beat = match note.kind {
-                    crate::note::NoteKind::Hold { hold_beat } => note.beat + hold_beat,
+                    phichain_chart::note::NoteKind::Hold { hold_beat } => note.beat + hold_beat,
                     _ => note.beat,
                 };
                 line.notes.push(Note {
@@ -358,13 +360,13 @@ impl Format for RpeChart {
                 }
 
                 match event.kind {
-                    crate::event::LineEventKind::X => {
+                    phichain_chart::event::LineEventKind::X => {
                         event_layer.move_xevents.push(rpe_event);
                     }
-                    crate::event::LineEventKind::Y => {
+                    phichain_chart::event::LineEventKind::Y => {
                         event_layer.move_yevents.push(rpe_event);
                     }
-                    crate::event::LineEventKind::Rotation => {
+                    phichain_chart::event::LineEventKind::Rotation => {
                         // negate value for rotation
                         event_layer.rotate_events.push(CommonEvent {
                             bezier: rpe_event.bezier,
@@ -376,7 +378,7 @@ impl Format for RpeChart {
                             start_time: rpe_event.start_time,
                         });
                     }
-                    crate::event::LineEventKind::Opacity => {
+                    phichain_chart::event::LineEventKind::Opacity => {
                         event_layer.alpha_events.push(CommonEvent {
                             bezier: rpe_event.bezier,
                             bezier_points: rpe_event.bezier_points,
@@ -387,7 +389,7 @@ impl Format for RpeChart {
                             start_time: rpe_event.start_time,
                         });
                     }
-                    crate::event::LineEventKind::Speed => {
+                    phichain_chart::event::LineEventKind::Speed => {
                         event_layer.speed_events.push(SpeedEvent {
                             start: event.start,
                             end: event.end,

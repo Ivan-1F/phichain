@@ -1,7 +1,7 @@
 [package]
 name = "phichain-format"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
 phichain-chart = { path = "../phichain-chart" }
@@ -9,3 +9,7 @@ phichain-compiler = { path = "../phichain-compiler" }
 anyhow = "1.0.89"
 nalgebra = "0.34.1"
 num = "0.4.3"
+
+serde = { version = "1.0.228", features = ["derive"] }
+serde_repr = "0.1.20"
+tracing = "0.1.41"

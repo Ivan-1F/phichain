@@ -1,9 +1,9 @@
 use clap::{Parser, ValueEnum};
-use phichain_chart::format::official::OfficialChart;
-use phichain_chart::format::rpe::RpeChart;
-use phichain_chart::format::Format;
-use phichain_chart::primitive::PrimitiveChart;
 use phichain_chart::serialization::PhichainChart;
+use phichain_format::official::OfficialChart;
+use phichain_format::primitive::PrimitiveChart;
+use phichain_format::rpe::RpeChart;
+use phichain_format::Format;
 use std::io::Write;
 use std::path::PathBuf;
 use strum::Display;
