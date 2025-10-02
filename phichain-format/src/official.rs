@@ -516,7 +516,24 @@ pub fn official_to_phichain(
             cleaned_events.extend(filtered);
         }
 
-        fitted_events = cleaned_events;
+        fitted_events = cleaned_events
+            .iter()
+            .copied()
+            .map(|event| match event.value {
+                LineEventValue::Transition { start, end, .. } => {
+                    if start == end {
+                        LineEvent {
+                            value: LineEventValue::constant(start),
+                            ..event
+                        }
+                    } else {
+                        event
+                    }
+                }
+
+                _ => event,
+            })
+            .collect();
 
         println!("=========");
 
