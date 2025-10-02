@@ -9,6 +9,7 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::easing::Easing;
 use phichain_chart::event::LineEventKind;
+use phichain_compiler::sequence::EventSequence;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
@@ -462,20 +463,10 @@ pub fn official_to_phichain(
             })
             .collect();
 
-        let mut events_by_kind: std::collections::HashMap<LineEventKind, Vec<_>> =
-            std::collections::HashMap::new();
-
-        for event in events {
-            events_by_kind
-                .entry(event.kind)
-                .or_insert_with(Vec::new)
-                .push(event);
-        }
-
         // Fit events for each kind (except speed)
         let mut fitted_events = vec![];
 
-        for (kind, events) in events_by_kind {
+        for (kind, events) in events.group_by_kind() {
             if kind.is_speed() {
                 // Don't fit speed events, just add them
                 fitted_events.extend(events);
@@ -485,20 +476,9 @@ pub fn official_to_phichain(
             }
         }
 
-        // remove redundant constant events suffix
-        let mut events_by_kind: std::collections::HashMap<LineEventKind, Vec<_>> =
-            std::collections::HashMap::new();
-
-        for event in fitted_events {
-            events_by_kind
-                .entry(event.kind)
-                .or_insert_with(Vec::new)
-                .push(event);
-        }
-
         let mut cleaned_events = vec![];
 
-        for (_, mut events) in events_by_kind {
+        for (_, mut events) in fitted_events.group_by_kind() {
             events.sort_by_key(|e| e.start_beat);
 
             let mut filtered = vec![];

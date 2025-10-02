@@ -1,17 +1,18 @@
 use phichain_chart::beat::Beat;
-use phichain_chart::event::LineEvent;
+use phichain_chart::event::{LineEvent, LineEventKind};
+use std::collections::HashMap;
 
-pub trait EventSequence {
+pub trait EventSequence: Sized {
     fn evaluate(&self, beat: Beat) -> f32;
     fn evaluate_start_no_effect(&self, beat: Beat) -> f32;
 
     fn x(&self) -> Self;
     fn y(&self) -> Self;
     fn rotation(&self) -> Self;
-    #[allow(dead_code)]
     fn opacity(&self) -> Self;
-    #[allow(dead_code)]
     fn speed(&self) -> Self;
+
+    fn group_by_kind(&self) -> HashMap<LineEventKind, Self>;
 }
 
 impl EventSequence for Vec<LineEvent> {
@@ -65,5 +66,14 @@ impl EventSequence for Vec<LineEvent> {
 
     fn speed(&self) -> Self {
         self.iter().filter(|x| x.kind.is_speed()).copied().collect()
+    }
+
+    fn group_by_kind(&self) -> HashMap<LineEventKind, Self> {
+        let mut map = HashMap::new();
+
+        for event in self {
+            map.entry(event.kind).or_insert_with(Vec::new).push(*event);
+        }
+        map
     }
 }
