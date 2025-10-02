@@ -285,7 +285,7 @@ impl Format for OfficialChart {
                 if let Some(last) = buffer.last() {
                     let event_is_increasing = event.end > event.start;
                     let direction_matches =
-                        is_increasing.map_or(true, |inc| inc == event_is_increasing);
+                        is_increasing.is_none_or(|inc| inc == event_is_increasing);
 
                     let duration_matches =
                         event.end_beat - event.start_beat == expected_duration.unwrap();
@@ -498,11 +498,12 @@ impl Format for OfficialChart {
 
                 let mut filtered = vec![];
                 for (i, event) in events.iter().enumerate() {
-                    if event.start == event.end {
-                        if i > 0 && (events[i - 1].end - event.start).abs() < EVENT_VALUE_EPSILON {
-                            // skip this redundant suffix constant event
-                            continue;
-                        }
+                    if event.start == event.end
+                        && i > 0
+                        && (events[i - 1].end - event.start).abs() < EVENT_VALUE_EPSILON
+                    {
+                        // skip this redundant suffix constant event
+                        continue;
                     }
                     filtered.push(*event);
                 }
