@@ -1,5 +1,5 @@
+mod sequence;
 mod steps;
-mod utils;
 
 use crate::steps::{evaluate_curve_note_tracks, merge_children_line};
 use phichain_chart::primitive::{Format, PrimitiveChart};
