@@ -4,12 +4,13 @@ use serde::{Deserialize, Serialize};
 use crate::bpm_list::BpmList;
 use crate::curve_note_track::CurveNoteTrack;
 use crate::event::{LineEvent, LineEventKind, LineEventValue};
+use crate::format::Format;
 use crate::line::Line;
 use crate::migration::CURRENT_FORMAT;
 use crate::note::Note;
 use crate::offset::Offset;
 use crate::primitive;
-use crate::primitive::{Format, PrimitiveChart};
+use crate::primitive::PrimitiveChart;
 
 #[derive(Serialize, Deserialize)]
 pub struct PhichainChart {
