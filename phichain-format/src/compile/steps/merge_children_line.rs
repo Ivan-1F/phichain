@@ -1,9 +1,9 @@
-use crate::sequence::EventSequence;
 use nalgebra::{Isometry2, Rotation2, Vector2};
 use phichain_chart::beat;
 use phichain_chart::easing::Easing;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use phichain_chart::serialization::{PhichainChart, SerializedLine};
+use phichain_compiler::sequence::EventSequence;
 
 fn merge(parent: SerializedLine) -> Vec<SerializedLine> {
     if parent.children.is_empty() {
