@@ -69,7 +69,7 @@ bevy_mod_reqwest = "0.19.2"
 phichain-chart = { path = "../phichain-chart", features = ["bevy"] }
 phichain-assets = { path = "../phichain-assets", features = ["egui"] }
 phichain-game = { path = "../phichain-game" }
-phichain-compiler = { path = "../phichain-compiler" }
+phichain-format = { path = "../phichain-format" }
 
 # Egui Dependencies: Update according to egui version
 

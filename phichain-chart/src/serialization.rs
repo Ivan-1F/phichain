@@ -22,7 +22,7 @@ pub struct PhichainChart {
 
 impl Format for PhichainChart {
     // Note: This only convert necessary types. To convert a PhichainChart to PrimitiveChart,
-    // while remaining advanced features provided by phichain chart, use `phichain_compiler::compile()` instead
+    // while remaining advanced features provided by phichain chart, use `phichain_format::compile_phichain_chart()` instead
     fn into_primitive(self) -> anyhow::Result<PrimitiveChart> {
         Ok(PrimitiveChart {
             offset: self.offset.0,

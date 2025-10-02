@@ -67,7 +67,7 @@ fn export_official(path: &Path, project: &Project) -> anyhow::Result<PathBuf> {
     zip.start_file("chart.json", SimpleFileOptions::default())?;
     let chart_file = fs::File::open(project.path.chart_path())?;
     let chart: PhichainChart = serde_json::from_reader(chart_file)?;
-    let official = OfficialChart::from_primitive(phichain_compiler::compile(chart)?)?;
+    let official = OfficialChart::from_primitive(phichain_format::compile_phichain_chart(chart)?)?;
     zip.write_all(serde_json::to_string(&official)?.as_bytes())?;
 
     if let Some(illustration_path) = project.path.illustration_path() {
