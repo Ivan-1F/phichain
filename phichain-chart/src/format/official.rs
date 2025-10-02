@@ -103,6 +103,7 @@ pub struct OfficialChart {
     lines: Vec<Line>,
 }
 
+const EVENT_VALUE_EPSILON: f32 = 1e-4;
 const EASING_FITTING_EPSILON: f32 = 1e-1;
 
 const EASING_FITTING_POSSIBLE_EASINGS: [Easing; 31] = [
@@ -456,7 +457,6 @@ impl Format for OfficialChart {
                 })
                 .collect();
 
-            // Group events by kind
             let mut events_by_kind: std::collections::HashMap<LineEventKind, Vec<_>> =
                 std::collections::HashMap::new();
 
@@ -479,6 +479,38 @@ impl Format for OfficialChart {
                     fitted_events.append(&mut fitted);
                 }
             }
+
+            // remove redundant constant events suffix
+            let mut events_by_kind: std::collections::HashMap<LineEventKind, Vec<_>> =
+                std::collections::HashMap::new();
+
+            for event in fitted_events {
+                events_by_kind
+                    .entry(event.kind)
+                    .or_insert_with(Vec::new)
+                    .push(event);
+            }
+
+            let mut cleaned_events = vec![];
+
+            for (_, mut events) in events_by_kind {
+                events.sort_by_key(|e| e.start_beat);
+
+                let mut filtered = vec![];
+                for (i, event) in events.iter().enumerate() {
+                    if event.start == event.end {
+                        if i > 0 && (events[i - 1].end - event.start).abs() < EVENT_VALUE_EPSILON {
+                            // skip this redundant suffix constant event
+                            continue;
+                        }
+                    }
+                    filtered.push(*event);
+                }
+
+                cleaned_events.extend(filtered);
+            }
+
+            fitted_events = cleaned_events;
 
             println!("=========");
 
