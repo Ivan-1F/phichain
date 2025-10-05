@@ -256,7 +256,7 @@ error:
     cannot_load_audio: 'Cannot load audio: %{error}'
   load_audio:
     unknown_format: Cannot determine audio format
-    unsupported_format: 'Unsupported audio format: %{format}. Use wav, mp3, ogg, flac instead'
+    unsupported_format: 'Unsupported audio format "%{format}". Supported formats are WAV, MP3, OGG, and FLAC'
     io: 'Failed to open audio file: %{error}'
     load: 'Failed to load audio source: %{error}'
 

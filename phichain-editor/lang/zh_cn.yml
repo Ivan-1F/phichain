@@ -256,7 +256,7 @@ error:
     cannot_load_audio: '无法加载音频: %{error}'
   load_audio:
     unknown_format: 无法确定音频格式
-    unsupported_format: '不支持的音频格式: %{format}。请改用 wav、mp3、ogg、flac'
+    unsupported_format: '不支持的音频格式 "%{format}". 支持的格式为 WAV、MP3、OGG 和 FLAC'
     io: '无法打开音频文件: %{error}'
     load: '无法加载音频源: %{error}'
 
