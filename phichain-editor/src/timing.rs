@@ -1,5 +1,4 @@
 use crate::action::ActionRegistrationExt;
-use crate::audio::InstanceHandle;
 use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
 use crate::identifier::{Identifier, IntoIdentifier};
 use crate::project::project_loaded;
@@ -9,6 +8,7 @@ use bevy_kira_audio::AudioInstance;
 use bevy_persistent::Persistent;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::offset::Offset;
+use phichain_game::audio::InstanceHandle;
 
 /// Represents the current time in seconds
 #[derive(Resource)]

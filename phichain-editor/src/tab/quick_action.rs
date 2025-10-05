@@ -1,4 +1,3 @@
-use crate::audio::AudioDuration;
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::settings::{AspectRatio, EditorSettings};
 use crate::timing::{SeekToEvent, Timing};
@@ -7,6 +6,7 @@ use bevy::prelude::*;
 use bevy_persistent::Persistent;
 use egui::{vec2, Ui};
 use phichain_chart::bpm_list::BpmList;
+use phichain_game::audio::AudioDuration;
 
 pub fn quick_action(ui: &mut Ui, world: &mut World) {
     let mut state: SystemState<(

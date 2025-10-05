@@ -1,3 +1,4 @@
+use crate::audio::{load_audio, open_audio, AudioBytes};
 use crate::illustration::{load_illustration, open_illustration};
 use crate::loader::load_line;
 use anyhow::{Context, Result};
@@ -18,6 +19,7 @@ pub struct ProjectData {
     pub project: Project,
     pub chart: PhichainChart,
     illustration: Option<ImageResult<DynamicImage>>,
+    pub audio: AudioBytes,
 }
 
 type LoadingProjectTask = Task<Result<ProjectData>>;
@@ -51,12 +53,15 @@ pub fn load_project(project: &Project, commands: &mut Commands) {
             serde_json::from_value(migrated).context("Failed to deserialize chart")?;
 
         let illustration = project.path.illustration_path().map(open_illustration);
+        let audio_path = project.path.music_path().context("Failed to find music")?;
+        let audio = open_audio(audio_path)?;
 
         Ok(ProjectData {
             duration: start.elapsed(),
             project: project.clone(),
             chart,
             illustration,
+            audio,
         })
     });
 
@@ -74,7 +79,18 @@ pub fn handle_tasks_system(
 
             // load the chart
             match result {
-                Ok(data) => {
+                Ok(mut data) => {
+                    let audio = std::mem::take(&mut data.audio);
+                    if let Err(error) = load_audio(audio, &mut commands) {
+                        commands.trigger(ProjectLoadingResult(Err(error.into())));
+                        continue;
+                    }
+
+                    // TODO: handle Some(Err)
+                    if let Some(Ok(ref illustration)) = data.illustration {
+                        load_illustration(illustration.clone(), &mut commands);
+                    }
+
                     commands.insert_resource(data.chart.offset);
                     commands.insert_resource(data.chart.bpm_list.clone());
 
@@ -84,11 +100,6 @@ pub fn handle_tasks_system(
                         if first_line_id.is_none() {
                             first_line_id = Some(id)
                         }
-                    }
-
-                    // TODO: handle Some(Err)
-                    if let Some(Ok(ref illustration)) = data.illustration {
-                        load_illustration(illustration.clone(), &mut commands);
                     }
 
                     commands.trigger(ProjectLoadingResult(Ok(data)));

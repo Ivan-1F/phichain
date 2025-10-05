@@ -1,3 +1,4 @@
+pub mod audio;
 pub mod constants;
 pub mod core;
 pub mod curve_note_track;

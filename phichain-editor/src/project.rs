@@ -2,12 +2,12 @@ use anyhow::Context;
 use bevy::prelude::*;
 
 use crate::action::ActionRegistrationExt;
-use crate::audio::load_audio;
 use crate::editing::history::EditorHistory;
 use crate::hotkey::modifier::Modifier;
 use crate::hotkey::Hotkey;
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::recent_projects::{PersistentRecentProjectsExt, RecentProject, RecentProjects};
+use crate::spectrogram::{self, Spectrogram};
 use crate::telemetry::PushTelemetryEvent;
 use bevy::ecs::system::SystemState;
 use bevy_kira_audio::{Audio, AudioControl, AudioSource};
@@ -108,7 +108,7 @@ pub struct LoadProjectEvent(pub PathBuf);
 /// After [`phichain_game::load_project`] is executed successfully, this function will load editor-specific resources:
 ///
 /// - [crate::selection::SelectedLine] will be inserted into the world
-/// - Currently, audio is handle in the editor instead of [`phichain_game`], so [InstanceHandle], [AudioDuration] and [AudioAssetId] will be inserted into the world (TODO)
+/// - Audio playback resources ([phichain_game::audio::InstanceHandle], [phichain_game::audio::AudioDuration] and [phichain_game::audio::AudioAssetId]) will be inserted into the world
 /// - After all resources and entities above are added, [Project] will be inserted into the world,
 ///   indicating the editor is now in editing mode: all systems with run condition [`project_loaded`] will start working
 fn load_project_system(
@@ -161,13 +161,16 @@ fn handle_project_loading_result_system(
                 if let Some(first) = query.iter(world).next() {
                     world.insert_resource(crate::selection::SelectedLine(first));
                 }
+
+                // generate spectrogram
+                let audio_asset_id = world.resource::<phichain_game::audio::AudioAssetId>().0;
+                let audio_assets = world.resource::<Assets<AudioSource>>();
+                let source = audio_assets
+                    .get(audio_asset_id)
+                    .expect("Expected audio loaded in Assets<AudioSource>");
+                world.insert_resource(Spectrogram(spectrogram::make_spectrogram(source)));
             });
 
-            // TODO: move audio to phichain-game
-            // unwrap: if Project::load is ok, music_path() must return Some
-            let audio_path = data.project.path.music_path().unwrap();
-            // TODO: handle error after moving audio to phichain-game
-            let _ = load_audio(audio_path, &mut commands);
             commands.insert_resource(data.project.clone());
         }
         Err(error) => {
@@ -196,7 +199,7 @@ fn unload_project_system(
         world.remove_resource::<Project>();
 
         // unload audio
-        use crate::audio::{AudioAssetId, AudioDuration, InstanceHandle};
+        use phichain_game::audio::{AudioAssetId, AudioDuration, InstanceHandle};
         world.remove_resource::<InstanceHandle>();
         world.remove_resource::<AudioDuration>();
         let audio_asset_id = world.resource::<AudioAssetId>().0;

@@ -4,7 +4,6 @@ pub mod event;
 pub mod note;
 pub mod settings;
 
-use crate::audio::AudioDuration;
 use crate::constants::{BASE_ZOOM, INDICATOR_POSITION};
 use crate::tab::timeline::TimelineViewport;
 use crate::timeline::drag_selection::TimelineDragSelectionPlugin;
@@ -24,6 +23,7 @@ use phichain_chart::beat;
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::line::Line;
+use phichain_game::audio::AudioDuration;
 
 pub struct TimelinePlugin;
 

@@ -5334,7 +5334,6 @@ dependencies = [
  "futures-lite",
  "hound",
  "indexmap 2.7.0",
- "infer",
  "kakasi",
  "machine-uid",
  "num",
@@ -5420,13 +5419,16 @@ version = "1.0.0-beta.4"
 dependencies = [
  "anyhow",
  "bevy",
+ "bevy_kira_audio",
  "bevy_prototype_lyon",
  "image",
+ "infer",
  "num",
  "phichain-assets",
  "phichain-chart",
  "rand 0.9.1",
  "serde_json",
+ "thiserror 2.0.17",
 ]
 
 [[package]]
