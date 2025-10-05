@@ -1,10 +1,6 @@
 use std::time::Duration;
 use std::{io::Cursor, path::PathBuf};
 
-use bevy::prelude::*;
-use bevy_kira_audio::prelude::*;
-use bevy_persistent::prelude::*;
-
 use crate::settings::EditorSettings;
 use crate::spectrogram::Spectrogram;
 use crate::timing::{SeekToEvent, Timing};
@@ -14,6 +10,10 @@ use crate::{
     spectrogram,
     timing::{PauseEvent, Paused, ResumeEvent, SeekEvent},
 };
+use bevy::prelude::*;
+use bevy_kira_audio::prelude::*;
+use bevy_persistent::prelude::*;
+use thiserror::Error;
 
 #[derive(Resource)]
 pub struct InstanceHandle(pub Handle<AudioInstance>);
@@ -54,10 +54,35 @@ impl Plugin for AudioPlugin {
     }
 }
 
-pub fn load_audio(path: PathBuf, commands: &mut Commands) {
-    let sound_data = std::fs::read(path).unwrap();
+#[derive(Error, Debug)]
+pub enum LoadAudioError {
+    #[error("unknown file format")]
+    UnknownFormat,
+    #[error("unsupported file format {0}")]
+    UnsupportedFormat(&'static str),
+    #[error("failed to read audio file")]
+    Io(#[from] std::io::Error),
+    #[error("failed to load audio source")]
+    Load(#[from] FromFileError),
+}
+
+pub fn load_audio(path: PathBuf, commands: &mut Commands) -> Result<(), LoadAudioError> {
+    let sound_data = std::fs::read(path)?;
+
+    let is_supported = infer::audio::is_wav(sound_data.as_slice())
+        || infer::audio::is_ogg(sound_data.as_slice())
+        || infer::audio::is_flac(sound_data.as_slice())
+        || infer::audio::is_wav(sound_data.as_slice());
+
+    if !is_supported {
+        return match infer::get(&sound_data) {
+            None => Err(LoadAudioError::UnknownFormat),
+            Some(file_type) => Err(LoadAudioError::UnsupportedFormat(file_type.mime_type())),
+        };
+    }
+
     let source = AudioSource {
-        sound: StaticSoundData::from_cursor(Cursor::new(sound_data)).unwrap(),
+        sound: StaticSoundData::from_cursor(Cursor::new(sound_data))?,
     };
 
     commands.insert_resource(Spectrogram(spectrogram::make_spectrogram(&source)));
@@ -73,6 +98,8 @@ pub fn load_audio(path: PathBuf, commands: &mut Commands) {
             });
         });
     });
+
+    Ok(())
 }
 
 // TODO: move this to separate plugin

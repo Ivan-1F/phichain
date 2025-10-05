@@ -166,7 +166,8 @@ fn handle_project_loading_result_system(
             // TODO: move audio to phichain-game
             // unwrap: if Project::load is ok, music_path() must return Some
             let audio_path = data.project.path.music_path().unwrap();
-            load_audio(audio_path, &mut commands);
+            // TODO: handle error after moving audio to phichain-game
+            let _ = load_audio(audio_path, &mut commands);
             commands.insert_resource(data.project.clone());
         }
         Err(error) => {
