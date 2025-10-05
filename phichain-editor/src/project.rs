@@ -16,7 +16,8 @@ use phichain_chart::line::Line;
 use phichain_chart::project::OpenProjectError;
 pub use phichain_chart::project::{Project, ProjectMeta, ProjectPath};
 use phichain_chart::serialization::PhichainChart;
-use phichain_game::loader::nonblocking::ProjectLoadingResult;
+use phichain_game::audio::LoadAudioError;
+use phichain_game::loader::nonblocking::{LoadProjectError, ProjectLoadingResult};
 use phichain_game::serialization::{serialize_chart, SerializeChartParam, SerializeLineParam};
 use serde_json::json;
 use std::path::PathBuf;
@@ -130,16 +131,16 @@ fn load_project_system(
             Err(error) => {
                 let message = match error {
                     OpenProjectError::MissingFile(file) => {
-                        t!("home.load.error.missing_file", file = file)
+                        t!("error.open_project.missing_file", file = file)
                     }
                     OpenProjectError::CannotOpenMeta(error) => {
-                        t!("home.load.error.cannot_open_meta", error = error)
+                        t!("error.open_project.cannot_open_meta", error = error)
                     }
                     OpenProjectError::InvalidMeta(error) => {
-                        t!("home.load.error.invalid_meta", error = error)
+                        t!("error.open_project.invalid_meta", error = error)
                     }
                 };
-                toasts.error(format!("{}: {}", t!("home.load.error.label"), message));
+                toasts.error(format!("{}: {}", t!("error.open_project.label"), message));
             }
         }
     }
@@ -186,7 +187,35 @@ fn handle_project_loading_result_system(
             commands.insert_resource(data.project.clone());
         }
         Err(error) => {
-            toasts.error(format!("Failed to load chart: {error:?}"));
+            let message = match error {
+                LoadProjectError::CannotOpenChart(error) => {
+                    t!("error.load_project.cannot_open_chart", error = error)
+                }
+                LoadProjectError::InvalidChart(error) => {
+                    t!("error.load_project.invalid_chart", error = error)
+                }
+                LoadProjectError::MigrationFailed(error) => {
+                    t!("error.load_project.migration_failed", error = error)
+                }
+                LoadProjectError::CannotLoadAudio(error) => {
+                    let reason = match error {
+                        LoadAudioError::UnknownFormat => t!("error.load_audio.unknown_format"),
+                        LoadAudioError::UnsupportedFormat(format) => {
+                            t!("error.load_audio.unsupported_format", format = format)
+                        }
+                        LoadAudioError::Io(io_error) => {
+                            t!("error.load_audio.io", error = io_error)
+                        }
+                        LoadAudioError::Load(load_error) => {
+                            t!("error.load_audio.load", error = load_error)
+                        }
+                    };
+
+                    t!("error.load_project.cannot_load_audio", error = reason)
+                }
+            };
+
+            toasts.error(message);
             telemetry.write(PushTelemetryEvent::new(
                 "phichain.editor.project.load.failed",
                 json!({}),

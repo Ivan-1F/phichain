@@ -243,6 +243,23 @@ illustration:
   load:
     failed: 'イラストの読み込み中にエラーが発生しました: %{error}'
 
+error:
+  open_project:
+    label: プロジェクトの読み込み中にエラーが発生しました
+    missing_file: '%{file} が見つかりません'
+    cannot_open_meta: 'meta.json を開けません: %{error}'
+    invalid_meta: '無効な meta.json です: %{error}'
+  load_project:
+    cannot_open_chart: 'chart.json を開けません: %{error}'
+    invalid_chart: '無効な chart.json です: %{error}'
+    migration_failed: 'マイグレーションに失敗しました: %{error}'
+    cannot_load_audio: 'オーディオの読み込みに失敗しました: %{error}'
+  load_audio:
+    unknown_format: オーディオ形式を特定できません
+    unsupported_format: 'サポートされていないオーディオ形式です: %{format}。代わりに wav、mp3、ogg、flac を使用してください'
+    io: 'オーディオファイルを開けません: %{error}'
+    load: 'オーディオソースの読み込みに失敗しました: %{error}'
+
 home:
   recent_projects:
     last_opened: '最終起動日時: %{time}'

@@ -243,14 +243,24 @@ illustration:
   load:
     failed: 'Failed to load illustration: %{error}'
 
-home:
-  load:
-    error:
-      label: 'Failed to load project'
-      missing_file: 'Missing %{file}'
-      cannot_open_meta: 'Cannot open meta.json: %{error}'
-      invalid_meta: 'Invalid meta.json: %{error}'
+error:
+  open_project:
+    label: Failed to load project
+    missing_file: Missing %{file}
+    cannot_open_meta: 'Cannot open meta.json: %{error}'
+    invalid_meta: 'Invalid meta.json: %{error}'
+  load_project:
+    cannot_open_chart: 'Cannot open chart.json: %{error}'
+    invalid_chart: 'Invalid chart.json: %{error}'
+    migration_failed: 'Migration failed: %{error}'
+    cannot_load_audio: 'Cannot load audio: %{error}'
+  load_audio:
+    unknown_format: Cannot determine audio format
+    unsupported_format: 'Unsupported audio format: %{format}. Use wav, mp3, ogg, flac instead'
+    io: 'Failed to open audio file: %{error}'
+    load: 'Failed to load audio source: %{error}'
 
+home:
   recent_projects:
     last_opened: 'Last Opened: %{time}'
     empty: 'No Recent Projects'

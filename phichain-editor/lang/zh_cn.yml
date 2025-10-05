@@ -243,14 +243,24 @@ illustration:
   load:
     failed: '加载曲绘时发生错误: %{error}'
 
-home:
-  load:
-    error:
-      label: '加载项目时发生错误'
-      missing_file: '缺少 %{file}'
-      cannot_open_meta: '无法打开 meta.json: %{error}'
-      invalid_meta: '无效的 meta.json: %{error}'
+error:
+  open_project:
+    label: 加载项目时发生错误
+    missing_file: 缺少 %{file}
+    cannot_open_meta: '无法打开 meta.json: %{error}'
+    invalid_meta: '无效的 meta.json: %{error}'
+  load_project:
+    cannot_open_chart: '无法打开 chart.json: %{error}'
+    invalid_chart: '无效的 chart.json: %{error}'
+    migration_failed: '迁移失败: %{error}'
+    cannot_load_audio: '无法加载音频: %{error}'
+  load_audio:
+    unknown_format: 无法确定音频格式
+    unsupported_format: '不支持的音频格式: %{format}。请改用 wav、mp3、ogg、flac'
+    io: '无法打开音频文件: %{error}'
+    load: '无法加载音频源: %{error}'
 
+home:
   recent_projects:
     last_opened: '上一次打开: %{time}'
     empty: '没有最近的项目'

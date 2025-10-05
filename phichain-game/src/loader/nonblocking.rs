@@ -1,7 +1,6 @@
-use crate::audio::{load_audio, open_audio, AudioBytes};
+use crate::audio::{load_audio, open_audio, AudioBytes, LoadAudioError};
 use crate::illustration::{load_illustration, open_illustration};
 use crate::loader::load_line;
-use anyhow::{Context, Result};
 use bevy::app::App;
 use bevy::prelude::{Commands, Component, Entity, Event, Plugin, Query, Update};
 use bevy::tasks::futures_lite::future;
@@ -13,6 +12,7 @@ use phichain_chart::serialization::PhichainChart;
 use serde_json::Value;
 use std::fs::File;
 use std::time::{Duration, Instant};
+use thiserror::Error;
 
 pub struct ProjectData {
     pub duration: Duration,
@@ -21,6 +21,20 @@ pub struct ProjectData {
     illustration: Option<ImageResult<DynamicImage>>,
     pub audio: AudioBytes,
 }
+
+#[derive(Error, Debug)]
+pub enum LoadProjectError {
+    #[error("cannot open chart")]
+    CannotOpenChart(#[from] std::io::Error),
+    #[error("invalid chart")]
+    InvalidChart(#[from] serde_json::Error),
+    #[error("migration failed")]
+    MigrationFailed(#[from] anyhow::Error), // TODO: use thiserror for migration
+    #[error("cannot load audio")]
+    CannotLoadAudio(#[from] LoadAudioError),
+}
+
+type Result<T> = std::result::Result<T, LoadProjectError>;
 
 type LoadingProjectTask = Task<Result<ProjectData>>;
 
@@ -47,13 +61,13 @@ pub fn load_project(project: &Project, commands: &mut Commands) {
         let start = Instant::now();
 
         let file = File::open(project.path.chart_path())?;
-        let chart: Value = serde_json::from_reader(file).context("Failed to load chart")?;
-        let migrated = migrate(&chart).context("Migration failed")?;
-        let chart: PhichainChart =
-            serde_json::from_value(migrated).context("Failed to deserialize chart")?;
+        let chart: Value = serde_json::from_reader(file)?;
+        let migrated = migrate(&chart)?;
+        let chart: PhichainChart = serde_json::from_value(migrated)?;
 
         let illustration = project.path.illustration_path().map(open_illustration);
-        let audio_path = project.path.music_path().context("Failed to find music")?;
+        // music_path has been checked in Project::load()
+        let audio_path = project.path.music_path().unwrap();
         let audio = open_audio(audio_path)?;
 
         Ok(ProjectData {
