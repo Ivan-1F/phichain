@@ -13,6 +13,7 @@ use bevy::ecs::system::SystemState;
 use bevy_kira_audio::{Audio, AudioControl, AudioSource};
 use bevy_persistent::Persistent;
 use phichain_chart::line::Line;
+use phichain_chart::project::LoadProjectError;
 pub use phichain_chart::project::{Project, ProjectMeta, ProjectPath};
 use phichain_chart::serialization::PhichainChart;
 use phichain_game::loader::nonblocking::ProjectLoadingResult;
@@ -127,7 +128,18 @@ fn load_project_system(
                 // results will be handled in `handle_project_loading_result_system`
             }
             Err(error) => {
-                toasts.error(format!("Failed to open project: {error:?}"));
+                let message = match error {
+                    LoadProjectError::MissingFile(file) => {
+                        t!("home.load.error.missing_file", file = file)
+                    }
+                    LoadProjectError::CannotOpenMeta(error) => {
+                        t!("home.load.error.cannot_open_meta", error = error)
+                    }
+                    LoadProjectError::InvalidMeta(error) => {
+                        t!("home.load.error.invalid_meta", error = error)
+                    }
+                };
+                toasts.error(format!("{}: {}", t!("home.load.error.label"), message));
             }
         }
     }

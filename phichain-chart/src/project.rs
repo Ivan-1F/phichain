@@ -1,7 +1,7 @@
-use anyhow::{anyhow, bail, Context};
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::path::{Path, PathBuf};
+use thiserror::Error;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -11,6 +11,16 @@ pub struct ProjectMeta {
     pub illustrator: String,
     pub name: String,
     pub level: String,
+}
+
+#[derive(Error, Debug)]
+pub enum LoadProjectError {
+    #[error("missing {0} file")]
+    MissingFile(&'static str),
+    #[error("cannot open meta.json")]
+    CannotOpenMeta(#[from] std::io::Error),
+    #[error("invalid meta.json")]
+    InvalidMeta(#[from] serde_json::Error),
 }
 
 #[cfg_attr(feature = "bevy", derive(bevy::prelude::Resource))]
@@ -24,7 +34,7 @@ pub struct Project {
 }
 
 impl Project {
-    pub fn load(root_dir: PathBuf) -> anyhow::Result<Self> {
+    pub fn load(root_dir: PathBuf) -> Result<Self, LoadProjectError> {
         ProjectPath(root_dir).into_project()
     }
 }
@@ -69,23 +79,23 @@ impl ProjectPath {
         self.0.join("meta.json")
     }
 
-    pub fn into_project(self) -> anyhow::Result<Project> {
+    pub fn into_project(self) -> Result<Project, LoadProjectError> {
         if !self.chart_path().is_file() {
-            bail!("chart.json is missing");
+            return Err(LoadProjectError::MissingFile("chart.json"));
         }
         if !self
             .music_path()
-            .ok_or(anyhow!("Could not find music file in project"))?
+            .ok_or(LoadProjectError::MissingFile("music.[wav|mp3|ogg|flac]"))?
             .is_file()
         {
-            bail!("music.wav is missing");
+            return Err(LoadProjectError::MissingFile("music.[wav|mp3|ogg|flac]"));
         }
         if !self.meta_path().is_file() {
-            bail!("meta.json is missing");
+            return Err(LoadProjectError::MissingFile("meta.json"));
         }
 
-        let meta_file = File::open(self.meta_path()).context("Failed to open meta file")?;
-        let meta: ProjectMeta = serde_json::from_reader(meta_file).context("Invalid meta file")?;
+        let meta_file = File::open(self.meta_path())?;
+        let meta: ProjectMeta = serde_json::from_reader(meta_file)?;
 
         Ok(Project {
             path: self,

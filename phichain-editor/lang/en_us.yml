@@ -244,6 +244,13 @@ illustration:
     failed: 'Failed to load illustration: %{error}'
 
 home:
+  load:
+    error:
+      label: 'Failed to load project'
+      missing_file: 'Missing %{file}'
+      cannot_open_meta: 'Cannot open meta.json: %{error}'
+      invalid_meta: 'Invalid meta.json: %{error}'
+
   recent_projects:
     last_opened: 'Last Opened: %{time}'
     empty: 'No Recent Projects'

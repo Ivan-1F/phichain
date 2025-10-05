@@ -16,6 +16,8 @@ serde_repr = "0.1.19"
 tracing = "0.1.40"
 convert_case = "0.8.0"
 
+thiserror = "2.0.17"
+
 uuid = { version = "1.13.1", features = ["v4"] }
 
 [features]

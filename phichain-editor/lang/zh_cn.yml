@@ -244,6 +244,13 @@ illustration:
     failed: '加载曲绘时发生错误: %{error}'
 
 home:
+  load:
+    error:
+      label: '加载项目时发生错误'
+      missing_file: '缺少 %{file}'
+      cannot_open_meta: '无法打开 meta.json: %{error}'
+      invalid_meta: '无效的 meta.json: %{error}'
+
   recent_projects:
     last_opened: '上一次打开: %{time}'
     empty: '没有最近的项目'
