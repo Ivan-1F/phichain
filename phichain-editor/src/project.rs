@@ -13,7 +13,7 @@ use bevy::ecs::system::SystemState;
 use bevy_kira_audio::{Audio, AudioControl, AudioSource};
 use bevy_persistent::Persistent;
 use phichain_chart::line::Line;
-use phichain_chart::project::LoadProjectError;
+use phichain_chart::project::OpenProjectError;
 pub use phichain_chart::project::{Project, ProjectMeta, ProjectPath};
 use phichain_chart::serialization::PhichainChart;
 use phichain_game::loader::nonblocking::ProjectLoadingResult;
@@ -122,20 +122,20 @@ fn load_project_system(
     }
 
     if let Some(event) = events.read().last() {
-        match Project::load(event.0.clone()) {
+        match Project::open(event.0.clone()) {
             Ok(project) => {
                 phichain_game::loader::nonblocking::load_project(&project, &mut commands);
                 // results will be handled in `handle_project_loading_result_system`
             }
             Err(error) => {
                 let message = match error {
-                    LoadProjectError::MissingFile(file) => {
+                    OpenProjectError::MissingFile(file) => {
                         t!("home.load.error.missing_file", file = file)
                     }
-                    LoadProjectError::CannotOpenMeta(error) => {
+                    OpenProjectError::CannotOpenMeta(error) => {
                         t!("home.load.error.cannot_open_meta", error = error)
                     }
-                    LoadProjectError::InvalidMeta(error) => {
+                    OpenProjectError::InvalidMeta(error) => {
                         t!("home.load.error.invalid_meta", error = error)
                     }
                 };

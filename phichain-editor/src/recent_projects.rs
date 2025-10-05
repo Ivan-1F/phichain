@@ -66,7 +66,7 @@ impl PersistentRecentProjectsExt for Persistent<RecentProjects> {
     }
 
     fn refresh(&mut self) {
-        self.0.retain_mut(|x| match Project::load(x.path.clone()) {
+        self.0.retain_mut(|x| match Project::open(x.path.clone()) {
             Ok(project) => {
                 x.name = project.meta.name;
                 true

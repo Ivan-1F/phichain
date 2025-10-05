@@ -14,7 +14,7 @@ pub struct ProjectMeta {
 }
 
 #[derive(Error, Debug)]
-pub enum LoadProjectError {
+pub enum OpenProjectError {
     #[error("missing {0} file")]
     MissingFile(&'static str),
     #[error("cannot open meta.json")]
@@ -34,7 +34,7 @@ pub struct Project {
 }
 
 impl Project {
-    pub fn load(root_dir: PathBuf) -> Result<Self, LoadProjectError> {
+    pub fn open(root_dir: PathBuf) -> Result<Self, OpenProjectError> {
         ProjectPath(root_dir).into_project()
     }
 }
@@ -79,19 +79,19 @@ impl ProjectPath {
         self.0.join("meta.json")
     }
 
-    pub fn into_project(self) -> Result<Project, LoadProjectError> {
+    pub fn into_project(self) -> Result<Project, OpenProjectError> {
         if !self.chart_path().is_file() {
-            return Err(LoadProjectError::MissingFile("chart.json"));
+            return Err(OpenProjectError::MissingFile("chart.json"));
         }
         if !self
             .music_path()
-            .ok_or(LoadProjectError::MissingFile("music.[wav|mp3|ogg|flac]"))?
+            .ok_or(OpenProjectError::MissingFile("music.[wav|mp3|ogg|flac]"))?
             .is_file()
         {
-            return Err(LoadProjectError::MissingFile("music.[wav|mp3|ogg|flac]"));
+            return Err(OpenProjectError::MissingFile("music.[wav|mp3|ogg|flac]"));
         }
         if !self.meta_path().is_file() {
-            return Err(LoadProjectError::MissingFile("meta.json"));
+            return Err(OpenProjectError::MissingFile("meta.json"));
         }
 
         let meta_file = File::open(self.meta_path())?;

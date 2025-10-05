@@ -130,7 +130,7 @@ fn setup_system(
     render_device: Res<RenderDevice>,
     args: Res<Args>,
 ) {
-    let project = Project::load(args.path.clone().into()).expect("Failed to load project");
+    let project = Project::open(args.path.clone().into()).expect("Failed to load project");
 
     let duration = utils::audio_duration(project.path.music_path().unwrap())
         .expect("Failed to get audio duration");
