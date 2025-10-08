@@ -13,7 +13,7 @@
 - QQ 群: [768476938](https://phicha.in/qq)
 - Discord: [discord.gg/ESUwcdMBPv](https://phicha.in/discord)
 
-![screenshot](screenshots/phichain-editor.png)
+![screenshot](screenshots/phichain-editor-zh-CN.png)
 
 ## 致谢
 

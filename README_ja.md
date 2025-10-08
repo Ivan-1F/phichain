@@ -13,9 +13,10 @@ RustとBevyをベースにしたPhigrosの譜面制作ツールチェインで�
 - QQグループ: [768476938](https://phicha.in/qq)
 - Discord: [discord.gg/ESUwcdMBPv](https://phicha.in/discord)
 
-![screenshot](screenshots/phichain-editor.png)
+![screenshot](screenshots/phichain-editor-ja.png)
 
 ## 謝辞
 
 - [cmdysj](https://space.bilibili.com/252635690) 氏の Re:PhiEdit
 - `assets/image` および `assets/audio` ディレクトリ内のアセットファイルは [https://github.com/MisaLiu/phi-chart-render] に由来し、[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) ライセンスに従います。
+- 
