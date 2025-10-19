@@ -1,3 +1,4 @@
+use crate::official::fitting::fit_events;
 use crate::official::schema::{OfficialChart, OfficialNote, OfficialNoteKind};
 use anyhow::bail;
 use phichain_chart::beat::Beat;
@@ -6,9 +7,10 @@ use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::event::LineEvent;
 use phichain_chart::serialization::PhichainChart;
 use phichain_chart::{beat, event};
-use phichain_compiler::helpers::{are_contiguous, fit_easing, map_if, remove_if};
+use phichain_compiler::helpers::{are_contiguous, map_if, remove_if};
 use phichain_compiler::sequence::EventSequence;
 
+mod fitting;
 pub mod schema;
 
 const EASING_FITTING_EPSILON: f32 = 1e-1;
@@ -31,7 +33,7 @@ fn merge_constant_events(events: Vec<LineEvent>) -> Vec<LineEvent> {
 }
 
 pub fn official_to_phichain(official: OfficialChart) -> anyhow::Result<PhichainChart> {
-    use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
+    use phichain_chart::event::{LineEvent, LineEventKind};
     use phichain_chart::note::{Note, NoteKind};
     use phichain_chart::offset::Offset;
     use phichain_chart::serialization::PhichainChart;
@@ -53,63 +55,6 @@ pub fn official_to_phichain(official: OfficialChart) -> anyhow::Result<PhichainC
         bpm_list: BpmList::single(official.lines[0].bpm),
         ..Default::default()
     };
-
-    fn flush_buffer(buffer: &mut [LineEvent], fitted_events: &mut Vec<LineEvent>) {
-        match fit_easing(buffer, EASING_FITTING_EPSILON) {
-            Ok(fitted) => {
-                fitted_events.push(fitted);
-            }
-            Err(mut original) => {
-                fitted_events.append(&mut original);
-            }
-        }
-    }
-
-    fn fit_events(events: Vec<LineEvent>) -> Vec<LineEvent> {
-        if events.is_empty() {
-            return vec![];
-        }
-
-        let mut fitted_events = vec![];
-        let mut buffer: Vec<LineEvent> = vec![];
-
-        let mut expected_duration: Option<Beat> = None;
-        let mut is_increasing: Option<bool> = None;
-
-        for event in events.sorted().iter().copied() {
-            if let Some(last) = buffer.last() {
-                let event_is_increasing = event.value.end() > event.value.start();
-                let direction_matches = is_increasing.is_none_or(|inc| inc == event_is_increasing);
-
-                let duration_matches =
-                    event.end_beat - event.start_beat == expected_duration.unwrap();
-
-                if are_contiguous(last, &event)
-                    && !event.value.is_numeric_constant()
-                    && duration_matches
-                    && direction_matches
-                {
-                    buffer.push(event);
-                    is_increasing.get_or_insert(event_is_increasing);
-                } else {
-                    flush_buffer(&mut buffer, &mut fitted_events);
-                    buffer.clear();
-                    buffer.push(event);
-                    expected_duration.replace(event.end_beat - event.start_beat);
-                    is_increasing = None;
-                }
-            } else {
-                buffer.push(event);
-                expected_duration.replace(event.end_beat - event.start_beat);
-                is_increasing = None;
-            }
-        }
-
-        // Flush remaining buffer
-        flush_buffer(&mut buffer, &mut fitted_events);
-
-        fitted_events
-    }
 
     for line in official.lines {
         let t: fn(f32) -> Beat = |x| Beat::from(x * 1.875 / 60.0);
@@ -261,8 +206,6 @@ pub fn official_to_phichain(official: OfficialChart) -> anyhow::Result<PhichainC
                 ..event
             },
         );
-
-        println!("=========");
 
         let mut line = SerializedLine {
             notes: line
