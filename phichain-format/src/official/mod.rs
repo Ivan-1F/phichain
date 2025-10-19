@@ -229,11 +229,12 @@ pub fn official_to_phichain(official: OfficialChart) -> anyhow::Result<PhichainC
             .chain(speed_event_iter)
             .collect();
 
+        // Shrink constant events to 1/4
         let events = map_if(
             &events,
             |event| {
-                event.value.start() == event.value.end()
-                    && event.end_beat - event.start_beat > beat!(1, 4)
+                event.value.is_numeric_constant()
+                    && event.duration() > beat!(1, 4)
                     && !event.kind.is_speed() // FIXME: filtering speed events out, seems like current speed evaluation is not correct
             },
             |mut event| {
@@ -242,18 +243,18 @@ pub fn official_to_phichain(official: OfficialChart) -> anyhow::Result<PhichainC
             },
         );
 
-        // Fit events for each kind (except speed)
-        let mut fitted_events = vec![];
-
-        for (kind, events) in events.group_by_kind() {
-            if kind.is_speed() {
-                // Don't fit speed events, just add them
-                fitted_events.extend(events);
-            } else {
-                let mut fitted = fit_events(events, kind);
-                fitted_events.append(&mut fitted);
-            }
-        }
+        // Fit events for each kind (speed events are kept as-is, others are fitted)
+        let mut fitted_events: Vec<_> = events
+            .group_by_kind()
+            .into_iter()
+            .flat_map(|(kind, events)| {
+                if kind.is_speed() {
+                    events
+                } else {
+                    fit_events(events, kind)
+                }
+            })
+            .collect();
 
         let mut cleaned_events = vec![];
 
