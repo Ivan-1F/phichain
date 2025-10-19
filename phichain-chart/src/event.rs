@@ -285,3 +285,30 @@ impl LineEvent {
         }
     }
 }
+
+#[macro_export]
+macro_rules! event {
+    ($kind:expr, $from:expr => $to:expr, $start_value:expr => $end_value:expr, $easing:expr $(,)?) => {
+        $crate::event::LineEvent {
+            kind: $kind,
+            start_beat: $from,
+            end_beat: $to,
+            value: $crate::event::LineEventValue::transition(
+                $start_value as f32,
+                $end_value as f32,
+                $easing,
+            ),
+        }
+    };
+    ($kind:expr, $from:expr => $to:expr, $start_value:expr => $end_value:expr $(,)?) => {
+        event!($kind, $from => $to, $start_value => $end_value, $crate::easing::Easing::Linear)
+    };
+    ($kind:expr, $from:expr => $to:expr, $value:expr $(,)?) => {
+        $crate::event::LineEvent {
+            kind: $kind,
+            start_beat: $from,
+            end_beat: $to,
+            value: $crate::event::LineEventValue::constant($value as f32),
+        }
+    };
+}

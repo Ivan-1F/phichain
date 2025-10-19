@@ -25,7 +25,7 @@ macro_rules! beat {
         $crate::beat::Beat::new($whole as i32, num::Rational32::new(0, 1))
     };
     () => {
-        $crate::beat::Beat::new(0, num::Rational32::new(0, 1))
+        $crate::beat::Beat::ZERO
     };
 }
 
