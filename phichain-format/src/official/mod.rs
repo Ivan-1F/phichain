@@ -257,7 +257,7 @@ pub fn official_to_phichain(official: OfficialChart) -> anyhow::Result<PhichainC
             &events,
             |event| event.value.is_numeric_constant() && !event.value.is_constant(), // is numeric constant but not really a constant event
             |event| LineEvent {
-                value: LineEventValue::constant(event.value.start()),
+                value: event.value.into_constant(),
                 ..event
             },
         );
