@@ -1,9 +1,9 @@
+use crate::beat::Beat;
 use crate::easing::{Easing, Tween};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
-
-use crate::beat::Beat;
+use std::time::Duration;
 
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, IntoPrimitive, TryFromPrimitive,
@@ -221,6 +221,10 @@ impl EventEvaluationResult {
 }
 
 impl LineEvent {
+    pub fn duration(&self) -> Beat {
+        self.end_beat - self.start_beat
+    }
+
     pub fn evaluate(&self, beat: f32) -> EventEvaluationResult {
         let start_beat = self.start_beat.value();
         let end_beat = self.end_beat.value();
