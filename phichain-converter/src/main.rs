@@ -1,3 +1,6 @@
+mod options;
+
+use crate::options::CliOfficialInputOptions;
 use clap::{Parser, ValueEnum};
 use phichain_chart::serialization::PhichainChart;
 use phichain_format::official::official_to_phichain;
@@ -26,6 +29,7 @@ struct Args {
     /// The input chart format
     #[arg(short, long, required = true)]
     input: Formats,
+
     /// The output chart format
     #[arg(short, long, required = true)]
     output: Formats,
@@ -33,6 +37,13 @@ struct Args {
     /// The path of the input chart
     #[arg(required = true)]
     path: PathBuf,
+
+    /// Official input options
+    #[command(flatten)]
+    #[command(
+        next_help_heading = "Official Input Options - Applicable only when the input format is official"
+    )]
+    official_input_options: CliOfficialInputOptions,
 }
 
 fn convert(args: Args) -> anyhow::Result<()> {
@@ -51,7 +62,7 @@ fn convert(args: Args) -> anyhow::Result<()> {
             println!("Converting official chart into phichain chart...");
 
             let chart: OfficialChart = serde_json::from_reader(file)?;
-            let phichain = official_to_phichain(chart)?;
+            let phichain = official_to_phichain(chart, args.official_input_options.into())?;
 
             println!(
                 "Converted to phichain chart: {} lines, {} notes, {} events",
