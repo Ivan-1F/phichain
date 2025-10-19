@@ -42,7 +42,30 @@ pub enum OfficialInputError {
     UnsupportedFormatVersion(u32),
 }
 
-pub fn official_to_phichain(official: OfficialChart) -> Result<PhichainChart, OfficialInputError> {
+#[derive(Debug, Clone)]
+pub struct OfficialInputOptions {
+    /// Enable easing fitting
+    pub easing_fitting: bool,
+    /// The epsilon used during easing fitting
+    pub easing_fitting_epsilon: f32,
+    /// For constant events, how long to shrink them to
+    pub constant_event_shrink_to: Beat,
+}
+
+impl Default for OfficialInputOptions {
+    fn default() -> Self {
+        Self {
+            easing_fitting: true,
+            easing_fitting_epsilon: EASING_FITTING_EPSILON,
+            constant_event_shrink_to: beat!(1, 4),
+        }
+    }
+}
+
+pub fn official_to_phichain(
+    official: OfficialChart,
+    options: OfficialInputOptions,
+) -> Result<PhichainChart, OfficialInputError> {
     if official.lines.is_empty() {
         return Err(OfficialInputError::NoLine);
     }
@@ -158,27 +181,31 @@ pub fn official_to_phichain(official: OfficialChart) -> Result<PhichainChart, Of
             &events,
             |event| {
                 event.value.is_numeric_constant()
-                    && event.duration() > beat!(1, 4)
+                    && event.duration() > options.constant_event_shrink_to
                     && !event.kind.is_speed() // FIXME: filtering speed events out, seems like current speed evaluation is not correct
             },
             |mut event| {
-                event.end_beat = event.start_beat + beat!(1, 4);
+                event.end_beat = event.start_beat + options.constant_event_shrink_to;
                 event
             },
         );
 
-        // Fit events for each kind (speed events are kept as-is, others are fitted)
-        let events: Vec<_> = events
-            .group_by_kind()
-            .into_iter()
-            .flat_map(|(kind, events)| {
-                if kind.is_speed() {
-                    events
-                } else {
-                    fit_events(events)
-                }
-            })
-            .collect();
+        let events = if options.easing_fitting {
+            // Fit events for each kind (speed events are kept as-is, others are fitted)
+            events
+                .group_by_kind()
+                .into_iter()
+                .flat_map(|(kind, events)| {
+                    if kind.is_speed() {
+                        events
+                    } else {
+                        fit_events(events, options.easing_fitting_epsilon)
+                    }
+                })
+                .collect()
+        } else {
+            events
+        };
 
         // Remove redundant constant suffix events
         let events: Vec<_> = events
