@@ -54,27 +54,18 @@ pub fn official_to_phichain(official: OfficialChart) -> anyhow::Result<PhichainC
         ..Default::default()
     };
 
-    fn flush_buffer(
-        buffer: &mut [LineEvent],
-        fitted_events: &mut Vec<LineEvent>,
-        success: &mut i32,
-        failed: &mut i32,
-    ) {
+    fn flush_buffer(buffer: &mut [LineEvent], fitted_events: &mut Vec<LineEvent>) {
         match fit_easing(buffer, EASING_FITTING_EPSILON) {
             Ok(fitted) => {
-                *success += 1;
                 fitted_events.push(fitted);
             }
             Err(mut original) => {
-                if original.len() > 1 {
-                    *failed += 1;
-                }
                 fitted_events.append(&mut original);
             }
         }
     }
 
-    fn fit_events(events: Vec<LineEvent>, kind: LineEventKind) -> Vec<LineEvent> {
+    fn fit_events(events: Vec<LineEvent>) -> Vec<LineEvent> {
         if events.is_empty() {
             return vec![];
         }
@@ -84,9 +75,6 @@ pub fn official_to_phichain(official: OfficialChart) -> anyhow::Result<PhichainC
 
         let mut expected_duration: Option<Beat> = None;
         let mut is_increasing: Option<bool> = None;
-
-        let mut success = 0;
-        let mut failed = 0;
 
         for event in events.sorted().iter().copied() {
             if let Some(last) = buffer.last() {
@@ -104,7 +92,7 @@ pub fn official_to_phichain(official: OfficialChart) -> anyhow::Result<PhichainC
                     buffer.push(event);
                     is_increasing.get_or_insert(event_is_increasing);
                 } else {
-                    flush_buffer(&mut buffer, &mut fitted_events, &mut success, &mut failed);
+                    flush_buffer(&mut buffer, &mut fitted_events);
                     buffer.clear();
                     buffer.push(event);
                     expected_duration.replace(event.end_beat - event.start_beat);
@@ -118,19 +106,7 @@ pub fn official_to_phichain(official: OfficialChart) -> anyhow::Result<PhichainC
         }
 
         // Flush remaining buffer
-        flush_buffer(&mut buffer, &mut fitted_events, &mut success, &mut failed);
-
-        println!(
-            "{:?}: success {}, failed {}, success rate {:.2}%",
-            kind,
-            success,
-            failed,
-            if success + failed > 0 {
-                (success as f32 / (success + failed) as f32) * 100.0
-            } else {
-                0.0
-            }
-        );
+        flush_buffer(&mut buffer, &mut fitted_events);
 
         fitted_events
     }
@@ -251,7 +227,7 @@ pub fn official_to_phichain(official: OfficialChart) -> anyhow::Result<PhichainC
                 if kind.is_speed() {
                     events
                 } else {
-                    fit_events(events, kind)
+                    fit_events(events)
                 }
             })
             .collect();
