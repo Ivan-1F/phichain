@@ -1,18 +1,19 @@
-use crate::official::EASING_FITTING_EPSILON;
 use phichain_chart::beat::Beat;
 use phichain_chart::event::{Direction, LineEvent};
 use phichain_compiler::helpers::{are_contiguous, fit_easing};
 use phichain_compiler::sequence::EventSequence;
 
 struct Buffer {
+    epsilon: f32,
     events: Vec<LineEvent>,
     duration: Option<Beat>,
     direction: Option<Direction>,
 }
 
 impl Buffer {
-    fn new() -> Self {
+    fn new(epsilon: f32) -> Self {
         Self {
+            epsilon,
             events: Vec::new(),
             duration: None,
             direction: None,
@@ -56,7 +57,7 @@ impl Buffer {
             return;
         }
 
-        match fit_easing(self.events.as_slice(), EASING_FITTING_EPSILON) {
+        match fit_easing(self.events.as_slice(), self.epsilon) {
             Ok(fitted) => target.push(fitted),
             Err(mut original) => target.append(&mut original),
         }
@@ -67,13 +68,13 @@ impl Buffer {
     }
 }
 
-pub fn fit_events(events: Vec<LineEvent>) -> Vec<LineEvent> {
+pub fn fit_events(events: Vec<LineEvent>, epsilon: f32) -> Vec<LineEvent> {
     if events.is_empty() {
         return vec![];
     }
 
     let mut fitted_events = Vec::new();
-    let mut buffer = Buffer::new();
+    let mut buffer = Buffer::new(epsilon);
 
     for event in events.sorted() {
         if !buffer.accept(&event) {
