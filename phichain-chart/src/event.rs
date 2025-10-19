@@ -79,6 +79,14 @@ impl LineEventValue {
         matches!(self, LineEventValue::Constant(_))
     }
 
+    pub fn is_numeric_constant(&self) -> bool {
+        match self {
+            LineEventValue::Constant(_) => true,
+            LineEventValue::Transition { start, end, .. } if start == end => true,
+            _ => false,
+        }
+    }
+
     pub fn start(&self) -> f32 {
         match self {
             LineEventValue::Transition { start, .. } => *start,

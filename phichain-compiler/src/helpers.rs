@@ -128,3 +128,25 @@ where
         .map(|e| if predicate(&e) { f(e) } else { e })
         .collect()
 }
+
+/// Check if two events are temporally adjacent
+///
+/// Returns true if `first` ends exactly when `second` starts, or `first` starts exactly when `second` ends
+///
+/// This only checks temporal adjacency, not value continuity.
+pub fn are_adjacent(first: &LineEvent, second: &LineEvent) -> bool {
+    first.end_beat == second.start_beat || first.start_beat == second.end_beat
+}
+
+/// Check if two events are contiguous (both beats and values align)
+///
+/// Returns true if the events are both temporally adjacent AND their values connect smoothly:
+/// - `first` ends exactly when `second` starts, with `first.end_value == second.start_value`, or
+/// - `first` starts exactly when `second` ends, with `first.start_value == second.end_value`
+///
+/// This is stricter than [`are_adjacent`] as it requires value continuity.
+/// ```
+pub fn are_contiguous(first: &LineEvent, second: &LineEvent) -> bool {
+    (first.end_beat == second.start_beat && first.value.end() == second.value.start())
+        || (first.start_beat == second.end_beat && first.value.start() == second.value.end())
+}

@@ -5,17 +5,15 @@ use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::easing::Easing;
-use phichain_compiler::helpers::{fit_easing, map_if, remove_if};
+use phichain_chart::serialization::PhichainChart;
+use phichain_compiler::helpers::{are_contiguous, fit_easing, map_if, remove_if};
 use phichain_compiler::sequence::EventSequence;
 
 pub mod schema;
 
-const EVENT_VALUE_EPSILON: f32 = 1e-4;
 const EASING_FITTING_EPSILON: f32 = 1e-1;
 
-pub fn official_to_phichain(
-    official: OfficialChart,
-) -> anyhow::Result<phichain_chart::serialization::PhichainChart> {
+pub fn official_to_phichain(official: OfficialChart) -> anyhow::Result<PhichainChart> {
     use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
     use phichain_chart::note::{Note, NoteKind};
     use phichain_chart::offset::Offset;
@@ -56,10 +54,9 @@ pub fn official_to_phichain(
 
             if let Some(idx) = *target_index {
                 if let Some(last) = merged.get_mut(idx) {
-                    if last.value.start() == last.value.end()
-                        && event.value.start() == event.value.end()
-                        && last.value.end() == event.value.start()
-                        && last.end_beat == event.start_beat
+                    if last.value.is_numeric_constant()
+                        && event.value.is_numeric_constant()
+                        && are_contiguous(last, &event)
                     {
                         last.end_beat = event.end_beat;
                         continue;
@@ -117,9 +114,8 @@ pub fn official_to_phichain(
                 let duration_matches =
                     event.end_beat - event.start_beat == expected_duration.unwrap();
 
-                if last.end_beat == event.start_beat
-                    && (last.value.end() - event.value.start()).abs() <= EASING_FITTING_EPSILON
-                    && event.value.start() != event.value.end()
+                if are_contiguous(last, &event)
+                    && !event.value.is_numeric_constant()
                     && duration_matches
                     && direction_matches
                 {
@@ -308,8 +304,7 @@ pub fn official_to_phichain(
                 let is_redundant = match last_end_value {
                     None => false,
                     Some(last_end_value) => {
-                        event.value.start() == event.value.end()
-                            && (last_end_value - event.value.start()).abs() < EVENT_VALUE_EPSILON
+                        event.value.is_numeric_constant() && last_end_value == event.value.start()
                     }
                 };
 
