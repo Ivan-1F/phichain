@@ -244,7 +244,7 @@ pub fn official_to_phichain(official: OfficialChart) -> anyhow::Result<PhichainC
         );
 
         // Fit events for each kind (speed events are kept as-is, others are fitted)
-        let mut fitted_events: Vec<_> = events
+        let events: Vec<_> = events
             .group_by_kind()
             .into_iter()
             .flat_map(|(kind, events)| {
@@ -256,32 +256,30 @@ pub fn official_to_phichain(official: OfficialChart) -> anyhow::Result<PhichainC
             })
             .collect();
 
-        let mut cleaned_events = vec![];
+        // Remove redundant constant suffix events
+        let events: Vec<_> = events
+            .group_by_kind()
+            .into_iter()
+            .flat_map(|(_, events)| {
+                let sorted_events = events.sorted();
 
-        for (_, events) in fitted_events.group_by_kind() {
-            let events = events.sorted();
+                let mut prev_end_value = None;
 
-            // remove redundant constant suffix events
-            let mut last_end_value: Option<f32> = None;
-            let filtered = remove_if(&events, |event| {
-                let is_redundant = match last_end_value {
-                    None => false,
-                    Some(last_end_value) => {
-                        event.value.is_numeric_constant() && last_end_value == event.value.start()
-                    }
-                };
+                remove_if(&sorted_events, |event| {
+                    let is_redundant = prev_end_value.is_some_and(|prev_end| {
+                        event.value.is_numeric_constant() && event.value.start() == prev_end
+                    });
 
-                last_end_value.replace(event.value.end());
+                    prev_end_value = Some(event.value.end());
+                    is_redundant
+                })
+            })
+            .collect();
 
-                is_redundant
-            });
-
-            cleaned_events.extend(filtered);
-        }
-
-        fitted_events = map_if(
-            &cleaned_events,
-            |event| matches!(event.value, LineEventValue::Transition { start, end, .. } if start == end),
+        // Convert numeric constant transition events to constant events
+        let events = map_if(
+            &events,
+            |event| event.value.is_numeric_constant() && !event.value.is_constant(), // is numeric constant but not really a constant event
             |event| LineEvent {
                 value: LineEventValue::constant(event.value.start()),
                 ..event
@@ -297,7 +295,7 @@ pub fn official_to_phichain(official: OfficialChart) -> anyhow::Result<PhichainC
                 .map(|x| create_note(true, x))
                 .chain(line.notes_below.iter().map(|x| create_note(false, x)))
                 .collect(),
-            events: fitted_events,
+            events,
 
             ..Default::default()
         };
