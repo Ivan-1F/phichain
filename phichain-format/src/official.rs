@@ -9,7 +9,8 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::easing::Easing;
 use phichain_chart::event::LineEventKind;
-use phichain_compiler::sequence::{fit_easing, map_if, remove_if, EventSequence};
+use phichain_compiler::helpers::{fit_easing, map_if, remove_if};
+use phichain_compiler::sequence::EventSequence;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
@@ -108,40 +109,6 @@ pub struct OfficialChart {
 const EVENT_VALUE_EPSILON: f32 = 1e-4;
 const EASING_FITTING_EPSILON: f32 = 1e-1;
 
-const EASING_FITTING_POSSIBLE_EASINGS: [Easing; 31] = [
-    Easing::Linear,
-    Easing::EaseInSine,
-    Easing::EaseOutSine,
-    Easing::EaseInOutSine,
-    Easing::EaseInQuad,
-    Easing::EaseOutQuad,
-    Easing::EaseInOutQuad,
-    Easing::EaseInCubic,
-    Easing::EaseOutCubic,
-    Easing::EaseInOutCubic,
-    Easing::EaseInQuart,
-    Easing::EaseOutQuart,
-    Easing::EaseInOutQuart,
-    Easing::EaseInQuint,
-    Easing::EaseOutQuint,
-    Easing::EaseInOutQuint,
-    Easing::EaseInExpo,
-    Easing::EaseOutExpo,
-    Easing::EaseInOutExpo,
-    Easing::EaseInCirc,
-    Easing::EaseOutCirc,
-    Easing::EaseInOutCirc,
-    Easing::EaseInBack,
-    Easing::EaseOutBack,
-    Easing::EaseInOutBack,
-    Easing::EaseInElastic,
-    Easing::EaseOutElastic,
-    Easing::EaseInOutElastic,
-    Easing::EaseInBounce,
-    Easing::EaseOutBounce,
-    Easing::EaseInOutBounce,
-];
-
 pub fn official_to_phichain(
     official: OfficialChart,
 ) -> anyhow::Result<phichain_chart::serialization::PhichainChart> {
@@ -205,16 +172,12 @@ pub fn official_to_phichain(
     }
 
     fn flush_buffer(
-        buffer: &mut Vec<LineEvent>,
+        buffer: &mut [LineEvent],
         fitted_events: &mut Vec<LineEvent>,
         success: &mut i32,
         failed: &mut i32,
     ) {
-        match fit_easing(
-            buffer,
-            &EASING_FITTING_POSSIBLE_EASINGS,
-            EASING_FITTING_EPSILON,
-        ) {
+        match fit_easing(buffer, EASING_FITTING_EPSILON) {
             Ok(fitted) => {
                 *success += 1;
                 fitted_events.push(fitted);
