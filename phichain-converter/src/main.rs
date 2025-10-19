@@ -22,21 +22,82 @@ enum Formats {
     Primitive,
 }
 
+macro_rules! define_format_args {
+    (
+        $(
+            $field:ident => $variant:ident: $help:expr
+        ),* $(,)?
+    ) => {
+        #[derive(Debug, Parser)]
+        struct FormatArgs {
+            $(
+                #[doc = $help]
+                #[arg(long, num_args = 0..=1)]
+                $field: Option<Option<PathBuf>>,
+            )*
+        }
+
+        impl FormatArgs {
+            fn collect_formats(&self, order: &[String]) -> Vec<(Formats, Option<PathBuf>)> {
+                // Create a map of format name -> (Format, PathBuf)
+                let mut format_map = std::collections::HashMap::new();
+                $(
+                    if let Some(path) = &self.$field {
+                        format_map.insert(
+                            stringify!($field).to_string(),
+                            (Formats::$variant, path.clone())
+                        );
+                    }
+                )*
+
+                // Build result in the order specified by command line
+                let mut format_args = vec![];
+                for arg in order {
+                    if let Some(entry) = format_map.get(arg) {
+                        format_args.push(entry.clone());
+                    }
+                }
+
+                format_args
+            }
+
+            /// Get the list of all supported format flag names
+            fn format_flags() -> &'static [&'static str] {
+                &[$(stringify!($field)),*]
+            }
+        }
+    };
+}
+
+define_format_args! {
+    phichain => Phichain: "Use Phichain chart as input or output",
+    official => Official: "Use official chart as input or output",
+    rpe => Rpe: "Use RPE chart as input or output",
+    primitive => Primitive: "Use primitive chart as input or output",
+}
+
+/// Extract the order of format flags from command line arguments
+fn extract_format_order() -> Vec<String> {
+    let format_flags = FormatArgs::format_flags();
+
+    std::env::args()
+        .filter_map(|arg| {
+            if let Some(flag) = arg.strip_prefix("--") {
+                if format_flags.contains(&flag) {
+                    return Some(flag.to_string());
+                }
+            }
+            None
+        })
+        .collect()
+}
+
 #[derive(Debug, Parser)]
 #[command(name = "phichain-converter")]
 #[command(about = "Converts Phigros charts between different formats")]
 struct Args {
-    /// The input chart format
-    #[arg(short, long, required = true)]
-    input: Formats,
-
-    /// The output chart format
-    #[arg(short, long, required = true)]
-    output: Formats,
-
-    /// The path of the input chart
-    #[arg(required = true)]
-    path: PathBuf,
+    #[command(flatten)]
+    formats: FormatArgs,
 
     /// Official input options
     #[command(flatten)]
@@ -46,7 +107,48 @@ struct Args {
     official_input_options: CliOfficialInputOptions,
 }
 
-fn convert(args: Args) -> anyhow::Result<()> {
+impl Args {
+    fn parse_args(self, format_order: &[String]) -> anyhow::Result<ParsedArgs> {
+        let format_args = self.formats.collect_formats(format_order);
+
+        if format_args.len() != 2 {
+            anyhow::bail!(
+                "Expected exactly 2 format flags, got {}. Usage: <input-format> <input-path> <output-format> [output-path]",
+                format_args.len()
+            );
+        }
+
+        let (input_format, input_path) = &format_args[0];
+        let (output_format, output_path) = &format_args[1];
+
+        let input_path = input_path
+            .clone()
+            .ok_or_else(|| anyhow::anyhow!("Input format must have a path specified"))?;
+
+        let output_path = output_path
+            .clone()
+            .unwrap_or_else(|| PathBuf::from("output.json"));
+
+        Ok(ParsedArgs {
+            input: input_format.clone(),
+            path: input_path,
+            output: output_format.clone(),
+            output_path,
+            official_input_options: self.official_input_options,
+        })
+    }
+}
+
+struct ParsedArgs {
+    input: Formats,
+    path: PathBuf,
+    output: Formats,
+    output_path: PathBuf,
+
+    official_input_options: CliOfficialInputOptions,
+}
+
+fn convert(args: ParsedArgs) -> anyhow::Result<()> {
     if !args.path.exists() {
         anyhow::bail!("No such file: {}", args.path.display());
     }
@@ -127,9 +229,7 @@ fn convert(args: Args) -> anyhow::Result<()> {
             }
         };
 
-    let output_path = args.path.with_extension(format!("{}.json", args.output));
-
-    let mut output_file = std::fs::File::create(output_path)?;
+    let mut output_file = std::fs::File::create(&args.output_path)?;
     output_file.write_all(output.as_bytes())?;
 
     Ok(())
@@ -137,7 +237,14 @@ fn convert(args: Args) -> anyhow::Result<()> {
 
 fn main() {
     let args = Args::parse();
-    if let Err(err) = convert(args) {
+    let parsed_args = match args.parse_args(&extract_format_order()) {
+        Ok(parsed) => parsed,
+        Err(err) => {
+            eprintln!("Error: {err}");
+            std::process::exit(1);
+        }
+    };
+    if let Err(err) = convert(parsed_args) {
         eprintln!("Error: {err}");
         std::process::exit(1);
     }
