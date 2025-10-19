@@ -3,8 +3,10 @@ use crate::official::schema::{OfficialChart, OfficialNote, OfficialNoteKind};
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
-use phichain_chart::event::LineEvent;
-use phichain_chart::serialization::PhichainChart;
+use phichain_chart::event::{LineEvent, LineEventKind};
+use phichain_chart::note::{Note, NoteKind};
+use phichain_chart::offset::Offset;
+use phichain_chart::serialization::{PhichainChart, SerializedLine};
 use phichain_chart::{beat, event};
 use phichain_compiler::helpers::{are_contiguous, map_if, remove_if};
 use phichain_compiler::sequence::EventSequence;
@@ -41,12 +43,6 @@ pub enum OfficialInputError {
 }
 
 pub fn official_to_phichain(official: OfficialChart) -> Result<PhichainChart, OfficialInputError> {
-    use phichain_chart::event::{LineEvent, LineEventKind};
-    use phichain_chart::note::{Note, NoteKind};
-    use phichain_chart::offset::Offset;
-    use phichain_chart::serialization::PhichainChart;
-    use phichain_chart::serialization::SerializedLine;
-
     if official.lines.is_empty() {
         return Err(OfficialInputError::NoLine);
     }
