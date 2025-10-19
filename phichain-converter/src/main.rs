@@ -3,7 +3,7 @@ use phichain_chart::serialization::PhichainChart;
 use phichain_format::official::official_to_phichain;
 use phichain_format::official::schema::OfficialChart;
 use phichain_format::primitive::PrimitiveChart;
-use phichain_format::rpe::RpeChart;
+use phichain_format::rpe::schema::RpeChart;
 use phichain_format::Format;
 use std::io::Write;
 use std::path::PathBuf;
