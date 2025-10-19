@@ -28,10 +28,10 @@ impl Buffer {
         if let Some(last) = self.events.last() {
             let duration_matches = self
                 .duration
-                .map_or(true, |duration| duration == event.duration());
+                .is_none_or(|duration| duration == event.duration());
             let direction_matches = self
                 .direction
-                .map_or(true, |direction| direction == event.value.direction());
+                .is_none_or(|direction| direction == event.value.direction());
 
             are_contiguous(last, event) && duration_matches && direction_matches
         } else {
