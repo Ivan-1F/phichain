@@ -3,7 +3,6 @@ use crate::easing::{Easing, Tween};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
-use std::time::Duration;
 
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, IntoPrimitive, TryFromPrimitive,
@@ -49,6 +48,13 @@ pub enum LineEventValue {
         easing: Easing,
     },
     Constant(f32),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Direction {
+    Increasing,
+    Decreasing,
+    Equal,
 }
 
 impl LineEventValue {
@@ -98,6 +104,19 @@ impl LineEventValue {
         match self {
             LineEventValue::Transition { end, .. } => *end,
             LineEventValue::Constant(value) => *value,
+        }
+    }
+
+    pub fn direction(&self) -> Direction {
+        let start = self.start();
+        let end = self.end();
+
+        if start < end {
+            Direction::Increasing
+        } else if start > end {
+            Direction::Decreasing
+        } else {
+            Direction::Equal
         }
     }
 
