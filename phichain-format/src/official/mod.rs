@@ -5,6 +5,7 @@ use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::easing::Easing;
+use phichain_chart::event::LineEvent;
 use phichain_chart::serialization::PhichainChart;
 use phichain_compiler::helpers::{are_contiguous, fit_easing, map_if, remove_if};
 use phichain_compiler::sequence::EventSequence;
@@ -12,6 +13,23 @@ use phichain_compiler::sequence::EventSequence;
 pub mod schema;
 
 const EASING_FITTING_EPSILON: f32 = 1e-1;
+
+fn merge_constant_events(events: Vec<LineEvent>) -> Vec<LineEvent> {
+    events.into_iter().fold(Vec::new(), |mut merged, event| {
+        if let Some(last) = merged.last_mut() {
+            if last.value.is_numeric_constant()
+                && event.value.is_numeric_constant()
+                && are_contiguous(last, &event)
+            {
+                // extend the previous event instead of adding a new one
+                last.end_beat = event.end_beat;
+                return merged;
+            }
+        }
+        merged.push(event);
+        merged
+    })
+}
 
 pub fn official_to_phichain(official: OfficialChart) -> anyhow::Result<PhichainChart> {
     use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
@@ -36,41 +54,6 @@ pub fn official_to_phichain(official: OfficialChart) -> anyhow::Result<PhichainC
         bpm_list: BpmList::single(official.lines[0].bpm),
         ..Default::default()
     };
-
-    fn merge_constant_move_events(events: Vec<LineEvent>) -> Vec<LineEvent> {
-        let mut merged = Vec::with_capacity(events.len());
-        let mut last_x: Option<usize> = None;
-        let mut last_y: Option<usize> = None;
-
-        for event in events {
-            let target_index = match event.kind {
-                LineEventKind::X => &mut last_x,
-                LineEventKind::Y => &mut last_y,
-                _ => {
-                    merged.push(event);
-                    continue;
-                }
-            };
-
-            if let Some(idx) = *target_index {
-                if let Some(last) = merged.get_mut(idx) {
-                    if last.value.is_numeric_constant()
-                        && event.value.is_numeric_constant()
-                        && are_contiguous(last, &event)
-                    {
-                        last.end_beat = event.end_beat;
-                        continue;
-                    }
-                }
-            }
-
-            let idx = merged.len();
-            *target_index = Some(idx);
-            merged.push(event);
-        }
-
-        merged
-    }
 
     fn flush_buffer(
         buffer: &mut [LineEvent],
@@ -177,59 +160,64 @@ pub fn official_to_phichain(official: OfficialChart) -> anyhow::Result<PhichainC
             )
         };
 
-        let move_events = merge_constant_move_events(
-            line.move_events
-                .iter()
-                .flat_map(|event| match official.format_version {
-                    // reference: https://github.com/MisaLiu/phi-chart-render/blob/master/src/chart/convert/official.js#L203
-                    1 => vec![
-                        LineEvent {
-                            kind: LineEventKind::X,
-                            value: LineEventValue::transition(
-                                x((event.start_x / 1e3).round() / 880.0),
-                                x((event.end_x / 1e3).round() / 880.0),
-                                Easing::Linear,
-                            ),
-                            start_beat: t(event.start_time),
-                            end_beat: t(event.end_time),
-                        },
-                        LineEvent {
-                            kind: LineEventKind::Y,
-                            value: LineEventValue::transition(
-                                y(event.start_x % 1e3 / 530.0),
-                                y(event.end_x % 1e3 / 530.0),
-                                Easing::Linear,
-                            ),
-                            start_beat: t(event.start_time),
-                            end_beat: t(event.end_time),
-                        },
-                    ],
-                    3 => vec![
-                        LineEvent {
-                            kind: LineEventKind::X,
-                            value: LineEventValue::transition(
-                                x(event.start_x),
-                                x(event.end_x),
-                                Easing::Linear,
-                            ),
-                            start_beat: t(event.start_time),
-                            end_beat: t(event.end_time),
-                        },
-                        LineEvent {
-                            kind: LineEventKind::Y,
-                            value: LineEventValue::transition(
-                                y(event.start_y),
-                                y(event.end_y),
-                                Easing::Linear,
-                            ),
-                            start_beat: t(event.start_time),
-                            end_beat: t(event.end_time),
-                        },
-                    ],
-                    _ => unreachable!(),
-                })
-                .collect(),
-        );
+        let move_events = line
+            .move_events
+            .iter()
+            .flat_map(|event| match official.format_version {
+                // reference: https://github.com/MisaLiu/phi-chart-render/blob/master/src/chart/convert/official.js#L203
+                1 => vec![
+                    LineEvent {
+                        kind: LineEventKind::X,
+                        value: LineEventValue::transition(
+                            x((event.start_x / 1e3).round() / 880.0),
+                            x((event.end_x / 1e3).round() / 880.0),
+                            Easing::Linear,
+                        ),
+                        start_beat: t(event.start_time),
+                        end_beat: t(event.end_time),
+                    },
+                    LineEvent {
+                        kind: LineEventKind::Y,
+                        value: LineEventValue::transition(
+                            y(event.start_x % 1e3 / 530.0),
+                            y(event.end_x % 1e3 / 530.0),
+                            Easing::Linear,
+                        ),
+                        start_beat: t(event.start_time),
+                        end_beat: t(event.end_time),
+                    },
+                ],
+                3 => vec![
+                    LineEvent {
+                        kind: LineEventKind::X,
+                        value: LineEventValue::transition(
+                            x(event.start_x),
+                            x(event.end_x),
+                            Easing::Linear,
+                        ),
+                        start_beat: t(event.start_time),
+                        end_beat: t(event.end_time),
+                    },
+                    LineEvent {
+                        kind: LineEventKind::Y,
+                        value: LineEventValue::transition(
+                            y(event.start_y),
+                            y(event.end_y),
+                            Easing::Linear,
+                        ),
+                        start_beat: t(event.start_time),
+                        end_beat: t(event.end_time),
+                    },
+                ],
+                _ => unreachable!(),
+            })
+            .collect::<Vec<_>>();
+
+        let move_events = [
+            merge_constant_events(move_events.x()),
+            merge_constant_events(move_events.y()),
+        ]
+        .concat();
 
         let rotate_event_iter = line.rotate_events.iter().map(|event| LineEvent {
             kind: LineEventKind::Rotation,
