@@ -1,6 +1,5 @@
 use crate::official::fitting::fit_events;
 use crate::official::schema::{OfficialChart, OfficialNote, OfficialNoteKind};
-use anyhow::bail;
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
@@ -9,6 +8,7 @@ use phichain_chart::serialization::PhichainChart;
 use phichain_chart::{beat, event};
 use phichain_compiler::helpers::{are_contiguous, map_if, remove_if};
 use phichain_compiler::sequence::EventSequence;
+use thiserror::Error;
 
 mod fitting;
 pub mod schema;
@@ -32,7 +32,15 @@ fn merge_constant_events(events: Vec<LineEvent>) -> Vec<LineEvent> {
     })
 }
 
-pub fn official_to_phichain(official: OfficialChart) -> anyhow::Result<PhichainChart> {
+#[derive(Debug, Error)]
+pub enum OfficialInputError {
+    #[error("expected at leat one line")]
+    NoLine,
+    #[error("unsupported formatVersion, expected 1 or 3, got {0}")]
+    UnsupportedFormatVersion(u32),
+}
+
+pub fn official_to_phichain(official: OfficialChart) -> Result<PhichainChart, OfficialInputError> {
     use phichain_chart::event::{LineEvent, LineEventKind};
     use phichain_chart::note::{Note, NoteKind};
     use phichain_chart::offset::Offset;
@@ -40,14 +48,13 @@ pub fn official_to_phichain(official: OfficialChart) -> anyhow::Result<PhichainC
     use phichain_chart::serialization::SerializedLine;
 
     if official.lines.is_empty() {
-        bail!("Expect at least one line");
+        return Err(OfficialInputError::NoLine);
     }
 
     if !matches!(official.format_version, 1 | 3) {
-        bail!(
-            "Unsupported formatVersion, expected 1 or 3, got: {}",
-            official.format_version
-        );
+        return Err(OfficialInputError::UnsupportedFormatVersion(
+            official.format_version,
+        ));
     }
 
     let mut phichain = PhichainChart {

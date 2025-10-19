@@ -5577,6 +5577,7 @@ dependencies = [
  "phichain-compiler",
  "serde",
  "serde_repr",
+ "thiserror 2.0.17",
  "tracing",
 ]
 
