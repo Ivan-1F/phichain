@@ -1,7 +1,13 @@
 cli:
   about: Converts Phigros charts between different formats
-  args:
+  format_args:
+    heading: 'Format Options - Must provide two format flags: the first one for the input format and second one for the output format. The output path is optional.'
     phichain: Use Phichain chart as input or output
     official: Use official chart as input or output
     rpe: Use RPE chart as input or output
     primitive: Use primitive chart as input or output
+  official_input:
+    heading: Official Input Options - Applicable only when the input format is official
+    no_easing_fitting: Disable easing fitting
+    easing_fitting_epsilon: The epsilon used during easing fitting
+    constant_event_shrink_to: 'For constant events, how long to shrink them to (format: "numer/denom" or "whole+numer/denom" or "whole")'

@@ -1,19 +1,17 @@
 use phichain_chart::beat::Beat;
 use phichain_format::official::OfficialInputOptions;
+use rust_i18n::t;
 
 /// CLI wrapper for OfficialInputOptions
 #[derive(Debug, Clone, clap::Args)]
 pub struct CliOfficialInputOptions {
-    /// Disable easing fitting (enabled by default)
-    #[arg(long, default_value_t = false)]
+    #[arg(long, default_value_t = false, help = t!("cli.official_input.no_easing_fitting").to_string())]
     no_easing_fitting: bool,
 
-    /// The epsilon used during easing fitting
-    #[arg(long, default_value_t = 0.1)]
+    #[arg(long, default_value_t = 0.1, help = t!("cli.official_input.easing_fitting_epsilon").to_string())]
     easing_fitting_epsilon: f32,
 
-    /// For constant events, how long to shrink them to (format: "numer/denom" or "whole+numer/denom" or "whole")
-    #[arg(long, value_parser = clap::value_parser!(Beat), default_value = "1/4")]
+    #[arg(long, value_parser = clap::value_parser!(Beat), default_value = "1/4", help = t!("cli.official_input.constant_event_shrink_to").to_string())]
     constant_event_shrink_to: Beat,
 }
 
