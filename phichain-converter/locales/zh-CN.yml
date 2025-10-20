@@ -1,2 +1,7 @@
-app:
+cli:
   about: 在不同格式之间转换 Phigros 谱面
+  args:
+    phichain: 使用 Phichain 谱面作为输入或输出
+    official: 使用官方谱面作为输入或输出
+    rpe: 使用 RPE 谱面作为输入或输出
+    primitive: 使用原始谱面作为输入或输出

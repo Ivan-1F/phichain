@@ -28,14 +28,13 @@ enum Formats {
 macro_rules! define_format_args {
     (
         $(
-            $field:ident => $variant:ident: $help:expr
+            $field:ident => $variant:ident
         ),* $(,)?
     ) => {
         #[derive(Debug, Parser)]
         struct FormatArgs {
             $(
-                #[doc = $help]
-                #[arg(long, num_args = 0..=1)]
+                #[arg(long, num_args = 0..=1, help = t!(concat!("cli.args.", stringify!($field))).to_string())]
                 $field: Option<Option<PathBuf>>,
             )*
         }
@@ -73,10 +72,10 @@ macro_rules! define_format_args {
 }
 
 define_format_args! {
-    phichain => Phichain: "Use Phichain chart as input or output",
-    official => Official: "Use official chart as input or output",
-    rpe => Rpe: "Use RPE chart as input or output",
-    primitive => Primitive: "Use primitive chart as input or output",
+    phichain => Phichain,
+    official => Official,
+    rpe => Rpe,
+    primitive => Primitive,
 }
 
 /// Extract the order of format flags from command line arguments
@@ -97,7 +96,7 @@ fn extract_format_order() -> Vec<String> {
 
 #[derive(Debug, Parser)]
 #[command(name = "phichain-converter")]
-#[command(about = t!("app.about").to_string())]
+#[command(about = t!("cli.about").to_string())]
 struct Args {
     #[command(flatten)]
     formats: FormatArgs,
@@ -239,15 +238,18 @@ fn convert(args: ParsedArgs) -> anyhow::Result<()> {
 }
 
 /// Normalize locale from system to rust-i18n format
-///
-/// Converts POSIX locale format to BCP 47:
-/// - "zh_CN.UTF-8" → "zh-CN"
-/// - "en_US" → "en-US"
-/// - "C" → "en-US"
 fn normalize_locale(locale: &str) -> String {
-    match locale {
+    // Remove encoding suffix and replace underscore
+    let base = locale.split('.').next().unwrap_or(locale).replace('_', "-");
+
+    // Map to available translation files
+    match base.as_str() {
         "C" | "POSIX" => "en-US".to_string(),
-        _ => locale.split('.').next().unwrap_or(locale).replace('_', "-"),
+        // macOS verbose formats
+        "zh-Hans-CN" | "zh-Hans" | "zh-Hans-SG" => "zh-CN".to_string(),
+        "zh-Hant-CN" | "zh-Hant-TW" | "zh-Hant" | "zh-Hant-HK" | "zh-Hant-MO" => "zh-TW".to_string(),
+        // already normalized
+        _ => base,
     }
 }
 
