@@ -8,9 +8,12 @@ use phichain_format::official::schema::OfficialChart;
 use phichain_format::primitive::PrimitiveChart;
 use phichain_format::rpe::schema::RpeChart;
 use phichain_format::Format;
+use rust_i18n::t;
 use std::io::Write;
 use std::path::PathBuf;
 use strum::Display;
+
+rust_i18n::i18n!("locales", fallback = "en-US");
 
 #[derive(ValueEnum, Debug, Display, Clone)]
 #[clap(rename_all = "kebab_case")]
@@ -94,7 +97,7 @@ fn extract_format_order() -> Vec<String> {
 
 #[derive(Debug, Parser)]
 #[command(name = "phichain-converter")]
-#[command(about = "Converts Phigros charts between different formats")]
+#[command(about = t!("app.about").to_string())]
 struct Args {
     #[command(flatten)]
     formats: FormatArgs,
@@ -235,7 +238,30 @@ fn convert(args: ParsedArgs) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Normalize locale from system to rust-i18n format
+///
+/// Converts POSIX locale format to BCP 47:
+/// - "zh_CN.UTF-8" → "zh-CN"
+/// - "en_US" → "en-US"
+/// - "C" → "en-US"
+fn normalize_locale(locale: &str) -> String {
+    match locale {
+        "C" | "POSIX" => "en-US".to_string(),
+        _ => locale.split('.').next().unwrap_or(locale).replace('_', "-"),
+    }
+}
+
+/// Get system locale with fallback
+fn locale() -> String {
+    std::env::var("PHICHAIN_LANG")
+        .ok()
+        .or(sys_locale::get_locale().map(|loc| normalize_locale(&loc)))
+        .unwrap_or_else(|| "en-US".to_string())
+}
+
 fn main() {
+    rust_i18n::set_locale(&locale());
+
     let args = Args::parse();
     let parsed_args = match args.parse_args(&extract_format_order()) {
         Ok(parsed) => parsed,

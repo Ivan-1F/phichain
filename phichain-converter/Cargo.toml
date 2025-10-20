@@ -8,5 +8,7 @@ anyhow = "1.0.86"
 clap = { version = "4.5.4", features = ["derive"] }
 phichain-chart = { path = "../phichain-chart" }
 phichain-format = { path = "../phichain-format" }
+rust-i18n = "=3.0.1"
 serde_json = "1.0.117"
 strum = { version = "0.27.1", features = ["derive"] }
+sys-locale = "0.3.2"
