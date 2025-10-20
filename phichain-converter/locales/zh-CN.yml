@@ -1,5 +1,12 @@
 cli:
   about: 在不同格式之间转换 Phigros 谱面
+
+  examples: |
+    示例：
+    
+    phichain-converter --rpe RPE.json --phichain chart.json: 将 RPE 谱面 `RPE.json` 转换为名为 `chart.json` 的 Phichain 谱面
+    phichain-converter --phichain chart.json --official:     将 Phichain 谱面 `chart.json` 转换为名为 `output.json` 的官谱
+
   format_args:
     heading: '格式选项 - 必须提供两个格式标志: 前一个用于输入格式，后一个用于输出格式。输出路径是可选的'
     phichain: 使用 Phichain 谱面作为输入或输出

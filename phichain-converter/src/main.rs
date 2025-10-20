@@ -97,6 +97,7 @@ fn extract_format_order() -> Vec<String> {
 #[derive(Debug, Parser)]
 #[command(name = "phichain-converter")]
 #[command(about = t!("cli.about").to_string())]
+#[command(after_help = t!("cli.examples").to_string())]
 struct Args {
     #[command(flatten)]
     #[command(
