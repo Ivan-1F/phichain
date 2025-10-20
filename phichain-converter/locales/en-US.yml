@@ -1,5 +1,12 @@
 cli:
   about: Converts Phigros charts between different formats
+
+  examples: |
+    Examples:
+    
+    phichain-converter --rpe RPE.json --phichain chart.json: Convert the RPE chart `RPE.json` to a Phichain chart named `chart.json`
+    phichain-converter --phichain chart.json --official:     Convert the Phichain chart `chart.json` to the official format named `output.json`
+
   format_args:
     heading: 'Format Options - Must provide two format flags: the first one for the input format and second one for the output format. The output path is optional.'
     phichain: Use Phichain chart as input or output
