@@ -34,7 +34,7 @@ macro_rules! define_format_args {
         #[derive(Debug, Parser)]
         struct FormatArgs {
             $(
-                #[arg(long, num_args = 0..=1, help = t!(concat!("cli.args.", stringify!($field))).to_string())]
+                #[arg(long, num_args = 0..=1, help = t!(concat!("cli.format_args.", stringify!($field))).to_string())]
                 $field: Option<Option<PathBuf>>,
             )*
         }
@@ -99,14 +99,34 @@ fn extract_format_order() -> Vec<String> {
 #[command(about = t!("cli.about").to_string())]
 struct Args {
     #[command(flatten)]
+    #[command(
+        next_help_heading = cli_format_args_heading()
+    )]
     formats: FormatArgs,
 
-    /// Official input options
     #[command(flatten)]
     #[command(
-        next_help_heading = "Official Input Options - Applicable only when the input format is official"
+        next_help_heading = cli_official_input_heading()
     )]
     official_input_options: CliOfficialInputOptions,
+}
+
+fn cli_official_input_heading() -> &'static str {
+    match t!("cli.official_input.heading") {
+        Cow::Borrowed(s) => s,
+        Cow::Owned(_) => {
+            unreachable!()
+        }
+    }
+}
+
+fn cli_format_args_heading() -> &'static str {
+    match t!("cli.format_args.heading") {
+        Cow::Borrowed(s) => s,
+        Cow::Owned(_) => {
+            unreachable!()
+        }
+    }
 }
 
 impl Args {
@@ -247,7 +267,9 @@ fn normalize_locale(locale: &str) -> String {
         "C" | "POSIX" => "en-US".to_string(),
         // macOS verbose formats
         "zh-Hans-CN" | "zh-Hans" | "zh-Hans-SG" => "zh-CN".to_string(),
-        "zh-Hant-CN" | "zh-Hant-TW" | "zh-Hant" | "zh-Hant-HK" | "zh-Hant-MO" => "zh-TW".to_string(),
+        "zh-Hant-CN" | "zh-Hant-TW" | "zh-Hant" | "zh-Hant-HK" | "zh-Hant-MO" => {
+            "zh-TW".to_string()
+        }
         // already normalized
         _ => base,
     }
