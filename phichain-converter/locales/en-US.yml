@@ -1,2 +1,7 @@
-app:
+cli:
   about: Converts Phigros charts between different formats
+  args:
+    phichain: Use Phichain chart as input or output
+    official: Use official chart as input or output
+    rpe: Use RPE chart as input or output
+    primitive: Use primitive chart as input or output
