@@ -1,7 +1,13 @@
 cli:
   about: 在不同格式之间转换 Phigros 谱面
-  args:
+  format_args:
+    heading: '格式选项 - 必须提供两个格式标志: 前一个用于输入格式，后一个用于输出格式。输出路径是可选的'
     phichain: 使用 Phichain 谱面作为输入或输出
-    official: 使用官方谱面作为输入或输出
+    official: 使用官谱作为输入或输出
     rpe: 使用 RPE 谱面作为输入或输出
-    primitive: 使用原始谱面作为输入或输出
+    primitive: 使用基本谱面作为输入或输出
+  official_input:
+    heading: 官方格式输入选项 - 仅当输入格式为官方格式时适用
+    no_easing_fitting: 禁用缓动拟合
+    easing_fitting_epsilon: 缓动拟合时使用的误差值
+    constant_event_shrink_to: '对于常量事件，将其缩短到的长度 (格式: "分子/分母" 或 "整数+分子/分母" 或 "整数")'
