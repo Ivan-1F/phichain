@@ -5544,6 +5544,7 @@ dependencies = [
  "nalgebra 0.33.1",
  "num",
  "phichain-chart",
+ "thiserror 2.0.17",
 ]
 
 [[package]]

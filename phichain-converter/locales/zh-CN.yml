@@ -18,3 +18,7 @@ cli:
     no_easing_fitting: 禁用缓动拟合
     easing_fitting_epsilon: 缓动拟合时使用的误差值
     constant_event_shrink_to: '对于常量事件，将其缩短到的长度 (格式: "分子/分母" 或 "整数+分子/分母" 或 "整数")'
+
+  official_output:
+    heading: 官方格式输出选项 - 仅当输出格式为官方格式时适用
+    minimum_beat: 进行事件切割时使用的最小拍数单位
