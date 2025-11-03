@@ -15,7 +15,7 @@ use thiserror::Error;
 mod fitting;
 pub mod schema;
 
-const EASING_FITTING_EPSILON: f32 = 1e-1;
+const DEFAULT_EASING_FITTING_EPSILON: f32 = 1e-1;
 
 fn merge_constant_events(events: Vec<LineEvent>) -> Vec<LineEvent> {
     events.into_iter().fold(Vec::new(), |mut merged, event| {
@@ -56,7 +56,7 @@ impl Default for OfficialInputOptions {
     fn default() -> Self {
         Self {
             easing_fitting: true,
-            easing_fitting_epsilon: EASING_FITTING_EPSILON,
+            easing_fitting_epsilon: DEFAULT_EASING_FITTING_EPSILON,
             constant_event_shrink_to: beat!(1, 4),
         }
     }
