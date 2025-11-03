@@ -7,7 +7,7 @@ use phichain_format::official::from_phichain::phichain_to_official;
 use phichain_format::official::official_to_phichain;
 use phichain_format::official::schema::OfficialChart;
 use phichain_format::primitive::PrimitiveChart;
-use phichain_format::rpe::schema::RpeChart;
+use phichain_format::rpe::schema::{rpe_to_phichain, RpeChart};
 use phichain_format::Format;
 use rust_i18n::t;
 use std::io::Write;
@@ -238,6 +238,20 @@ fn convert(args: ParsedArgs) -> anyhow::Result<()> {
                     + l.rotate_events.len()
                     + l.speed_events.len())
                 .sum::<usize>(),
+        );
+
+        serde_json::to_string(&phichain)?
+    } else if matches!(args.input, Formats::Rpe) && matches!(args.output, Formats::Phichain) {
+        println!("Converting RPE chart into phichain chart...");
+
+        let chart: RpeChart = serde_json::from_reader(file)?;
+        let phichain = rpe_to_phichain(chart);
+
+        println!(
+            "Converted to phichain chart: {} lines, {} notes, {} events",
+            phichain.lines.len(),
+            phichain.lines.iter().map(|l| l.notes.len()).sum::<usize>(),
+            phichain.lines.iter().map(|l| l.events.len()).sum::<usize>(),
         );
 
         serde_json::to_string(&phichain)?
