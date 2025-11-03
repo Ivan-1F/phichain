@@ -255,7 +255,7 @@ pub fn official_to_phichain(
             if let NoteKind::Hold { .. } = note.kind {
                 let mut speed = 0.0;
                 for event in &speed_events {
-                    let result = event.evaluate(note.beat.value());
+                    let result = event.evaluate_inclusive(note.beat.value());
                     if let Some(value) = result.value() {
                         speed = value;
                     }
