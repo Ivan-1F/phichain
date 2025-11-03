@@ -1,4 +1,5 @@
 use phichain_chart::beat::Beat;
+use phichain_format::official::from_phichain::OfficialOutputOptions;
 use phichain_format::official::OfficialInputOptions;
 use rust_i18n::t;
 
@@ -21,6 +22,21 @@ impl From<CliOfficialInputOptions> for OfficialInputOptions {
             easing_fitting: !cli.no_easing_fitting,
             easing_fitting_epsilon: cli.easing_fitting_epsilon,
             constant_event_shrink_to: cli.constant_event_shrink_to,
+        }
+    }
+}
+
+/// CLI wrapper for OfficialInputOptions
+#[derive(Debug, Clone, clap::Args)]
+pub struct CliOfficialOutputOptions {
+    #[arg(long, value_parser = clap::value_parser!(Beat), default_value = "1/32", help = t!("cli.official_output.minimum_beat").to_string())]
+    minimum_beat: Beat,
+}
+
+impl From<CliOfficialOutputOptions> for OfficialOutputOptions {
+    fn from(cli: CliOfficialOutputOptions) -> Self {
+        OfficialOutputOptions {
+            minimum_beat: cli.minimum_beat,
         }
     }
 }
