@@ -4,6 +4,7 @@ use crate::primitive;
 use crate::primitive::PrimitiveChart;
 use crate::Format;
 use num::{Num, Rational32};
+use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::easing::Easing;
 use serde::{Deserialize, Serialize};
@@ -12,7 +13,7 @@ use tracing::warn;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
-pub enum NoteKind {
+pub enum RpeNoteKind {
     #[default]
     Tap = 1,
     Drag = 4,
@@ -25,14 +26,14 @@ pub enum NoteKind {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RpeBeat(pub i32, pub i32, pub i32);
 
-impl From<RpeBeat> for phichain_chart::beat::Beat {
+impl From<RpeBeat> for Beat {
     fn from(val: RpeBeat) -> Self {
-        phichain_chart::beat::Beat::new(val.0, Rational32::new(val.1, val.2))
+        Beat::new(val.0, Rational32::new(val.1, val.2))
     }
 }
 
-impl From<phichain_chart::beat::Beat> for RpeBeat {
-    fn from(value: phichain_chart::beat::Beat) -> Self {
+impl From<Beat> for RpeBeat {
+    fn from(value: Beat) -> Self {
         RpeBeat(value.beat(), value.numer(), value.denom())
     }
 }
@@ -41,7 +42,7 @@ impl From<phichain_chart::beat::Beat> for RpeBeat {
 #[serde(rename_all = "camelCase")]
 pub struct RpeChart {
     #[serde(rename = "BPMList")]
-    pub bpm_list: Vec<BpmPoint>,
+    pub bpm_list: Vec<RpeBpmPoint>,
     #[serde(rename = "META")]
     pub meta: RpeMeta,
     pub judge_line_list: Vec<RpeJudgeLine>,
@@ -49,7 +50,7 @@ pub struct RpeChart {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct BpmPoint {
+pub struct RpeBpmPoint {
     pub bpm: f32,
     pub start_time: RpeBeat,
 }
@@ -125,7 +126,7 @@ pub struct RpeNote {
     pub size: f32,         // ignored
     pub visible_time: f32, // ignored
     #[serde(rename = "type")]
-    pub kind: NoteKind,
+    pub kind: RpeNoteKind,
 }
 
 pub static RPE_EASING: [Easing; 30] = [
@@ -252,15 +253,15 @@ impl Format for RpeChart {
                     .notes
                     .iter()
                     .map(|note| {
-                        let start_beat = phichain_chart::beat::Beat::from(note.start_time.clone());
-                        let end_beat = phichain_chart::beat::Beat::from(note.end_time.clone());
+                        let start_beat = Beat::from(note.start_time.clone());
+                        let end_beat = Beat::from(note.end_time.clone());
                         let kind: phichain_chart::note::NoteKind = match note.kind {
-                            NoteKind::Tap => phichain_chart::note::NoteKind::Tap,
-                            NoteKind::Drag => phichain_chart::note::NoteKind::Drag,
-                            NoteKind::Hold => phichain_chart::note::NoteKind::Hold {
+                            RpeNoteKind::Tap => phichain_chart::note::NoteKind::Tap,
+                            RpeNoteKind::Drag => phichain_chart::note::NoteKind::Drag,
+                            RpeNoteKind::Hold => phichain_chart::note::NoteKind::Hold {
                                 hold_beat: end_beat - start_beat,
                             },
-                            NoteKind::Flick => phichain_chart::note::NoteKind::Flick,
+                            RpeNoteKind::Flick => phichain_chart::note::NoteKind::Flick,
                         };
 
                         phichain_chart::note::Note::new(
@@ -293,7 +294,7 @@ impl Format for RpeChart {
                 .bpm_list
                 .0
                 .iter()
-                .map(|x| BpmPoint {
+                .map(|x| RpeBpmPoint {
                     bpm: x.bpm,
                     start_time: x.beat.into(),
                 })
@@ -319,10 +320,10 @@ impl Format for RpeChart {
             let mut line = RpeJudgeLine::default();
             for note in notes {
                 let kind = match note.kind {
-                    phichain_chart::note::NoteKind::Tap => NoteKind::Tap,
-                    phichain_chart::note::NoteKind::Drag => NoteKind::Drag,
-                    phichain_chart::note::NoteKind::Hold { .. } => NoteKind::Hold,
-                    phichain_chart::note::NoteKind::Flick => NoteKind::Flick,
+                    phichain_chart::note::NoteKind::Tap => RpeNoteKind::Tap,
+                    phichain_chart::note::NoteKind::Drag => RpeNoteKind::Drag,
+                    phichain_chart::note::NoteKind::Hold { .. } => RpeNoteKind::Hold,
+                    phichain_chart::note::NoteKind::Flick => RpeNoteKind::Flick,
                 };
                 let end_beat = match note.kind {
                     phichain_chart::note::NoteKind::Hold { hold_beat } => note.beat + hold_beat,
