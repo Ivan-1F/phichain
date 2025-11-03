@@ -54,8 +54,8 @@ fn merge(parent: SerializedLine) -> Vec<SerializedLine> {
                     macro_rules! evaluate {
                         ($target:ident, $filter:ident) => {
                             (
-                                $target.events.$filter().evaluate(start_beat),
-                                $target.events.$filter().evaluate(end_beat),
+                                $target.events.$filter().evaluate_inclusive(start_beat),
+                                $target.events.$filter().evaluate_inclusive(end_beat),
                             )
                         };
                     }

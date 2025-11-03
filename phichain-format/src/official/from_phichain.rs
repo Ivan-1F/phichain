@@ -187,10 +187,10 @@ pub fn phichain_to_official(
                 continue;
             }
 
-            let start_x = x_events.evaluate(start_beat) / CANVAS_WIDTH + 0.5;
-            let end_x = x_events.evaluate_start_no_effect(end_beat) / CANVAS_WIDTH + 0.5;
-            let start_y = y_events.evaluate(start_beat) / CANVAS_HEIGHT + 0.5;
-            let end_y = y_events.evaluate_start_no_effect(end_beat) / CANVAS_HEIGHT + 0.5;
+            let start_x = x_events.evaluate_inclusive(start_beat) / CANVAS_WIDTH + 0.5;
+            let end_x = x_events.evaluate_exclusive(end_beat) / CANVAS_WIDTH + 0.5;
+            let start_y = y_events.evaluate_inclusive(start_beat) / CANVAS_HEIGHT + 0.5;
+            let end_y = y_events.evaluate_exclusive(end_beat) / CANVAS_HEIGHT + 0.5;
 
             official_line.move_events.push(OfficialPositionLineEvent {
                 start_time: time(start_beat),
@@ -226,7 +226,7 @@ pub fn phichain_to_official(
             let speed = if matches!(note.kind, NoteKind::Hold { .. }) {
                 let mut speed = 0.0;
                 for event in &speed_events {
-                    let result = event.evaluate(note.beat.value());
+                    let result = event.evaluate_inclusive(note.beat.value());
                     if let Some(value) = result.value() {
                         speed = value;
                     }

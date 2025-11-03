@@ -1,11 +1,18 @@
 use itertools::Itertools;
 use phichain_chart::beat::Beat;
-use phichain_chart::event::{LineEvent, LineEventKind};
+use phichain_chart::event::{Boundary, LineEvent, LineEventKind};
 use std::collections::HashMap;
 
 pub trait EventSequence: Sized {
-    fn evaluate(&self, beat: Beat) -> f32;
-    fn evaluate_start_no_effect(&self, beat: Beat) -> f32;
+    fn evaluate(&self, beat: Beat, boundary: Boundary) -> f32;
+
+    fn evaluate_inclusive(&self, beat: Beat) -> f32 {
+        self.evaluate(beat, Boundary::Inclusive)
+    }
+
+    fn evaluate_exclusive(&self, beat: Beat) -> f32 {
+        self.evaluate(beat, Boundary::Exclusive)
+    }
 
     fn x(&self) -> Self;
     fn y(&self) -> Self;
@@ -19,24 +26,11 @@ pub trait EventSequence: Sized {
 }
 
 impl EventSequence for Vec<LineEvent> {
-    fn evaluate(&self, beat: Beat) -> f32 {
+    fn evaluate(&self, beat: Beat, boundary: Boundary) -> f32 {
         let mut ret = 0.0;
 
         for event in self {
-            let result = event.evaluate(beat.value());
-            if let Some(value) = result.value() {
-                ret = value;
-            }
-        }
-
-        ret
-    }
-
-    fn evaluate_start_no_effect(&self, beat: Beat) -> f32 {
-        let mut ret = 0.0;
-
-        for event in self {
-            let result = event.evaluate_start_no_effect(beat.value());
+            let result = event.evaluate(beat.value(), boundary);
             if let Some(value) = result.value() {
                 ret = value;
             }
