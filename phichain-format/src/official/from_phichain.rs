@@ -15,8 +15,12 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum OfficialOutputError {
-    #[error("event sequence error: {0}")]
-    EventSequenceError(#[from] EventSequenceError),
+    #[error("event sequence error in line '{line_name}' for event kind {event_kind:?}: {source}")]
+    EventSequenceError {
+        line_name: String,
+        event_kind: LineEventKind,
+        source: EventSequenceError,
+    },
 }
 
 pub struct OfficialOutputOptions {
@@ -67,7 +71,8 @@ pub fn phichain_to_official(
             kind: LineEventKind,
             mut transform: F,
             target: &mut Vec<T>,
-        ) where
+        ) -> Result<(), OfficialOutputError>
+        where
             F: FnMut(&LineEvent) -> T,
             T: std::fmt::Debug,
         {
@@ -78,7 +83,13 @@ pub fn phichain_to_official(
                 .copied()
                 .collect::<Vec<_>>();
 
-            let filled_gap = fill_gap(&events, 0.0).unwrap();
+            let filled_gap = fill_gap(&events, 0.0).map_err(|source| {
+                OfficialOutputError::EventSequenceError {
+                    line_name: line.line.name.clone(),
+                    event_kind: kind,
+                    source,
+                }
+            })?;
 
             for event in filled_gap {
                 let event_segments = cut(event, beat!(1, 32));
@@ -88,6 +99,8 @@ pub fn phichain_to_official(
                     .collect::<Vec<_>>();
                 target.append(&mut transformed_events);
             }
+
+            Ok(())
         }
 
         process(
@@ -100,7 +113,7 @@ pub fn phichain_to_official(
                 end: e.value.end(),
             },
             &mut official_line.rotate_events,
-        );
+        )?;
 
         process(
             &line,
@@ -112,7 +125,7 @@ pub fn phichain_to_official(
                 end: e.value.end() / 255.0,
             },
             &mut official_line.opacity_events,
-        );
+        )?;
 
         process(
             &line,
@@ -124,7 +137,7 @@ pub fn phichain_to_official(
                 floor_position: 0.0, // this will be calculated later
             },
             &mut official_line.speed_events,
-        );
+        )?;
 
         // -------- Move events --------
 
