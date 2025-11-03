@@ -5,8 +5,12 @@ use crate::primitive::PrimitiveChart;
 use crate::Format;
 use num::{Num, Rational32};
 use phichain_chart::beat::Beat;
-use phichain_chart::bpm_list::BpmList;
+use phichain_chart::bpm_list::{BpmList, BpmPoint};
 use phichain_chart::easing::Easing;
+use phichain_chart::event::{LineEvent, LineEventValue};
+use phichain_chart::line::Line;
+use phichain_chart::offset::Offset;
+use phichain_chart::serialization::{PhichainChart, SerializedLine};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use tracing::warn;
@@ -162,6 +166,121 @@ pub static RPE_EASING: [Easing; 30] = [
     Easing::EaseInOutElastic,
 ];
 
+pub fn rpe_to_phichain(rpe: RpeChart) -> PhichainChart {
+    let mut phichain = PhichainChart {
+        offset: Offset(rpe.meta.offset as f32),
+        bpm_list: BpmList::new(
+            rpe.bpm_list
+                .iter()
+                .map(|x| BpmPoint::new(x.start_time.clone().into(), x.bpm))
+                .collect(),
+        ),
+        ..Default::default()
+    };
+
+    let e = |id: i32| {
+        RPE_EASING.get(id as usize).copied().unwrap_or_else(|| {
+            warn!("Unknown easing type: {}", id);
+            Easing::Linear
+        })
+    };
+
+    for line in rpe.judge_line_list {
+        let x_event_iter = line
+            .event_layers
+            .iter()
+            .flat_map(|layer| layer.move_x_events.clone())
+            .map(|event| LineEvent {
+                kind: phichain_chart::event::LineEventKind::X,
+                start_beat: event.start_time.into(),
+                end_beat: event.end_time.into(),
+                value: LineEventValue::transition(event.start, event.end, e(event.easing_type)),
+            });
+        let y_event_iter = line
+            .event_layers
+            .iter()
+            .flat_map(|layer| layer.move_y_events.clone())
+            .map(|event| LineEvent {
+                kind: phichain_chart::event::LineEventKind::Y,
+                start_beat: event.start_time.into(),
+                end_beat: event.end_time.into(),
+                value: LineEventValue::transition(event.start, event.end, e(event.easing_type)),
+            });
+        let rotate_event_iter = line
+            .event_layers
+            .iter()
+            .flat_map(|layer| layer.rotate_events.clone())
+            .map(|event| LineEvent {
+                kind: phichain_chart::event::LineEventKind::Rotation,
+                start_beat: event.start_time.into(),
+                end_beat: event.end_time.into(),
+                // negate value for rotation
+                value: LineEventValue::transition(-event.start, -event.end, e(event.easing_type)),
+            });
+        let alpha_event_iter = line
+            .event_layers
+            .iter()
+            .flat_map(|layer| layer.alpha_events.clone())
+            .map(|event| LineEvent {
+                kind: phichain_chart::event::LineEventKind::Opacity,
+                start_beat: event.start_time.into(),
+                end_beat: event.end_time.into(),
+                value: LineEventValue::transition(
+                    event.start as f32,
+                    event.end as f32,
+                    e(event.easing_type),
+                ),
+            });
+        let speed_event_iter = line
+            .event_layers
+            .iter()
+            .flat_map(|layer| layer.speed_events.clone())
+            .map(|event| LineEvent {
+                kind: phichain_chart::event::LineEventKind::Speed,
+                start_beat: event.start_time.into(),
+                end_beat: event.end_time.into(),
+                value: LineEventValue::transition(event.start, event.end, Easing::Linear), // speed events' easing are fixed to be Linear
+            });
+
+        phichain.lines.push(SerializedLine {
+            notes: line
+                .notes
+                .iter()
+                .map(|note| {
+                    let start_beat = Beat::from(note.start_time.clone());
+                    let end_beat = Beat::from(note.end_time.clone());
+                    let kind: phichain_chart::note::NoteKind = match note.kind {
+                        RpeNoteKind::Tap => phichain_chart::note::NoteKind::Tap,
+                        RpeNoteKind::Drag => phichain_chart::note::NoteKind::Drag,
+                        RpeNoteKind::Hold => phichain_chart::note::NoteKind::Hold {
+                            hold_beat: end_beat - start_beat,
+                        },
+                        RpeNoteKind::Flick => phichain_chart::note::NoteKind::Flick,
+                    };
+
+                    phichain_chart::note::Note::new(
+                        kind,
+                        note.above == 1,
+                        start_beat,
+                        note.position_x,
+                        note.speed,
+                    )
+                })
+                .collect(),
+            events: x_event_iter
+                .chain(y_event_iter)
+                .chain(rotate_event_iter)
+                .chain(alpha_event_iter)
+                .chain(speed_event_iter)
+                .collect(),
+
+            ..Default::default()
+        });
+    }
+
+    phichain
+}
+
 impl Format for RpeChart {
     fn into_primitive(self) -> anyhow::Result<PrimitiveChart> {
         let mut primitive = PrimitiveChart {
@@ -169,9 +288,7 @@ impl Format for RpeChart {
             bpm_list: BpmList::new(
                 self.bpm_list
                     .iter()
-                    .map(|x| {
-                        phichain_chart::bpm_list::BpmPoint::new(x.start_time.clone().into(), x.bpm)
-                    })
+                    .map(|x| BpmPoint::new(x.start_time.clone().into(), x.bpm))
                     .collect(),
             ),
             lines: vec![],
