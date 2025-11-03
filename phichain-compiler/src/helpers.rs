@@ -75,11 +75,11 @@ pub fn fit_easing(events: &[LineEvent], epsilon: f32) -> Result<LineEvent, Vec<L
         let mut fits = true;
         for event in events {
             let expected_start = target_event
-                .evaluate(event.start_beat.value())
+                .evaluate_inclusive(event.start_beat.value())
                 .value()
                 .unwrap();
             let expected_end = target_event
-                .evaluate(event.end_beat.value())
+                .evaluate_inclusive(event.end_beat.value())
                 .value()
                 .unwrap();
 
@@ -181,18 +181,10 @@ pub enum EventSequenceError {
 /// For non-linear event with different start and end value, cut it in to 1/32 events
 /// In:  |~~~~~~~~~~~~~~~~~~~~~~~| (sine)
 /// Out: ||||||||||||||||||||||||| (linear)
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct CutOptions {
     /// Force splitting linear transitions even if they are eased linearly
     pub force_linear: bool,
-}
-
-impl Default for CutOptions {
-    fn default() -> Self {
-        Self {
-            force_linear: false,
-        }
-    }
 }
 
 pub fn cut_with_options(event: LineEvent, minimum: Beat, options: CutOptions) -> Vec<LineEvent> {
@@ -219,8 +211,11 @@ pub fn cut_with_options(event: LineEvent, minimum: Beat, options: CutOptions) ->
                 let start_beat = current;
                 let end_beat = current + minimum;
 
-                let start_value = event.evaluate(start_beat.value()).value().unwrap();
-                let end_value = event.evaluate(end_beat.value()).value().unwrap();
+                let start_value = event
+                    .evaluate_inclusive(start_beat.value())
+                    .value()
+                    .unwrap();
+                let end_value = event.evaluate_inclusive(end_beat.value()).value().unwrap();
 
                 events.push(LineEvent {
                     kind: event.kind,

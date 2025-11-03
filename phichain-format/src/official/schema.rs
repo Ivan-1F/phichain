@@ -127,11 +127,17 @@ impl Format for OfficialChart {
 
             while current_beat <= event.end_beat {
                 let start_value = phichain_chart::event::LineEvent::from(event)
-                    .evaluate(current_beat.value())
+                    .evaluate(
+                        current_beat.value(),
+                        phichain_chart::event::Boundary::Inclusive,
+                    )
                     .value()
                     .unwrap();
                 let end_value = phichain_chart::event::LineEvent::from(event)
-                    .evaluate(current_beat.value() + minimum.value())
+                    .evaluate(
+                        current_beat.value() + minimum.value(),
+                        phichain_chart::event::Boundary::Inclusive,
+                    )
                     .value()
                     .unwrap();
                 events.push(primitive::event::LineEvent {
@@ -303,12 +309,14 @@ impl Format for OfficialChart {
             ) -> f32 {
                 let mut ret = 0.0;
                 for event in events {
-                    let result = if start_has_effect {
-                        phichain_chart::event::LineEvent::from(*event).evaluate(beat.value())
-                    } else {
-                        phichain_chart::event::LineEvent::from(*event)
-                            .evaluate_start_no_effect(beat.value())
-                    };
+                    let result = phichain_chart::event::LineEvent::from(*event).evaluate(
+                        beat.value(),
+                        if start_has_effect {
+                            phichain_chart::event::Boundary::Inclusive
+                        } else {
+                            phichain_chart::event::Boundary::Exclusive
+                        },
+                    );
                     if let Some(value) = result.value() {
                         ret = value;
                     }
@@ -376,8 +384,10 @@ impl Format for OfficialChart {
                 let speed = if matches!(note.kind, phichain_chart::note::NoteKind::Hold { .. }) {
                     let mut speed = 0.0;
                     for event in &speed_events {
-                        let result = phichain_chart::event::LineEvent::from(**event)
-                            .evaluate(note.beat.value());
+                        let result = phichain_chart::event::LineEvent::from(**event).evaluate(
+                            note.beat.value(),
+                            phichain_chart::event::Boundary::Inclusive,
+                        );
                         if let Some(value) = result.value() {
                             speed = value;
                         }

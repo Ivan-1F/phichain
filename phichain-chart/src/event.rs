@@ -4,6 +4,12 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Boundary {
+    Inclusive,
+    Exclusive,
+}
+
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, IntoPrimitive, TryFromPrimitive,
 )]
@@ -244,9 +250,12 @@ impl LineEvent {
         self.end_beat - self.start_beat
     }
 
-    pub fn evaluate(&self, beat: f32) -> EventEvaluationResult {
+    pub fn evaluate(&self, beat: f32, boundary: Boundary) -> EventEvaluationResult {
         let start_beat = self.start_beat.value();
         let end_beat = self.end_beat.value();
+        if matches!(boundary, Boundary::Exclusive) && beat <= start_beat {
+            return EventEvaluationResult::Unaffected;
+        }
         match self.value {
             LineEventValue::Transition { start, end, easing } => {
                 if beat >= start_beat && beat <= end_beat {
@@ -276,36 +285,12 @@ impl LineEvent {
         }
     }
 
-    pub fn evaluate_start_no_effect(&self, beat: f32) -> EventEvaluationResult {
-        let start_beat = self.start_beat.value();
-        let end_beat = self.end_beat.value();
-        match self.value {
-            LineEventValue::Transition { start, end, easing } => {
-                if beat > start_beat && beat <= end_beat {
-                    let percent = (beat - start_beat) / (end_beat - start_beat);
-                    EventEvaluationResult::Affecting(start.ease_to(end, percent, easing))
-                } else if beat > end_beat {
-                    EventEvaluationResult::Inherited {
-                        from: self.end_beat,
-                        value: end,
-                    }
-                } else {
-                    EventEvaluationResult::Unaffected
-                }
-            }
-            LineEventValue::Constant(value) => {
-                if beat > start_beat && beat <= end_beat {
-                    EventEvaluationResult::Affecting(value)
-                } else if beat > end_beat {
-                    EventEvaluationResult::Inherited {
-                        from: self.end_beat,
-                        value,
-                    }
-                } else {
-                    EventEvaluationResult::Unaffected
-                }
-            }
-        }
+    pub fn evaluate_inclusive(&self, beat: f32) -> EventEvaluationResult {
+        self.evaluate(beat, Boundary::Inclusive)
+    }
+
+    pub fn evaluate_exclusive(&self, beat: f32) -> EventEvaluationResult {
+        self.evaluate(beat, Boundary::Exclusive)
     }
 }
 

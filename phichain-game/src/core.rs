@@ -122,7 +122,7 @@ pub fn compute_line_system(
             let mut speed_value = EventEvaluationResult::Unaffected;
 
             for event in events.iter().filter_map(|x| event_query.get(x).ok()) {
-                let value = event.evaluate(beat);
+                let value = event.evaluate_inclusive(beat);
                 match event.kind {
                     LineEventKind::X => x_value = x_value.max(value),
                     LineEventKind::Y => y_value = y_value.max(value),
