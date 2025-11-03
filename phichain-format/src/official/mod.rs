@@ -13,6 +13,7 @@ use phichain_compiler::sequence::EventSequence;
 use thiserror::Error;
 
 mod fitting;
+pub mod from_phichain;
 pub mod schema;
 
 const DEFAULT_EASING_FITTING_EPSILON: f32 = 1e-1;

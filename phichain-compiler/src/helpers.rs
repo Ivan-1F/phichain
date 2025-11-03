@@ -1,5 +1,9 @@
+use itertools::Itertools;
+use phichain_chart::beat;
+use phichain_chart::beat::Beat;
 use phichain_chart::easing::Easing;
-use phichain_chart::event::{LineEvent, LineEventValue};
+use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
+use thiserror::Error;
 
 const EASING_FITTING_POSSIBLE_EASINGS: [Easing; 31] = [
     Easing::Linear,
@@ -149,4 +153,195 @@ pub fn are_adjacent(first: &LineEvent, second: &LineEvent) -> bool {
 pub fn are_contiguous(first: &LineEvent, second: &LineEvent) -> bool {
     (first.end_beat == second.start_beat && first.value.end() == second.value.start())
         || (first.start_beat == second.end_beat && first.value.start() == second.value.end())
+}
+
+#[derive(Error, Debug, Eq, PartialEq)]
+pub enum EventSequenceError {
+    #[error("the event sequence has overlap at {0:?}")]
+    Overlap(Beat),
+    #[error("events in the event sequence do not share a single kind")]
+    DifferentKind,
+}
+
+/// Cut the given event to multiple small segments
+///
+/// For constant events, return without modification
+/// In:  |-----------------------| (constant)
+/// Out: |-----------------------| (constant)
+///
+/// For linear events, return without modification
+/// In:  |-----------------------| (linear)
+/// Out: |-----------------------| (linear)
+///
+/// For non-linear event with same start and end value, return with an identical constant event
+/// Val: 8                       8
+/// In:  |~~~~~~~~~~~~~~~~~~~~~~~| (sine)
+/// Out: |-----------------------| (constant)
+///
+/// For non-linear event with different start and end value, cut it in to 1/32 events
+/// In:  |~~~~~~~~~~~~~~~~~~~~~~~| (sine)
+/// Out: ||||||||||||||||||||||||| (linear)
+pub fn cut(event: LineEvent, minimum: Beat) -> Vec<LineEvent> {
+    match event.value {
+        LineEventValue::Constant(_) => vec![event],
+        LineEventValue::Transition { start, end, easing } => {
+            if matches!(easing, Easing::Linear) {
+                return vec![event];
+            }
+
+            if start == end {
+                return vec![LineEvent {
+                    kind: event.kind,
+                    start_beat: event.start_beat,
+                    end_beat: event.end_beat,
+                    value: LineEventValue::constant(start),
+                }];
+            }
+
+            let mut events = vec![];
+            let mut current = event.start_beat;
+
+            while current + minimum <= event.end_beat {
+                let start_beat = current;
+                let end_beat = current + minimum;
+
+                let start_value = event.evaluate(start_beat.value()).value().unwrap();
+                let end_value = event.evaluate(end_beat.value()).value().unwrap();
+
+                events.push(LineEvent {
+                    kind: event.kind,
+                    start_beat,
+                    end_beat,
+                    value: LineEventValue::transition(start_value, end_value, Easing::Linear),
+                });
+
+                current += minimum;
+            }
+
+            events
+        }
+    }
+}
+
+pub fn sorted(events: &[LineEvent]) -> Vec<LineEvent> {
+    events
+        .iter()
+        .sorted_by_key(|x| x.start_beat)
+        .copied()
+        .collect()
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum EnsureSameKindResult {
+    Empty,
+    Kind(LineEventKind),
+}
+
+/// Checks if all events in the sequence share the same [`LineEventKind`]
+///
+/// - If the sequence is empty, it returns `Ok(EnsureSameKindResult::Empty)`
+/// - If all events in the sequence have the same kind, it returns `Ok(EnsureSameKindResult::Kind(LineEventKind))`
+/// - If the events differ, it returns `Err(EventSequenceError::DifferentKind)`
+pub fn ensure_same_kind(events: &[LineEvent]) -> Result<EnsureSameKindResult, EventSequenceError> {
+    if events.is_empty() {
+        Ok(EnsureSameKindResult::Empty)
+    } else {
+        let first = events[0].kind;
+
+        if events.iter().skip(1).all(|x| x.kind == first) {
+            Ok(EnsureSameKindResult::Kind(first))
+        } else {
+            Err(EventSequenceError::DifferentKind)
+        }
+    }
+}
+
+/// Check if the given event sequence has overlap
+///
+/// ```text
+/// |         |=====|      |=====|       |===============|       |=====|    true
+///
+/// |   |=====|        |===============|       |=====|                      false
+/// |       |======|
+///
+/// |   |=====|        |===============|       |=====|                      false
+/// |                           |=================|
+/// ```
+pub fn check_overlap(events: &[LineEvent]) -> Result<(), EventSequenceError> {
+    match sorted(events)
+        .iter()
+        .tuple_windows()
+        .find(|(a, b)| a.end_beat > b.start_beat)
+    {
+        None => Ok(()),
+        Some((_, b)) => Err(EventSequenceError::Overlap(b.start_beat)),
+    }
+}
+
+/// Fill the gap in the event sequence until a given beat. The given event sequence should be sorted
+///
+/// ```text
+/// 0                                                                     end
+/// v                                                                      v
+/// |      |=====|      |=====|       |===============|       |=====|
+/// |------|=====|------|=====|-------|===============|-------|=====|------|
+/// ```
+pub fn fill_gap_until(
+    events: &[LineEvent],
+    until: Beat,
+    default: f32,
+) -> Result<Vec<LineEvent>, EventSequenceError> {
+    let kind = match ensure_same_kind(events)? {
+        EnsureSameKindResult::Empty => {
+            return Ok(vec![]);
+        }
+        EnsureSameKindResult::Kind(kind) => kind,
+    };
+
+    check_overlap(events)?;
+
+    let mut last_end = beat!(0);
+    let mut last_value = default;
+
+    let mut filled = vec![];
+
+    for event in sorted(events) {
+        if event.start_beat > last_end {
+            filled.push(LineEvent {
+                kind,
+                start_beat: last_end,
+                end_beat: event.start_beat,
+                value: LineEventValue::Constant(last_value),
+            });
+        }
+        filled.push(event);
+
+        last_end = event.end_beat;
+        last_value = event.value.end();
+    }
+
+    if last_end < until {
+        filled.push(LineEvent {
+            kind,
+            start_beat: last_end,
+            end_beat: until,
+            value: LineEventValue::Constant(last_value),
+        });
+    }
+
+    Ok(filled)
+}
+
+/// Fill the gap in the event sequence
+///
+/// ```text
+/// |              |=====|      |=====|       |===============|       |=====|
+/// |--------------|=====|------|=====|-------|===============|-------|=====|
+/// ```
+pub fn fill_gap(events: &[LineEvent], default: f32) -> Result<Vec<LineEvent>, EventSequenceError> {
+    fill_gap_until(
+        events,
+        events.last().map(|x| x.end_beat).unwrap_or(beat!(0)),
+        default,
+    )
 }
