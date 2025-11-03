@@ -83,9 +83,9 @@ pub struct RpeJudgeLine {
 pub struct RpeEventLayer {
     #[serde(default)]
     pub alpha_events: Vec<RpeCommonEvent<i32>>,
-    #[serde(rename = "moveXEvents")]
+    #[serde(default, rename = "moveXEvents")]
     pub move_xevents: Vec<RpeCommonEvent<f32>>,
-    #[serde(rename = "moveYEvents")]
+    #[serde(default, rename = "moveYEvents")]
     pub move_yevents: Vec<RpeCommonEvent<f32>>,
     #[serde(default)]
     pub rotate_events: Vec<RpeCommonEvent<f32>>,
