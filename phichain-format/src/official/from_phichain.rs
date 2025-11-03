@@ -9,7 +9,7 @@ use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::event::{LineEvent, LineEventKind};
 use phichain_chart::note::NoteKind;
 use phichain_chart::serialization::{PhichainChart, SerializedLine};
-use phichain_compiler::helpers::{cut, fill_gap, EventSequenceError};
+use phichain_compiler::helpers::{cut, cut_with_options, fill_gap, CutOptions, EventSequenceError};
 use phichain_compiler::sequence::EventSequence;
 use thiserror::Error;
 
@@ -92,7 +92,13 @@ pub fn phichain_to_official(
             })?;
 
             for event in filled_gap {
-                let event_segments = cut(event, beat!(1, 32));
+                let event_segments = cut_with_options(
+                    event,
+                    beat!(1, 32),
+                    CutOptions {
+                        force_linear: kind.is_speed(),
+                    },
+                );
                 let mut transformed_events = event_segments
                     .iter()
                     .map(&mut transform)
