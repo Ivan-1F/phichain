@@ -59,7 +59,7 @@ pub struct RpeBpmPoint {
 #[serde(rename_all = "camelCase")]
 pub struct RpeMeta {
     #[serde(rename = "RPEVersion")]
-    pub rpeversion: i32,
+    pub rpe_version: i32,
     pub background: String,
     pub charter: String,
     pub composer: String,
@@ -84,9 +84,9 @@ pub struct RpeEventLayer {
     #[serde(default)]
     pub alpha_events: Vec<RpeCommonEvent<i32>>,
     #[serde(default, rename = "moveXEvents")]
-    pub move_xevents: Vec<RpeCommonEvent<f32>>,
+    pub move_x_events: Vec<RpeCommonEvent<f32>>,
     #[serde(default, rename = "moveYEvents")]
-    pub move_yevents: Vec<RpeCommonEvent<f32>>,
+    pub move_y_events: Vec<RpeCommonEvent<f32>>,
     #[serde(default)]
     pub rotate_events: Vec<RpeCommonEvent<f32>>,
     #[serde(default)]
@@ -189,7 +189,7 @@ impl Format for RpeChart {
             let x_event_iter = line
                 .event_layers
                 .iter()
-                .flat_map(|layer| layer.move_xevents.clone())
+                .flat_map(|layer| layer.move_x_events.clone())
                 .map(|event| primitive::event::LineEvent {
                     kind: phichain_chart::event::LineEventKind::X,
                     start_beat: event.start_time.into(),
@@ -201,7 +201,7 @@ impl Format for RpeChart {
             let y_event_iter = line
                 .event_layers
                 .iter()
-                .flat_map(|layer| layer.move_yevents.clone())
+                .flat_map(|layer| layer.move_y_events.clone())
                 .map(|event| primitive::event::LineEvent {
                     kind: phichain_chart::event::LineEventKind::Y,
                     start_beat: event.start_time.into(),
@@ -362,10 +362,10 @@ impl Format for RpeChart {
 
                 match event.kind {
                     phichain_chart::event::LineEventKind::X => {
-                        event_layer.move_xevents.push(rpe_event);
+                        event_layer.move_x_events.push(rpe_event);
                     }
                     phichain_chart::event::LineEventKind::Y => {
-                        event_layer.move_yevents.push(rpe_event);
+                        event_layer.move_y_events.push(rpe_event);
                     }
                     phichain_chart::event::LineEventKind::Rotation => {
                         // negate value for rotation
