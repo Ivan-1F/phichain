@@ -183,7 +183,6 @@ pub fn official_to_phichain(
             |event| {
                 event.value.is_numeric_constant()
                     && event.duration() > options.constant_event_shrink_to
-                    && !event.kind.is_speed() // FIXME: filtering speed events out, seems like current speed evaluation is not correct
             },
             |mut event| {
                 event.end_beat = event.start_beat + options.constant_event_shrink_to;
