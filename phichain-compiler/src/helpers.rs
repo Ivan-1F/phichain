@@ -181,11 +181,25 @@ pub enum EventSequenceError {
 /// For non-linear event with different start and end value, cut it in to 1/32 events
 /// In:  |~~~~~~~~~~~~~~~~~~~~~~~| (sine)
 /// Out: ||||||||||||||||||||||||| (linear)
-pub fn cut(event: LineEvent, minimum: Beat) -> Vec<LineEvent> {
+#[derive(Debug, Clone, Copy)]
+pub struct CutOptions {
+    /// Force splitting linear transitions even if they are eased linearly
+    pub force_linear: bool,
+}
+
+impl Default for CutOptions {
+    fn default() -> Self {
+        Self {
+            force_linear: false,
+        }
+    }
+}
+
+pub fn cut_with_options(event: LineEvent, minimum: Beat, options: CutOptions) -> Vec<LineEvent> {
     match event.value {
         LineEventValue::Constant(_) => vec![event],
         LineEventValue::Transition { start, end, easing } => {
-            if matches!(easing, Easing::Linear) {
+            if matches!(easing, Easing::Linear) && !(options.force_linear && start != end) {
                 return vec![event];
             }
 
@@ -221,6 +235,10 @@ pub fn cut(event: LineEvent, minimum: Beat) -> Vec<LineEvent> {
             events
         }
     }
+}
+
+pub fn cut(event: LineEvent, minimum: Beat) -> Vec<LineEvent> {
+    cut_with_options(event, minimum, CutOptions::default())
 }
 
 pub fn sorted(events: &[LineEvent]) -> Vec<LineEvent> {
