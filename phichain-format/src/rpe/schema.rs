@@ -1,4 +1,6 @@
 //! Re:PhiEdit json format
+//!
+//! Credit: https://teamflos.github.io/phira-docs/chart-standard/chart-format/rpe/judgeLine.html
 
 use crate::primitive;
 use crate::primitive::PrimitiveChart;
@@ -8,7 +10,6 @@ use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::{BpmList, BpmPoint};
 use phichain_chart::easing::Easing;
 use phichain_chart::event::{LineEvent, LineEventValue};
-use phichain_chart::line::Line;
 use phichain_chart::offset::Offset;
 use phichain_chart::serialization::{PhichainChart, SerializedLine};
 use serde::{Deserialize, Serialize};
@@ -74,9 +75,19 @@ pub struct RpeMeta {
     pub song: String,
 }
 
+fn deserialize_event_layers<'de, D>(deserializer: D) -> Result<Vec<RpeEventLayer>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let layers: Vec<Option<RpeEventLayer>> = Vec::deserialize(deserializer)?;
+    Ok(layers.into_iter().flatten().collect())
+}
+
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RpeJudgeLine {
+    /// Before a certain version, the field will be `null` if there's no events in this layer (ref: https://teamflos.github.io/phira-docs/chart-standard/chart-format/rpe/judgeLine.html)
+    #[serde(default, deserialize_with = "deserialize_event_layers")]
     pub event_layers: Vec<RpeEventLayer>,
     #[serde(default)]
     pub notes: Vec<RpeNote>,
