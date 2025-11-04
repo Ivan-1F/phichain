@@ -80,7 +80,7 @@ pub fn official_to_phichain(
     let mut phichain = PhichainChart {
         offset: Offset(official.offset * 1000.0),
         bpm_list: BpmList::single(official.lines[0].bpm),
-        ..Default::default()
+        ..PhichainChart::empty()
     };
 
     for line in official.lines {

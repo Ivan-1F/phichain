@@ -28,13 +28,23 @@ impl PhichainChart {
     }
 }
 
-impl Default for PhichainChart {
-    fn default() -> Self {
+impl PhichainChart {
+    /// Create an empty [`PhichainChart`] without any lines
+    pub fn empty() -> Self {
         Self {
             format: CURRENT_FORMAT,
             offset: Default::default(),
             bpm_list: Default::default(),
+            lines: Default::default(),
+        }
+    }
+}
+
+impl Default for PhichainChart {
+    fn default() -> Self {
+        Self {
             lines: vec![Default::default()],
+            ..Self::empty()
         }
     }
 }
