@@ -402,7 +402,6 @@ fn build_nested_line(
 
     // Recursively build nested structure
     fn build_layer(
-        line_index: usize,
         layers: &[RpeEventLayer],
         original_indices: &[usize],
         index: usize,
@@ -446,7 +445,6 @@ fn build_nested_line(
         } else {
             // Not last layer: create child for next layer
             let child = build_layer(
-                line_index,
                 layers,
                 original_indices,
                 index + 1,
@@ -466,7 +464,6 @@ fn build_nested_line(
     }
 
     build_layer(
-        line_index,
         &layers,
         &original_indices,
         0,
