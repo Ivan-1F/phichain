@@ -13,6 +13,7 @@ cli:
     official: Use official chart as input or output
     rpe: Use RPE chart as input or output
     primitive: Use primitive chart as input or output
+
   official_input:
     heading: Official Input Options - Applicable only when the input format is official
     no_easing_fitting: Disable easing fitting
@@ -22,3 +23,8 @@ cli:
   official_output:
     heading: Official Output Options - Applicable only when the output format is official
     minimum_beat: The minimum beat used for event cutting
+
+  rpe_input:
+    heading: RPE Input Options - Applicable only when the input format is rpe
+    remove_fake_notes: If enabled, notes with `isFake = true` will be removed. Otherwise, it will retain as a real note
+    remove_ui_controls: If enabled, lines with non-empty `attachUI` will be removed. Otherwise, it will retain as a normal line

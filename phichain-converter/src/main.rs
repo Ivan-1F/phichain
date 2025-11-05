@@ -1,6 +1,6 @@
 mod options;
 
-use crate::options::{CliOfficialInputOptions, CliOfficialOutputOptions};
+use crate::options::{CliOfficialInputOptions, CliOfficialOutputOptions, CliRpeInputOptions};
 use clap::{Parser, ValueEnum};
 use phichain_chart::serialization::PhichainChart;
 use phichain_format::official::from_phichain::phichain_to_official;
@@ -117,6 +117,12 @@ struct Args {
         next_help_heading = cli_official_output_heading()
     )]
     official_output_options: CliOfficialOutputOptions,
+
+    #[command(flatten)]
+    #[command(
+        next_help_heading = cli_rpe_input_heading()
+    )]
+    rpe_input_options: CliRpeInputOptions,
 }
 
 fn cli_official_input_heading() -> &'static str {
@@ -130,6 +136,15 @@ fn cli_official_input_heading() -> &'static str {
 
 fn cli_official_output_heading() -> &'static str {
     match t!("cli.official_output.heading") {
+        Cow::Borrowed(s) => s,
+        Cow::Owned(_) => {
+            unreachable!()
+        }
+    }
+}
+
+fn cli_rpe_input_heading() -> &'static str {
+    match t!("cli.rpe_input.heading") {
         Cow::Borrowed(s) => s,
         Cow::Owned(_) => {
             unreachable!()
@@ -175,6 +190,7 @@ impl Args {
             output_path,
             official_input_options: self.official_input_options,
             official_output_options: self.official_output_options,
+            rpe_input_options: self.rpe_input_options,
         })
     }
 }
@@ -187,6 +203,7 @@ struct ParsedArgs {
 
     official_input_options: CliOfficialInputOptions,
     official_output_options: CliOfficialOutputOptions,
+    rpe_input_options: CliRpeInputOptions,
 }
 
 fn convert(args: ParsedArgs) -> anyhow::Result<()> {
@@ -245,7 +262,7 @@ fn convert(args: ParsedArgs) -> anyhow::Result<()> {
         println!("Converting RPE chart into phichain chart...");
 
         let chart: RpeChart = serde_json::from_reader(file)?;
-        let phichain = rpe_to_phichain(chart);
+        let phichain = rpe_to_phichain(chart, args.rpe_input_options.into());
 
         println!(
             "Converted to phichain chart: {} lines, {} notes, {} events",
