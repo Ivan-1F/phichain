@@ -157,6 +157,9 @@ pub struct RpeNote {
     pub visible_time: f32, // ignored
     #[serde(rename = "type")]
     pub kind: RpeNoteKind,
+    /// 1 => fake note, other values => real note
+    #[serde(default, rename = "isFake")]
+    pub is_fake: i32,
 }
 
 pub static RPE_EASING: [Easing; 30] = [
@@ -474,7 +477,15 @@ fn build_nested_line(
     )
 }
 
-pub fn rpe_to_phichain(rpe: RpeChart) -> PhichainChart {
+#[derive(Debug, Clone)]
+pub struct RpeInputOptions {
+    /// If true, notes with `isFake = true` will be removed. Otherwise, it will retain as a real note
+    pub remove_fake_notes: bool,
+    /// If true, lines with non-empty `attachUI` will be removed. Otherwise, it will retain as a normal line
+    pub remove_ui_controls: bool,
+}
+
+pub fn rpe_to_phichain(rpe: RpeChart, options: RpeInputOptions) -> PhichainChart {
     let mut phichain = PhichainChart {
         offset: Offset(rpe.meta.offset as f32),
         bpm_list: BpmList::new(
@@ -497,21 +508,41 @@ pub fn rpe_to_phichain(rpe: RpeChart) -> PhichainChart {
         .judge_line_list
         .into_iter()
         .enumerate()
-        .filter(|(_, rpe_line)| {
+        .filter_map(|(index, rpe_line)| {
+            // Always warn about UI control lines
             if let Some(attach_ui) = &rpe_line.attach_ui {
-                warn!(
-                    "Skipping UI control line with attachUI = {:?} (Phichain doesn't support UI control lines)",
-                    attach_ui
-                );
-                false
-            } else {
-                true
+                if options.remove_ui_controls {
+                    warn!(
+                        "Skipping UI control line with attachUI = {:?} (Phichain doesn't support UI control lines)",
+                        attach_ui
+                    );
+                    return None;
+                } else {
+                    warn!(
+                        "Line {} has attachUI = {:?}, but Phichain doesn't support UI control lines. \
+                         This line will be treated as a normal line.",
+                        index, attach_ui
+                    );
+                }
             }
-        })
-        .map(|(index, rpe_line)| {
-            let notes = convert_rpe_notes(&rpe_line.notes);
+
+            // Filter out fake notes if remove_fake_notes is enabled
+            let filtered_notes: Vec<_> = if options.remove_fake_notes {
+                let fake_count = rpe_line.notes.iter().filter(|note| note.is_fake == 1).count();
+                if fake_count > 0 {
+                    warn!(
+                        "Line {} has {} fake note(s) that will be removed",
+                        index, fake_count
+                    );
+                }
+                rpe_line.notes.iter().filter(|note| note.is_fake != 1).cloned().collect()
+            } else {
+                rpe_line.notes.clone()
+            };
+
+            let notes = convert_rpe_notes(&filtered_notes);
             let serialized_line = build_nested_line(index, &rpe_line.name, rpe_line.event_layers, notes, &easing_fn);
-            (serialized_line, rpe_line.father, rpe_line.rotate_with_father)
+            Some((serialized_line, rpe_line.father, rpe_line.rotate_with_father))
         })
         .collect();
 
@@ -773,6 +804,7 @@ impl Format for RpeChart {
                     size: 1.0,
                     visible_time: 999999.0,
                     kind,
+                    is_fake: 0,
                 });
             }
             let mut event_layer = RpeEventLayer::default();
