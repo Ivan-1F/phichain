@@ -343,6 +343,8 @@ fn locale() -> String {
 }
 
 fn main() {
+    tracing_subscriber::fmt().init();
+
     rust_i18n::set_locale(&locale());
 
     let args = Args::parse();
