@@ -1,6 +1,7 @@
 use phichain_chart::beat::Beat;
 use phichain_format::official::from_phichain::OfficialOutputOptions;
 use phichain_format::official::OfficialInputOptions;
+use phichain_format::rpe::schema::RpeInputOptions;
 use rust_i18n::t;
 
 /// CLI wrapper for OfficialInputOptions
@@ -37,6 +38,24 @@ impl From<CliOfficialOutputOptions> for OfficialOutputOptions {
     fn from(cli: CliOfficialOutputOptions) -> Self {
         OfficialOutputOptions {
             minimum_beat: cli.minimum_beat,
+        }
+    }
+}
+
+/// CLI wrapper for OfficialInputOptions
+#[derive(Debug, Clone, clap::Args)]
+pub struct CliRpeInputOptions {
+    #[arg(long, help = t!("cli.rpe_input.remove_fake_notes").to_string())]
+    pub remove_fake_notes: bool,
+    #[arg(long, help = t!("cli.rpe_input.remove_ui_controls").to_string())]
+    pub remove_ui_controls: bool,
+}
+
+impl From<CliRpeInputOptions> for RpeInputOptions {
+    fn from(cli: CliRpeInputOptions) -> Self {
+        RpeInputOptions {
+            remove_fake_notes: cli.remove_fake_notes,
+            remove_ui_controls: cli.remove_ui_controls,
         }
     }
 }
