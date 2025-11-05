@@ -5577,6 +5577,7 @@ dependencies = [
  "serde_json",
  "strum 0.27.1",
  "sys-locale",
+ "tracing-subscriber",
 ]
 
 [[package]]
