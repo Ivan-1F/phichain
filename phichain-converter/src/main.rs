@@ -1,6 +1,8 @@
 mod options;
+mod utils;
 
 use crate::options::{CliOfficialInputOptions, CliOfficialOutputOptions, CliRpeInputOptions};
+use crate::utils::i18n_str;
 use clap::{Parser, ValueEnum};
 use phichain_chart::serialization::PhichainChart;
 use phichain_format::official::from_phichain::phichain_to_official;
@@ -9,7 +11,6 @@ use phichain_format::official::schema::OfficialChart;
 use phichain_format::primitive::PrimitiveChart;
 use phichain_format::rpe::schema::{rpe_to_phichain, RpeChart};
 use phichain_format::Format;
-use rust_i18n::t;
 use std::io::Write;
 use std::path::PathBuf;
 use strum::Display;
@@ -35,7 +36,7 @@ macro_rules! define_format_args {
         #[derive(Debug, Parser)]
         struct FormatArgs {
             $(
-                #[arg(long, num_args = 0..=1, help = t!(concat!("cli.format_args.", stringify!($field))).to_string())]
+                #[arg(long, num_args = 0..=1, help = i18n_str(concat!("cli.format_args.", stringify!($field))))]
                 $field: Option<Option<PathBuf>>,
             )*
         }
@@ -97,68 +98,32 @@ fn extract_format_order() -> Vec<String> {
 
 #[derive(Debug, Parser)]
 #[command(name = "phichain-converter")]
-#[command(about = t!("cli.about").to_string())]
-#[command(after_help = t!("cli.examples").to_string())]
+#[command(about = i18n_str("cli.about"))]
+#[command(after_help = i18n_str("cli.examples"))]
 struct Args {
     #[command(flatten)]
     #[command(
-        next_help_heading = cli_format_args_heading()
+        next_help_heading = i18n_str("cli.format_args.heading")
     )]
     formats: FormatArgs,
 
     #[command(flatten)]
     #[command(
-        next_help_heading = cli_official_input_heading()
+        next_help_heading = i18n_str("cli.official_input.heading")
     )]
     official_input_options: CliOfficialInputOptions,
 
     #[command(flatten)]
     #[command(
-        next_help_heading = cli_official_output_heading()
+        next_help_heading = i18n_str("cli.official_output.heading")
     )]
     official_output_options: CliOfficialOutputOptions,
 
     #[command(flatten)]
     #[command(
-        next_help_heading = cli_rpe_input_heading()
+        next_help_heading = i18n_str("cli.rpe_input.heading")
     )]
     rpe_input_options: CliRpeInputOptions,
-}
-
-fn cli_official_input_heading() -> &'static str {
-    match t!("cli.official_input.heading") {
-        Cow::Borrowed(s) => s,
-        Cow::Owned(_) => {
-            unreachable!()
-        }
-    }
-}
-
-fn cli_official_output_heading() -> &'static str {
-    match t!("cli.official_output.heading") {
-        Cow::Borrowed(s) => s,
-        Cow::Owned(_) => {
-            unreachable!()
-        }
-    }
-}
-
-fn cli_rpe_input_heading() -> &'static str {
-    match t!("cli.rpe_input.heading") {
-        Cow::Borrowed(s) => s,
-        Cow::Owned(_) => {
-            unreachable!()
-        }
-    }
-}
-
-fn cli_format_args_heading() -> &'static str {
-    match t!("cli.format_args.heading") {
-        Cow::Borrowed(s) => s,
-        Cow::Owned(_) => {
-            unreachable!()
-        }
-    }
 }
 
 impl Args {

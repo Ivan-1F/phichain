@@ -15,16 +15,16 @@ cli:
     primitive: 使用基本谱面作为输入或输出
 
   official_input:
-    heading: 官方格式输入选项 - 仅当输入格式为官方格式时适用
+    heading: '[官谱 => *] - 仅当输入格式为官谱时适用'
     no_easing_fitting: 禁用缓动拟合
     easing_fitting_epsilon: 缓动拟合时使用的误差值
     constant_event_shrink_to: '对于常量事件，将其缩短到的长度 (格式: "分子/分母" 或 "整数+分子/分母" 或 "整数")'
 
   official_output:
-    heading: 官方格式输出选项 - 仅当输出格式为官方格式时适用
+    heading: '[* => 官谱] - 仅当输出格式为官谱时适用'
     minimum_beat: 进行事件切割时使用的最小拍数单位
 
   rpe_input:
-    heading: RPE 输入选项 - 仅当输入格式为 RPE 时适用
+    heading: '[RPE => *] - 仅当输入格式为 RPE 时适用'
     remove_fake_notes: 若开启，带有 `isFake = true` 的音符会被移除。否则，它们将被保留但被视为真音符
     remove_ui_controls: 若开启，带有非空 `attachUI` 的判定线会被移除。否则，它们将被保留但被视为常规判定线

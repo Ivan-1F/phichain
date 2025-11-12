@@ -15,16 +15,16 @@ cli:
     primitive: Use primitive chart as input or output
 
   official_input:
-    heading: Official Input Options - Applicable only when the input format is official
+    heading: '[OFFICIAL => *] - Applicable only when the input format is official'
     no_easing_fitting: Disable easing fitting
     easing_fitting_epsilon: The epsilon used during easing fitting
     constant_event_shrink_to: 'For constant events, how long to shrink them to (format: "numer/denom" or "whole+numer/denom" or "whole")'
 
   official_output:
-    heading: Official Output Options - Applicable only when the output format is official
+    heading: '[* => OFFICIAL] - Applicable only when the output format is official'
     minimum_beat: The minimum beat used for event cutting
 
   rpe_input:
-    heading: RPE Input Options - Applicable only when the input format is rpe
+    heading: '[RPE => *] - Applicable only when the input format is rpe'
     remove_fake_notes: If enabled, notes with `isFake = true` will be removed. Otherwise, it will retain as a real note
     remove_ui_controls: If enabled, lines with non-empty `attachUI` will be removed. Otherwise, it will retain as a normal line
