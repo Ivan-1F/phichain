@@ -2,6 +2,8 @@ name: Dev Builds
 
 on:
   push:
+    branches:
+      - master
   pull_request:
 
 env:
