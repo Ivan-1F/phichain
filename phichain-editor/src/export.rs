@@ -10,7 +10,7 @@ use bevy::prelude::*;
 use phichain_chart::serialization::PhichainChart;
 use phichain_format::official::from_phichain::OfficialOutputOptions;
 use phichain_format::official::schema::OfficialChart;
-use phichain_format::{ChartFormat, CommonOutputOptions};
+use phichain_format::ChartFormat;
 use rfd::FileDialog;
 use std::fs;
 use std::io::{Read, Write};
@@ -68,11 +68,7 @@ fn export_official(path: &Path, project: &Project) -> anyhow::Result<PathBuf> {
     zip.start_file("chart.json", SimpleFileOptions::default())?;
     let chart_file = fs::File::open(project.path.chart_path())?;
     let chart: PhichainChart = serde_json::from_reader(chart_file)?;
-    let official = OfficialChart::from_phichain(
-        chart,
-        &OfficialOutputOptions::default(),
-        &CommonOutputOptions::default(),
-    )?;
+    let official = OfficialChart::from_phichain(chart, &OfficialOutputOptions::default())?;
     zip.write_all(serde_json::to_string(&official)?.as_bytes())?;
 
     if let Some(illustration_path) = project.path.illustration_path() {

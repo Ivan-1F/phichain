@@ -9,7 +9,7 @@ use clap::{Parser, ValueEnum};
 use phichain_chart::serialization::PhichainChart;
 use phichain_format::official::schema::OfficialChart;
 use phichain_format::rpe::schema::RpeChart;
-use phichain_format::ChartFormat;
+use phichain_format::{ChartFormat, CommonOutputOptions};
 use serde::Serialize;
 use std::path::PathBuf;
 use strum::Display;
@@ -32,6 +32,20 @@ enum Chart {
     Official(OfficialChart),
     Phichain(PhichainChart),
     Rpe(RpeChart),
+}
+
+impl Chart {
+    fn apply_common_output_options(self, common_options: &CommonOutputOptions) -> Self {
+        match self {
+            Chart::Official(chart) => {
+                Chart::Official(chart.apply_common_output_options(common_options))
+            }
+            Chart::Phichain(chart) => {
+                Chart::Phichain(chart.apply_common_output_options(common_options))
+            }
+            Chart::Rpe(chart) => Chart::Rpe(chart.apply_common_output_options(common_options)),
+        }
+    }
 }
 
 macro_rules! define_format_args {
@@ -217,22 +231,15 @@ fn convert(args: ParsedArgs) -> anyhow::Result<()> {
         Formats::Official => Chart::Official(OfficialChart::from_phichain(
             phichain,
             &args.official_output_options.into(),
-            &args.common_output_options.into(),
         )?),
-        Formats::Phichain => Chart::Phichain(PhichainChart::from_phichain(
-            phichain,
-            &(),
-            &args.common_output_options.into(),
-        )?),
-        Formats::Rpe => Chart::Rpe(RpeChart::from_phichain(
-            phichain,
-            &(),
-            &args.common_output_options.into(),
-        )?),
+        Formats::Phichain => Chart::Phichain(PhichainChart::from_phichain(phichain, &())?),
+        Formats::Rpe => Chart::Rpe(RpeChart::from_phichain(phichain, &())?),
         Formats::Primitive => {
             unimplemented!()
         }
     };
+
+    let output = output.apply_common_output_options(&args.common_output_options.into());
 
     let output_file = std::fs::File::create(&args.output_path)?;
     serde_json::to_writer(output_file, &output)?;
