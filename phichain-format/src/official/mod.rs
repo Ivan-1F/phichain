@@ -81,9 +81,47 @@ impl ChartFormat for OfficialChart {
     fn from_phichain(
         phichain: PhichainChart,
         opts: &Self::OutputOptions,
-        _: &CommonOutputOptions,
     ) -> Result<Self, Self::OutputError> {
         phichain_to_official(phichain, opts)
+    }
+
+    fn apply_common_output_options(mut self, common_options: &CommonOutputOptions) -> Self {
+        let round = |value: f32| -> f32 {
+            let multiplier = 10_f32.powi(common_options.round as i32);
+            (value * multiplier).round() / multiplier
+        };
+
+        for line in &mut self.lines {
+            for event in &mut line.rotate_events {
+                event.start = round(event.start);
+                event.end = round(event.end);
+            }
+
+            for event in &mut line.opacity_events {
+                event.start = round(event.start);
+                event.end = round(event.end);
+            }
+
+            for event in &mut line.speed_events {
+                event.value = round(event.value);
+            }
+
+            for event in &mut line.move_events {
+                event.start_x = round(event.start_x);
+                event.end_x = round(event.end_x);
+                event.start_y = round(event.start_y);
+                event.end_y = round(event.end_y);
+            }
+
+            for note in &mut line.notes_above {
+                note.x = round(note.x);
+            }
+            for note in &mut line.notes_below {
+                note.x = round(note.x);
+            }
+        }
+
+        self
     }
 }
 
