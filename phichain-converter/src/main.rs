@@ -1,7 +1,9 @@
 mod options;
 mod utils;
 
-use crate::options::{CliOfficialInputOptions, CliOfficialOutputOptions, CliRpeInputOptions};
+use crate::options::{
+    CliCommonOutputOptions, CliOfficialInputOptions, CliOfficialOutputOptions, CliRpeInputOptions,
+};
 use crate::utils::i18n_str;
 use clap::{Parser, ValueEnum};
 use phichain_chart::serialization::PhichainChart;
@@ -129,6 +131,12 @@ struct Args {
         next_help_heading = i18n_str("cli.rpe_input.heading")
     )]
     rpe_input_options: CliRpeInputOptions,
+
+    #[command(flatten)]
+    #[command(
+        next_help_heading = i18n_str("cli.common_output.heading")
+    )]
+    common_output_options: CliCommonOutputOptions,
 }
 
 impl Args {
@@ -161,6 +169,7 @@ impl Args {
             official_input_options: self.official_input_options,
             official_output_options: self.official_output_options,
             rpe_input_options: self.rpe_input_options,
+            common_output_options: self.common_output_options,
         })
     }
 }
@@ -174,6 +183,8 @@ struct ParsedArgs {
     official_input_options: CliOfficialInputOptions,
     official_output_options: CliOfficialOutputOptions,
     rpe_input_options: CliRpeInputOptions,
+
+    common_output_options: CliCommonOutputOptions,
 }
 
 fn convert(args: ParsedArgs) -> anyhow::Result<()> {
@@ -206,9 +217,18 @@ fn convert(args: ParsedArgs) -> anyhow::Result<()> {
         Formats::Official => Chart::Official(OfficialChart::from_phichain(
             phichain,
             &args.official_output_options.into(),
+            &args.common_output_options.into(),
         )?),
-        Formats::Phichain => Chart::Phichain(PhichainChart::from_phichain(phichain, &())?),
-        Formats::Rpe => Chart::Rpe(RpeChart::from_phichain(phichain, &())?),
+        Formats::Phichain => Chart::Phichain(PhichainChart::from_phichain(
+            phichain,
+            &(),
+            &args.common_output_options.into(),
+        )?),
+        Formats::Rpe => Chart::Rpe(RpeChart::from_phichain(
+            phichain,
+            &(),
+            &args.common_output_options.into(),
+        )?),
         Formats::Primitive => {
             unimplemented!()
         }

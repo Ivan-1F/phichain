@@ -1,5 +1,5 @@
 use crate::rpe::schema::{rpe_to_phichain, RpeChart, RpeInputOptions};
-use crate::ChartFormat;
+use crate::{ChartFormat, CommonOutputOptions};
 use phichain_chart::serialization::PhichainChart;
 use std::convert::Infallible;
 
@@ -15,7 +15,11 @@ impl ChartFormat for RpeChart {
         Ok(rpe_to_phichain(self, opts))
     }
 
-    fn from_phichain(_: PhichainChart, _: &Self::OutputOptions) -> Result<Self, Self::OutputError> {
+    fn from_phichain(
+        _: PhichainChart,
+        _: &Self::OutputOptions,
+        _: &CommonOutputOptions,
+    ) -> Result<Self, Self::OutputError> {
         todo!()
     }
 }

@@ -3,7 +3,7 @@ use crate::official::from_phichain::{
     phichain_to_official, OfficialOutputError, OfficialOutputOptions,
 };
 use crate::official::schema::{OfficialChart, OfficialNote, OfficialNoteKind};
-use crate::ChartFormat;
+use crate::{ChartFormat, CommonOutputOptions};
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
@@ -81,6 +81,7 @@ impl ChartFormat for OfficialChart {
     fn from_phichain(
         phichain: PhichainChart,
         opts: &Self::OutputOptions,
+        _: &CommonOutputOptions,
     ) -> Result<Self, Self::OutputError> {
         phichain_to_official(phichain, opts)
     }

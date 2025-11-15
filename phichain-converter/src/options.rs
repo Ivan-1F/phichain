@@ -4,6 +4,7 @@ use phichain_format::official::from_phichain::OfficialOutputOptions;
 use phichain_format::official::OfficialInputOptions;
 use phichain_format::rpe::schema::RpeInputOptions;
 use rust_i18n::t;
+use phichain_format::CommonOutputOptions;
 
 /// CLI wrapper for OfficialInputOptions
 #[derive(Debug, Clone, clap::Args, o2o)]
@@ -36,4 +37,12 @@ pub struct CliRpeInputOptions {
     remove_fake_notes: bool,
     #[arg(long, help = t!("cli.rpe_input.remove_ui_controls").to_string())]
     remove_ui_controls: bool,
+}
+
+// CLI wrapper for CommonOutputOptions
+#[derive(Debug, Clone, clap::Args, o2o)]
+#[map(CommonOutputOptions)]
+pub struct CliCommonOutputOptions {
+    #[arg(long, help = t!("cli.common_output.round").to_string(), default_value_t = 2)]
+    round: u32,
 }
