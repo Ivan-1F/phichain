@@ -482,7 +482,7 @@ pub struct RpeInputOptions {
     pub remove_ui_controls: bool,
 }
 
-pub fn rpe_to_phichain(rpe: RpeChart, options: RpeInputOptions) -> PhichainChart {
+pub fn rpe_to_phichain(rpe: RpeChart, options: &RpeInputOptions) -> PhichainChart {
     let mut phichain = PhichainChart {
         offset: Offset(rpe.meta.offset as f32),
         bpm_list: BpmList::new(

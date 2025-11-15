@@ -1,5 +1,9 @@
 use crate::official::fitting::fit_events;
+use crate::official::from_phichain::{
+    phichain_to_official, OfficialOutputError, OfficialOutputOptions,
+};
 use crate::official::schema::{OfficialChart, OfficialNote, OfficialNoteKind};
+use crate::ChartFormat;
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
@@ -63,9 +67,28 @@ impl Default for OfficialInputOptions {
     }
 }
 
+impl ChartFormat for OfficialChart {
+    type InputOptions = OfficialInputOptions;
+    type InputError = OfficialInputError;
+
+    type OutputOptions = OfficialOutputOptions;
+    type OutputError = OfficialOutputError;
+
+    fn to_phichain(self, opts: &Self::InputOptions) -> Result<PhichainChart, Self::InputError> {
+        official_to_phichain(self, opts)
+    }
+
+    fn from_phichain(
+        phichain: PhichainChart,
+        opts: &Self::OutputOptions,
+    ) -> Result<Self, Self::OutputError> {
+        phichain_to_official(phichain, opts)
+    }
+}
+
 pub fn official_to_phichain(
     official: OfficialChart,
-    options: OfficialInputOptions,
+    options: &OfficialInputOptions,
 ) -> Result<PhichainChart, OfficialInputError> {
     if official.lines.is_empty() {
         return Err(OfficialInputError::NoLine);
