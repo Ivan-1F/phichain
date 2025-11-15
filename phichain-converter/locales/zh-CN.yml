@@ -28,3 +28,7 @@ cli:
     heading: '[RPE => *] - 仅当输入格式为 RPE 时适用'
     remove_fake_notes: 若开启，带有 `isFake = true` 的音符会被移除。否则，它们将被保留但被视为真音符
     remove_ui_controls: 若开启，带有非空 `attachUI` 的判定线会被移除。否则，它们将被保留但被视为常规判定线
+
+  common_output:
+    heading: 通用输出选项
+    round: 输出数值的小数位数 (适用于事件值和音符 x 坐标)

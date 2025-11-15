@@ -28,3 +28,7 @@ cli:
     heading: '[RPE => *] - Applicable only when the input format is rpe'
     remove_fake_notes: If enabled, notes with `isFake = true` will be removed. Otherwise, it will retain as a real note
     remove_ui_controls: If enabled, lines with non-empty `attachUI` will be removed. Otherwise, it will retain as a normal line
+
+  common_output:
+    heading: Common Output Options
+    round: Number of decimal places to round output values (event values and note x positions)
