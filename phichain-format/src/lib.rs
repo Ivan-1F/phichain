@@ -89,8 +89,10 @@ pub trait ChartFormat: Serialize + DeserializeOwned {
     fn from_phichain(
         phichain: PhichainChart,
         opts: &Self::OutputOptions,
-        common_output_options: &CommonOutputOptions,
     ) -> Result<Self, Self::OutputError>;
+
+    /// Apply common output options (like rounding) to the chart
+    fn apply_common_output_options(self, common_options: &CommonOutputOptions) -> Self;
 }
 
 impl ChartFormat for PhichainChart {
@@ -106,8 +108,48 @@ impl ChartFormat for PhichainChart {
     fn from_phichain(
         phichain: PhichainChart,
         _: &Self::OutputOptions,
-        _: &CommonOutputOptions,
     ) -> Result<Self, Self::OutputError> {
         Ok(phichain)
+    }
+
+    fn apply_common_output_options(mut self, common_options: &CommonOutputOptions) -> Self {
+        use phichain_chart::event::LineEventValue;
+
+        let round = |value: f32| -> f32 {
+            let multiplier = 10_f32.powi(common_options.round as i32);
+            (value * multiplier).round() / multiplier
+        };
+
+        fn round_line<F>(line: &mut SerializedLine, round: &F)
+        where
+            F: Fn(f32) -> f32,
+        {
+            for note in &mut line.notes {
+                note.x = round(note.x);
+            }
+
+            for event in &mut line.events {
+                event.value = match event.value {
+                    LineEventValue::Constant(v) => LineEventValue::Constant(round(v)),
+                    LineEventValue::Transition { start, end, easing } => {
+                        LineEventValue::Transition {
+                            start: round(start),
+                            end: round(end),
+                            easing,
+                        }
+                    }
+                };
+            }
+
+            for child in &mut line.children {
+                round_line(child, round);
+            }
+        }
+
+        for line in &mut self.lines {
+            round_line(line, &round);
+        }
+
+        self
     }
 }

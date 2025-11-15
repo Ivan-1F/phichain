@@ -3,8 +3,8 @@ use phichain_chart::beat::Beat;
 use phichain_format::official::from_phichain::OfficialOutputOptions;
 use phichain_format::official::OfficialInputOptions;
 use phichain_format::rpe::schema::RpeInputOptions;
-use rust_i18n::t;
 use phichain_format::CommonOutputOptions;
+use rust_i18n::t;
 
 /// CLI wrapper for OfficialInputOptions
 #[derive(Debug, Clone, clap::Args, o2o)]
