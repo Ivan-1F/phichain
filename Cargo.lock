@@ -5606,6 +5606,7 @@ dependencies = [
  "phichain-chart",
  "phichain-format",
  "rust-i18n",
+ "serde",
  "serde_json",
  "strum 0.27.1",
  "sys-locale",

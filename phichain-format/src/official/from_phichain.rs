@@ -37,7 +37,7 @@ impl Default for OfficialOutputOptions {
 
 pub fn phichain_to_official(
     phichain: PhichainChart,
-    options: OfficialOutputOptions,
+    options: &OfficialOutputOptions,
 ) -> Result<OfficialChart, OfficialOutputError> {
     let phichain = merge_children_line(phichain);
     let phichain = evaluate_curve_note_tracks(phichain);
