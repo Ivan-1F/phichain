@@ -66,6 +66,17 @@ impl Format for PhichainChart {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct CommonOutputOptions {
+    pub round: u32,
+}
+
+impl Default for CommonOutputOptions {
+    fn default() -> Self {
+        Self { round: 2 }
+    }
+}
+
 pub trait ChartFormat: Serialize + DeserializeOwned {
     type InputOptions;
     type InputError;
@@ -78,6 +89,7 @@ pub trait ChartFormat: Serialize + DeserializeOwned {
     fn from_phichain(
         phichain: PhichainChart,
         opts: &Self::OutputOptions,
+        common_output_options: &CommonOutputOptions,
     ) -> Result<Self, Self::OutputError>;
 }
 
@@ -94,6 +106,7 @@ impl ChartFormat for PhichainChart {
     fn from_phichain(
         phichain: PhichainChart,
         _: &Self::OutputOptions,
+        _: &CommonOutputOptions,
     ) -> Result<Self, Self::OutputError> {
         Ok(phichain)
     }
