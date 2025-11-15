@@ -6,6 +6,7 @@ pub mod rpe;
 use crate::primitive::PrimitiveChart;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use std::convert::Infallible;
 
 // TODO
 pub use compile::compile as compile_phichain_chart;
@@ -62,5 +63,38 @@ impl Format for PhichainChart {
                 .collect(),
             ..Default::default()
         })
+    }
+}
+
+pub trait ChartFormat: Serialize + DeserializeOwned {
+    type InputOptions;
+    type InputError;
+
+    type OutputOptions;
+    type OutputError;
+
+    fn to_phichain(self, opts: &Self::InputOptions) -> Result<PhichainChart, Self::InputError>;
+
+    fn from_phichain(
+        phichain: PhichainChart,
+        opts: &Self::OutputOptions,
+    ) -> Result<Self, Self::OutputError>;
+}
+
+impl ChartFormat for PhichainChart {
+    type InputOptions = ();
+    type InputError = Infallible;
+    type OutputOptions = ();
+    type OutputError = Infallible;
+
+    fn to_phichain(self, _: &Self::InputOptions) -> Result<PhichainChart, Self::InputError> {
+        Ok(self)
+    }
+
+    fn from_phichain(
+        phichain: PhichainChart,
+        _: &Self::OutputOptions,
+    ) -> Result<Self, Self::OutputError> {
+        Ok(phichain)
     }
 }

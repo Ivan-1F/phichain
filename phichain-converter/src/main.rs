@@ -5,13 +5,10 @@ use crate::options::{CliOfficialInputOptions, CliOfficialOutputOptions, CliRpeIn
 use crate::utils::i18n_str;
 use clap::{Parser, ValueEnum};
 use phichain_chart::serialization::PhichainChart;
-use phichain_format::official::from_phichain::phichain_to_official;
-use phichain_format::official::official_to_phichain;
 use phichain_format::official::schema::OfficialChart;
-use phichain_format::primitive::PrimitiveChart;
-use phichain_format::rpe::schema::{rpe_to_phichain, RpeChart};
-use phichain_format::Format;
-use std::io::Write;
+use phichain_format::rpe::schema::RpeChart;
+use phichain_format::ChartFormat;
+use serde::Serialize;
 use std::path::PathBuf;
 use strum::Display;
 
@@ -25,6 +22,14 @@ enum Formats {
     Phichain,
     Rpe,
     Primitive,
+}
+
+#[derive(Serialize)]
+#[serde(untagged)]
+enum Chart {
+    Official(OfficialChart),
+    Phichain(PhichainChart),
+    Rpe(RpeChart),
 }
 
 macro_rules! define_format_args {
@@ -182,118 +187,35 @@ fn convert(args: ParsedArgs) -> anyhow::Result<()> {
 
     let file = std::fs::File::open(&args.path)?;
 
-    let output = if matches!(args.input, Formats::Official)
-        && matches!(args.output, Formats::Phichain)
-    {
-        println!("Converting official chart into phichain chart...");
-
-        let chart: OfficialChart = serde_json::from_reader(file)?;
-        let phichain = official_to_phichain(chart, args.official_input_options.into())?;
-
-        println!(
-            "Converted to phichain chart: {} lines, {} notes, {} events",
-            phichain.lines.len(),
-            phichain.lines.iter().map(|l| l.notes.len()).sum::<usize>(),
-            phichain.lines.iter().map(|l| l.events.len()).sum::<usize>(),
-        );
-
-        serde_json::to_string(&phichain)?
-    } else if matches!(args.input, Formats::Phichain) && matches!(args.output, Formats::Official) {
-        println!("Converting phichain chart into official chart...");
-
-        let chart: PhichainChart = serde_json::from_reader(file)?;
-        let phichain = phichain_to_official(chart, args.official_output_options.into())?;
-
-        println!(
-            "Converted to official chart: {} lines, {} notes, {} events",
-            phichain.lines.len(),
-            phichain
-                .lines
-                .iter()
-                .map(|l| l.notes_above.len() + l.notes_below.len())
-                .sum::<usize>(),
-            phichain
-                .lines
-                .iter()
-                .map(|l| l.move_events.len()
-                    + l.opacity_events.len()
-                    + l.rotate_events.len()
-                    + l.speed_events.len())
-                .sum::<usize>(),
-        );
-
-        serde_json::to_string(&phichain)?
-    } else if matches!(args.input, Formats::Rpe) && matches!(args.output, Formats::Phichain) {
-        println!("Converting RPE chart into phichain chart...");
-
-        let chart: RpeChart = serde_json::from_reader(file)?;
-        let phichain = rpe_to_phichain(chart, args.rpe_input_options.into());
-
-        println!(
-            "Converted to phichain chart: {} lines, {} notes, {} events",
-            phichain.lines.len(),
-            phichain.lines.iter().map(|l| l.notes.len()).sum::<usize>(),
-            phichain.lines.iter().map(|l| l.events.len()).sum::<usize>(),
-        );
-
-        serde_json::to_string(&phichain)?
-    } else {
-        println!("Converting chart into primitive chart...");
-
-        let primitive = match args.input {
-            Formats::Official => {
-                let chart: OfficialChart = serde_json::from_reader(file)?;
-                chart.into_primitive()?
-            }
-            Formats::Phichain => {
-                let chart: PhichainChart = serde_json::from_reader(file)?;
-                phichain_format::compile_phichain_chart(chart)?
-            }
-            Formats::Rpe => {
-                let chart: RpeChart = serde_json::from_reader(file)?;
-                chart.into_primitive()?
-            }
-            Formats::Primitive => {
-                let chart: PrimitiveChart = serde_json::from_reader(file)?;
-                chart.into_primitive()?
-            }
-        };
-
-        println!(
-            "Converted to primitive chart: {} lines, {} notes, {} events",
-            primitive.lines.len(),
-            primitive.lines.iter().map(|l| l.notes.len()).sum::<usize>(),
-            primitive
-                .lines
-                .iter()
-                .map(|l| l.events.len())
-                .sum::<usize>(),
-        );
-
-        println!("Converting chart into `{}` chart...", args.output);
-
-        match args.output {
-            Formats::Official => {
-                let chart = OfficialChart::from_primitive(primitive)?;
-                serde_json::to_string(&chart)?
-            }
-            Formats::Phichain => {
-                let chart = PhichainChart::from_primitive(primitive)?;
-                serde_json::to_string(&chart)?
-            }
-            Formats::Rpe => {
-                let chart = RpeChart::from_primitive(primitive)?;
-                serde_json::to_string(&chart)?
-            }
-            Formats::Primitive => {
-                let chart = PrimitiveChart::from_primitive(primitive)?;
-                serde_json::to_string(&chart)?
-            }
+    let input = match args.input {
+        Formats::Official => Chart::Official(serde_json::from_reader(file)?),
+        Formats::Phichain => Chart::Phichain(serde_json::from_reader(file)?),
+        Formats::Rpe => Chart::Rpe(serde_json::from_reader(file)?),
+        Formats::Primitive => {
+            unimplemented!()
         }
     };
 
-    let mut output_file = std::fs::File::create(&args.output_path)?;
-    output_file.write_all(output.as_bytes())?;
+    let phichain = match input {
+        Chart::Official(official) => official.to_phichain(&args.official_input_options.into())?,
+        Chart::Phichain(phichain) => phichain.to_phichain(&())?,
+        Chart::Rpe(rpe) => rpe.to_phichain(&args.rpe_input_options.into())?,
+    };
+
+    let output = match args.output {
+        Formats::Official => Chart::Official(OfficialChart::from_phichain(
+            phichain,
+            &args.official_output_options.into(),
+        )?),
+        Formats::Phichain => Chart::Phichain(PhichainChart::from_phichain(phichain, &())?),
+        Formats::Rpe => Chart::Rpe(RpeChart::from_phichain(phichain, &())?),
+        Formats::Primitive => {
+            unimplemented!()
+        }
+    };
+
+    let output_file = std::fs::File::create(&args.output_path)?;
+    serde_json::to_writer(output_file, &output)?;
 
     Ok(())
 }
