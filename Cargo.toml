@@ -3,7 +3,7 @@ members = [
     "phichain-assets",
     "phichain-chart", "phichain-compiler",
     "phichain-converter",
-    "phichain-editor",
+    "phichain-editor", "phichain-format",
     "phichain-game",
     "phichain-renderer",
 ]

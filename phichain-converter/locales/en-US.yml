@@ -1,0 +1,34 @@
+cli:
+  about: Converts Phigros charts between different formats
+
+  examples: |
+    Examples:
+    
+    phichain-converter --rpe RPE.json --phichain chart.json: Convert the RPE chart `RPE.json` to a Phichain chart named `chart.json`
+    phichain-converter --phichain chart.json --official:     Convert the Phichain chart `chart.json` to the official format named `output.json`
+
+  format_args:
+    heading: 'Format Options - Must provide two format flags: the first one for the input format and second one for the output format. The output path is optional.'
+    phichain: Use Phichain chart as input or output
+    official: Use official chart as input or output
+    rpe: Use RPE chart as input or output
+    primitive: Use primitive chart as input or output
+
+  official_input:
+    heading: '[OFFICIAL => *] - Applicable only when the input format is official'
+    no_easing_fitting: Disable easing fitting
+    easing_fitting_epsilon: The epsilon used during easing fitting
+    constant_event_shrink_to: 'For constant events, how long to shrink them to (format: "numer/denom" or "whole+numer/denom" or "whole")'
+
+  official_output:
+    heading: '[* => OFFICIAL] - Applicable only when the output format is official'
+    minimum_beat: The minimum beat used for event cutting
+
+  rpe_input:
+    heading: '[RPE => *] - Applicable only when the input format is rpe'
+    remove_fake_notes: If enabled, notes with `isFake = true` will be removed. Otherwise, it will retain as a real note
+    remove_ui_controls: If enabled, lines with non-empty `attachUI` will be removed. Otherwise, it will retain as a normal line
+
+  common_output:
+    heading: Common Output Options
+    round: Number of decimal places to round output values (event values and note x positions)

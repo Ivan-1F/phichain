@@ -1,6 +1,6 @@
-use crate::bpm_list::BpmList;
 use crate::primitive::line::Line;
-use serde::de::DeserializeOwned;
+use crate::Format;
+use phichain_chart::bpm_list::BpmList;
 use serde::{Deserialize, Serialize};
 
 pub mod event;
@@ -23,14 +23,6 @@ impl Default for PrimitiveChart {
             lines: Default::default(),
         }
     }
-}
-
-pub trait Format: Serialize + DeserializeOwned {
-    fn into_primitive(self) -> anyhow::Result<PrimitiveChart>;
-
-    fn from_primitive(phichain: PrimitiveChart) -> anyhow::Result<Self>
-    where
-        Self: Sized;
 }
 
 impl Format for PrimitiveChart {
