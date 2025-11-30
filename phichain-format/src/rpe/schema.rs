@@ -5,7 +5,7 @@
 use crate::primitive;
 use crate::primitive::PrimitiveChart;
 use crate::Format;
-use num::{Num, Rational32};
+use num::{Num, Rational32, ToPrimitive};
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::{BpmList, BpmPoint};
 use phichain_chart::easing::Easing;
@@ -284,52 +284,53 @@ fn convert_event_layer(
 ) -> Vec<LineEvent> {
     let mut events = Vec::new();
 
+    fn convert_event<T: Num + ToPrimitive>(
+        kind: LineEventKind,
+        event: RpeCommonEvent<T>,
+        easing_fn: &impl Fn(i32) -> Easing,
+    ) -> LineEvent {
+        LineEvent {
+            kind,
+            start_beat: event.start_time.into(),
+            end_beat: event.end_time.into(),
+            value: if event.start == event.end {
+                LineEventValue::constant(event.start.to_f32().unwrap_or_default())
+            } else {
+                LineEventValue::transition(
+                    event.start.to_f32().unwrap_or_default(),
+                    event.end.to_f32().unwrap_or_default(),
+                    easing_fn(event.easing_type),
+                )
+            },
+        }
+    }
+
     // Convert moveX events
     for event in &layer.move_x_events {
-        events.push(LineEvent {
-            kind: LineEventKind::X,
-            start_beat: event.start_time.clone().into(),
-            end_beat: event.end_time.clone().into(),
-            value: LineEventValue::transition(event.start, event.end, easing_fn(event.easing_type)),
-        });
+        events.push(convert_event(LineEventKind::X, event.clone(), easing_fn));
     }
 
     // Convert moveY events
     for event in &layer.move_y_events {
-        events.push(LineEvent {
-            kind: LineEventKind::Y,
-            start_beat: event.start_time.clone().into(),
-            end_beat: event.end_time.clone().into(),
-            value: LineEventValue::transition(event.start, event.end, easing_fn(event.easing_type)),
-        });
+        events.push(convert_event(LineEventKind::Y, event.clone(), easing_fn));
     }
 
     // Convert rotate events (negate values)
     for event in &layer.rotate_events {
-        events.push(LineEvent {
-            kind: LineEventKind::Rotation,
-            start_beat: event.start_time.clone().into(),
-            end_beat: event.end_time.clone().into(),
-            value: LineEventValue::transition(
-                -event.start,
-                -event.end,
-                easing_fn(event.easing_type),
-            ),
-        });
+        let mut phichain_event = convert_event(LineEventKind::Rotation, event.clone(), easing_fn);
+
+        phichain_event.value = phichain_event.value.negated();
+
+        events.push(phichain_event);
     }
 
     // Convert alpha events
     for event in &layer.alpha_events {
-        events.push(LineEvent {
-            kind: LineEventKind::Opacity,
-            start_beat: event.start_time.clone().into(),
-            end_beat: event.end_time.clone().into(),
-            value: LineEventValue::transition(
-                event.start as f32,
-                event.end as f32,
-                easing_fn(event.easing_type),
-            ),
-        });
+        events.push(convert_event(
+            LineEventKind::Opacity,
+            event.clone(),
+            easing_fn,
+        ));
     }
 
     // Convert speed events
@@ -338,7 +339,11 @@ fn convert_event_layer(
             kind: LineEventKind::Speed,
             start_beat: event.start_time.clone().into(),
             end_beat: event.end_time.clone().into(),
-            value: LineEventValue::transition(event.start, event.end, Easing::Linear),
+            value: if event.start == event.end {
+                LineEventValue::constant(event.start)
+            } else {
+                LineEventValue::transition(event.start, event.end, Easing::Linear)
+            },
         });
     }
 
