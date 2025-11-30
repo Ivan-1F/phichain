@@ -2,6 +2,7 @@ mod apply;
 mod create;
 mod delete;
 mod rename;
+mod update;
 
 use crate::action::{ActionRegistrationExt, ActionRegistry};
 use crate::identifier::Identifier;
@@ -9,6 +10,7 @@ use crate::layout::apply::{apply_layout_observer, ApplyLayout};
 use crate::layout::create::{create_layout_observer, NewLayout};
 use crate::layout::delete::{delete_layout_observer, DeleteLayout};
 use crate::layout::rename::{rename_layout_observer, RenameLayout};
+use crate::layout::update::{update_layout_observer, UpdateLayout};
 use crate::misc::WorkingDirectory;
 use crate::ui::sides::SidesExt;
 use bevy::prelude::*;
@@ -62,7 +64,8 @@ impl Plugin for LayoutPlugin {
             .add_observer(create_layout_observer)
             .add_observer(apply_layout_observer)
             .add_observer(delete_layout_observer)
-            .add_observer(rename_layout_observer);
+            .add_observer(rename_layout_observer)
+            .add_observer(update_layout_observer);
     }
 }
 
@@ -91,6 +94,7 @@ pub fn layout_menu(ui: &mut egui::Ui, world: &mut World) {
                     ui.close_menu();
                 }
                 if ui.button("Update from Current Layout").clicked() {
+                    world.trigger(UpdateLayout(index));
                     ui.close_menu();
                 }
 
