@@ -1,15 +1,16 @@
 mod apply;
 mod create;
 mod delete;
+mod rename;
 
 use crate::action::{ActionRegistrationExt, ActionRegistry};
 use crate::identifier::Identifier;
 use crate::layout::apply::{apply_layout_observer, ApplyLayout};
 use crate::layout::create::{create_layout_observer, NewLayout};
 use crate::layout::delete::{delete_layout_observer, DeleteLayout};
+use crate::layout::rename::{rename_layout_observer, RenameLayout};
 use crate::misc::WorkingDirectory;
 use crate::ui::sides::SidesExt;
-use crate::UiState;
 use bevy::prelude::*;
 use bevy_egui::{EguiContext, EguiPrimaryContextPass};
 use bevy_persistent::{Persistent, StorageFormat};
@@ -60,7 +61,8 @@ impl Plugin for LayoutPlugin {
             .add_systems(EguiPrimaryContextPass, modal_ui_system.in_set(GameSet))
             .add_observer(create_layout_observer)
             .add_observer(apply_layout_observer)
-            .add_observer(delete_layout_observer);
+            .add_observer(delete_layout_observer)
+            .add_observer(rename_layout_observer);
     }
 }
 
@@ -84,6 +86,10 @@ pub fn layout_menu(ui: &mut egui::Ui, world: &mut World) {
                     ui.close_menu();
                 }
                 if ui.button("Rename").clicked() {
+                    world.spawn(RenameLayoutDialog {
+                        index,
+                        name: preset.name.clone(),
+                    });
                     ui.close_menu();
                 }
                 if ui.button("Update from Current Layout").clicked() {
@@ -115,14 +121,18 @@ pub fn layout_menu(ui: &mut egui::Ui, world: &mut World) {
 #[derive(Default, Debug, Clone, Component)]
 struct NewLayoutDialog(String);
 
+#[derive(Default, Debug, Clone, Component)]
+struct RenameLayoutDialog {
+    index: usize,
+    name: String,
+}
+
 fn modal_ui_system(
     mut commands: Commands,
     mut context: Query<&mut EguiContext>,
-    mut query: Query<(Entity, &mut NewLayoutDialog)>,
+    mut new_query: Query<(Entity, &mut NewLayoutDialog)>,
+    mut rename_query: Query<(Entity, &mut RenameLayoutDialog)>,
 ) -> Result<()> {
-    let Ok((entity, mut dialog)) = query.single_mut() else {
-        return Ok(());
-    };
     let Ok(egui_context) = context.single_mut() else {
         return Ok(());
     };
@@ -130,31 +140,65 @@ fn modal_ui_system(
     let mut egui_context = egui_context.clone();
     let ctx = egui_context.get_mut();
 
-    let response = egui::Modal::new("New Layout".into()).show(ctx, |ui| {
-        ui.heading("New Layout");
-        ui.separator();
+    if let Ok((entity, mut dialog)) = new_query.single_mut() {
+        let response = egui::Modal::new("New Layout".into()).show(ctx, |ui| {
+            ui.heading("New Layout");
+            ui.separator();
 
-        ui.label("Layout name:");
-        ui.text_edit_singleline(&mut dialog.0).request_focus();
+            ui.label("Layout name:");
+            ui.text_edit_singleline(&mut dialog.0).request_focus();
 
-        ui.add_space(2.0);
+            ui.add_space(2.0);
 
-        ui.sides(
-            |_| {},
-            |ui| {
-                if ui.button("Save").clicked() {
-                    commands.trigger(NewLayout(dialog.0.clone()));
-                    commands.entity(entity).despawn();
-                }
-                if ui.button("Cancel").clicked() {
-                    commands.entity(entity).despawn();
-                }
-            },
-        );
-    });
+            ui.sides(
+                |_| {},
+                |ui| {
+                    if ui.button("Save").clicked() {
+                        commands.trigger(NewLayout(dialog.0.clone()));
+                        commands.entity(entity).despawn();
+                    }
+                    if ui.button("Cancel").clicked() {
+                        commands.entity(entity).despawn();
+                    }
+                },
+            );
+        });
 
-    if response.should_close() {
-        commands.entity(entity).despawn();
+        if response.should_close() {
+            commands.entity(entity).despawn();
+        }
+    }
+
+    if let Ok((entity, mut dialog)) = rename_query.single_mut() {
+        let response = egui::Modal::new("Rename Layout".into()).show(ctx, |ui| {
+            ui.heading("Rename Layout");
+            ui.separator();
+
+            ui.label("New name:");
+            ui.text_edit_singleline(&mut dialog.name).request_focus();
+
+            ui.add_space(2.0);
+
+            ui.sides(
+                |_| {},
+                |ui| {
+                    if ui.button("Save").clicked() {
+                        commands.trigger(RenameLayout {
+                            index: dialog.index,
+                            name: dialog.name.clone(),
+                        });
+                        commands.entity(entity).despawn();
+                    }
+                    if ui.button("Cancel").clicked() {
+                        commands.entity(entity).despawn();
+                    }
+                },
+            );
+        });
+
+        if response.should_close() {
+            commands.entity(entity).despawn();
+        }
     }
 
     Ok(())
