@@ -148,24 +148,22 @@ fn create_event_system(
                 } else {
                     let (track, beat) = calc_event_attrs();
                     let kind = LineEventKind::try_from(track).expect("Unknown event track");
-                    commands.entity(line_entity).with_children(|parent| {
-                        let value = if hotkey.just_pressed(CreateEventHotkeys::PlaceTransitionEvent)
-                        {
-                            LineEventValue::transition(0.0, 0.0, Easing::Linear)
-                        } else {
-                            // hotkey.just_pressed(CreateEventHotkeys::PlaceConstantEvent)
-                            LineEventValue::constant(0.0)
-                        };
-                        parent.spawn((
-                            LineEvent {
-                                kind,
-                                value,
-                                start_beat: beat,
-                                end_beat: beat + ctx.settings.minimum_beat(),
-                            },
-                            Pending,
-                        ));
-                    });
+                    let value = if hotkey.just_pressed(CreateEventHotkeys::PlaceTransitionEvent) {
+                        LineEventValue::transition(0.0, 0.0, Easing::Linear)
+                    } else {
+                        // hotkey.just_pressed(CreateEventHotkeys::PlaceConstantEvent)
+                        LineEventValue::constant(0.0)
+                    };
+                    commands.spawn((
+                        LineEvent {
+                            kind,
+                            value,
+                            start_beat: beat,
+                            end_beat: beat + ctx.settings.minimum_beat(),
+                        },
+                        Pending,
+                        EventOf(line_entity),
+                    ));
                 }
             }
         }
