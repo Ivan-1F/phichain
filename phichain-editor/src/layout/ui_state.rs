@@ -13,8 +13,8 @@ pub struct UiState {
     pub state: DockState<Identifier>,
 }
 
-impl UiState {
-    pub fn new() -> Self {
+impl Default for UiState {
+    fn default() -> Self {
         let mut state = DockState::new(vec![EditorTab::Game.into_identifier()]);
         let tree = state.main_surface_mut();
         let [game, timeline] = tree.split_left(
@@ -45,7 +45,9 @@ impl UiState {
 
         Self { state }
     }
+}
 
+impl UiState {
     pub fn ui(&mut self, world: &mut World, registry: &mut TabRegistry, ctx: &mut egui::Context) {
         let mut tab_viewer = TabViewer { world, registry };
 

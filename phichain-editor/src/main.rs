@@ -117,7 +117,7 @@ fn main() {
                 .run_if(project_loaded()),
         )
         .insert_resource(ClearColor(Color::BLACK))
-        .insert_resource(UiState::new())
+        .insert_resource(UiState::default())
         .add_plugins(ReqwestPlugin::default())
         .add_plugins(HotkeyPlugin)
         .add_plugins(CliPlugin)
