@@ -1,6 +1,6 @@
+use crate::layout::LayoutPresetManager;
 use bevy::prelude::{Event, ResMut, Trigger};
 use bevy_persistent::Persistent;
-use crate::layout::LayoutPresetManager;
 
 #[derive(Debug, Clone, Event)]
 pub struct DeleteLayout(pub usize);

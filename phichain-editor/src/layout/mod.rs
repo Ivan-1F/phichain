@@ -70,9 +70,7 @@ pub fn layout_menu(ui: &mut egui::Ui, world: &mut World) {
     let presets = world
         .resource::<Persistent<LayoutPresetManager>>()
         .presets
-        .iter()
-        .cloned()
-        .collect::<Vec<_>>();
+        .to_vec();
 
     ui.menu_button("Layout", |ui| {
         let _ = ui.button("Default");
