@@ -2,6 +2,7 @@ mod apply;
 mod create;
 mod delete;
 mod rename;
+pub mod ui_state;
 mod update;
 
 use crate::action::{ActionRegistrationExt, ActionRegistry};
