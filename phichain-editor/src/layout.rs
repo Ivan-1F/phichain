@@ -52,7 +52,8 @@ impl Plugin for LayoutPlugin {
             )
             .add_systems(EguiPrimaryContextPass, modal_ui_system.in_set(GameSet))
             .add_observer(create_layout_observer)
-            .add_observer(apply_layout_observer);
+            .add_observer(apply_layout_observer)
+            .add_observer(delete_layout_observer);
     }
 }
 
@@ -69,7 +70,7 @@ pub fn layout_menu(ui: &mut egui::Ui, world: &mut World) {
 
         ui.separator();
 
-        for preset in &presets {
+        for (index, preset) in presets.iter().enumerate() {
             ui.menu_button(&preset.name, |ui| {
                 if ui.button("Apply").clicked() {
                     world.trigger(ApplyLayout(preset.layout.clone()));
@@ -85,6 +86,7 @@ pub fn layout_menu(ui: &mut egui::Ui, world: &mut World) {
                 ui.separator();
 
                 if ui.button("Delete").clicked() {
+                    world.trigger(DeleteLayout(index));
                     ui.close_menu();
                 }
             });
@@ -177,6 +179,18 @@ fn apply_layout_observer(
     mut ui_state: ResMut<UiState>,
 ) -> Result<()> {
     ui_state.state = trigger.0.clone();
+
+    Ok(())
+}
+
+#[derive(Debug, Clone, Event)]
+struct DeleteLayout(usize);
+
+fn delete_layout_observer(
+    trigger: Trigger<DeleteLayout>,
+    mut manager: ResMut<Persistent<LayoutPresetManager>>,
+) -> Result<()> {
+    manager.presets.remove(trigger.0);
 
     Ok(())
 }
