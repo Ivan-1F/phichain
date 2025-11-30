@@ -10,7 +10,7 @@ use bevy::ecs::system::SystemState;
 use bevy::prelude::{Entity, EventWriter, Query, Res, World};
 use egui::{Align2, Color32, FontId, Rangef, Rect, Sense, Stroke, StrokeKind, Ui};
 use phichain_chart::bpm_list::BpmList;
-use phichain_chart::event::{LineEvent, LineEventKind};
+use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use phichain_chart::line::Line;
 use phichain_game::event::{EventOf, Events};
 use std::iter;
@@ -229,7 +229,10 @@ impl Timeline for EventTimeline {
             let mut color = if selected.is_some() {
                 Color32::LIGHT_GREEN
             } else {
-                Color32::LIGHT_BLUE
+                match event.value {
+                    LineEventValue::Transition { .. } => Color32::LIGHT_BLUE,
+                    LineEventValue::Constant(_) => Color32::LIGHT_RED,
+                }
             };
 
             if pending.is_some() {
@@ -251,7 +254,7 @@ impl Timeline for EventTimeline {
                     rect,
                     0.0,
                     color,
-                    Stroke::new(2.0, Color32::WHITE),
+                    Stroke::new(2.0, color.gamma_multiply(1.2)),
                     StrokeKind::Middle,
                 );
 
