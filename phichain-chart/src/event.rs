@@ -139,6 +139,13 @@ impl LineEventValue {
             LineEventValue::Constant(value) => Self::transition(value, value, Easing::Linear),
         }
     }
+
+    pub fn easing(&self) -> Easing {
+        match self {
+            LineEventValue::Transition { easing, .. } => *easing,
+            LineEventValue::Constant(_) => Easing::Linear,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
