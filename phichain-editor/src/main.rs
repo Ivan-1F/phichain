@@ -17,6 +17,7 @@ mod hotkey;
 mod identifier;
 mod ime;
 mod l10n;
+mod layout;
 mod logging;
 mod metronome;
 mod misc;
@@ -52,6 +53,7 @@ use crate::home::HomePlugin;
 use crate::hotkey::HotkeyPlugin;
 use crate::identifier::{Identifier, IntoIdentifier};
 use crate::ime::ImeCompatPlugin;
+use crate::layout::{layout_menu, LayoutPlugin};
 use crate::logging::custom_layer;
 use crate::metronome::MetronomePlugin;
 use crate::misc::MiscPlugin;
@@ -169,6 +171,7 @@ fn main() {
         .add_plugins(EventPlugin)
         .add_plugins(ZoomPlugin)
         .add_plugins(FpsPlugin)
+        .add_plugins(LayoutPlugin)
         .add_systems(Startup, setup_system)
         .add_systems(Startup, setup_egui_system)
         .add_systems(
@@ -415,6 +418,8 @@ fn ui_system(world: &mut World) {
                     ui.close_menu();
                 }
             });
+
+            layout_menu(ui, world);
         });
 
         ui.add(

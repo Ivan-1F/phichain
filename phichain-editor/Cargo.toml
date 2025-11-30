@@ -61,7 +61,7 @@ bevy_kira_audio = { version = "0.23.0", features = [
 bevy_egui = { version = "0.35.1", features = ["immutable_ctx"] }
 # TODO: revert this when bevy_prototype_lyon release support for bevy 0.16
 bevy_prototype_lyon = { git = "https://github.com/rparrett/bevy_prototype_lyon", branch = "fix-dynamic-examples" }
-bevy-persistent = { version = "0.8.0", features = ["yaml"] }
+bevy-persistent = { version = "0.8.0", features = ["yaml", "json"] }
 bevy_mod_reqwest = "0.19.2"
 
 # Phichain Dependencies
@@ -74,7 +74,7 @@ phichain-compiler = { path = "../phichain-compiler" }
 # Egui Dependencies: Update according to egui version
 
 egui = "0.31.1"
-egui_dock = "0.16.0"
+egui_dock = { version = "0.16.0", features = ["serde"] }
 egui_extras = { version = "0.31.1", features = ["all_loaders"] }
 egui-phosphor = "0.9.0"
 egui-toast = "0.17.0"
