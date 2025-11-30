@@ -9,6 +9,15 @@ menu_bar:
   export:
     title: 导出
     as_official: 导出为官谱
+  layout:
+    title: 布局
+    default: 默认
+    save_current: 保存当前布局
+    item:
+      apply: 应用
+      rename: 重命名
+      update: 更新至当前布局
+      delete: 删除
 
 tab:
   game:

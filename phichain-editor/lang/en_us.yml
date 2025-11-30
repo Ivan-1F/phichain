@@ -9,6 +9,15 @@ menu_bar:
   export:
     title: Export
     as_official: Export as Official
+  layout:
+    title: Layout
+    default: Default
+    save_current: Save Current Layout
+    item:
+      apply: Apply
+      rename: Rename
+      update: Update from Current Layout
+      delete: Delete
 
 tab:
   game:

@@ -75,32 +75,32 @@ pub fn layout_menu(ui: &mut egui::Ui, world: &mut World) {
         .presets
         .to_vec();
 
-    ui.menu_button("Layout", |ui| {
-        let _ = ui.button("Default");
+    ui.menu_button(t!("menu_bar.layout.title"), |ui| {
+        let _ = ui.button(t!("menu_bar.layout.default"));
 
         ui.separator();
 
         for (index, preset) in presets.iter().enumerate() {
             ui.menu_button(&preset.name, |ui| {
-                if ui.button("Apply").clicked() {
+                if ui.button(t!("menu_bar.layout.item.apply")).clicked() {
                     world.trigger(ApplyLayout(preset.layout.clone()));
                     ui.close_menu();
                 }
-                if ui.button("Rename").clicked() {
+                if ui.button(t!("menu_bar.layout.item.rename")).clicked() {
                     world.spawn(RenameLayoutDialog {
                         index,
                         name: preset.name.clone(),
                     });
                     ui.close_menu();
                 }
-                if ui.button("Update from Current Layout").clicked() {
+                if ui.button(t!("menu_bar.layout.item.update")).clicked() {
                     world.trigger(UpdateLayout(index));
                     ui.close_menu();
                 }
 
                 ui.separator();
 
-                if ui.button("Delete").clicked() {
+                if ui.button(t!("menu_bar.layout.item.delete")).clicked() {
                     world.trigger(DeleteLayout(index));
                     ui.close_menu();
                 }
@@ -111,7 +111,7 @@ pub fn layout_menu(ui: &mut egui::Ui, world: &mut World) {
             ui.separator();
         }
 
-        if ui.button("Save Current Layout").clicked() {
+        if ui.button(t!("menu_bar.layout.save_current")).clicked() {
             world.resource_scope(|world, mut actions: Mut<ActionRegistry>| {
                 actions.run_action(world, "phichain.new_layout");
             });
