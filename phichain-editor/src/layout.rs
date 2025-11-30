@@ -51,7 +51,8 @@ impl Plugin for LayoutPlugin {
                 None,
             )
             .add_systems(EguiPrimaryContextPass, modal_ui_system.in_set(GameSet))
-            .add_observer(create_layout_observer);
+            .add_observer(create_layout_observer)
+            .add_observer(apply_layout_observer);
     }
 }
 
@@ -60,7 +61,7 @@ pub fn layout_menu(ui: &mut egui::Ui, world: &mut World) {
         .resource::<Persistent<LayoutPresetManager>>()
         .presets
         .iter()
-        .map(|preset| preset.name.clone())
+        .cloned()
         .collect::<Vec<_>>();
 
     ui.menu_button("Layout", |ui| {
@@ -69,12 +70,23 @@ pub fn layout_menu(ui: &mut egui::Ui, world: &mut World) {
         ui.separator();
 
         for preset in &presets {
-            ui.menu_button(preset, |ui| {
-                let _ = ui.button("Apply");
-                let _ = ui.button("Rename");
-                let _ = ui.button("Update from Current Layout");
-                let _ = ui.separator();
-                let _ = ui.button("Delete");
+            ui.menu_button(&preset.name, |ui| {
+                if ui.button("Apply").clicked() {
+                    world.trigger(ApplyLayout(preset.layout.clone()));
+                    ui.close_menu();
+                }
+                if ui.button("Rename").clicked() {
+                    ui.close_menu();
+                }
+                if ui.button("Update from Current Layout").clicked() {
+                    ui.close_menu();
+                }
+
+                ui.separator();
+
+                if ui.button("Delete").clicked() {
+                    ui.close_menu();
+                }
             });
         }
 
@@ -94,7 +106,7 @@ pub fn layout_menu(ui: &mut egui::Ui, world: &mut World) {
 #[derive(Default, Debug, Clone, Component)]
 struct NewLayoutDialog(String);
 
-#[derive(Default, Debug, Clone, Event)]
+#[derive(Debug, Clone, Event)]
 struct NewLayout(String);
 
 fn modal_ui_system(
@@ -153,6 +165,18 @@ fn create_layout_observer(
     });
 
     manager.persist()?;
+
+    Ok(())
+}
+
+#[derive(Debug, Clone, Event)]
+struct ApplyLayout(Layout);
+
+fn apply_layout_observer(
+    trigger: Trigger<ApplyLayout>,
+    mut ui_state: ResMut<UiState>,
+) -> Result<()> {
+    ui_state.state = trigger.0.clone();
 
     Ok(())
 }
