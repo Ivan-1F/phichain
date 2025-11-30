@@ -1,8 +1,10 @@
+use crate::rpe::from_phichain::phichain_to_rpe;
 use crate::rpe::schema::{rpe_to_phichain, RpeChart, RpeInputOptions};
 use crate::{ChartFormat, CommonOutputOptions};
 use phichain_chart::serialization::PhichainChart;
 use std::convert::Infallible;
 
+mod from_phichain;
 pub mod schema;
 
 impl ChartFormat for RpeChart {
@@ -15,8 +17,11 @@ impl ChartFormat for RpeChart {
         Ok(rpe_to_phichain(self, opts))
     }
 
-    fn from_phichain(_: PhichainChart, _: &Self::OutputOptions) -> Result<Self, Self::OutputError> {
-        todo!()
+    fn from_phichain(
+        phichain: PhichainChart,
+        _: &Self::OutputOptions,
+    ) -> Result<Self, Self::OutputError> {
+        Ok(phichain_to_rpe(phichain))
     }
 
     fn apply_common_output_options(mut self, common_options: &CommonOutputOptions) -> Self {
