@@ -1,11 +1,13 @@
 use crate::action::{ActionRegistrationExt, ActionRegistry};
 use crate::identifier::Identifier;
 use crate::misc::WorkingDirectory;
+use crate::ui::sides::SidesExt;
 use crate::UiState;
-use bevy::app::{App, Plugin};
-use bevy::prelude::{Mut, Res, ResMut, Resource, World};
+use bevy::prelude::*;
+use bevy_egui::{EguiContext, EguiPrimaryContextPass};
 use bevy_persistent::{Persistent, StorageFormat};
 use egui_dock::DockState;
+use phichain_game::GameSet;
 use serde::{Deserialize, Serialize};
 
 type Layout = DockState<Identifier>;
@@ -39,20 +41,17 @@ impl Plugin for LayoutPlugin {
             .build()
             .expect("Failed to initialize editor layouts");
 
-        app.insert_resource(resource).add_action(
-            "phichain.save_layout",
-            |mut manager: ResMut<Persistent<LayoutPresetManager>>, ui_state: Res<UiState>| {
-                manager.presets.push(LayoutPreset {
-                    name: "New Layout".to_string(),
-                    layout: ui_state.state.clone(),
-                });
-
-                manager.persist()?;
-
-                Ok(())
-            },
-            None,
-        );
+        app.insert_resource(resource)
+            .add_action(
+                "phichain.new_layout",
+                |mut commands: Commands| {
+                    commands.spawn(NewLayoutDialog::default());
+                    Ok(())
+                },
+                None,
+            )
+            .add_systems(EguiPrimaryContextPass, modal_ui_system.in_set(GameSet))
+            .add_observer(create_layout_observer);
     }
 }
 
@@ -85,8 +84,78 @@ pub fn layout_menu(ui: &mut egui::Ui, world: &mut World) {
 
         if ui.button("Save Current Layout").clicked() {
             world.resource_scope(|world, mut actions: Mut<ActionRegistry>| {
-                actions.run_action(world, "phichain.save_layout");
-            })
+                actions.run_action(world, "phichain.new_layout");
+            });
+            ui.close_menu();
         }
     });
+}
+
+#[derive(Default, Debug, Clone, Component)]
+struct NewLayoutDialog(String);
+
+#[derive(Default, Debug, Clone, Event)]
+struct NewLayout(String);
+
+fn modal_ui_system(
+    mut commands: Commands,
+    mut context: Query<&mut EguiContext>,
+    mut query: Query<(Entity, &mut NewLayoutDialog)>,
+
+    mut manager: ResMut<Persistent<LayoutPresetManager>>,
+    ui_state: Res<UiState>,
+) -> Result<()> {
+    let Ok((entity, mut dialog)) = query.single_mut() else {
+        return Ok(());
+    };
+    let Ok(egui_context) = context.single_mut() else {
+        return Ok(());
+    };
+
+    let mut egui_context = egui_context.clone();
+    let ctx = egui_context.get_mut();
+
+    let response = egui::Modal::new("New Layout".into()).show(ctx, |ui| {
+        ui.heading("New Layout");
+        ui.separator();
+
+        ui.label("Layout name:");
+        ui.text_edit_singleline(&mut dialog.0).request_focus();
+
+        ui.add_space(2.0);
+
+        ui.sides(
+            |_| {},
+            |ui| {
+                if ui.button("Save").clicked() {
+                    commands.trigger(NewLayout(dialog.0.clone()));
+                    commands.entity(entity).despawn();
+                }
+                if ui.button("Cancel").clicked() {
+                    commands.entity(entity).despawn();
+                }
+            },
+        );
+    });
+
+    if response.should_close() {
+        commands.entity(entity).despawn();
+    }
+
+    Ok(())
+}
+
+fn create_layout_observer(
+    trigger: Trigger<NewLayout>,
+    mut manager: ResMut<Persistent<LayoutPresetManager>>,
+    ui_state: Res<UiState>,
+) -> Result<()> {
+    manager.presets.push(LayoutPreset {
+        name: trigger.0.clone(),
+        layout: ui_state.state.clone(),
+    });
+
+    manager.persist()?;
+
+    Ok(())
 }
