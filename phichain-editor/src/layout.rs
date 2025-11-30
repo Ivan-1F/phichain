@@ -101,9 +101,6 @@ fn modal_ui_system(
     mut commands: Commands,
     mut context: Query<&mut EguiContext>,
     mut query: Query<(Entity, &mut NewLayoutDialog)>,
-
-    mut manager: ResMut<Persistent<LayoutPresetManager>>,
-    ui_state: Res<UiState>,
 ) -> Result<()> {
     let Ok((entity, mut dialog)) = query.single_mut() else {
         return Ok(());
