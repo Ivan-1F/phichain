@@ -1,5 +1,12 @@
+mod apply;
+mod create;
+mod delete;
+
 use crate::action::{ActionRegistrationExt, ActionRegistry};
 use crate::identifier::Identifier;
+use crate::layout::apply::{apply_layout_observer, ApplyLayout};
+use crate::layout::create::{create_layout_observer, NewLayout};
+use crate::layout::delete::{delete_layout_observer, DeleteLayout};
 use crate::misc::WorkingDirectory;
 use crate::ui::sides::SidesExt;
 use crate::UiState;
@@ -108,9 +115,6 @@ pub fn layout_menu(ui: &mut egui::Ui, world: &mut World) {
 #[derive(Default, Debug, Clone, Component)]
 struct NewLayoutDialog(String);
 
-#[derive(Debug, Clone, Event)]
-struct NewLayout(String);
-
 fn modal_ui_system(
     mut commands: Commands,
     mut context: Query<&mut EguiContext>,
@@ -152,45 +156,6 @@ fn modal_ui_system(
     if response.should_close() {
         commands.entity(entity).despawn();
     }
-
-    Ok(())
-}
-
-fn create_layout_observer(
-    trigger: Trigger<NewLayout>,
-    mut manager: ResMut<Persistent<LayoutPresetManager>>,
-    ui_state: Res<UiState>,
-) -> Result<()> {
-    manager.presets.push(LayoutPreset {
-        name: trigger.0.clone(),
-        layout: ui_state.state.clone(),
-    });
-
-    manager.persist()?;
-
-    Ok(())
-}
-
-#[derive(Debug, Clone, Event)]
-struct ApplyLayout(Layout);
-
-fn apply_layout_observer(
-    trigger: Trigger<ApplyLayout>,
-    mut ui_state: ResMut<UiState>,
-) -> Result<()> {
-    ui_state.state = trigger.0.clone();
-
-    Ok(())
-}
-
-#[derive(Debug, Clone, Event)]
-struct DeleteLayout(usize);
-
-fn delete_layout_observer(
-    trigger: Trigger<DeleteLayout>,
-    mut manager: ResMut<Persistent<LayoutPresetManager>>,
-) -> Result<()> {
-    manager.presets.remove(trigger.0);
 
     Ok(())
 }
