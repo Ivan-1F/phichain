@@ -11,7 +11,7 @@ menu_bar:
     as_official: 导出为官谱
   layout:
     title: 布局
-    default: 默认
+    default: 应用默认布局
     save_current: 保存当前布局
     item:
       apply: 应用

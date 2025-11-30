@@ -10,12 +10,12 @@ menu_bar:
     title: エクスポート
     as_official: 公式譜面としてエクスポート
   layout:
-    title: レイアウト
+    title: デフォルトレイアウトを適用
     default: デフォルト
     save_current: 現在のレイアウトを保存
     item:
       apply: 適用
-      rename: 名前の変更
+      rename: 名前を変更
       update: 現在のレイアウトに更新
       delete: 削除
 

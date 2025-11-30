@@ -11,6 +11,7 @@ use crate::layout::apply::{apply_layout_observer, ApplyLayout};
 use crate::layout::create::{create_layout_observer, NewLayout};
 use crate::layout::delete::{delete_layout_observer, DeleteLayout};
 use crate::layout::rename::{rename_layout_observer, RenameLayout};
+use crate::layout::ui_state::UiState;
 use crate::layout::update::{update_layout_observer, UpdateLayout};
 use crate::misc::WorkingDirectory;
 use crate::ui::sides::SidesExt;
@@ -77,7 +78,10 @@ pub fn layout_menu(ui: &mut egui::Ui, world: &mut World) {
         .to_vec();
 
     ui.menu_button(t!("menu_bar.layout.title"), |ui| {
-        let _ = ui.button(t!("menu_bar.layout.default"));
+        if ui.button(t!("menu_bar.layout.default")).clicked() {
+            world.trigger(ApplyLayout(UiState::default().state));
+            ui.close_menu();
+        }
 
         ui.separator();
 

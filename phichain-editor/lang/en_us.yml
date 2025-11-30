@@ -11,7 +11,7 @@ menu_bar:
     as_official: Export as Official
   layout:
     title: Layout
-    default: Default
+    default: Apply Default Layout
     save_current: Save Current Layout
     item:
       apply: Apply
