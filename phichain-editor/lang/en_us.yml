@@ -18,6 +18,12 @@ menu_bar:
       rename: Rename
       update: Update from Current Layout
       delete: Delete
+    messages:
+      applied: Successfully applied layout
+      rename: Successfully renamed layout
+      update: Successfully updated layout
+      delete: Successfully deleted layout
+      created: Successfully created layout
 
 tab:
   game:

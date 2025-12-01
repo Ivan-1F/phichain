@@ -18,6 +18,12 @@ menu_bar:
       rename: 名前を変更
       update: 現在のレイアウトに更新
       delete: 削除
+    messages:
+      applied: レイアウトが適用されました
+      rename: レイアウトの名前が変更されました
+      update: レイアウトが更新されました
+      delete: レイアウトが削除されました
+      created: レイアウトが作成されました
 
 tab:
   game:

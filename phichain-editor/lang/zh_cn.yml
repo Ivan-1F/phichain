@@ -18,6 +18,12 @@ menu_bar:
       rename: 重命名
       update: 更新至当前布局
       delete: 删除
+    messages:
+      applied: 已应用布局
+      rename: 已重命名布局
+      update: 已更新布局
+      delete: 已删除布局
+      created: 已创建布局
 
 tab:
   game:
