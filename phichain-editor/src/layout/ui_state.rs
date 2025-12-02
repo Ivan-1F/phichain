@@ -2,13 +2,14 @@ use crate::identifier::{Identifier, IntoIdentifier};
 use crate::tab::{EditorTab, TabRegistry};
 use bevy::prelude::{Resource, World};
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
+use serde::{Deserialize, Serialize};
 
 struct TabViewer<'a> {
     world: &'a mut World,
     registry: &'a mut TabRegistry,
 }
 
-#[derive(Resource)]
+#[derive(Resource, Clone, Serialize, Deserialize)]
 pub struct UiState {
     pub state: DockState<Identifier>,
 }

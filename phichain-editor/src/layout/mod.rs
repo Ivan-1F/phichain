@@ -14,13 +14,18 @@ use crate::layout::rename::{rename_layout_observer, RenameLayout};
 use crate::layout::ui_state::UiState;
 use crate::layout::update::{update_layout_observer, UpdateLayout};
 use crate::misc::WorkingDirectory;
+use crate::project::project_loaded;
 use crate::ui::sides::SidesExt;
 use bevy::prelude::*;
+use bevy::time::common_conditions::on_timer;
 use bevy_egui::{EguiContext, EguiPrimaryContextPass};
 use bevy_persistent::{Persistent, StorageFormat};
 use egui_dock::DockState;
 use phichain_game::GameSet;
 use serde::{Deserialize, Serialize};
+use std::time::Duration;
+
+const LAYOUT_SAVE_CHECK_INTERVAL: Duration = Duration::from_secs(3);
 
 type Layout = DockState<Identifier>;
 
@@ -45,15 +50,39 @@ impl Plugin for LayoutPlugin {
             .config()
             .expect("Failed to locate config directory");
 
-        let resource = Persistent::<LayoutPresetManager>::builder()
-            .name("Editor Layouts")
+        let layout_presets = Persistent::<LayoutPresetManager>::builder()
+            .name("Layout Presets")
             .format(StorageFormat::Json)
             .path(config_dir.join("layouts.json"))
             .default(LayoutPresetManager::default())
             .build()
-            .expect("Failed to initialize editor layouts");
+            .expect("Failed to initialize layouts presets");
 
-        app.insert_resource(resource)
+        let layout_path = config_dir.join("editor_layout.json");
+
+        // try to load layout from file, fallback to default
+        let ui_state = if layout_path.exists() {
+            match std::fs::read_to_string(&layout_path)
+                .ok()
+                .and_then(|s| serde_json::from_str::<UiState>(&s).ok())
+            {
+                Some(state) => {
+                    info!("Loaded editor layout from file");
+                    state
+                }
+                None => {
+                    warn!("Failed to load layout file, deleting and using default");
+                    let _ = std::fs::remove_file(&layout_path);
+                    UiState::default()
+                }
+            }
+        } else {
+            UiState::default()
+        };
+
+        app.insert_resource(layout_presets)
+            .insert_resource(ui_state.clone())
+            .insert_resource(LastSavedLayout(Some(ui_state)))
             .add_action(
                 "phichain.new_layout",
                 |mut commands: Commands| {
@@ -62,12 +91,57 @@ impl Plugin for LayoutPlugin {
                 },
                 None,
             )
+            .add_systems(
+                Update,
+                save_layout_system
+                    .run_if(project_loaded())
+                    .run_if(on_timer(LAYOUT_SAVE_CHECK_INTERVAL)),
+            )
             .add_systems(EguiPrimaryContextPass, modal_ui_system.in_set(GameSet))
             .add_observer(create_layout_observer)
             .add_observer(apply_layout_observer)
             .add_observer(delete_layout_observer)
             .add_observer(rename_layout_observer)
             .add_observer(update_layout_observer);
+    }
+}
+
+#[derive(Resource, Default)]
+struct LastSavedLayout(Option<UiState>);
+
+fn save_layout_system(
+    ui_state: Res<UiState>,
+    working_dir: Res<WorkingDirectory>,
+    mut last_saved: ResMut<LastSavedLayout>,
+) {
+    // check if layout actually changed by comparing serialized bytes
+    // not using `.is_change()`: UiState gets mutably dereferenced every frame to render the UI, so `.is_change()` is always true
+    // not using `==`: UiState does not implement `PartialEq`
+    let layout_changed = match &last_saved.0 {
+        None => true,
+        Some(last) => match (serde_json::to_vec(last), serde_json::to_vec(&*ui_state)) {
+            (Ok(a), Ok(b)) => a != b,
+            _ => false,
+        },
+    };
+
+    if layout_changed {
+        let Ok(config_dir) = working_dir.config() else {
+            return;
+        };
+        let layout_path = config_dir.join("editor_layout.json");
+
+        match serde_json::to_string(&*ui_state) {
+            Ok(json) => {
+                if let Err(e) = std::fs::write(layout_path, json) {
+                    error!("Failed to save editor layout: {}", e);
+                } else {
+                    debug!("Saved editor layout");
+                    last_saved.0 = Some(ui_state.clone());
+                }
+            }
+            Err(e) => error!("Failed to serialize layout: {}", e),
+        }
     }
 }
 
