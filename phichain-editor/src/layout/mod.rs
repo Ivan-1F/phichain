@@ -222,11 +222,11 @@ fn modal_ui_system(
     let ctx = egui_context.get_mut();
 
     if let Ok((entity, mut dialog)) = new_query.single_mut() {
-        let response = egui::Modal::new("New Layout".into()).show(ctx, |ui| {
-            ui.heading("New Layout");
+        let response = egui::Modal::new("new-layout".into()).show(ctx, |ui| {
+            ui.heading(t!("menu_bar.layout.dialog.new.title"));
             ui.separator();
 
-            ui.label("Layout name:");
+            ui.label(t!("menu_bar.layout.dialog.new.name_label"));
             ui.text_edit_singleline(&mut dialog.0).request_focus();
 
             ui.add_space(2.0);
@@ -234,11 +234,11 @@ fn modal_ui_system(
             ui.sides(
                 |_| {},
                 |ui| {
-                    if ui.button("Save").clicked() {
+                    if ui.button(t!("menu_bar.layout.dialog.new.save")).clicked() {
                         commands.trigger(NewLayout(dialog.0.clone()));
                         commands.entity(entity).despawn();
                     }
-                    if ui.button("Cancel").clicked() {
+                    if ui.button(t!("menu_bar.layout.dialog.new.cancel")).clicked() {
                         commands.entity(entity).despawn();
                     }
                 },
@@ -252,10 +252,10 @@ fn modal_ui_system(
 
     if let Ok((entity, mut dialog)) = rename_query.single_mut() {
         let response = egui::Modal::new("Rename Layout".into()).show(ctx, |ui| {
-            ui.heading("Rename Layout");
+            ui.heading(t!("menu_bar.layout.dialog.rename.title"));
             ui.separator();
 
-            ui.label("New name:");
+            ui.label(t!("menu_bar.layout.dialog.rename.name_label"));
             ui.text_edit_singleline(&mut dialog.name).request_focus();
 
             ui.add_space(2.0);
@@ -263,14 +263,14 @@ fn modal_ui_system(
             ui.sides(
                 |_| {},
                 |ui| {
-                    if ui.button("Save").clicked() {
+                    if ui.button(t!("menu_bar.layout.dialog.rename.save")).clicked() {
                         commands.trigger(RenameLayout {
                             index: dialog.index,
                             name: dialog.name.clone(),
                         });
                         commands.entity(entity).despawn();
                     }
-                    if ui.button("Cancel").clicked() {
+                    if ui.button(t!("menu_bar.layout.dialog.rename.cancel")).clicked() {
                         commands.entity(entity).despawn();
                     }
                 },

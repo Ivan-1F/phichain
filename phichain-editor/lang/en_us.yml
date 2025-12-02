@@ -24,6 +24,17 @@ menu_bar:
       update: Successfully updated layout
       delete: Successfully deleted layout
       created: Successfully created layout
+    dialog:
+      new:
+        title: New Layout
+        name_label: 'Layout name:'
+        save: Save
+        cancel: Cancel
+      rename:
+        title: Rename Layout
+        name_label: 'New name:'
+        save: Save
+        cancel: Cancel
 
 tab:
   game:

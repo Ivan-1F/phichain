@@ -24,6 +24,17 @@ menu_bar:
       update: レイアウトが更新されました
       delete: レイアウトが削除されました
       created: レイアウトが作成されました
+    dialog:
+      new:
+        title: 新しいレイアウト
+        name_label: 'レイアウト名:'
+        save: 保存
+        cancel: キャンセル
+      rename:
+        title: レイアウトの名前を変更
+        name_label: '新しい名前:'
+        save: 保存
+        cancel: キャンセル
 
 tab:
   game:

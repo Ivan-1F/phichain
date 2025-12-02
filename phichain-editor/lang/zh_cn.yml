@@ -24,6 +24,17 @@ menu_bar:
       update: 已更新布局
       delete: 已删除布局
       created: 已创建布局
+    dialog:
+      new:
+        title: 新建布局
+        name_label: '布局名称:'
+        save: 保存
+        cancel: 取消
+      rename:
+        title: 重命名布局
+        name_label: 新名称：
+        save: 保存
+        cancel: 取消
 
 tab:
   game:
