@@ -10,8 +10,8 @@ menu_bar:
     title: エクスポート
     as_official: 公式譜面としてエクスポート
   layout:
-    title: デフォルトレイアウトを適用
-    default: デフォルト
+    title: レイアウト
+    default: デフォルトレイアウトを適用
     save_current: 現在のレイアウトを保存
     item:
       apply: 適用
