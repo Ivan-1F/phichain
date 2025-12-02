@@ -24,6 +24,7 @@ menu_bar:
       update: 已更新布局
       delete: 已删除布局
       created: 已创建布局
+      empty_name: 布局名称不能为空
     dialog:
       new:
         title: 新建布局

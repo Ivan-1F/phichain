@@ -24,6 +24,7 @@ menu_bar:
       update: Successfully updated layout
       delete: Successfully deleted layout
       created: Successfully created layout
+      empty_name: Layout name cannot be empty
     dialog:
       new:
         title: New Layout

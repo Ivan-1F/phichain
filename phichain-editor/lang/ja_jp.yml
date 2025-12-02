@@ -24,6 +24,7 @@ menu_bar:
       update: レイアウトが更新されました
       delete: レイアウトが削除されました
       created: レイアウトが作成されました
+      empty_name: レイアウト名を空にすることはできません
     dialog:
       new:
         title: 新しいレイアウト

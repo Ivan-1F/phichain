@@ -14,6 +14,7 @@ use crate::layout::rename::{rename_layout_observer, RenameLayout};
 use crate::layout::ui_state::UiState;
 use crate::layout::update::{update_layout_observer, UpdateLayout};
 use crate::misc::WorkingDirectory;
+use crate::notification::ToastsExt;
 use crate::project::project_loaded;
 use crate::ui::sides::SidesExt;
 use bevy::prelude::*;
@@ -213,6 +214,7 @@ fn modal_ui_system(
     mut context: Query<&mut EguiContext>,
     mut new_query: Query<(Entity, &mut NewLayoutDialog)>,
     mut rename_query: Query<(Entity, &mut RenameLayoutDialog)>,
+    mut toasts: ResMut<crate::notification::ToastsStorage>,
 ) -> Result<()> {
     let Ok(egui_context) = context.single_mut() else {
         return Ok(());
@@ -235,8 +237,12 @@ fn modal_ui_system(
                 |_| {},
                 |ui| {
                     if ui.button(t!("menu_bar.layout.dialog.new.save")).clicked() {
-                        commands.trigger(NewLayout(dialog.0.clone()));
-                        commands.entity(entity).despawn();
+                        if dialog.0.trim().is_empty() {
+                            toasts.error(t!("menu_bar.layout.messages.empty_name"));
+                        } else {
+                            commands.trigger(NewLayout(dialog.0.clone()));
+                            commands.entity(entity).despawn();
+                        }
                     }
                     if ui.button(t!("menu_bar.layout.dialog.new.cancel")).clicked() {
                         commands.entity(entity).despawn();
@@ -263,14 +269,24 @@ fn modal_ui_system(
             ui.sides(
                 |_| {},
                 |ui| {
-                    if ui.button(t!("menu_bar.layout.dialog.rename.save")).clicked() {
-                        commands.trigger(RenameLayout {
-                            index: dialog.index,
-                            name: dialog.name.clone(),
-                        });
-                        commands.entity(entity).despawn();
+                    if ui
+                        .button(t!("menu_bar.layout.dialog.rename.save"))
+                        .clicked()
+                    {
+                        if dialog.name.trim().is_empty() {
+                            toasts.error(t!("menu_bar.layout.messages.empty_name"));
+                        } else {
+                            commands.trigger(RenameLayout {
+                                index: dialog.index,
+                                name: dialog.name.clone(),
+                            });
+                            commands.entity(entity).despawn();
+                        }
                     }
-                    if ui.button(t!("menu_bar.layout.dialog.rename.cancel")).clicked() {
+                    if ui
+                        .button(t!("menu_bar.layout.dialog.rename.cancel"))
+                        .clicked()
+                    {
                         commands.entity(entity).despawn();
                     }
                 },
