@@ -16,23 +16,23 @@ menu_bar:
     item:
       apply: 应用
       rename: 重命名
-      update: 更新至当前布局
+      update: 用当前布局更新
       delete: 删除
     messages:
-      applied: 已应用布局
-      rename: 已重命名布局
-      update: 已更新布局
-      delete: 已删除布局
-      created: 已创建布局
-      empty_name: 布局名称不能为空
+      applied: 已应用布局预设
+      rename: 已重命名布局预设
+      update: 已更新布局预设
+      delete: 已删除布局预设
+      created: 已创建布局预设
+      empty_name: 布局预设名称不能为空
     dialog:
       new:
-        title: 新建布局
-        name_label: '布局名称:'
+        title: 新建布局预设
+        name_label: '布局预设名称:'
         save: 保存
         cancel: 取消
       rename:
-        title: 重命名布局
+        title: 重命名布局预设
         name_label: 新名称：
         save: 保存
         cancel: 取消

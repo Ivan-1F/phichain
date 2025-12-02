@@ -16,23 +16,23 @@ menu_bar:
     item:
       apply: 適用
       rename: 名前を変更
-      update: 現在のレイアウトに更新
+      update: 現在のレイアウトで更新
       delete: 削除
     messages:
-      applied: レイアウトが適用されました
-      rename: レイアウトの名前が変更されました
-      update: レイアウトが更新されました
-      delete: レイアウトが削除されました
-      created: レイアウトが作成されました
-      empty_name: レイアウト名を空にすることはできません
+      applied: レイアウトプリセットが適用されました
+      rename: レイアウトプリセットの名前が変更されました
+      update: レイアウトプリセットが更新されました
+      delete: レイアウトプリセットが削除されました
+      created: レイアウトプリセットが作成されました
+      empty_name: レイアウトプリセット名を空にすることはできません
     dialog:
       new:
-        title: 新しいレイアウト
-        name_label: 'レイアウト名:'
+        title: 新しいレイアウトプリセット
+        name_label: 'レイアウトプリセット名:'
         save: 保存
         cancel: キャンセル
       rename:
-        title: レイアウトの名前を変更
+        title: レイアウトプリセットの名前を変更
         name_label: '新しい名前:'
         save: 保存
         cancel: キャンセル

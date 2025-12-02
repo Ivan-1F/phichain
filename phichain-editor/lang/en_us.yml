@@ -16,23 +16,23 @@ menu_bar:
     item:
       apply: Apply
       rename: Rename
-      update: Update from Current Layout
+      update: Update with Current Layout
       delete: Delete
     messages:
-      applied: Successfully applied layout
-      rename: Successfully renamed layout
-      update: Successfully updated layout
-      delete: Successfully deleted layout
-      created: Successfully created layout
-      empty_name: Layout name cannot be empty
+      applied: Successfully applied layout preset
+      rename: Successfully renamed layout preset
+      update: Successfully updated layout preset
+      delete: Successfully deleted layout preset
+      created: Successfully created layout preset
+      empty_name: Layout preset name cannot be empty
     dialog:
       new:
-        title: New Layout
-        name_label: 'Layout name:'
+        title: New Layout Preset
+        name_label: 'Layout preset name:'
         save: Save
         cancel: Cancel
       rename:
-        title: Rename Layout
+        title: Rename Layout Preset
         name_label: 'New name:'
         save: Save
         cancel: Cancel
