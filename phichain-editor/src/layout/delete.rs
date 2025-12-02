@@ -13,6 +13,8 @@ pub fn delete_layout_observer(
 ) -> bevy::prelude::Result<()> {
     manager.presets.remove(trigger.0);
 
+    manager.persist()?;
+
     toasts.success(t!("menu_bar.layout.messages.delete"));
 
     Ok(())
