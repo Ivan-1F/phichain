@@ -363,6 +363,8 @@ action:
 
   phichain.export_as_official: Export as Official
 
+  phichain.new_layout: Save Current Layout
+
   phichain.create_line: Create Line
   phichain.create_line_from_selected: Create Line from Selected Line State
 

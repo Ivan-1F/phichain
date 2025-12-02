@@ -363,6 +363,8 @@ action:
 
   phichain.export_as_official: 公式譜面としてエクスポート
 
+  phichain.new_layout: 現在のレイアウトを保存
+
   phichain.create_line: 新規判定ライン
   phichain.create_line_from_selected: 選択中の判定ライン状態から作成
 
