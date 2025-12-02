@@ -12,7 +12,6 @@ menu_bar:
   layout:
     title: レイアウト
     default: デフォルトレイアウトを適用
-    save_current: 現在のレイアウトを保存
     item:
       apply: 適用
       rename: 名前を変更
