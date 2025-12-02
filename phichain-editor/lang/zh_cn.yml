@@ -363,7 +363,7 @@ action:
 
   phichain.export_as_official: 导出为官谱
 
-  phichain.new_layout: 保存当前布局
+  phichain.save_layout_preset: 保存当前布局为预设
 
   phichain.create_line: 新建判定线
   phichain.create_line_from_selected: 以选中的判定线状态创建判定线

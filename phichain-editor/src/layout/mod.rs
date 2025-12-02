@@ -85,7 +85,7 @@ impl Plugin for LayoutPlugin {
             .insert_resource(ui_state.clone())
             .insert_resource(LastSavedLayout(Some(ui_state)))
             .add_action(
-                "phichain.new_layout",
+                "phichain.save_layout_preset",
                 |mut commands: Commands| {
                     commands.spawn(NewLayoutDialog::default());
                     Ok(())
@@ -193,7 +193,7 @@ pub fn layout_menu(ui: &mut egui::Ui, world: &mut World) {
 
         if ui.button(t!("menu_bar.layout.save_current")).clicked() {
             world.resource_scope(|world, mut actions: Mut<ActionRegistry>| {
-                actions.run_action(world, "phichain.new_layout");
+                actions.run_action(world, "phichain.save_layout_preset");
             });
             ui.close_menu();
         }
