@@ -1,6 +1,6 @@
+use crate::layout::ui_state::UiState;
 use crate::layout::LayoutPresetManager;
 use crate::notification::{ToastsExt, ToastsStorage};
-use crate::UiState;
 use bevy::prelude::{Event, Res, ResMut, Trigger};
 use bevy_persistent::Persistent;
 use std::ops::IndexMut;

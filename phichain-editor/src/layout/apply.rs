@@ -1,6 +1,6 @@
+use crate::layout::ui_state::UiState;
 use crate::layout::Layout;
 use crate::notification::{ToastsExt, ToastsStorage};
-use crate::UiState;
 use bevy::prelude::{Event, ResMut, Trigger};
 
 #[derive(Debug, Clone, Event)]
