@@ -9,6 +9,32 @@ menu_bar:
   export:
     title: 导出
     as_official: 导出为官谱
+  layout:
+    title: 布局
+    default: 应用默认布局
+    item:
+      apply: 应用
+      rename: 重命名
+      update: 用当前布局更新
+      delete: 删除
+    messages:
+      applied: 已应用布局预设
+      rename: 已重命名布局预设
+      update: 已更新布局预设
+      delete: 已删除布局预设
+      created: 已创建布局预设
+      empty_name: 布局预设名称不能为空
+    dialog:
+      new:
+        title: 新建布局预设
+        name_label: '布局预设名称:'
+        save: 保存
+        cancel: 取消
+      rename:
+        title: 重命名布局预设
+        name_label: 新名称：
+        save: 保存
+        cancel: 取消
 
 tab:
   game:
@@ -335,6 +361,8 @@ action:
   phichain.reset_zoom: 重置缩放至 100%
 
   phichain.export_as_official: 导出为官谱
+
+  phichain.save_layout_preset: 保存当前布局为预设
 
   phichain.create_line: 新建判定线
   phichain.create_line_from_selected: 以选中的判定线状态创建判定线

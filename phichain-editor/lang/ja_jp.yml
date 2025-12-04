@@ -9,6 +9,32 @@ menu_bar:
   export:
     title: エクスポート
     as_official: 公式譜面としてエクスポート
+  layout:
+    title: レイアウト
+    default: デフォルトレイアウトを適用
+    item:
+      apply: 適用
+      rename: 名前を変更
+      update: 現在のレイアウトで更新
+      delete: 削除
+    messages:
+      applied: レイアウトプリセットが適用されました
+      rename: レイアウトプリセットの名前が変更されました
+      update: レイアウトプリセットが更新されました
+      delete: レイアウトプリセットが削除されました
+      created: レイアウトプリセットが作成されました
+      empty_name: レイアウトプリセット名を空にすることはできません
+    dialog:
+      new:
+        title: 新しいレイアウトプリセット
+        name_label: 'レイアウトプリセット名:'
+        save: 保存
+        cancel: キャンセル
+      rename:
+        title: レイアウトプリセットの名前を変更
+        name_label: '新しい名前:'
+        save: 保存
+        cancel: キャンセル
 
 tab:
   game:
@@ -335,6 +361,8 @@ action:
   phichain.reset_zoom: ズームを100%にリセット
 
   phichain.export_as_official: 公式譜面としてエクスポート
+
+  phichain.save_layout_preset: 現在のレイアウトをプリセットとして保存
 
   phichain.create_line: 新規判定ライン
   phichain.create_line_from_selected: 選択中の判定ライン状態から作成

@@ -9,6 +9,32 @@ menu_bar:
   export:
     title: Export
     as_official: Export as Official
+  layout:
+    title: Layout
+    default: Apply Default Layout
+    item:
+      apply: Apply
+      rename: Rename
+      update: Update with Current Layout
+      delete: Delete
+    messages:
+      applied: Successfully applied layout preset
+      rename: Successfully renamed layout preset
+      update: Successfully updated layout preset
+      delete: Successfully deleted layout preset
+      created: Successfully created layout preset
+      empty_name: Layout preset name cannot be empty
+    dialog:
+      new:
+        title: New Layout Preset
+        name_label: 'Layout preset name:'
+        save: Save
+        cancel: Cancel
+      rename:
+        title: Rename Layout Preset
+        name_label: 'New name:'
+        save: Save
+        cancel: Cancel
 
 tab:
   game:
@@ -335,6 +361,8 @@ action:
   phichain.reset_zoom: Reset Zoom to 100%
 
   phichain.export_as_official: Export as Official
+
+  phichain.save_layout_preset: Save Current Layout as Preset
 
   phichain.create_line: Create Line
   phichain.create_line_from_selected: Create Line from Selected Line State
