@@ -232,14 +232,17 @@ fn modal_ui_system(
             ui.separator();
 
             ui.label(t!("menu_bar.layout.dialog.new.name_label"));
-            ui.text_edit_singleline(&mut dialog.0).request_focus();
+            let text_edit_response = ui.text_edit_singleline(&mut dialog.0);
+            text_edit_response.request_focus();
+
+            let enter_pressed = ui.input(|i| i.key_pressed(egui::Key::Enter));
 
             ui.add_space(2.0);
 
             ui.sides(
                 |_| {},
                 |ui| {
-                    if ui.button(t!("menu_bar.layout.dialog.new.save")).clicked() {
+                    if ui.button(t!("menu_bar.layout.dialog.new.save")).clicked() || enter_pressed {
                         if dialog.0.trim().is_empty() {
                             toasts.error(t!("menu_bar.layout.messages.empty_name"));
                         } else {
@@ -265,7 +268,10 @@ fn modal_ui_system(
             ui.separator();
 
             ui.label(t!("menu_bar.layout.dialog.rename.name_label"));
-            ui.text_edit_singleline(&mut dialog.name).request_focus();
+            let text_edit_response = ui.text_edit_singleline(&mut dialog.name);
+            text_edit_response.request_focus();
+
+            let enter_pressed = ui.input(|i| i.key_pressed(egui::Key::Enter));
 
             ui.add_space(2.0);
 
@@ -275,6 +281,7 @@ fn modal_ui_system(
                     if ui
                         .button(t!("menu_bar.layout.dialog.rename.save"))
                         .clicked()
+                        || enter_pressed
                     {
                         if dialog.name.trim().is_empty() {
                             toasts.error(t!("menu_bar.layout.messages.empty_name"));
