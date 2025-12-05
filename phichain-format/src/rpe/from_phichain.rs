@@ -6,7 +6,7 @@ use crate::rpe::schema::{
 use phichain_chart::easing::Easing;
 use phichain_chart::event::LineEventKind;
 use phichain_chart::note::{Note, NoteKind};
-use phichain_chart::serialization::PhichainChart;
+use phichain_chart::serialization::{PhichainChart, SerializedLine};
 use tracing::warn;
 
 fn easing(easing: Easing) -> i32 {
@@ -42,6 +42,77 @@ fn note(note: &Note) -> RpeNote {
     }
 }
 
+fn event_layer_from_line(line: &SerializedLine) -> RpeEventLayer {
+    let mut event_layer = RpeEventLayer::default();
+
+    for event in &line.events {
+        match event.kind {
+            LineEventKind::Speed => {
+                event_layer.speed_events.push(RpeSpeedEvent {
+                    start: event.value.start(),
+                    start_time: event.start_beat.into(),
+                    end: event.value.end(),
+                    end_time: event.end_beat.into(),
+                });
+            }
+            _ => {
+                let rpe_event = RpeCommonEvent {
+                    easing_type: easing(event.value.easing()),
+                    start: event.value.start(),
+                    start_time: event.start_beat.into(),
+                    end: event.value.end(),
+                    end_time: event.end_beat.into(),
+
+                    // FIXME: using default Default impl
+                    ..Default::default()
+                };
+
+                match event.kind {
+                    LineEventKind::X => {
+                        event_layer.move_x_events.push(rpe_event);
+                    }
+                    LineEventKind::Y => {
+                        event_layer.move_y_events.push(rpe_event);
+                    }
+                    LineEventKind::Rotation => {
+                        event_layer.rotate_events.push(rpe_event);
+                    }
+                    LineEventKind::Opacity => {
+                        event_layer.alpha_events.push(RpeCommonEvent {
+                            easing_type: easing(event.value.easing()),
+                            start: event.value.start() as i32,
+                            start_time: event.start_beat.into(),
+                            end: event.value.end() as i32,
+                            end_time: event.end_beat.into(),
+                            ..Default::default()
+                        });
+                    }
+                    _ => unreachable!(),
+                }
+            }
+        }
+    }
+
+    event_layer
+}
+
+fn push_line(line: &SerializedLine, parent_index: Option<usize>, target: &mut Vec<RpeJudgeLine>) {
+    let event_layer = event_layer_from_line(line);
+    let current_index = target.len();
+    target.push(RpeJudgeLine {
+        name: line.line.name.clone(),
+        father: parent_index.map(|i| i as i32).unwrap_or(-1),
+        rotate_with_father: true,
+        event_layers: vec![event_layer],
+        notes: line.notes.iter().map(note).collect(),
+        attach_ui: None,
+    });
+
+    for child in &line.children {
+        push_line(child, Some(current_index), target);
+    }
+}
+
 pub fn phichain_to_rpe(phichain: PhichainChart) -> RpeChart {
     let phichain = evaluate_curve_note_tracks(phichain);
 
@@ -62,67 +133,8 @@ pub fn phichain_to_rpe(phichain: PhichainChart) -> RpeChart {
         judge_line_list: vec![],
     };
 
-    for line in phichain.lines {
-        let mut event_layer = RpeEventLayer::default();
-
-        for event in line.events {
-            match event.kind {
-                LineEventKind::Speed => {
-                    event_layer.speed_events.push(RpeSpeedEvent {
-                        start: event.value.start(),
-                        start_time: event.start_beat.into(),
-                        end: event.value.end(),
-                        end_time: event.end_beat.into(),
-                    });
-                }
-                _ => {
-                    let rpe_event = RpeCommonEvent {
-                        easing_type: easing(event.value.easing()),
-                        start: event.value.start(),
-                        start_time: event.start_beat.into(),
-                        end: event.value.end(),
-                        end_time: event.end_beat.into(),
-
-                        // FIXME: using default Default impl
-                        ..Default::default()
-                    };
-
-                    match event.kind {
-                        LineEventKind::X => {
-                            event_layer.move_x_events.push(rpe_event);
-                        }
-                        LineEventKind::Y => {
-                            event_layer.move_y_events.push(rpe_event);
-                        }
-                        LineEventKind::Rotation => {
-                            event_layer.rotate_events.push(rpe_event);
-                        }
-                        LineEventKind::Opacity => {
-                            event_layer.alpha_events.push(RpeCommonEvent {
-                                easing_type: easing(event.value.easing()),
-                                start: event.value.start() as i32,
-                                start_time: event.start_beat.into(),
-                                end: event.value.end() as i32,
-                                end_time: event.end_beat.into(),
-                                ..Default::default()
-                            });
-                        }
-                        _ => unreachable!(),
-                    }
-                }
-            }
-        }
-
-        let rpe_line = RpeJudgeLine {
-            name: line.line.name,
-            father: -1,
-            rotate_with_father: true,
-            event_layers: vec![event_layer],
-            notes: line.notes.iter().map(note).collect(),
-            attach_ui: None,
-        };
-
-        rpe.judge_line_list.push(rpe_line);
+    for line in &phichain.lines {
+        push_line(line, None, &mut rpe.judge_line_list);
     }
 
     rpe
