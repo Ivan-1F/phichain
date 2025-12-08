@@ -1,0 +1,450 @@
+use crate::rpe::schema::{
+    RpeChart, RpeCommonEvent, RpeEventLayer, RpeNote, RpeNoteKind, RPE_EASING,
+};
+use num::{Num, ToPrimitive};
+use phichain_chart::beat::Beat;
+use phichain_chart::bpm_list::{BpmList, BpmPoint};
+use phichain_chart::easing::Easing;
+use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
+use phichain_chart::line::Line;
+use phichain_chart::note::{Note, NoteKind};
+use phichain_chart::offset::Offset;
+use phichain_chart::serialization::{PhichainChart, SerializedLine};
+use tracing::warn;
+
+/// Convert RpeNotes to Phichain notes
+fn convert_rpe_notes(rpe_notes: &[RpeNote]) -> Vec<Note> {
+    rpe_notes
+        .iter()
+        .map(|note| {
+            let start_beat = Beat::from(note.start_time.clone());
+            let end_beat = Beat::from(note.end_time.clone());
+            let kind: NoteKind = match note.kind {
+                RpeNoteKind::Tap => NoteKind::Tap,
+                RpeNoteKind::Drag => NoteKind::Drag,
+                RpeNoteKind::Hold => NoteKind::Hold {
+                    hold_beat: end_beat - start_beat,
+                },
+                RpeNoteKind::Flick => NoteKind::Flick,
+            };
+
+            Note::new(
+                kind,
+                note.above == 1,
+                start_beat,
+                note.position_x,
+                note.speed,
+            )
+        })
+        .collect()
+}
+
+/// Check if an event layer is effectively empty (has no meaningful events)
+///
+/// In RPE, event layers are **additive**:
+/// - Final X position = sum of all layers' moveX values
+/// - Final rotation = sum of all layers' rotate values
+/// - etc.
+///
+/// An event layer is considered empty if:
+/// - It has no events at all, OR
+/// - All its events contribute 0 to the sum (start == 0 && end == 0)
+fn is_event_layer_empty(layer: &RpeEventLayer) -> bool {
+    // Check if layer has any events
+    let has_any_events = !layer.move_x_events.is_empty()
+        || !layer.move_y_events.is_empty()
+        || !layer.rotate_events.is_empty()
+        || !layer.alpha_events.is_empty()
+        || !layer.speed_events.is_empty();
+
+    if !has_any_events {
+        return true;
+    }
+
+    let all_move_x_noop = layer
+        .move_x_events
+        .iter()
+        .all(|e| e.start == 0.0 && e.end == 0.0);
+
+    let all_move_y_noop = layer
+        .move_y_events
+        .iter()
+        .all(|e| e.start == 0.0 && e.end == 0.0);
+
+    let all_rotate_noop = layer
+        .rotate_events
+        .iter()
+        .all(|e| e.start == 0.0 && e.end == 0.0);
+
+    let all_alpha_noop = layer
+        .alpha_events
+        .iter()
+        .all(|e| e.start == 0 && e.end == 0);
+
+    let all_speed_noop = layer
+        .speed_events
+        .iter()
+        .all(|e| e.start == 0.0 && e.end == 0.0);
+
+    // Layer is empty if all events contribute 0 to the sum
+    (layer.move_x_events.is_empty() || all_move_x_noop)
+        && (layer.move_y_events.is_empty() || all_move_y_noop)
+        && (layer.rotate_events.is_empty() || all_rotate_noop)
+        && (layer.alpha_events.is_empty() || all_alpha_noop)
+        && (layer.speed_events.is_empty() || all_speed_noop)
+}
+
+/// Convert a single RpeEventLayer to LineEvents
+fn convert_event_layer(
+    layer: &RpeEventLayer,
+    easing_fn: &impl Fn(i32) -> Easing,
+) -> Vec<LineEvent> {
+    let mut events = Vec::new();
+
+    fn convert_event<T: Num + ToPrimitive>(
+        kind: LineEventKind,
+        event: RpeCommonEvent<T>,
+        easing_fn: &impl Fn(i32) -> Easing,
+    ) -> LineEvent {
+        LineEvent {
+            kind,
+            start_beat: event.start_time.into(),
+            end_beat: event.end_time.into(),
+            value: if event.start == event.end {
+                LineEventValue::constant(event.start.to_f32().unwrap_or_default())
+            } else {
+                LineEventValue::transition(
+                    event.start.to_f32().unwrap_or_default(),
+                    event.end.to_f32().unwrap_or_default(),
+                    easing_fn(event.easing_type),
+                )
+            },
+        }
+    }
+
+    // Convert moveX events
+    for event in &layer.move_x_events {
+        events.push(convert_event(LineEventKind::X, event.clone(), easing_fn));
+    }
+
+    // Convert moveY events
+    for event in &layer.move_y_events {
+        events.push(convert_event(LineEventKind::Y, event.clone(), easing_fn));
+    }
+
+    // Convert rotate events (negate values)
+    for event in &layer.rotate_events {
+        let mut phichain_event = convert_event(LineEventKind::Rotation, event.clone(), easing_fn);
+
+        phichain_event.value = phichain_event.value.negated();
+
+        events.push(phichain_event);
+    }
+
+    // Convert alpha events
+    for event in &layer.alpha_events {
+        events.push(convert_event(
+            LineEventKind::Opacity,
+            event.clone(),
+            easing_fn,
+        ));
+    }
+
+    // Convert speed events
+    for event in &layer.speed_events {
+        events.push(LineEvent {
+            kind: LineEventKind::Speed,
+            start_beat: event.start_time.clone().into(),
+            end_beat: event.end_time.clone().into(),
+            value: if event.start == event.end {
+                LineEventValue::constant(event.start)
+            } else {
+                LineEventValue::transition(event.start, event.end, Easing::Linear)
+            },
+        });
+    }
+
+    events
+}
+
+/// Build nested parent-child line structure from event layers
+/// Layer 0 becomes the parent, Layer 1 becomes child of Layer 0, etc.
+/// Notes are placed on the layer that has speed events (since child lines don't inherit parent speed)
+/// Empty/no-op event layers are filtered out to reduce unnecessary nesting
+fn build_nested_line(
+    line_index: usize,
+    line_name: &str,
+    event_layers: Vec<RpeEventLayer>,
+    notes: Vec<Note>,
+    easing_fn: &impl Fn(i32) -> Easing,
+) -> SerializedLine {
+    // Helper to format line name with RPE original name
+    let format_line_name = |suffix: &str| {
+        if line_name.is_empty() || line_name == "Untitled" {
+            format!("#{}{}", line_index, suffix)
+        } else {
+            format!("{} (#{}{})", line_name, line_index, suffix)
+        }
+    };
+
+    // Filter out empty/no-op event layers, but keep track of original layer indices
+    let filtered_layers: Vec<(usize, RpeEventLayer)> = event_layers
+        .into_iter()
+        .enumerate()
+        .filter(|(_, layer)| !is_event_layer_empty(layer))
+        .collect();
+
+    if filtered_layers.is_empty() {
+        // No meaningful event layers, create a line with default events and notes
+        return SerializedLine {
+            line: Line {
+                name: format_line_name(line_name),
+            },
+            notes,
+            ..Default::default()
+        };
+    }
+
+    // Extract layers and their original indices
+    let layers: Vec<RpeEventLayer> = filtered_layers
+        .iter()
+        .map(|(_, layer)| layer.clone())
+        .collect();
+    let original_indices: Vec<usize> = filtered_layers.iter().map(|(idx, _)| *idx).collect();
+
+    // Find the last layer that contains speed events
+    // Notes should be placed on this layer because child lines don't inherit parent speed
+    let note_layer_index = layers
+        .iter()
+        .enumerate()
+        .rev()
+        .find(|(_, layer)| !layer.speed_events.is_empty())
+        .map(|(index, _)| index)
+        .unwrap_or(layers.len() - 1); // If no speed events, put notes on the last layer
+
+    // Recursively build nested structure
+    fn build_layer(
+        layers: &[RpeEventLayer],
+        original_indices: &[usize],
+        index: usize,
+        note_layer_index: usize,
+        notes: Vec<Note>,
+        easing_fn: &impl Fn(i32) -> Easing,
+        format_line_name: &impl Fn(&str) -> String,
+    ) -> SerializedLine {
+        let events = convert_event_layer(&layers[index], easing_fn);
+        let original_layer_index = original_indices[index];
+
+        // Generate name using format_line_name helper
+        let line_name = if index == 0 {
+            // First layer
+            format_line_name("")
+        } else {
+            // Subsequent layers
+            format_line_name(&format!(" - Layer {}", original_layer_index))
+        };
+
+        let (line_notes, child_notes) = if index == note_layer_index {
+            // This is the layer with speed events: place notes here
+            (notes, vec![])
+        } else if index < note_layer_index {
+            // Before the note layer: pass notes to children
+            (vec![], notes)
+        } else {
+            // After the note layer: no notes (should not happen, but handle it)
+            (vec![], vec![])
+        };
+
+        if index == layers.len() - 1 {
+            // Last layer
+            SerializedLine {
+                line: Line { name: line_name },
+                notes: line_notes,
+                events,
+                children: vec![],
+                curve_note_tracks: vec![],
+            }
+        } else {
+            // Not last layer: create child for next layer
+            let child = build_layer(
+                layers,
+                original_indices,
+                index + 1,
+                note_layer_index,
+                child_notes,
+                easing_fn,
+                format_line_name,
+            );
+            SerializedLine {
+                line: Line { name: line_name },
+                notes: line_notes,
+                events,
+                children: vec![child],
+                curve_note_tracks: vec![],
+            }
+        }
+    }
+
+    build_layer(
+        &layers,
+        &original_indices,
+        0,
+        note_layer_index,
+        notes,
+        easing_fn,
+        &format_line_name,
+    )
+}
+
+#[derive(Debug, Clone)]
+pub struct RpeInputOptions {
+    /// If true, notes with `isFake = true` will be removed. Otherwise, it will retain as a real note
+    pub remove_fake_notes: bool,
+    /// If true, lines with non-empty `attachUI` will be removed. Otherwise, it will retain as a normal line
+    pub remove_ui_controls: bool,
+}
+
+pub fn rpe_to_phichain(rpe: RpeChart, options: &RpeInputOptions) -> PhichainChart {
+    let mut phichain = PhichainChart {
+        offset: Offset(rpe.meta.offset as f32),
+        bpm_list: BpmList::new(
+            rpe.bpm_list
+                .iter()
+                .map(|x| BpmPoint::new(x.start_time.clone().into(), x.bpm))
+                .collect(),
+        ),
+        ..PhichainChart::empty()
+    };
+
+    let easing_fn = |id: i32| {
+        RPE_EASING.get(id as usize).copied().unwrap_or_else(|| {
+            warn!("Unknown easing type: {}", id);
+            Easing::Linear
+        })
+    };
+
+    let lines_with_parent: Vec<(SerializedLine, i32, bool)> = rpe
+        .judge_line_list
+        .into_iter()
+        .enumerate()
+        .filter_map(|(index, rpe_line)| {
+            // Always warn about UI control lines
+            if let Some(attach_ui) = &rpe_line.attach_ui {
+                if options.remove_ui_controls {
+                    warn!(
+                        "Skipping UI control line with attachUI = {:?} (Phichain doesn't support UI control lines)",
+                        attach_ui
+                    );
+                    return None;
+                } else {
+                    warn!(
+                        "Line {} has attachUI = {:?}, but Phichain doesn't support UI control lines. \
+                         This line will be treated as a normal line.",
+                        index, attach_ui
+                    );
+                }
+            }
+
+            // Filter out fake notes if remove_fake_notes is enabled
+            let filtered_notes: Vec<_> = if options.remove_fake_notes {
+                let fake_count = rpe_line.notes.iter().filter(|note| note.is_fake == 1).count();
+                if fake_count > 0 {
+                    warn!(
+                        "Line {} has {} fake note(s) that will be removed",
+                        index, fake_count
+                    );
+                }
+                rpe_line.notes.iter().filter(|note| note.is_fake != 1).cloned().collect()
+            } else {
+                rpe_line.notes.clone()
+            };
+
+            let notes = convert_rpe_notes(&filtered_notes);
+            let serialized_line = build_nested_line(index, &rpe_line.name, rpe_line.event_layers, notes, &easing_fn);
+            Some((serialized_line, rpe_line.father, rpe_line.rotate_with_father))
+        })
+        .collect();
+
+    // Warn about rotate_with_father = false, as Phichain doesn't currently support this
+    for (index, (_, _, rotate_with_father)) in lines_with_parent.iter().enumerate() {
+        if !rotate_with_father {
+            warn!(
+                "Line {} has rotate_with_father = false, but Phichain currently doesn't support \
+                 disabling rotation inheritance. The line will inherit its parent's rotation.",
+                index
+            );
+        }
+    }
+
+    // Build tree structure
+    let lines = build_parent_child_tree(lines_with_parent);
+
+    phichain.lines = lines;
+    phichain
+}
+
+/// Build a tree structure from flat list of lines with parent indices
+fn build_parent_child_tree(
+    lines_with_parent: Vec<(SerializedLine, i32, bool)>,
+) -> Vec<SerializedLine> {
+    if lines_with_parent.is_empty() {
+        return vec![];
+    }
+
+    // Separate lines and parent information
+    let (mut lines, parent_info): (Vec<_>, Vec<_>) = lines_with_parent
+        .into_iter()
+        .map(|(line, father, _)| (Some(line), father))
+        .unzip();
+
+    // Helper function to add a child to the innermost level of a line's event layer nesting
+    fn add_child_to_innermost(mut line: SerializedLine, child: SerializedLine) -> SerializedLine {
+        // Only recurse into event layer nesting (identified by " - Layer " in the name)
+        // Do NOT recurse into parent-child line relationships
+        if line.children.len() == 1
+            && line.notes.is_empty()
+            && line.children[0].line.name.contains(" - Layer ")
+        {
+            let inner_child = line.children.pop().unwrap();
+            line.children
+                .push(add_child_to_innermost(inner_child, child));
+        } else {
+            // This is the innermost event layer level, add the child here
+            line.children.push(child);
+        }
+        line
+    }
+
+    // Helper function to build a subtree rooted at a given index
+    fn build_subtree(
+        index: usize,
+        lines: &mut [Option<SerializedLine>],
+        parent_info: &[i32],
+    ) -> Option<SerializedLine> {
+        let mut line = lines[index].take()?;
+
+        // Find all children of this line
+        for child_index in 0..parent_info.len() {
+            if parent_info[child_index] == index as i32 {
+                if let Some(child) = build_subtree(child_index, lines, parent_info) {
+                    // Add child to the innermost level of the event layer nesting
+                    line = add_child_to_innermost(line, child);
+                }
+            }
+        }
+
+        Some(line)
+    }
+
+    // Find all root lines (father = -1) and build their subtrees
+    let mut result = Vec::new();
+    for i in 0..parent_info.len() {
+        if parent_info[i] == -1 {
+            if let Some(root) = build_subtree(i, &mut lines, &parent_info) {
+                result.push(root);
+            }
+        }
+    }
+
+    result
+}

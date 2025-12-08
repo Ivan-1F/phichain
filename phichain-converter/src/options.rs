@@ -2,7 +2,7 @@ use o2o::o2o;
 use phichain_chart::beat::Beat;
 use phichain_format::official::from_phichain::OfficialOutputOptions;
 use phichain_format::official::OfficialInputOptions;
-use phichain_format::rpe::schema::RpeInputOptions;
+use phichain_format::rpe::into_phichain::RpeInputOptions;
 use phichain_format::CommonOutputOptions;
 use rust_i18n::t;
 
