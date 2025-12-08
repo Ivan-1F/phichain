@@ -1,7 +1,5 @@
 //! Phigros official json chart format
 
-use crate::primitive::PrimitiveChart;
-use crate::Format;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
@@ -95,17 +93,4 @@ pub struct OfficialChart {
     pub offset: f32,
     #[serde(rename = "judgeLineList")]
     pub lines: Vec<OfficialLine>,
-}
-
-impl Format for OfficialChart {
-    fn into_primitive(self) -> anyhow::Result<PrimitiveChart> {
-        unimplemented!("use official_to_phichain instead")
-    }
-
-    fn from_primitive(_: PrimitiveChart) -> anyhow::Result<Self>
-    where
-        Self: Sized,
-    {
-        unimplemented!("use phichain_to_official instead")
-    }
 }

@@ -1,5 +1,4 @@
 use crate::primitive::line::Line;
-use crate::Format;
 use phichain_chart::bpm_list::BpmList;
 use serde::{Deserialize, Serialize};
 
@@ -22,18 +21,5 @@ impl Default for PrimitiveChart {
             bpm_list: Default::default(),
             lines: Default::default(),
         }
-    }
-}
-
-impl Format for PrimitiveChart {
-    fn into_primitive(self) -> anyhow::Result<PrimitiveChart> {
-        Ok(self)
-    }
-
-    fn from_primitive(phichain: PrimitiveChart) -> anyhow::Result<Self>
-    where
-        Self: Sized,
-    {
-        Ok(phichain)
     }
 }
