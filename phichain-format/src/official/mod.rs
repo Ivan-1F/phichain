@@ -1,20 +1,20 @@
-use crate::official::from_phichain::{
-    phichain_to_official, OfficialOutputError, OfficialOutputOptions,
-};
+use crate::official::from_phichain::phichain_to_official;
 use crate::official::into_phichain::official_to_phichain;
-use crate::official::schema::OfficialChart;
 use crate::{ChartFormat, CommonOutputOptions};
-use phichain_chart::beat;
-use phichain_chart::beat::Beat;
 use phichain_chart::event::LineEvent;
 use phichain_chart::serialization::PhichainChart;
 use phichain_compiler::helpers::are_contiguous;
-use thiserror::Error;
 
+mod errors;
 mod fitting;
-pub mod from_phichain;
+mod from_phichain;
 mod into_phichain;
-pub mod schema;
+mod options;
+mod schema;
+
+pub use errors::{OfficialInputError, OfficialOutputError};
+pub use options::{OfficialInputOptions, OfficialOutputOptions};
+pub use schema::OfficialChart;
 
 const DEFAULT_EASING_FITTING_EPSILON: f32 = 1e-1;
 
@@ -33,34 +33,6 @@ fn merge_constant_events(events: Vec<LineEvent>) -> Vec<LineEvent> {
         merged.push(event);
         merged
     })
-}
-
-#[derive(Debug, Error)]
-pub enum OfficialInputError {
-    #[error("expected at leat one line")]
-    NoLine,
-    #[error("unsupported formatVersion, expected 1 or 3, got {0}")]
-    UnsupportedFormatVersion(u32),
-}
-
-#[derive(Debug, Clone)]
-pub struct OfficialInputOptions {
-    /// Enable easing fitting
-    pub easing_fitting: bool,
-    /// The epsilon used during easing fitting
-    pub easing_fitting_epsilon: f32,
-    /// For constant events, how long to shrink them to
-    pub constant_event_shrink_to: Beat,
-}
-
-impl Default for OfficialInputOptions {
-    fn default() -> Self {
-        Self {
-            easing_fitting: true,
-            easing_fitting_epsilon: DEFAULT_EASING_FITTING_EPSILON,
-            constant_event_shrink_to: beat!(1, 4),
-        }
-    }
 }
 
 impl ChartFormat for OfficialChart {

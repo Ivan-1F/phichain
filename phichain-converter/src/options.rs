@@ -1,8 +1,7 @@
 use o2o::o2o;
 use phichain_chart::beat::Beat;
-use phichain_format::official::from_phichain::OfficialOutputOptions;
-use phichain_format::official::OfficialInputOptions;
-use phichain_format::rpe::into_phichain::RpeInputOptions;
+use phichain_format::official::{OfficialInputOptions, OfficialOutputOptions};
+use phichain_format::rpe::RpeInputOptions;
 use phichain_format::CommonOutputOptions;
 use rust_i18n::t;
 
@@ -29,7 +28,7 @@ pub struct CliOfficialOutputOptions {
     minimum_beat: Beat,
 }
 
-// CLI wrapper for RpeInputOptions
+/// CLI wrapper for RpeInputOptions
 #[derive(Debug, Clone, clap::Args, o2o)]
 #[map(RpeInputOptions)]
 pub struct CliRpeInputOptions {
@@ -39,7 +38,7 @@ pub struct CliRpeInputOptions {
     remove_ui_controls: bool,
 }
 
-// CLI wrapper for CommonOutputOptions
+/// CLI wrapper for CommonOutputOptions
 #[derive(Debug, Clone, clap::Args, o2o)]
 #[map(CommonOutputOptions)]
 pub struct CliCommonOutputOptions {
