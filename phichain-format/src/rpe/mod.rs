@@ -1,13 +1,16 @@
 use crate::rpe::from_phichain::phichain_to_rpe;
-use crate::rpe::into_phichain::{rpe_to_phichain, RpeInputOptions};
-use crate::rpe::schema::RpeChart;
+use crate::rpe::into_phichain::rpe_to_phichain;
 use crate::{ChartFormat, CommonOutputOptions};
 use phichain_chart::serialization::PhichainChart;
 use std::convert::Infallible;
 
-pub mod from_phichain;
-pub mod into_phichain;
-pub mod schema;
+mod from_phichain;
+mod into_phichain;
+mod options;
+mod schema;
+
+pub use options::RpeInputOptions;
+pub use schema::RpeChart;
 
 impl ChartFormat for RpeChart {
     type InputOptions = RpeInputOptions;

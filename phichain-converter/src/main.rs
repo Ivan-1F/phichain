@@ -7,8 +7,8 @@ use crate::options::{
 use crate::utils::i18n_str;
 use clap::{Parser, ValueEnum};
 use phichain_chart::serialization::PhichainChart;
-use phichain_format::official::schema::OfficialChart;
-use phichain_format::rpe::schema::RpeChart;
+use phichain_format::official::OfficialChart;
+use phichain_format::rpe::RpeChart;
 use phichain_format::{ChartFormat, CommonOutputOptions};
 use serde::Serialize;
 use std::path::PathBuf;

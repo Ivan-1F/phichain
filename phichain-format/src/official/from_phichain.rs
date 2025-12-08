@@ -3,37 +3,15 @@ use crate::official::schema::{
     OfficialChart, OfficialLine, OfficialNote, OfficialNoteKind, OfficialNumericLineEvent,
     OfficialPositionLineEvent, OfficialSpeedEvent,
 };
+use crate::official::{OfficialOutputError, OfficialOutputOptions};
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::event::{LineEvent, LineEventKind};
 use phichain_chart::note::NoteKind;
 use phichain_chart::serialization::{PhichainChart, SerializedLine};
-use phichain_compiler::helpers::{cut, cut_with_options, fill_gap, CutOptions, EventSequenceError};
+use phichain_compiler::helpers::{cut, cut_with_options, fill_gap, CutOptions};
 use phichain_compiler::sequence::EventSequence;
-use thiserror::Error;
-
-#[derive(Debug, Error)]
-pub enum OfficialOutputError {
-    #[error("event sequence error in line '{line_name}' for event kind {event_kind:?}: {source}")]
-    EventSequenceError {
-        line_name: String,
-        event_kind: LineEventKind,
-        source: EventSequenceError,
-    },
-}
-
-pub struct OfficialOutputOptions {
-    pub minimum_beat: Beat,
-}
-
-impl Default for OfficialOutputOptions {
-    fn default() -> Self {
-        Self {
-            minimum_beat: beat!(1, 32),
-        }
-    }
-}
 
 pub fn phichain_to_official(
     phichain: PhichainChart,

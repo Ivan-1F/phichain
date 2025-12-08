@@ -1,6 +1,7 @@
 use crate::rpe::schema::{
     RpeChart, RpeCommonEvent, RpeEventLayer, RpeNote, RpeNoteKind, RPE_EASING,
 };
+use crate::rpe::RpeInputOptions;
 use num::{Num, ToPrimitive};
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::{BpmList, BpmPoint};
@@ -294,14 +295,6 @@ fn build_nested_line(
         easing_fn,
         &format_line_name,
     )
-}
-
-#[derive(Debug, Clone)]
-pub struct RpeInputOptions {
-    /// If true, notes with `isFake = true` will be removed. Otherwise, it will retain as a real note
-    pub remove_fake_notes: bool,
-    /// If true, lines with non-empty `attachUI` will be removed. Otherwise, it will retain as a normal line
-    pub remove_ui_controls: bool,
 }
 
 pub fn rpe_to_phichain(rpe: RpeChart, options: &RpeInputOptions) -> PhichainChart {
