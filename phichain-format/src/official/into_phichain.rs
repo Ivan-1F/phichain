@@ -1,4 +1,3 @@
-use crate::official::fitting::fit_events;
 use crate::official::schema::{OfficialChart, OfficialNote, OfficialNoteKind};
 use crate::official::{merge_constant_events, OfficialInputError, OfficialInputOptions};
 use phichain_chart::beat::Beat;
@@ -9,6 +8,7 @@ use phichain_chart::event::{LineEvent, LineEventKind};
 use phichain_chart::note::{Note, NoteKind};
 use phichain_chart::offset::Offset;
 use phichain_chart::serialization::{PhichainChart, SerializedLine};
+use phichain_compiler::fitting::fit_events;
 use phichain_compiler::helpers::{map_if, remove_if};
 use phichain_compiler::sequence::EventSequence;
 

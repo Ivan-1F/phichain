@@ -1,7 +1,7 @@
+use crate::helpers::{are_contiguous, fit_easing};
+use crate::sequence::EventSequence;
 use phichain_chart::beat::Beat;
 use phichain_chart::event::{Direction, LineEvent};
-use phichain_compiler::helpers::{are_contiguous, fit_easing};
-use phichain_compiler::sequence::EventSequence;
 
 struct Buffer {
     epsilon: f32,
