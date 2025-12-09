@@ -48,6 +48,10 @@ const EASING_FITTING_POSSIBLE_EASINGS: [Easing; 31] = [
 /// - All events must be consecutive (end_beat == next.start_beat)
 /// - Values must be continuous (last.end ≈ next.start)
 ///
+/// **Note**: This function assumes the input events are already contiguous and suitable for fitting.
+/// It does not perform grouping or validation. For processing an entire event sequence with
+/// automatic grouping, use [`crate::fitting::fit_events`] instead.
+///
 /// ```text
 /// In:  |----|----|----|----|----| (many small linear segments)
 /// Out: |~~~~~~~~~~~~~~~~~~~~~~~~| (single eased event)

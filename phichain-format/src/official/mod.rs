@@ -6,7 +6,6 @@ use phichain_chart::serialization::PhichainChart;
 use phichain_compiler::helpers::are_contiguous;
 
 mod errors;
-mod fitting;
 mod from_phichain;
 mod into_phichain;
 mod options;
