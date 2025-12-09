@@ -41,7 +41,10 @@ const EASING_FITTING_POSSIBLE_EASINGS: [Easing; 31] = [
 
 /// Try to fit a sequence of linear events into a single eased event
 ///
-/// Returns the fitted event if successful, or the original events if fitting fails.
+/// # Returns
+/// - `Ok(LineEvent)`: A single eased event that approximates the input sequence within `epsilon` tolerance
+/// - `Err(Vec<LineEvent>)`: The original input events when no suitable easing could be found
+///
 /// The fitting considers:
 /// - All events must have the same duration
 /// - All events must be increasing or all decreasing
