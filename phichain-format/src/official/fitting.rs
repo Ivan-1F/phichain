@@ -68,6 +68,16 @@ impl Buffer {
     }
 }
 
+/// Fit a sequence of events by intelligently grouping and fitting them with easings
+///
+/// Difference from [`fit_easing`]:
+/// - [`fit_easing`] operates on a single group of events that are already known to be contiguous
+/// - `fit_events` processes an entire event sequence, automatically:
+///   - Sorting events by time
+///   - Grouping contiguous events with matching duration and direction
+///   - Skipping constant events (which cannot be fitted)
+///   - Applying [`fit_easing`] to each suitable group
+///   - Preserving events that cannot be fitted
 pub fn fit_events(events: Vec<LineEvent>, epsilon: f32) -> Vec<LineEvent> {
     if events.is_empty() {
         return vec![];
