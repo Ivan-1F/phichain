@@ -39,6 +39,9 @@ impl Widget for BeatValue<'_> {
             let mut numer = self.beat.numer();
             let mut denom = self.beat.denom();
 
+            // drop float part to avoid displaying large denominators during drag editing
+            let display_beat = self.beat.without_float();
+
             ui.spacing_mut().item_spacing.x = 4.0;
 
             let (response_value, response_whole, response_numer, response_denom) = if self.reversed
@@ -46,7 +49,7 @@ impl Widget for BeatValue<'_> {
                 let response_value = ui.add(
                     egui::DragValue::new(&mut value)
                         .range(0.0..=f32::MAX)
-                        .custom_formatter(|x, _| format!("{:?}", Beat::from(x as f32)))
+                        .custom_formatter(move |_, _| format!("{:?}", display_beat))
                         .speed(0.01),
                 );
                 ui.spacing_mut().interact_size = Vec2::new(20.0, 18.0);
@@ -95,7 +98,7 @@ impl Widget for BeatValue<'_> {
                 let response_value = ui.add(
                     egui::DragValue::new(&mut value)
                         .range(0.0..=f32::MAX)
-                        .custom_formatter(|x, _| format!("{:?}", Beat::from(x as f32)))
+                        .custom_formatter(move |_, _| format!("{:?}", display_beat))
                         .speed(0.01),
                 );
 
