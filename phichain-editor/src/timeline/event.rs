@@ -6,9 +6,10 @@ use crate::editing::DoCommandEvent;
 use crate::selection::{SelectEvent, Selected, SelectedLine};
 use crate::timeline::{Timeline, TimelineContext};
 use crate::timing::SeekToEvent;
+use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::{Entity, EventWriter, Query, Res, World};
-use egui::{Align2, Color32, FontId, Rangef, Rect, Sense, Stroke, StrokeKind, Ui};
+use egui::{Align2, Color32, FontId, Rect, Sense, Stroke, StrokeKind, Ui};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use phichain_chart::line::Line;
@@ -258,62 +259,20 @@ impl Timeline for EventTimeline {
                     StrokeKind::Middle,
                 );
 
-                let mut make_drag_zone = |start: bool| {
-                    let drag_zone = Rect::from_x_y_ranges(
-                        rect.x_range(),
-                        if start {
-                            Rangef::from(rect.max.y - 5.0..=rect.max.y)
-                        } else {
-                            Rangef::from(rect.min.y..=rect.min.y + 5.0)
-                        },
-                    );
-                    let response = ui
-                        .allocate_rect(drag_zone, Sense::drag())
-                        .on_hover_and_drag_cursor(egui::CursorIcon::ResizeVertical);
-
-                    let precise_id = egui::Id::new("event-drag-precise").with(start);
-
-                    if response.drag_started() {
-                        ui.data_mut(|data| data.insert_temp(egui::Id::new("event-drag"), *event));
-                        // store precise f32 position for accumulation
-                        let initial = if start {
-                            event.start_beat.value()
-                        } else {
-                            event.end_beat.value()
-                        };
-                        ui.data_mut(|data| data.insert_temp(precise_id, initial));
-                    }
-
-                    if response.dragged() {
-                        let drag_delta = response.drag_delta();
-                        // accumulate precise position, then attach for display
-                        let precise: f32 = ui.data(|data| data.get_temp(precise_id).unwrap());
-                        let delta_beat = ctx.y_to_beat_f32(drag_delta.y) - ctx.y_to_beat_f32(0.0);
-                        let new_precise = precise + delta_beat;
-                        ui.data_mut(|data| data.insert_temp(precise_id, new_precise));
-
-                        if start {
-                            event.start_beat = ctx.settings.attach(new_precise);
-                        } else {
-                            event.end_beat = ctx.settings.attach(new_precise);
-                        }
-                    }
-
-                    if response.drag_stopped() {
-                        let from = ui.data(|data| {
-                            data.get_temp::<LineEvent>(egui::Id::new("event-drag"))
-                                .unwrap()
-                        });
-                        ui.data_mut(|data| data.remove::<LineEvent>(egui::Id::new("event-drag")));
-                        ui.data_mut(|data| data.remove::<f32>(precise_id));
-                        if from != *event {
-                            on_event_change(from, *event);
-                        }
-                    }
-                };
-
-                make_drag_zone(true);
-                make_drag_zone(false);
+                if let Some((from, to)) = BeatRangeDragZone::new(
+                    rect,
+                    "event-drag",
+                    &ctx,
+                    &mut *event,
+                    |e| e.start_beat.value(),
+                    |e| e.end_beat.value(),
+                    |e, b| e.start_beat = b,
+                    |e, b| e.end_beat = b,
+                )
+                .show(ui)
+                {
+                    on_event_change(from, to);
+                }
 
                 ui.painter().text(
                     if end_outside_bottom.contains(&Some(entity)) {

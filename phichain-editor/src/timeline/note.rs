@@ -6,11 +6,12 @@ use crate::editing::DoCommandEvent;
 use crate::selection::{SelectEvent, Selected, SelectedLine};
 use crate::tab::timeline::TimelineFilter;
 use crate::timeline::{Timeline, TimelineContext};
+use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
 use crate::ui::widgets::easing::EasingGraph;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use bevy_egui::EguiUserTextures;
-use egui::{Color32, Pos2, Rangef, Rect, Sense, Ui};
+use egui::{Color32, Pos2, Rect, Sense, Ui};
 use phichain_assets::ImageAssets;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::CANVAS_WIDTH;
@@ -200,63 +201,22 @@ impl Timeline for NoteTimeline {
             }
 
             if let NoteKind::Hold { .. } = note.kind {
-                let mut make_drag_zone = |start: bool| {
-                    let drag_zone = Rect::from_x_y_ranges(
-                        rect.x_range(),
-                        if start {
-                            Rangef::from(rect.max.y - 5.0..=rect.max.y)
-                        } else {
-                            Rangef::from(rect.min.y..=rect.min.y + 5.0)
-                        },
-                    );
-                    let response = ui
-                        .allocate_rect(drag_zone, Sense::drag())
-                        .on_hover_and_drag_cursor(egui::CursorIcon::ResizeVertical);
-
-                    let precise_id = egui::Id::new("hold-drag-precise").with(start);
-
-                    if response.drag_started() {
-                        ui.data_mut(|data| data.insert_temp(egui::Id::new("hold-drag"), *note));
-                        // store precise f32 position for accumulation
-                        let initial = if start {
-                            note.beat.value()
-                        } else {
-                            note.end_beat().value()
-                        };
-                        ui.data_mut(|data| data.insert_temp(precise_id, initial));
-                    }
-
-                    if response.dragged() {
-                        let drag_delta = response.drag_delta();
-                        // accumulate precise position, then attach for display
-                        let precise: f32 = ui.data(|data| data.get_temp(precise_id).unwrap());
-                        let delta_beat = ctx.y_to_beat_f32(drag_delta.y) - ctx.y_to_beat_f32(0.0);
-                        let new_precise = precise + delta_beat;
-                        ui.data_mut(|data| data.insert_temp(precise_id, new_precise));
-
-                        if start {
-                            note.beat = ctx.settings.attach(new_precise);
-                        } else {
-                            note.set_end_beat(ctx.settings.attach(new_precise));
-                        }
-                    }
-
-                    if response.drag_stopped() {
-                        let from = ui.data(|data| {
-                            data.get_temp::<Note>(egui::Id::new("hold-drag")).unwrap()
-                        });
-                        ui.data_mut(|data| data.remove::<Note>(egui::Id::new("hold-drag")));
-                        ui.data_mut(|data| data.remove::<f32>(precise_id));
-                        if from != *note {
-                            event_writer.write(DoCommandEvent(EditorCommand::EditNote(
-                                EditNote::new(entity, from, *note),
-                            )));
-                        }
-                    }
-                };
-
-                make_drag_zone(true);
-                make_drag_zone(false);
+                if let Some((from, to)) = BeatRangeDragZone::new(
+                    rect,
+                    "hold-drag",
+                    &ctx,
+                    &mut *note,
+                    |n| n.beat.value(),
+                    |n| n.end_beat().value(),
+                    |n, b| n.beat = b,
+                    |n, b| n.set_end_beat(b),
+                )
+                .show(ui)
+                {
+                    event_writer.write(DoCommandEvent(EditorCommand::EditNote(EditNote::new(
+                        entity, from, to,
+                    ))));
+                }
             }
 
             if response.clicked() {
