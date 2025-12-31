@@ -89,7 +89,17 @@ impl<'a, T: Clone + PartialEq + Send + Sync + 'static> BeatRangeDragZone<'a, T> 
             let new_precise = precise + delta_beat;
             ui.data_mut(|data| data.insert_temp(precise_id, new_precise));
 
-            let attached = self.ctx.settings.attach(new_precise);
+            let min_step = 1.0 / self.ctx.settings.density as f32;
+            let current_start = (self.get_start)(self.data);
+            let current_end = (self.get_end)(self.data);
+
+            let clamped = if start {
+                new_precise.min(current_end - min_step)
+            } else {
+                new_precise.max(current_start + min_step)
+            };
+
+            let attached = self.ctx.settings.attach(clamped);
             if start {
                 (self.set_start)(self.data, attached);
             } else {
