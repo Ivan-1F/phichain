@@ -39,8 +39,7 @@ impl Widget for BeatValue<'_> {
             let mut numer = self.beat.numer();
             let mut denom = self.beat.denom();
 
-            // drop float part to avoid displaying large denominators during drag editing
-            let display_beat = self.beat.without_float();
+            let display_beat = *self.beat;
 
             ui.spacing_mut().item_spacing.x = 4.0;
 

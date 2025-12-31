@@ -271,23 +271,31 @@ impl Timeline for EventTimeline {
                         .allocate_rect(drag_zone, Sense::drag())
                         .on_hover_and_drag_cursor(egui::CursorIcon::ResizeVertical);
 
+                    let precise_id = egui::Id::new("event-drag-precise").with(start);
+
                     if response.drag_started() {
                         ui.data_mut(|data| data.insert_temp(egui::Id::new("event-drag"), *event));
+                        // store precise f32 position for accumulation
+                        let initial = if start {
+                            event.start_beat.value()
+                        } else {
+                            event.end_beat.value()
+                        };
+                        ui.data_mut(|data| data.insert_temp(precise_id, initial));
                     }
 
                     if response.dragged() {
                         let drag_delta = response.drag_delta();
+                        // accumulate precise position, then attach for display
+                        let precise: f32 = ui.data(|data| data.get_temp(precise_id).unwrap());
+                        let delta_beat = ctx.y_to_beat_f32(drag_delta.y) - ctx.y_to_beat_f32(0.0);
+                        let new_precise = precise + delta_beat;
+                        ui.data_mut(|data| data.insert_temp(precise_id, new_precise));
 
                         if start {
-                            let new_y = ctx.beat_to_y(event.start_beat) + drag_delta.y;
-                            let new_beat = ctx.y_to_beat_f32(new_y);
-                            // will be attached when stop dragging
-                            *event.start_beat.float_mut() += new_beat - event.start_beat.value();
+                            event.start_beat = ctx.settings.attach(new_precise);
                         } else {
-                            let new_y = ctx.beat_to_y(event.end_beat) + drag_delta.y;
-                            let new_beat = ctx.y_to_beat_f32(new_y);
-                            // will be attached when stop dragging
-                            *event.end_beat.float_mut() += new_beat - event.end_beat.value();
+                            event.end_beat = ctx.settings.attach(new_precise);
                         }
                     }
 
@@ -297,11 +305,7 @@ impl Timeline for EventTimeline {
                                 .unwrap()
                         });
                         ui.data_mut(|data| data.remove::<LineEvent>(egui::Id::new("event-drag")));
-                        if start {
-                            event.start_beat = ctx.settings.attach(event.start_beat.value());
-                        } else {
-                            event.end_beat = ctx.settings.attach(event.end_beat.value());
-                        }
+                        ui.data_mut(|data| data.remove::<f32>(precise_id));
                         if from != *event {
                             on_event_change(from, *event);
                         }

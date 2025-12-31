@@ -213,25 +213,31 @@ impl Timeline for NoteTimeline {
                         .allocate_rect(drag_zone, Sense::drag())
                         .on_hover_and_drag_cursor(egui::CursorIcon::ResizeVertical);
 
+                    let precise_id = egui::Id::new("hold-drag-precise").with(start);
+
                     if response.drag_started() {
                         ui.data_mut(|data| data.insert_temp(egui::Id::new("hold-drag"), *note));
+                        // store precise f32 position for accumulation
+                        let initial = if start {
+                            note.beat.value()
+                        } else {
+                            note.end_beat().value()
+                        };
+                        ui.data_mut(|data| data.insert_temp(precise_id, initial));
                     }
 
                     if response.dragged() {
                         let drag_delta = response.drag_delta();
+                        // accumulate precise position, then attach for display
+                        let precise: f32 = ui.data(|data| data.get_temp(precise_id).unwrap());
+                        let delta_beat = ctx.y_to_beat_f32(drag_delta.y) - ctx.y_to_beat_f32(0.0);
+                        let new_precise = precise + delta_beat;
+                        ui.data_mut(|data| data.insert_temp(precise_id, new_precise));
 
                         if start {
-                            let new_y = ctx.beat_to_y(note.beat) + drag_delta.y;
-                            let new_beat = ctx.y_to_beat_f32(new_y);
-                            // will be attached when stop dragging
-                            *note.beat.float_mut() += new_beat - note.beat.value();
+                            note.beat = ctx.settings.attach(new_precise);
                         } else {
-                            let new_y = ctx.beat_to_y(note.end_beat()) + drag_delta.y;
-                            let end_beat = ctx.y_to_beat_f32(new_y);
-                            let hold_beat = end_beat - note.beat.value();
-                            // will be attached when stop dragging
-                            *note.hold_beat_mut().unwrap().float_mut() +=
-                                hold_beat - note.hold_beat().unwrap().value();
+                            note.set_end_beat(ctx.settings.attach(new_precise));
                         }
                     }
 
@@ -240,12 +246,7 @@ impl Timeline for NoteTimeline {
                             data.get_temp::<Note>(egui::Id::new("hold-drag")).unwrap()
                         });
                         ui.data_mut(|data| data.remove::<Note>(egui::Id::new("hold-drag")));
-                        if start {
-                            note.beat = ctx.settings.attach(note.beat.value());
-                        } else {
-                            let end_beat = ctx.settings.attach(note.end_beat().value());
-                            note.set_end_beat(end_beat);
-                        }
+                        ui.data_mut(|data| data.remove::<f32>(precise_id));
                         if from != *note {
                             event_writer.write(DoCommandEvent(EditorCommand::EditNote(
                                 EditNote::new(entity, from, *note),
