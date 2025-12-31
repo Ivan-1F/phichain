@@ -74,29 +74,31 @@ impl<'a, T: Clone + PartialEq + Send + Sync + 'static> BeatRangeDragZone<'a, T> 
 
         if response.drag_started() {
             ui.data_mut(|data| data.insert_temp(snapshot_id, self.data.clone()));
-            let initial = if start {
+            let initial_beat = if start {
                 (self.get_start)(self.data)
             } else {
                 (self.get_end)(self.data)
             };
-            ui.data_mut(|data| data.insert_temp(precise_id, initial));
+            let initial_y = self.ctx.beat_f32_to_y(initial_beat);
+            ui.data_mut(|data| data.insert_temp(precise_id, initial_y));
         }
 
         if response.dragged() {
             let drag_delta = response.drag_delta();
-            let precise: f32 = ui.data(|data| data.get_temp(precise_id).unwrap());
-            let delta_beat = self.ctx.y_to_beat_f32(drag_delta.y) - self.ctx.y_to_beat_f32(0.0);
-            let new_precise = precise + delta_beat;
-            ui.data_mut(|data| data.insert_temp(precise_id, new_precise));
+            let precise_y: f32 = ui.data(|data| data.get_temp(precise_id).unwrap());
+            let new_y = precise_y + drag_delta.y;
+            ui.data_mut(|data| data.insert_temp(precise_id, new_y));
+
+            let new_beat = self.ctx.y_to_beat_f32(new_y);
 
             let min_step = 1.0 / self.ctx.settings.density as f32;
             let current_start = (self.get_start)(self.data);
             let current_end = (self.get_end)(self.data);
 
             let clamped = if start {
-                new_precise.min(current_end - min_step)
+                new_beat.min(current_end - min_step)
             } else {
-                new_precise.max(current_start + min_step)
+                new_beat.max(current_start + min_step)
             };
 
             let attached = self.ctx.settings.attach(clamped);
