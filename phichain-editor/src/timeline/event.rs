@@ -259,7 +259,7 @@ impl Timeline for EventTimeline {
                     StrokeKind::Middle,
                 );
 
-                if let Some((from, to)) = BeatRangeDragZone::new(
+                if let Some(drag) = BeatRangeDragZone::new(
                     rect,
                     "event-drag",
                     &ctx,
@@ -271,7 +271,7 @@ impl Timeline for EventTimeline {
                 )
                 .show(ui)
                 {
-                    on_event_change(from, to);
+                    on_event_change(drag.from, drag.to);
                 }
 
                 ui.painter().text(

@@ -17,6 +17,11 @@ pub struct BeatRangeDragZone<'a, T: Clone + PartialEq + Send + Sync + 'static> {
     set_end: fn(&mut T, Beat),
 }
 
+pub struct Drag<T> {
+    pub from: T,
+    pub to: T,
+}
+
 impl<'a, T: Clone + PartialEq + Send + Sync + 'static> BeatRangeDragZone<'a, T> {
     pub fn new(
         rect: Rect,
@@ -42,14 +47,14 @@ impl<'a, T: Clone + PartialEq + Send + Sync + 'static> BeatRangeDragZone<'a, T> 
 
     /// Show the drag zones for both start and end.
     /// Returns `Some((from, to))` if drag stopped and data changed.
-    pub fn show(mut self, ui: &mut Ui) -> Option<(T, T)> {
+    pub fn show(mut self, ui: &mut Ui) -> Option<Drag<T>> {
         let result_start = self.process_drag_zone(ui, true);
         let result_end = self.process_drag_zone(ui, false);
 
         result_start.or(result_end)
     }
 
-    fn process_drag_zone(&mut self, ui: &mut Ui, start: bool) -> Option<(T, T)> {
+    fn process_drag_zone(&mut self, ui: &mut Ui, start: bool) -> Option<Drag<T>> {
         let drag_zone = Rect::from_x_y_ranges(
             self.rect.x_range(),
             if start {
@@ -97,7 +102,10 @@ impl<'a, T: Clone + PartialEq + Send + Sync + 'static> BeatRangeDragZone<'a, T> 
             ui.data_mut(|data| data.remove::<f32>(precise_id));
 
             if from != *self.data {
-                return Some((from, self.data.clone()));
+                return Some(Drag {
+                    from,
+                    to: self.data.clone(),
+                });
             }
         }
 
