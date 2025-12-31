@@ -6,6 +6,7 @@ use phichain_chart::beat::Beat;
 ///
 /// This widget handles the common drag interaction pattern used in timeline editing,
 /// where users drag the top or bottom edge of a rect to adjust beat positions.
+// TODO: consider introducing a `BeatRange` trait or component
 pub struct BeatRangeDragZone<'a, T: Clone + PartialEq + Send + Sync + 'static> {
     rect: Rect,
     id: &'static str,
