@@ -152,6 +152,11 @@ impl Beat {
     pub fn float_mut(&mut self) -> &mut f32 {
         &mut self.2
     }
+
+    /// Returns a new Beat with the float part set to 0
+    pub fn without_float(&self) -> Self {
+        Self(self.0, self.1, 0.0)
+    }
 }
 
 impl From<Beat> for f32 {
