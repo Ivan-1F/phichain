@@ -8,7 +8,6 @@ use std::{
 
 use num::{CheckedAdd, FromPrimitive, Rational32, Signed, Zero};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use tracing::warn;
 
 #[macro_export]
 macro_rules! beat {
@@ -31,33 +30,16 @@ macro_rules! beat {
 
 /// A beat in the chart
 ///
-/// The [`Beat`] is represented with a fraction and a float
-///
-/// # The fraction part
-///
-/// The fraction part consists of a whole part and a ratio part, powered by [num_rational](https://docs.rs/num-rational/latest/num_rational)
-///
-/// # The float part
-///
-/// The float part should not be used in most cases, it is designed to prevent denominator overflow on high precision values
-///
-/// Up to now, the only usage of the float part is dragging edit, and the float part should only have value during dragging.
-/// When the dragging stopped, the float part should be merged into the fraction part after attached to beat lines
+/// The [`Beat`] is represented with a whole part and a ratio part,
+/// powered by [num_rational](https://docs.rs/num-rational/latest/num_rational)
 #[derive(Clone, Copy)]
-pub struct Beat(i32, Rational32, f32);
+pub struct Beat(i32, Rational32);
 
 impl Serialize for Beat {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        // ignore the float part, since it should not has meaning
-        if self.2 != 0.0 {
-            warn!(
-                "Expected float part of a fraction to be 0 during serialization, got {}",
-                self.2
-            );
-        }
         (self.0, self.1.numer(), self.1.denom()).serialize(serializer)
     }
 }
@@ -95,13 +77,7 @@ impl Beat {
 
 impl Debug for Beat {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}+{}/{}", self.0, self.1.numer(), self.1.denom())?;
-
-        if self.2 != 0.0 {
-            write!(f, "({})", self.2)?;
-        }
-
-        Ok(())
+        write!(f, "{}+{}/{}", self.0, self.1.numer(), self.1.denom())
     }
 }
 
@@ -136,32 +112,16 @@ pub mod utils {
 }
 
 impl Beat {
-    pub const MAX: Self = Beat(i32::MAX, Rational32::ZERO, 0.0);
-    pub const MIN: Self = Beat(i32::MIN, Rational32::ZERO, 0.0);
+    pub const MAX: Self = Beat(i32::MAX, Rational32::ZERO);
+    pub const MIN: Self = Beat(i32::MIN, Rational32::ZERO);
 
-    pub const ZERO: Self = Beat(0, Rational32::ZERO, 0.0);
-    pub const ONE: Self = Beat(1, Rational32::ZERO, 0.0);
-}
-
-/// The float part (`self.2`) related impl
-impl Beat {
-    pub fn float(&self) -> f32 {
-        self.2
-    }
-
-    pub fn float_mut(&mut self) -> &mut f32 {
-        &mut self.2
-    }
-
-    /// Returns a new Beat with the float part set to 0
-    pub fn without_float(&self) -> Self {
-        Self(self.0, self.1, 0.0)
-    }
+    pub const ZERO: Self = Beat(0, Rational32::ZERO);
+    pub const ONE: Self = Beat(1, Rational32::ZERO);
 }
 
 impl From<Beat> for f32 {
     fn from(val: Beat) -> Self {
-        val.0 as f32 + *val.1.numer() as f32 / *val.1.denom() as f32 + val.2
+        val.0 as f32 + *val.1.numer() as f32 / *val.1.denom() as f32
     }
 }
 
@@ -179,13 +139,13 @@ impl From<f32> for Beat {
 
 impl From<Rational32> for Beat {
     fn from(value: Rational32) -> Self {
-        Self(*value.trunc().numer(), value.fract(), 0.0)
+        Self(*value.trunc().numer(), value.fract())
     }
 }
 
 impl Beat {
     pub fn new(whole: i32, ratio: Rational32) -> Self {
-        Self(whole, ratio, 0.0)
+        Self(whole, ratio)
     }
 
     pub fn beat(&self) -> i32 {
@@ -206,7 +166,7 @@ impl Beat {
 
     // TODO: implement `Num`, `Neg` and `Signed` for `Beat`
     pub fn abs(&self) -> Self {
-        Self(self.0.abs(), self.1.abs(), self.2.abs())
+        Self(self.0.abs(), self.1.abs())
     }
 }
 
@@ -216,7 +176,7 @@ impl Zero for Beat {
     }
 
     fn is_zero(&self) -> bool {
-        self.0.is_zero() && self.1.is_zero() && self.2.is_zero()
+        self.0.is_zero() && self.1.is_zero()
     }
 }
 
@@ -224,7 +184,7 @@ impl Sub for Beat {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        Self(self.0 - rhs.0, self.1 - rhs.1, self.2 - rhs.2).reduced()
+        Self(self.0 - rhs.0, self.1 - rhs.1).reduced()
     }
 }
 
@@ -238,7 +198,7 @@ impl Add for Beat {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        Self(self.0 + rhs.0, self.1 + rhs.1, self.2 + rhs.2).reduced()
+        Self(self.0 + rhs.0, self.1 + rhs.1).reduced()
     }
 }
 
@@ -253,7 +213,6 @@ impl CheckedAdd for Beat {
         Some(Self(
             self.0.checked_add(rhs.0)?,
             self.1.checked_add(&rhs.1)?,
-            self.2 + rhs.2, // FIXME
         ))
     }
 }
