@@ -8,6 +8,7 @@ use crate::ui::widgets::beat_value::BeatValue;
 use crate::ui::widgets::easing::{EasingGraph, EasingValue};
 use bevy::prelude::*;
 use egui::{DragValue, Ui};
+use phichain_chart::beat::Beat;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 
 pub fn single_event_inspector(
@@ -35,14 +36,22 @@ pub fn single_event_inspector(
         ui.sides(
             |ui| ui.label(t!("tab.inspector.single_event.start_beat")),
             |ui| {
-                let response = ui.add(BeatValue::new(&mut event.start_beat).reversed(true));
+                let response = ui.add(
+                    BeatValue::new(&mut event.start_beat)
+                        .range(Beat::MIN..=event.end_beat)
+                        .reversed(true),
+                );
                 finished |= response.drag_stopped() || response.lost_focus();
             },
         );
         ui.sides(
             |ui| ui.label(t!("tab.inspector.single_event.end_beat")),
             |ui| {
-                let response = ui.add(BeatValue::new(&mut event.end_beat).reversed(true));
+                let response = ui.add(
+                    BeatValue::new(&mut event.end_beat)
+                        .range(event.start_beat..=Beat::MAX)
+                        .reversed(true),
+                );
                 finished |= response.drag_stopped() || response.lost_focus();
             },
         );
