@@ -44,7 +44,7 @@ pub fn single_note_inspector(
                 |ui| ui.label(t!("tab.inspector.single_note.hold_beat")),
                 |ui| {
                     let mut bind = hold_beat;
-                    let response = ui.beat(&mut bind);
+                    let response = ui.add(BeatValue::new(&mut bind).reversed(true));
                     finished |= response.drag_stopped() || response.lost_focus();
                     if bind != hold_beat {
                         note.kind = NoteKind::Hold { hold_beat: bind };
