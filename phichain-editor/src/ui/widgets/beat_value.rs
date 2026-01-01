@@ -8,6 +8,7 @@ pub struct BeatValue<'a> {
     beat: &'a mut Beat,
     clamp_range: RangeInclusive<Beat>,
     reversed: bool,
+    density: Option<u32>,
 }
 
 impl<'a> BeatValue<'a> {
@@ -16,7 +17,13 @@ impl<'a> BeatValue<'a> {
             beat,
             clamp_range: Beat::MIN..=Beat::MAX,
             reversed: false,
+            density: None,
         }
+    }
+
+    pub fn density(mut self, density: u32) -> Self {
+        self.density = Some(density);
+        self
     }
 
     pub fn range(mut self, range: RangeInclusive<Beat>) -> Self {
@@ -41,6 +48,8 @@ impl Widget for BeatValue<'_> {
 
             let display_beat = *self.beat;
 
+            let speed = self.density.map(|d| 1.0 / d as f32).unwrap_or(0.01);
+
             ui.spacing_mut().item_spacing.x = 4.0;
 
             let (response_value, response_whole, response_numer, response_denom) = if self.reversed
@@ -49,7 +58,7 @@ impl Widget for BeatValue<'_> {
                     egui::DragValue::new(&mut value)
                         .range(0.0..=f32::MAX)
                         .custom_formatter(move |_, _| format!("{:?}", display_beat))
-                        .speed(0.01),
+                        .speed(speed),
                 );
                 ui.spacing_mut().interact_size = Vec2::new(20.0, 18.0);
                 let response_denom = ui.add(
@@ -98,7 +107,7 @@ impl Widget for BeatValue<'_> {
                     egui::DragValue::new(&mut value)
                         .range(0.0..=f32::MAX)
                         .custom_formatter(move |_, _| format!("{:?}", display_beat))
-                        .speed(0.01),
+                        .speed(speed),
                 );
 
                 (
@@ -118,7 +127,12 @@ impl Widget for BeatValue<'_> {
             {
                 *self.beat = clamp_to_range(beat!(whole, numer, denom), &self.clamp_range);
             } else if value != self.beat.value() {
-                *self.beat = clamp_to_range(value.into(), &self.clamp_range);
+                let new_beat = if let Some(density) = self.density {
+                    beat::utils::attach(value, density)
+                } else {
+                    value.into()
+                };
+                *self.beat = clamp_to_range(new_beat, &self.clamp_range);
             }
 
             response
@@ -143,6 +157,7 @@ fn clamp_to_range(x: Beat, range: &RangeInclusive<Beat>) -> Beat {
     }
 }
 
+#[allow(dead_code)]
 pub trait BeatExt {
     fn beat(&mut self, beat: &mut Beat) -> Response;
 }

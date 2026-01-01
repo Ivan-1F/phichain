@@ -2,6 +2,7 @@ use crate::editing::command::event::EditEvent;
 use crate::editing::command::EditorCommand;
 use crate::editing::DoCommandEvent;
 use crate::selection::Selected;
+use crate::timeline::TimelineContext;
 use crate::ui::latch;
 use crate::ui::sides::SidesExt;
 use crate::ui::widgets::beat_value::BeatValue;
@@ -14,6 +15,7 @@ use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 pub fn single_event_inspector(
     In(mut ui): In<Ui>,
     event: Single<(&mut LineEvent, Entity), With<Selected>>,
+    ctx: TimelineContext,
     mut event_writer: EventWriter<DoCommandEvent>,
 ) -> Result {
     let (mut event, entity) = event.into_inner();
@@ -39,7 +41,8 @@ pub fn single_event_inspector(
                 let response = ui.add(
                     BeatValue::new(&mut event.start_beat)
                         .range(Beat::MIN..=event.end_beat)
-                        .reversed(true),
+                        .reversed(true)
+                        .density(ctx.settings.density),
                 );
                 finished |= response.drag_stopped() || response.lost_focus();
             },
@@ -50,7 +53,8 @@ pub fn single_event_inspector(
                 let response = ui.add(
                     BeatValue::new(&mut event.end_beat)
                         .range(event.start_beat..=Beat::MAX)
-                        .reversed(true),
+                        .reversed(true)
+                        .density(ctx.settings.density),
                 );
                 finished |= response.drag_stopped() || response.lost_focus();
             },

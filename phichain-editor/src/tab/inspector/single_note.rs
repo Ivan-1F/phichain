@@ -2,17 +2,18 @@ use crate::editing::command::note::EditNote;
 use crate::editing::command::EditorCommand;
 use crate::editing::DoCommandEvent;
 use crate::selection::Selected;
+use crate::timeline::TimelineContext;
 use crate::ui::latch;
 use crate::ui::sides::SidesExt;
-use crate::ui::widgets::beat_value::{BeatExt, BeatValue};
+use crate::ui::widgets::beat_value::BeatValue;
 use bevy::prelude::*;
 use egui::{DragValue, Ui};
 use phichain_chart::note::{Note, NoteKind};
 
 pub fn single_note_inspector(
     In(mut ui): In<Ui>,
-
     note: Single<(&mut Note, Entity), With<Selected>>,
+    ctx: TimelineContext,
     mut event_writer: EventWriter<DoCommandEvent>,
 ) -> Result {
     let (mut note, entity) = note.into_inner();
@@ -26,7 +27,11 @@ pub fn single_note_inspector(
         ui.sides(
             |ui| ui.label(t!("tab.inspector.single_note.beat")),
             |ui| {
-                let response = ui.add(BeatValue::new(&mut note.beat).reversed(true));
+                let response = ui.add(
+                    BeatValue::new(&mut note.beat)
+                        .reversed(true)
+                        .density(ctx.settings.density),
+                );
                 finished |= response.drag_stopped() || response.lost_focus();
             },
         );
@@ -44,7 +49,11 @@ pub fn single_note_inspector(
                 |ui| ui.label(t!("tab.inspector.single_note.hold_beat")),
                 |ui| {
                     let mut bind = hold_beat;
-                    let response = ui.add(BeatValue::new(&mut bind).reversed(true));
+                    let response = ui.add(
+                        BeatValue::new(&mut bind)
+                            .reversed(true)
+                            .density(ctx.settings.density),
+                    );
                     finished |= response.drag_stopped() || response.lost_focus();
                     if bind != hold_beat {
                         note.kind = NoteKind::Hold { hold_beat: bind };
