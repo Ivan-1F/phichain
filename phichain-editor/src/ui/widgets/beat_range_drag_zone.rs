@@ -137,7 +137,7 @@ impl<'a, T: TimelineBeatRange + Clone + PartialEq + Send + Sync + 'static>
             let current_end = self.data.end_beat_value();
 
             let clamped = if start {
-                new_beat.min(current_end - min_step)
+                new_beat.max(0.0).min(current_end - min_step)
             } else {
                 new_beat.max(current_start + min_step)
             };
