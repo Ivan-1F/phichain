@@ -1,21 +1,67 @@
 use crate::timeline::TimelineContext;
 use egui::{Id, Rangef, Rect, Sense, Ui};
 use phichain_chart::beat::Beat;
+use phichain_chart::event::LineEvent;
+use phichain_chart::note::Note;
+
+/// A trait for types that have a beat range on timeline.
+pub trait TimelineBeatRange {
+    fn start_beat_value(&self) -> f32;
+    fn end_beat_value(&self) -> f32;
+    fn set_start_beat(&mut self, beat: Beat);
+    fn set_end_beat(&mut self, beat: Beat);
+}
+
+impl TimelineBeatRange for Note {
+    fn start_beat_value(&self) -> f32 {
+        self.beat.value()
+    }
+
+    fn end_beat_value(&self) -> f32 {
+        self.end_beat().value()
+    }
+
+    /// Set start beat while keeping end_beat unchanged (adjusts hold_beat for Hold notes)
+    fn set_start_beat(&mut self, beat: Beat) {
+        let old_end = self.end_beat();
+        self.beat = beat;
+        if let Some(hold_beat) = self.hold_beat_mut() {
+            *hold_beat = old_end - beat;
+        }
+    }
+
+    fn set_end_beat(&mut self, beat: Beat) {
+        Note::set_end_beat(self, beat);
+    }
+}
+
+impl TimelineBeatRange for LineEvent {
+    fn start_beat_value(&self) -> f32 {
+        self.start_beat.value()
+    }
+
+    fn end_beat_value(&self) -> f32 {
+        self.end_beat.value()
+    }
+
+    fn set_start_beat(&mut self, beat: Beat) {
+        self.start_beat = beat;
+    }
+
+    fn set_end_beat(&mut self, beat: Beat) {
+        self.end_beat = beat;
+    }
+}
 
 /// A drag zone for editing beat ranges (start/end) with precise accumulation.
 ///
 /// This widget handles the common drag interaction pattern used in timeline editing,
 /// where users drag the top or bottom edge of a rect to adjust beat positions.
-// TODO: consider introducing a `BeatRange` trait or component
-pub struct BeatRangeDragZone<'a, T: Clone + PartialEq + Send + Sync + 'static> {
+pub struct BeatRangeDragZone<'a, T: TimelineBeatRange + Clone + PartialEq + Send + Sync + 'static> {
     rect: Rect,
     id: &'static str,
     ctx: &'a TimelineContext<'a>,
     data: &'a mut T,
-    get_start: fn(&T) -> f32,
-    get_end: fn(&T) -> f32,
-    set_start: fn(&mut T, Beat),
-    set_end: fn(&mut T, Beat),
 }
 
 pub struct Drag<T> {
@@ -23,26 +69,20 @@ pub struct Drag<T> {
     pub to: T,
 }
 
-impl<'a, T: Clone + PartialEq + Send + Sync + 'static> BeatRangeDragZone<'a, T> {
+impl<'a, T: TimelineBeatRange + Clone + PartialEq + Send + Sync + 'static>
+    BeatRangeDragZone<'a, T>
+{
     pub fn new(
         rect: Rect,
         id: &'static str,
         ctx: &'a TimelineContext<'a>,
         data: &'a mut T,
-        get_start: fn(&T) -> f32,
-        get_end: fn(&T) -> f32,
-        set_start: fn(&mut T, Beat),
-        set_end: fn(&mut T, Beat),
     ) -> Self {
         Self {
             rect,
             id,
             ctx,
             data,
-            get_start,
-            get_end,
-            set_start,
-            set_end,
         }
     }
 
@@ -75,25 +115,26 @@ impl<'a, T: Clone + PartialEq + Send + Sync + 'static> BeatRangeDragZone<'a, T> 
         if response.drag_started() {
             ui.data_mut(|data| data.insert_temp(snapshot_id, self.data.clone()));
             let initial_beat = if start {
-                (self.get_start)(self.data)
+                self.data.start_beat_value()
             } else {
-                (self.get_end)(self.data)
+                self.data.end_beat_value()
             };
             let initial_y = self.ctx.beat_f32_to_y(initial_beat);
             ui.data_mut(|data| data.insert_temp(precise_id, initial_y));
         }
 
         if response.dragged() {
+            let precise_y = ui.data(|data| data.get_temp::<f32>(precise_id))?;
+
             let drag_delta = response.drag_delta();
-            let precise_y: f32 = ui.data(|data| data.get_temp(precise_id).unwrap());
             let new_y = precise_y + drag_delta.y;
             ui.data_mut(|data| data.insert_temp(precise_id, new_y));
 
             let new_beat = self.ctx.y_to_beat_f32(new_y);
 
             let min_step = 1.0 / self.ctx.settings.density as f32;
-            let current_start = (self.get_start)(self.data);
-            let current_end = (self.get_end)(self.data);
+            let current_start = self.data.start_beat_value();
+            let current_end = self.data.end_beat_value();
 
             let clamped = if start {
                 new_beat.min(current_end - min_step)
@@ -103,14 +144,14 @@ impl<'a, T: Clone + PartialEq + Send + Sync + 'static> BeatRangeDragZone<'a, T> 
 
             let attached = self.ctx.settings.attach(clamped);
             if start {
-                (self.set_start)(self.data, attached);
+                self.data.set_start_beat(attached);
             } else {
-                (self.set_end)(self.data, attached);
+                self.data.set_end_beat(attached);
             }
         }
 
         if response.drag_stopped() {
-            let from: T = ui.data(|data| data.get_temp(snapshot_id).unwrap());
+            let from = ui.data(|data| data.get_temp::<T>(snapshot_id))?;
             ui.data_mut(|data| data.remove::<T>(snapshot_id));
             ui.data_mut(|data| data.remove::<f32>(precise_id));
 
