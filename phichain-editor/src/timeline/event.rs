@@ -240,12 +240,6 @@ impl Timeline for EventTimeline {
                 color = Color32::from_rgba_unmultiplied(color.r(), color.g(), color.b(), 20);
             }
 
-            let mut on_event_change = |old_event, new_event| {
-                event_writer.write(DoCommandEvent(EditorCommand::EditEvent(EditEvent::new(
-                    entity, old_event, new_event,
-                ))));
-            };
-
             let response = ui.allocate_rect(rect, Sense::click());
             if ui.is_rect_visible(rect)
                 || first_events_outside_bottom.contains(&Some(entity))
@@ -262,7 +256,9 @@ impl Timeline for EventTimeline {
                 if let Some(drag) =
                     BeatRangeDragZone::new(rect, "event-drag", &ctx, &mut *event).show(ui)
                 {
-                    on_event_change(drag.from, drag.to);
+                    event_writer.write(DoCommandEvent(EditorCommand::EditEvent(EditEvent::new(
+                        entity, drag.from, drag.to,
+                    ))));
                 }
 
                 ui.painter().text(
