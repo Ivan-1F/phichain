@@ -82,7 +82,6 @@ impl Debug for Beat {
 }
 
 pub mod utils {
-    use crate::beat;
     use crate::beat::Beat;
 
     /// Attach a beat value to beat lines with a given density
