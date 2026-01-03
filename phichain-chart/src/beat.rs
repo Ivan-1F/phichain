@@ -165,7 +165,8 @@ impl Beat {
 
     // TODO: implement `Num`, `Neg` and `Signed` for `Beat`
     pub fn abs(&self) -> Self {
-        Self(self.0.abs(), self.1.abs())
+        let rational: Rational32 = (*self).into();
+        Self::from(rational.abs())
     }
 }
 
@@ -371,5 +372,17 @@ mod tests {
         let beat = beat!(1, 1, 2);
         let rational: Rational32 = beat.into();
         assert_eq!(rational, Rational32::new(3, 2));
+    }
+
+    #[test]
+    fn test_abs() {
+        // positive beat stays the same
+        assert_eq!(beat!(1, 1, 2).abs(), beat!(1, 1, 2));
+        // negative beat: -1 + 1/2 = -0.5, abs = 0.5
+        assert_eq!(beat!(-1, 1, 2).abs(), beat!(0, 1, 2));
+        // negative beat: -2 + 1/4 = -1.75, abs = 1.75
+        assert_eq!(beat!(-2, 1, 4).abs(), beat!(1, 3, 4));
+        // zero stays zero
+        assert_eq!(beat!().abs(), beat!());
     }
 }
