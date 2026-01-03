@@ -1,9 +1,9 @@
-use crate::utils::EventSequence;
 use nalgebra::{Isometry2, Rotation2, Vector2};
 use phichain_chart::beat;
 use phichain_chart::easing::Easing;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use phichain_chart::serialization::{PhichainChart, SerializedLine};
+use phichain_compiler::sequence::EventSequence;
 
 fn merge(parent: SerializedLine) -> Vec<SerializedLine> {
     if parent.children.is_empty() {
@@ -54,11 +54,8 @@ fn merge(parent: SerializedLine) -> Vec<SerializedLine> {
                     macro_rules! evaluate {
                         ($target:ident, $filter:ident) => {
                             (
-                                $target
-                                    .events
-                                    .$filter()
-                                    .evaluate_start_no_effect(start_beat),
-                                $target.events.$filter().evaluate(end_beat),
+                                $target.events.$filter().evaluate_inclusive(start_beat),
+                                $target.events.$filter().evaluate_inclusive(end_beat),
                             )
                         };
                     }

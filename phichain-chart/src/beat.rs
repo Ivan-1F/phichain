@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Formatter};
 use std::hash::Hash;
 use std::ops::{AddAssign, SubAssign};
+use std::str::FromStr;
 use std::{
     cmp::Ordering,
     ops::{Add, Sub},
@@ -24,7 +25,7 @@ macro_rules! beat {
         $crate::beat::Beat::new($whole as i32, num::Rational32::new(0, 1))
     };
     () => {
-        $crate::beat::Beat::new(0, num::Rational32::new(0, 1))
+        $crate::beat::Beat::ZERO
     };
 }
 
@@ -245,6 +246,57 @@ impl Ord for Beat {
     }
 }
 
+impl FromStr for Beat {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        use nom::{
+            branch::alt,
+            character::complete::{char, i32 as nom_i32, multispace0},
+            combinator::{all_consuming, verify},
+            error::Error,
+            sequence::{delimited, preceded, separated_pair},
+            Finish, Parser,
+        };
+
+        let fraction = || {
+            separated_pair(
+                delimited(multispace0::<_, Error<_>>, nom_i32, multispace0),
+                char('/'),
+                delimited(multispace0, verify(nom_i32, |&d| d != 0), multispace0),
+            )
+        };
+
+        // "whole+numer/denom" with optional spaces around '+'
+        let whole_and_fraction = (
+            delimited(multispace0, nom_i32, multispace0),
+            preceded(char('+'), fraction()),
+        )
+            .map(|(whole, (numer, denom))| beat!(whole, numer, denom));
+
+        // "numer/denom" only
+        let fraction_only = fraction().map(|(numer, denom)| beat!(numer, denom));
+
+        // "whole" only
+        let whole_only = delimited(multispace0, nom_i32, multispace0).map(|whole| beat!(whole));
+
+        // try parsers in order: whole+fraction, fraction, whole
+        all_consuming(alt((whole_and_fraction, fraction_only, whole_only)))
+            .parse(s)
+            .finish()
+            .map(|(_, beat)| beat)
+            .map_err(|e| {
+                let err_msg = format!("{}", e);
+                // improve error message for zero denominator
+                if err_msg.contains("Verify") || s.contains("/0") {
+                    "Denominator cannot be zero".to_string()
+                } else {
+                    format!("Invalid beat format '{}': {}", s, e)
+                }
+            })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -371,5 +423,42 @@ mod tests {
         let beat = beat!(1, 1, 2);
         let rational: Rational32 = beat.into();
         assert_eq!(rational, Rational32::new(3, 2));
+    }
+
+    #[test]
+    fn test_from_str_fraction() {
+        let beat: Beat = "1/4".parse().unwrap();
+        assert_eq!(beat, beat!(1, 4));
+    }
+
+    #[test]
+    fn test_from_str_whole_and_fraction() {
+        let beat: Beat = "1+1/4".parse().unwrap();
+        assert_eq!(beat, beat!(1, 1, 4));
+    }
+
+    #[test]
+    fn test_from_str_whole() {
+        let beat: Beat = "2".parse().unwrap();
+        assert_eq!(beat, beat!(2));
+    }
+
+    #[test]
+    fn test_from_str_with_spaces() {
+        let beat: Beat = " 1 + 1 / 4 ".parse().unwrap();
+        assert_eq!(beat, beat!(1, 1, 4));
+    }
+
+    #[test]
+    fn test_from_str_zero_denominator() {
+        let result: Result<Beat, _> = "1/0".parse();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("zero"));
+    }
+
+    #[test]
+    fn test_from_str_invalid_format() {
+        let result: Result<Beat, _> = "abc".parse();
+        assert!(result.is_err());
     }
 }

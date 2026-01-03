@@ -1,0 +1,34 @@
+cli:
+  about: 在不同格式之间转换 Phigros 谱面
+
+  examples: |
+    示例：
+    
+    phichain-converter --rpe RPE.json --phichain chart.json: 将 RPE 谱面 `RPE.json` 转换为名为 `chart.json` 的 Phichain 谱面
+    phichain-converter --phichain chart.json --official:     将 Phichain 谱面 `chart.json` 转换为名为 `output.json` 的官谱
+
+  format_args:
+    heading: '格式选项 - 必须提供两个格式标志: 前一个用于输入格式，后一个用于输出格式。输出路径是可选的'
+    phichain: 使用 Phichain 谱面作为输入或输出
+    official: 使用官谱作为输入或输出
+    rpe: 使用 RPE 谱面作为输入或输出
+    primitive: 使用基本谱面作为输入或输出
+
+  official_input:
+    heading: '[官谱 => *] - 仅当输入格式为官谱时适用'
+    no_easing_fitting: 禁用缓动拟合
+    easing_fitting_epsilon: 缓动拟合时使用的误差值
+    constant_event_shrink_to: '对于常量事件，将其缩短到的长度 (格式: "分子/分母" 或 "整数+分子/分母" 或 "整数")'
+
+  official_output:
+    heading: '[* => 官谱] - 仅当输出格式为官谱时适用'
+    minimum_beat: 进行事件切割时使用的最小拍数单位
+
+  rpe_input:
+    heading: '[RPE => *] - 仅当输入格式为 RPE 时适用'
+    remove_fake_notes: 若开启，带有 `isFake = true` 的音符会被移除。否则，它们将被保留但被视为真音符
+    remove_ui_controls: 若开启，带有非空 `attachUI` 的判定线会被移除。否则，它们将被保留但被视为常规判定线
+
+  common_output:
+    heading: 通用输出选项
+    round: 输出数值的小数位数 (适用于事件值和音符 x 坐标)
