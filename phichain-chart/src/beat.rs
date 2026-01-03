@@ -56,8 +56,9 @@ impl<'de> Deserialize<'de> for Beat {
 
 impl Hash for Beat {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.0.hash(state);
-        self.1.reduced().hash(state);
+        let reduced = self.reduced();
+        reduced.0.hash(state);
+        reduced.1.hash(state);
     }
 }
 
@@ -249,6 +250,7 @@ impl Ord for Beat {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::hash::{DefaultHasher, Hasher};
 
     #[test]
     fn test_eq() {
@@ -384,5 +386,26 @@ mod tests {
         assert_eq!(beat!(-2, 1, 4).abs(), beat!(1, 3, 4));
         // zero stays zero
         assert_eq!(beat!().abs(), beat!());
+    }
+
+    #[test]
+    fn test_hash_eq_consistency() {
+        fn hash(beat: Beat) -> u64 {
+            let mut hasher = DefaultHasher::new();
+            beat.hash(&mut hasher);
+            hasher.finish()
+        }
+
+        // Beat(1, 3/2) and Beat(2, 1/2) are equal (both represent 2.5)
+        let a = beat!(1, 3, 2);
+        let b = beat!(2, 1, 2);
+        assert_eq!(a, b);
+        assert_eq!(hash(a), hash(b));
+
+        // Beat(0, 4/4) and Beat(1, 0/1) are equal (both represent 1.0)
+        let c = beat!(0, 4, 4);
+        let d = beat!(1);
+        assert_eq!(c, d);
+        assert_eq!(hash(c), hash(d));
     }
 }
