@@ -211,10 +211,7 @@ impl AddAssign for Beat {
 
 impl CheckedAdd for Beat {
     fn checked_add(&self, rhs: &Self) -> Option<Self> {
-        Some(Self(
-            self.0.checked_add(rhs.0)?,
-            self.1.checked_add(&rhs.1)?,
-        ))
+        Some(Self(self.0.checked_add(rhs.0)?, self.1.checked_add(&rhs.1)?).reduced())
     }
 }
 
@@ -407,5 +404,19 @@ mod tests {
         let d = beat!(1);
         assert_eq!(c, d);
         assert_eq!(hash(c), hash(d));
+    }
+
+    #[test]
+    fn test_checked_add_consistent_with_add() {
+        let a = beat!(1, 3, 4);
+        let b = beat!(2, 1, 2);
+
+        // CheckedAdd should return the same result as Add
+        let add_result = a + b;
+        let checked_add_result = a.checked_add(&b).unwrap();
+        assert_eq!(add_result, checked_add_result);
+
+        // Both should be reduced
+        assert_eq!(add_result, beat!(4, 1, 4));
     }
 }
