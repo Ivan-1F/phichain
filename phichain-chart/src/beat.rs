@@ -127,7 +127,7 @@ impl From<Beat> for f32 {
 
 impl From<Beat> for Rational32 {
     fn from(val: Beat) -> Self {
-        Rational32::new(val.0 * val.1.denom() + val.1.numer(), val.denom())
+        Rational32::from_integer(val.0) + val.1
     }
 }
 
