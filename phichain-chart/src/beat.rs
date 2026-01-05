@@ -263,9 +263,19 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn test_with_zero() {
+    fn test_with_zero_denom_0_0() {
         beat!(0, 0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_with_zero_denom_1_0() {
         beat!(1, 0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_with_zero_denom_2_0() {
         beat!(2, 0);
     }
 
