@@ -54,7 +54,6 @@ impl Plugin for TimingPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(ChartTime(0.0))
             .insert_resource(Paused(true))
-            .add_event::<ResumeEvent>()
             .add_event::<SeekEvent>()
             .add_event::<SeekToEvent>()
             .add_hotkey(
@@ -83,13 +82,9 @@ impl Plugin for TimingPlugin {
     }
 }
 
-fn toggle_system(
-    mut commands: Commands,
-    paused: Res<Paused>,
-    mut resume_events: EventWriter<ResumeEvent>,
-) -> Result {
+fn toggle_system(mut commands: Commands, paused: Res<Paused>) -> Result {
     if paused.0 {
-        resume_events.write_default();
+        commands.trigger(ResumeEvent);
     } else {
         commands.trigger(PauseEvent);
     }

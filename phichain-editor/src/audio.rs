@@ -26,7 +26,6 @@ impl Plugin for AudioPlugin {
             .add_systems(
                 Update,
                 (
-                    handle_resume_system,
                     handle_seek_system,
                     handle_seek_to_system,
                     update_seek_system,
@@ -40,7 +39,8 @@ impl Plugin for AudioPlugin {
                             .and(resource_exists::<AudioDuration>),
                     ),
             )
-            .add_observer(handle_pause_system);
+            .add_observer(handle_pause_system)
+            .add_observer(handle_resume_system);
     }
 }
 
@@ -64,23 +64,21 @@ fn handle_pause_system(
     }
 }
 
-/// When receiving [ResumeEvent], resume the audio instance
 fn handle_resume_system(
+    _: Trigger<ResumeEvent>,
+
     handle: Res<InstanceHandle>,
     mut paused: ResMut<Paused>,
     mut game_paused: ResMut<phichain_game::Paused>,
     mut audio_instances: ResMut<Assets<AudioInstance>>,
-    mut events: EventReader<ResumeEvent>,
 
     mut timing: ResMut<Timing>,
 ) {
     if let Some(instance) = audio_instances.get_mut(&handle.0) {
-        for _ in events.read() {
-            instance.resume(AudioTween::default());
-            paused.0 = false;
-            game_paused.0 = false;
-            timing.resume();
-        }
+        instance.resume(AudioTween::default());
+        paused.0 = false;
+        game_paused.0 = false;
+        timing.resume();
     }
 }
 
