@@ -46,7 +46,7 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
 
             let settings = world.resource::<Persistent<EditorSettings>>();
             if settings.general.pause_when_scroll && !world.resource::<Paused>().0 {
-                world.send_event_default::<PauseEvent>();
+                world.trigger(PauseEvent);
             }
         }
     }

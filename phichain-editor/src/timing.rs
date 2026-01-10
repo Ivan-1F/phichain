@@ -54,7 +54,6 @@ impl Plugin for TimingPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(ChartTime(0.0))
             .insert_resource(Paused(true))
-            .add_event::<PauseEvent>()
             .add_event::<ResumeEvent>()
             .add_event::<SeekEvent>()
             .add_event::<SeekToEvent>()
@@ -85,14 +84,14 @@ impl Plugin for TimingPlugin {
 }
 
 fn toggle_system(
+    mut commands: Commands,
     paused: Res<Paused>,
-    mut pause_events: EventWriter<PauseEvent>,
     mut resume_events: EventWriter<ResumeEvent>,
 ) -> Result {
     if paused.0 {
         resume_events.write_default();
     } else {
-        pause_events.write_default();
+        commands.trigger(PauseEvent);
     }
 
     Ok(())

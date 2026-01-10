@@ -26,7 +26,6 @@ impl Plugin for AudioPlugin {
             .add_systems(
                 Update,
                 (
-                    handle_pause_system,
                     handle_resume_system,
                     handle_seek_system,
                     handle_seek_to_system,
@@ -40,29 +39,28 @@ impl Plugin for AudioPlugin {
                             .and(resource_exists::<InstanceHandle>)
                             .and(resource_exists::<AudioDuration>),
                     ),
-            );
+            )
+            .add_observer(handle_pause_system);
     }
 }
 
 // TODO: move this to separate plugin
-/// When receiving [PauseEvent], pause the audio instance
 fn handle_pause_system(
+    _: Trigger<PauseEvent>,
+
     handle: Res<InstanceHandle>,
     mut paused: ResMut<Paused>,
     mut game_paused: ResMut<phichain_game::Paused>,
     mut audio_instances: ResMut<Assets<AudioInstance>>,
-    mut events: EventReader<PauseEvent>,
 
     mut timing: ResMut<Timing>,
 ) {
     if let Some(instance) = audio_instances.get_mut(&handle.0) {
-        for _ in events.read() {
-            instance.pause(AudioTween::default());
-            paused.0 = true;
-            game_paused.0 = true;
+        instance.pause(AudioTween::default());
+        paused.0 = true;
+        game_paused.0 = true;
 
-            timing.pause();
-        }
+        timing.pause();
     }
 }
 
@@ -191,10 +189,11 @@ fn update_playback_rate_system(
 /// Since audio is set to loop mode to prevent entering terminal Stopped state,
 /// we need to pause it when it reaches the end to prevent looping.
 fn auto_pause_at_end_system(
+    mut commands: Commands,
+
     audio_duration: Res<AudioDuration>,
     paused: Res<Paused>,
     timing: Res<Timing>,
-    mut pause_events: EventWriter<PauseEvent>,
 ) {
     if paused.0 {
         return;
@@ -203,6 +202,6 @@ fn auto_pause_at_end_system(
     let max_time = audio_duration.0.as_secs_f32();
 
     if timing.now() >= max_time {
-        pause_events.write_default();
+        commands.trigger(PauseEvent);
     }
 }
