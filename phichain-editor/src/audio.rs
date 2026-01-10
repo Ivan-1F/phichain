@@ -39,13 +39,13 @@ impl Plugin for AudioPlugin {
                             .and(resource_exists::<AudioDuration>),
                     ),
             )
-            .add_observer(handle_pause_system)
-            .add_observer(handle_resume_system);
+            .add_observer(pause_observer)
+            .add_observer(resume_observer);
     }
 }
 
 // TODO: move this to separate plugin
-fn handle_pause_system(
+fn pause_observer(
     _: Trigger<PauseEvent>,
 
     handle: Res<InstanceHandle>,
@@ -64,7 +64,7 @@ fn handle_pause_system(
     }
 }
 
-fn handle_resume_system(
+fn resume_observer(
     _: Trigger<ResumeEvent>,
 
     handle: Res<InstanceHandle>,

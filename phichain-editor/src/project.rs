@@ -40,7 +40,7 @@ impl Plugin for ProjectPlugin {
             .add_systems(Update, load_project_system.run_if(project_not_loaded()))
             .add_event::<UnloadProjectEvent>()
             .add_systems(PreUpdate, unload_project_system.run_if(project_loaded()))
-            .add_observer(handle_project_loading_result_system)
+            .add_observer(project_loading_result_observer)
             .add_action(
                 "phichain.save_project",
                 save_project_system,
@@ -148,7 +148,7 @@ fn load_project_system(
     events.clear();
 }
 
-fn handle_project_loading_result_system(
+fn project_loading_result_observer(
     trigger: Trigger<ProjectLoadingResult>,
 
     mut commands: Commands,
