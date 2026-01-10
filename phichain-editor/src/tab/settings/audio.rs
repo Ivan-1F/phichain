@@ -88,7 +88,7 @@ impl SettingCategory for Audio {
                 |ui| {
                     let response = ui.add(
                         egui::DragValue::new(&mut settings.audio.playback_rate)
-                            .range(0.01..=2.0)
+                            .range(0.01..=1.0)
                             .speed(0.01),
                     );
                     response.drag_stopped() || response.lost_focus()
