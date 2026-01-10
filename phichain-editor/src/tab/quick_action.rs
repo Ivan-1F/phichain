@@ -1,4 +1,3 @@
-use crate::audio::EffectiveMaxTime;
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::settings::{AspectRatio, EditorSettings};
 use crate::timing::{SeekToEvent, Timing};
@@ -110,7 +109,7 @@ pub fn quick_action(ui: &mut Ui, world: &mut World) {
 
         ui.horizontal(|ui| {
             ui.add(
-                egui::Slider::new(&mut second_binding, 0.0..=duration.effective_max_time())
+                egui::Slider::new(&mut second_binding, 0.0..=duration.0.as_secs_f32())
                     .show_value(false),
             );
             ui.add_sized(
@@ -118,9 +117,9 @@ pub fn quick_action(ui: &mut Ui, world: &mut World) {
                 egui::DragValue::new(&mut second_binding)
                     .speed(0.05)
                     .custom_formatter(|x, _| format!("{x:.2}"))
-                    .range(0.0..=duration.effective_max_time()),
+                    .range(0.0..=duration.0.as_secs_f32()),
             );
-            let max_beat = bpm_list.beat_at(duration.effective_max_time());
+            let max_beat = bpm_list.beat_at(duration.0.as_secs_f32());
             ui.add_sized(
                 vec2(55.0, 18.0),
                 egui::DragValue::new(&mut beat_binding)

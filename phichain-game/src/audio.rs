@@ -62,7 +62,9 @@ pub fn load_audio(bytes: AudioBytes, commands: &mut Commands) -> Result<(), Load
             world.resource_scope(|world, audio: Mut<Audio>| {
                 let handle = audios.add(source);
                 world.insert_resource(AudioAssetId(handle.id()));
-                let instance_handle = audio.play(handle).paused().handle();
+                // Use looped() to prevent audio from entering terminal Stopped state
+                // The editor will auto-pause at the end instead
+                let instance_handle = audio.play(handle).looped().paused().handle();
                 world.insert_resource(InstanceHandle(instance_handle));
             });
         });
