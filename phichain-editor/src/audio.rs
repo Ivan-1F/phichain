@@ -3,7 +3,7 @@ use crate::timing::{SeekToEvent, Timing};
 use crate::utils::compat::ControlKeyExt;
 use crate::{
     project::project_loaded,
-    timing::{PauseEvent, Paused, ResumeEvent, SeekEvent},
+    timing::{Pause, Paused, Resume, SeekEvent},
 };
 use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
@@ -46,7 +46,7 @@ impl Plugin for AudioPlugin {
 
 // TODO: move this to separate plugin
 fn pause_observer(
-    _: Trigger<PauseEvent>,
+    _: Trigger<Pause>,
 
     handle: Res<InstanceHandle>,
     mut paused: ResMut<Paused>,
@@ -65,7 +65,7 @@ fn pause_observer(
 }
 
 fn resume_observer(
-    _: Trigger<ResumeEvent>,
+    _: Trigger<Resume>,
 
     handle: Res<InstanceHandle>,
     mut paused: ResMut<Paused>,
@@ -200,6 +200,6 @@ fn auto_pause_at_end_system(
     let max_time = audio_duration.0.as_secs_f32();
 
     if timing.now() >= max_time {
-        commands.trigger(PauseEvent);
+        commands.trigger(Pause);
     }
 }

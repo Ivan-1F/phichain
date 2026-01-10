@@ -56,7 +56,7 @@ impl Plugin for ActionPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ActionRegistry>()
             .add_systems(Update, handle_action_hotkey_system.in_set(GameSet))
-            .add_event::<RunActionEvent>()
+            .add_event::<RunAction>()
             .add_observer(run_action_observer);
     }
 }
@@ -149,9 +149,9 @@ fn handle_action_hotkey_system(world: &mut World) {
 }
 
 #[derive(Debug, Clone, Event)]
-pub struct RunActionEvent(pub Identifier);
+pub struct RunAction(pub Identifier);
 
-fn run_action_observer(trigger: Trigger<RunActionEvent>, world: &mut World) {
+fn run_action_observer(trigger: Trigger<RunAction>, world: &mut World) {
     world.resource_scope(|world, mut registry: Mut<ActionRegistry>| {
         registry.run_action(world, trigger.event().0.clone());
     });

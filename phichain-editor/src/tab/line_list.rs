@@ -1,4 +1,4 @@
-use crate::action::RunActionEvent;
+use crate::action::RunAction;
 use crate::editing::command::line::{CreateLine, MoveLineAsChild, RemoveLine};
 use crate::editing::command::{CommandSequence, EditorCommand};
 use crate::editing::DoCommandEvent;
@@ -165,7 +165,7 @@ impl<'w, 's> LineList<'w, 's> {
         if create_line {
             self.params
                 .commands
-                .trigger(RunActionEvent("phichain.create_line".into()));
+                .trigger(RunAction("phichain.create_line".into()));
         }
     }
 

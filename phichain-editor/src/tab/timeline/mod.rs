@@ -5,7 +5,7 @@ use egui::Ui;
 use crate::settings::EditorSettings;
 use crate::timeline::settings::TimelineSettings;
 use crate::timeline::Timeline;
-use crate::timing::{PauseEvent, Paused, SeekEvent};
+use crate::timing::{Pause, Paused, SeekEvent};
 use crate::utils::convert::BevyEguiConvert;
 use crate::{spectrogram, timeline};
 use phichain_chart::note::Note;
@@ -46,7 +46,7 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
 
             let settings = world.resource::<Persistent<EditorSettings>>();
             if settings.general.pause_when_scroll && !world.resource::<Paused>().0 {
-                world.trigger(PauseEvent);
+                world.trigger(Pause);
             }
         }
     }

@@ -20,11 +20,11 @@ pub struct Paused(pub bool);
 
 /// Pause the chart
 #[derive(Event, Default)]
-pub struct PauseEvent;
+pub struct Pause;
 
 /// Resume the chart
 #[derive(Event, Default)]
-pub struct ResumeEvent;
+pub struct Resume;
 
 /// Seek the chart by certain delta
 #[derive(Event, Default)]
@@ -84,9 +84,9 @@ impl Plugin for TimingPlugin {
 
 fn toggle_system(mut commands: Commands, paused: Res<Paused>) -> Result {
     if paused.0 {
-        commands.trigger(ResumeEvent);
+        commands.trigger(Resume);
     } else {
-        commands.trigger(PauseEvent);
+        commands.trigger(Pause);
     }
 
     Ok(())

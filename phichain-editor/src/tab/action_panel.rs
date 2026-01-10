@@ -1,4 +1,4 @@
-use crate::action::{ActionRegistrationExt, ActionRegistry, RunActionEvent};
+use crate::action::{ActionRegistrationExt, ActionRegistry, RunAction};
 use crate::hotkey::modifier::Modifier;
 use crate::hotkey::{Hotkey, HotkeyRegistry};
 use crate::identifier::Identifier;
@@ -170,7 +170,7 @@ fn action_panel_ui_system(
                         commands.entity(entity).despawn();
                         match entry.kind {
                             ActionPanelEntryKind::Action => {
-                                commands.trigger(RunActionEvent(entry.id.clone()));
+                                commands.trigger(RunAction(entry.id.clone()));
                             }
                             ActionPanelEntryKind::Tab => {
                                 let id = entry.id.clone();
@@ -223,7 +223,7 @@ fn action_panel_ui_system(
                         commands.entity(entity).despawn();
                         match entry.kind {
                             ActionPanelEntryKind::Action => {
-                                commands.trigger(RunActionEvent(entry.id.clone()));
+                                commands.trigger(RunAction(entry.id.clone()));
                             }
                             ActionPanelEntryKind::Tab => {
                                 let id = entry.id.clone();
