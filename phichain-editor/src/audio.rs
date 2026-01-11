@@ -1,6 +1,5 @@
 use crate::settings::EditorSettings;
 use crate::timing::{SeekToEvent, Timing};
-use crate::utils::compat::ControlKeyExt;
 use crate::{
     project::project_loaded,
     timing::{Pause, Paused, Resume, SeekEvent},
@@ -117,21 +116,11 @@ fn update_seek_system(
 ///
 /// No immediate seeking occurs here - all timing changes are processed by [`update_seek_system`]
 fn handle_seek_system(
-    keyboard: Res<ButtonInput<KeyCode>>,
-
     mut events: EventReader<SeekEvent>,
     mut seek_target_time: ResMut<SeekDeltaTime>,
 ) {
     for event in events.read() {
-        // holding Control will seek faster and holding Alt will seek slower
-        let mut factor = 1.0;
-        if keyboard.pressed(KeyCode::control()) {
-            factor *= 2.0;
-        }
-        if keyboard.pressed(KeyCode::AltLeft) {
-            factor /= 2.0;
-        }
-        seek_target_time.0 += event.0 * factor;
+        seek_target_time.0 += event.0;
     }
 }
 
