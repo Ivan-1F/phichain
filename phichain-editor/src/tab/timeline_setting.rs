@@ -23,8 +23,8 @@ pub fn timeline_setting_tab(In(mut ui): In<Ui>, world: &mut World) {
             ui.label(t!("tab.timeline_setting.zoom"));
             ui.add(
                 egui::DragValue::new(&mut timeline_settings.zoom)
-                    .range(0.1..=f32::MAX)
-                    .speed(0.01),
+                    .range(0.1..=5.0)
+                    .speed(0.02),
             );
             ui.end_row();
 

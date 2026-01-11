@@ -29,24 +29,34 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
 
     let is_hovering = ui.rect_contains_pointer(clip_rect);
     if is_hovering {
-        let scroll_delta = ui.ctx().input_mut(|input| {
+        let (scroll_delta, is_command_pressed) = ui.ctx().input_mut(|input| {
             // using `raw_scroll_delta` since we handle smoothing ourselves
             let delta = input.raw_scroll_delta.y;
             // clear scroll delta to prevent other components from processing it
             input.raw_scroll_delta.y = 0.0;
 
-            delta
+            // `command` is Ctrl on Windows/Linux, Command on macOS
+            let command_pressed = input.modifiers.command;
+            (delta, command_pressed)
         });
 
         if scroll_delta != 0.0 {
-            let settings = world.resource::<Persistent<EditorSettings>>();
-            world.send_event(SeekEvent(
-                scroll_delta / 5000.0 * settings.general.timeline_scroll_sensitivity,
-            ));
+            if is_command_pressed {
+                // Ctrl/Command + scroll: adjust timeline zoom
+                let mut timeline_settings = world.resource_mut::<TimelineSettings>();
+                let zoom_factor = if scroll_delta > 0.0 { 1.02 } else { 1.0 / 1.02 };
+                timeline_settings.zoom = (timeline_settings.zoom * zoom_factor).clamp(0.1, 5.0);
+            } else {
+                // normal scroll: seek
+                let settings = world.resource::<Persistent<EditorSettings>>();
+                world.send_event(SeekEvent(
+                    scroll_delta / 5000.0 * settings.general.timeline_scroll_sensitivity,
+                ));
 
-            let settings = world.resource::<Persistent<EditorSettings>>();
-            if settings.general.pause_when_scroll && !world.resource::<Paused>().0 {
-                world.trigger(Pause);
+                let settings = world.resource::<Persistent<EditorSettings>>();
+                if settings.general.pause_when_scroll && !world.resource::<Paused>().0 {
+                    world.trigger(Pause);
+                }
             }
         }
     }
