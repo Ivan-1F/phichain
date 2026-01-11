@@ -12,9 +12,7 @@ use crate::timeline::note::NoteTimeline;
 use crate::timeline::settings::TimelineSettings;
 use crate::timing::ChartTime;
 use bevy::app::{App, Plugin};
-use bevy::ecs::component::HookContext;
 use bevy::ecs::system::SystemParam;
-use bevy::ecs::world::DeferredWorld;
 use bevy::math::Vec2;
 use bevy::prelude::*;
 use egui::{Rect, Ui};
@@ -34,11 +32,8 @@ impl Plugin for TimelinePlugin {
                 Vec2::ZERO,
                 Vec2::ZERO,
             )))
-            .insert_resource(TimelineSettings::default());
-
-        app.world_mut()
-            .register_component_hooks::<Line>()
-            .on_remove(clean_dangle_timelines);
+            .insert_resource(TimelineSettings::default())
+            .add_observer(clean_dangle_timelines_observer);
     }
 }
 
@@ -334,17 +329,18 @@ pub mod common {
     }
 }
 
-fn clean_dangle_timelines(mut world: DeferredWorld, context: HookContext) {
-    let mut timeline_settings = world.resource_mut::<TimelineSettings>();
-
+fn clean_dangle_timelines_observer(
+    trigger: Trigger<OnRemove, Line>,
+    mut timeline_settings: ResMut<TimelineSettings>,
+) {
     if let Some(index) =
         timeline_settings
             .container
             .timelines
             .iter()
             .position(|x| match &x.timeline {
-                TimelineItem::Note(timeline) => timeline.0 == Some(context.entity),
-                TimelineItem::Event(timeline) => timeline.0 == Some(context.entity),
+                TimelineItem::Note(timeline) => timeline.0 == Some(trigger.target()),
+                TimelineItem::Event(timeline) => timeline.0 == Some(trigger.target()),
             })
     {
         info!("Removed timeline due to removal of line");
