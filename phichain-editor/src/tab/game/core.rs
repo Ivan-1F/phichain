@@ -2,8 +2,6 @@ use crate::editing::pending::Pending;
 use crate::project::project_loaded;
 use crate::selection::{Selected, SelectedLine};
 use crate::settings::{EditorSettings, ShowLineAnchorOption};
-use bevy::ecs::component::HookContext;
-use bevy::ecs::world::DeferredWorld;
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
 use bevy_prototype_lyon::prelude::*;
@@ -32,11 +30,8 @@ impl Plugin for CoreGamePlugin {
                     .after(phichain_game::core::update_line_system)
                     .run_if(project_loaded()),
             )
-            .add_systems(Update, update_anchor_marker_system.run_if(project_loaded()));
-
-        app.world_mut()
-            .register_component_hooks::<Line>()
-            .on_add(create_anchor_marker);
+            .add_systems(Update, update_anchor_marker_system.run_if(project_loaded()))
+            .add_observer(create_anchor_marker_observer);
     }
 }
 
@@ -113,13 +108,13 @@ fn update_line_tint_system(
 #[derive(Debug, Component)]
 struct AnchorMarker;
 
-fn create_anchor_marker(mut world: DeferredWorld, context: HookContext) {
+fn create_anchor_marker_observer(trigger: Trigger<OnAdd, Line>, mut commands: Commands) {
     let shape = shapes::Circle {
         radius: 4.0,
         ..default()
     };
 
-    world.commands().entity(context.entity).with_children(|p| {
+    commands.entity(trigger.target()).with_children(|p| {
         p.spawn((
             AnchorMarker,
             ShapeBuilder::with(&shape)
