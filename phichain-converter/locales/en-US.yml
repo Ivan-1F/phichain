@@ -12,7 +12,6 @@ cli:
     phichain: Use Phichain chart as input or output
     official: Use official chart as input or output
     rpe: Use RPE chart as input or output
-    primitive: Use primitive chart as input or output
 
   official_input:
     heading: '[OFFICIAL => *] - Applicable only when the input format is official'

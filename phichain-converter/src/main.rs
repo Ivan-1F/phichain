@@ -23,7 +23,6 @@ enum Formats {
     Official,
     Phichain,
     Rpe,
-    Primitive,
 }
 
 #[derive(Serialize)]
@@ -98,7 +97,6 @@ define_format_args! {
     phichain => Phichain,
     official => Official,
     rpe => Rpe,
-    primitive => Primitive,
 }
 
 /// Extract the order of format flags from command line arguments
@@ -216,9 +214,6 @@ fn convert(args: ParsedArgs) -> anyhow::Result<()> {
         Formats::Official => Chart::Official(serde_json::from_reader(file)?),
         Formats::Phichain => Chart::Phichain(serde_json::from_reader(file)?),
         Formats::Rpe => Chart::Rpe(serde_json::from_reader(file)?),
-        Formats::Primitive => {
-            unimplemented!()
-        }
     };
 
     let phichain = match input {
@@ -234,9 +229,6 @@ fn convert(args: ParsedArgs) -> anyhow::Result<()> {
         )?),
         Formats::Phichain => Chart::Phichain(PhichainChart::from_phichain(phichain, &())?),
         Formats::Rpe => Chart::Rpe(RpeChart::from_phichain(phichain, &())?),
-        Formats::Primitive => {
-            unimplemented!()
-        }
     };
 
     let output = output.apply_common_output_options(&args.common_output_options.into());
