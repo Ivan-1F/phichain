@@ -91,6 +91,7 @@ pub struct RpeJudgeLine {
     pub event_layers: Vec<RpeEventLayer>,
     #[serde(default)]
     pub notes: Vec<RpeNote>,
+    pub num_of_notes: usize,
     /// Attach this line to a UI element
     /// Lines with this field are not actual lines but UI control lines
     #[serde(default, rename = "attachUI")]
