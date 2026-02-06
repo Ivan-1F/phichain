@@ -1,6 +1,5 @@
 mod compile;
 pub mod official;
-pub mod primitive;
 pub mod rpe;
 
 use serde::de::DeserializeOwned;
