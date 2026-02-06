@@ -105,6 +105,12 @@ fn push_line(line: &SerializedLine, parent_index: Option<usize>, target: &mut Ve
         rotate_with_father: true,
         event_layers: vec![event_layer],
         notes: line.notes.iter().map(note).collect(),
+        // does not include holds, ref: https://teamflos.github.io/phira-docs/chart-standard/chart-format/rpe/judgeLine.html
+        num_of_notes: line
+            .notes
+            .iter()
+            .filter(|note| !note.kind.is_hold())
+            .count(),
         attach_ui: None,
     });
 
