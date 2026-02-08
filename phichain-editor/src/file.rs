@@ -20,6 +20,7 @@ pub enum PickingKind {
     SelectMusic,
     CreateProject,
     ExportOfficial,
+    ExportRpe,
 }
 
 #[derive(Event, Debug)]
