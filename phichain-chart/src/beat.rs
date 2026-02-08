@@ -82,9 +82,16 @@ impl Hash for Beat {
 
 impl Beat {
     pub fn reduce(&mut self) {
-        let value = Rational32::from_integer(self.0) + self.1;
-        self.0 = value.to_integer();
-        self.1 = value.fract();
+        let denom = i64::from(*self.1.denom());
+        let total = i64::from(self.0) * denom + i64::from(*self.1.numer());
+        let whole = total.div_euclid(denom);
+        let numer = total.rem_euclid(denom);
+
+        self.0 = i32::try_from(whole).expect("reduced whole part out of i32 range");
+        self.1 = Rational32::new(
+            i32::try_from(numer).expect("reduced numerator out of i32 range"),
+            i32::try_from(denom).expect("denominator out of i32 range"),
+        );
     }
 
     pub fn reduced(&self) -> Self {
@@ -417,7 +424,6 @@ mod tests {
         let mut beat = beat!(1, 3, 2);
         beat.reduce();
         assert_eq!(beat, beat!(2, 1, 2));
-        // panic!();
     }
 
     #[test]
@@ -432,6 +438,14 @@ mod tests {
         let beat = beat!(1, -1, 2);
         let reduced = beat.reduced();
         assert_eq!(reduced, beat!(0, 1, 2));
+    }
+
+    #[test]
+    fn test_reduced_negative_large() {
+        let beat = beat!(-31249, -23, 32);
+        let reduced = beat.reduced();
+        assert_eq!(reduced, beat!(-31250, 9, 32));
+        assert!(reduced.numer() >= 0);
     }
 
     #[test]

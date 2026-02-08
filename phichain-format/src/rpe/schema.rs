@@ -23,13 +23,14 @@ pub enum RpeNoteKind {
 pub struct RpeBeat(pub i32, pub i32, pub i32);
 
 impl From<RpeBeat> for Beat {
-    fn from(val: RpeBeat) -> Self {
-        Beat::new(val.0, Rational32::new(val.1, val.2))
+    fn from(value: RpeBeat) -> Self {
+        Beat::new(value.0, Rational32::new(value.1, value.2))
     }
 }
 
 impl From<Beat> for RpeBeat {
     fn from(value: Beat) -> Self {
+        let value = value.reduced();
         RpeBeat(value.beat(), value.numer(), value.denom())
     }
 }
