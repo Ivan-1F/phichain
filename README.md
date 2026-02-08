@@ -17,5 +17,6 @@
 
 ## 致谢
 
+- [Phira](https://github.com/teamflos/phira)
 - [cmdysj](https://space.bilibili.com/252635690) 的 Re:PhiEdit
 - `assets/image` 和 `assets/audio` 目录下的资源文件来自 [https://github.com/MisaLiu/phi-chart-render], 并且遵循 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) 许可协议
