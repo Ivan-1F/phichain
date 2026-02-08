@@ -72,7 +72,6 @@ fn note(note: &Note) -> RpeNote {
             NoteKind::Flick => RpeNoteKind::Flick,
         },
 
-        // FIXME: using default Default impl
         ..Default::default()
     }
 }

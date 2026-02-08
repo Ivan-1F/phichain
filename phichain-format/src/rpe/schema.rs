@@ -135,21 +135,42 @@ pub struct RpeSpeedEvent {
     pub start_time: RpeBeat,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RpeNote {
+    /// 1 => above, other values => below
     pub above: i32,
+    pub alpha: i32, // ignored, default 255
     pub end_time: RpeBeat,
-    pub position_x: f32,
-    pub speed: f32,
     pub start_time: RpeBeat,
-    pub size: f32,         // ignored
-    pub visible_time: f32, // ignored
-    #[serde(rename = "type")]
-    pub kind: RpeNoteKind,
     /// 1 => fake note, other values => real note
     #[serde(default, rename = "isFake")]
     pub is_fake: i32,
+    pub position_x: f32,
+    pub size: f32, // ignored, default 1.0
+    pub speed: f32,
+    #[serde(rename = "type")]
+    pub kind: RpeNoteKind,
+    pub visible_time: f32, // ignored, default 999999.0000
+    pub y_offset: f32,     // ignored, default 0.0
+}
+
+impl Default for RpeNote {
+    fn default() -> Self {
+        Self {
+            above: 1, // default above
+            alpha: 255,
+            end_time: Default::default(),
+            start_time: Default::default(),
+            is_fake: 0, // default real
+            position_x: 0.0,
+            size: 1.0,
+            speed: 1.0,
+            kind: Default::default(),
+            visible_time: 999999.0,
+            y_offset: 0.0,
+        }
+    }
 }
 
 pub static RPE_EASING: [Easing; 30] = [
