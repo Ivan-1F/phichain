@@ -320,7 +320,8 @@ pub fn rpe_to_phichain(rpe: RpeChart, options: &RpeInputOptions) -> PhichainChar
         .judge_line_list
         .into_iter()
         .enumerate()
-        .filter_map(|(index, rpe_line)| {
+        .map(|(index, rpe_line)| {
+            let mut rpe_line = rpe_line.clone();
             // Always warn about UI control lines
             if let Some(attach_ui) = &rpe_line.attach_ui {
                 if options.remove_ui_controls {
@@ -328,7 +329,9 @@ pub fn rpe_to_phichain(rpe: RpeChart, options: &RpeInputOptions) -> PhichainChar
                         "Skipping UI control line with attachUI = {:?} (Phichain doesn't support UI control lines)",
                         attach_ui
                     );
-                    return None;
+                    rpe_line.num_of_notes = 0;
+                    rpe_line.notes.clear();
+                    rpe_line.event_layers.clear();
                 } else {
                     warn!(
                         "Line {} has attachUI = {:?}, but Phichain doesn't support UI control lines. \
@@ -354,7 +357,7 @@ pub fn rpe_to_phichain(rpe: RpeChart, options: &RpeInputOptions) -> PhichainChar
 
             let notes = convert_rpe_notes(&filtered_notes);
             let serialized_line = build_nested_line(index, &rpe_line.name, rpe_line.event_layers, notes, &easing_fn);
-            Some((serialized_line, rpe_line.father, rpe_line.rotate_with_father))
+            (serialized_line, rpe_line.father, rpe_line.rotate_with_father)
         })
         .collect();
 
@@ -372,8 +375,32 @@ pub fn rpe_to_phichain(rpe: RpeChart, options: &RpeInputOptions) -> PhichainChar
     // Build tree structure
     let lines = build_parent_child_tree(lines_with_parent);
 
+    // Remove lines that came from 0-note + 0-eventLayer inputs (e.g. removed UI control lines),
+    // while keeping their children.
+    let lines = remove_empty_placeholder_lines(lines);
+
     phichain.lines = lines;
     phichain
+}
+
+fn is_empty_placeholder_line(line: &SerializedLine) -> bool {
+    line.notes.is_empty()
+        && line.curve_note_tracks.is_empty()
+        && line.events == SerializedLine::default().events
+}
+
+fn remove_empty_placeholder_lines(lines: Vec<SerializedLine>) -> Vec<SerializedLine> {
+    fn remove_from_line(mut line: SerializedLine) -> Vec<SerializedLine> {
+        line.children = remove_empty_placeholder_lines(line.children);
+
+        if is_empty_placeholder_line(&line) {
+            line.children
+        } else {
+            vec![line]
+        }
+    }
+
+    lines.into_iter().flat_map(remove_from_line).collect()
 }
 
 /// Build a tree structure from flat list of lines with parent indices
