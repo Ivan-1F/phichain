@@ -319,7 +319,10 @@ audio_setting:
 export:
   official:
     success: Successfully exported to %{path}
-    failed: 'Failed to export official chart: %{path}'
+    failed: 'Failed to export official chart: %{error}'
+  rpe:
+    success: Successfully exported to %{path}
+    failed: 'Failed to export RPE chart: %{error}'
 
 game:
   aspect_ratio:
@@ -361,6 +364,7 @@ action:
   phichain.reset_zoom: Reset Zoom to 100%
 
   phichain.export_as_official: Export as Official
+  phichain.export_as_rpe: Export as RPE
 
   phichain.save_layout_preset: Save Current Layout as Preset
 

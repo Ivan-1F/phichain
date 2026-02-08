@@ -319,7 +319,10 @@ audio_setting:
 export:
   official:
     success: 已导出至 %{path}
-    failed: '导出为官谱时发生错误: %{path}'
+    failed: '导出为官谱时发生错误: %{error}'
+  rpe:
+    success: 已导出至 %{path}
+    failed: '导出为 RPE 时发生错误: %{error}'
 
 game:
   aspect_ratio:
@@ -361,6 +364,7 @@ action:
   phichain.reset_zoom: 重置缩放至 100%
 
   phichain.export_as_official: 导出为官谱
+  phichain.export_as_rpe: 导出为 RPE 谱面
 
   phichain.save_layout_preset: 保存当前布局为预设
 
