@@ -210,7 +210,11 @@ pub fn official_to_phichain(
                     }
                 }
 
-                note.speed /= speed / 9.0 * 2.0;
+                if speed == 0.0 {
+                    note.speed = 0.0;
+                } else {
+                    note.speed /= speed / 9.0 * 2.0;
+                }
             }
         }
 
