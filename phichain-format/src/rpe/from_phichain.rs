@@ -4,19 +4,54 @@ use crate::rpe::schema::{
     RpeNoteKind, RpeSpeedEvent, RPE_EASING,
 };
 use phichain_chart::easing::Easing;
-use phichain_chart::event::LineEventKind;
+use phichain_chart::event::{LineEvent, LineEventKind};
 use phichain_chart::note::{Note, NoteKind};
 use phichain_chart::serialization::{PhichainChart, SerializedLine};
 use tracing::warn;
 
-fn easing(easing: Easing) -> i32 {
-    RPE_EASING
-        .iter()
-        .position(|x| x == &easing)
-        .unwrap_or_else(|| {
-            warn!("Unsupported easing type: {}", easing);
-            0
-        }) as i32
+struct RpeEasingInfo {
+    easing_type: i32,
+    bezier: i32,
+    bezier_points: [f32; 4],
+}
+
+fn easing(easing: Easing) -> RpeEasingInfo {
+    match easing {
+        // RPE custom bezier: easingType = 1 + bezier = 1 + bezierPoints
+        Easing::Custom(a, b, c, d) => RpeEasingInfo {
+            easing_type: 1,
+            bezier: 1,
+            bezier_points: [a, b, c, d],
+        },
+        _ => {
+            let easing_type = RPE_EASING
+                .iter()
+                .position(|x| x == &easing)
+                .unwrap_or_else(|| {
+                    warn!("Unsupported easing type: {}", easing);
+                    0
+                }) as i32;
+            RpeEasingInfo {
+                easing_type,
+                bezier: 0,
+                bezier_points: [0.0, 0.0, 0.0, 0.0],
+            }
+        }
+    }
+}
+
+fn common_event_from_line_event(event: &LineEvent) -> RpeCommonEvent<f32> {
+    let easing_info = easing(event.value.easing());
+
+    RpeCommonEvent {
+        bezier: easing_info.bezier,
+        bezier_points: easing_info.bezier_points,
+        easing_type: easing_info.easing_type,
+        start: event.value.start(),
+        start_time: event.start_beat.into(),
+        end: event.value.end(),
+        end_time: event.end_beat.into(),
+    }
 }
 
 fn note(note: &Note) -> RpeNote {
@@ -56,16 +91,7 @@ fn event_layer_from_line(line: &SerializedLine) -> RpeEventLayer {
                 });
             }
             _ => {
-                let rpe_event = RpeCommonEvent {
-                    easing_type: easing(event.value.easing()),
-                    start: event.value.start(),
-                    start_time: event.start_beat.into(),
-                    end: event.value.end(),
-                    end_time: event.end_beat.into(),
-
-                    // FIXME: using default Default impl
-                    ..Default::default()
-                };
+                let rpe_event = common_event_from_line_event(event);
 
                 match event.kind {
                     LineEventKind::X => {
@@ -78,13 +104,15 @@ fn event_layer_from_line(line: &SerializedLine) -> RpeEventLayer {
                         event_layer.rotate_events.push(rpe_event);
                     }
                     LineEventKind::Opacity => {
+                        let easing_info = easing(event.value.easing());
                         event_layer.alpha_events.push(RpeCommonEvent {
-                            easing_type: easing(event.value.easing()),
+                            bezier: easing_info.bezier,
+                            bezier_points: easing_info.bezier_points,
+                            easing_type: easing_info.easing_type,
                             start: event.value.start() as i32,
                             start_time: event.start_beat.into(),
                             end: event.value.end() as i32,
                             end_time: event.end_beat.into(),
-                            ..Default::default()
                         });
                     }
                     _ => unreachable!(),
