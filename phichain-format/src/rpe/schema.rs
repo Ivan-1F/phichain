@@ -74,28 +74,69 @@ where
     Ok(layers.into_iter().flatten().collect())
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RpeJudgeLine {
+    #[serde(rename = "Group")]
+    pub group: i32,
+
     /// The name of the line
     #[serde(rename = "Name")]
     pub name: String,
 
-    /// The parent line; -1 indicates no parent
-    pub father: i32,
-    /// Does the child line inherit the parent line's rotation angle
-    #[serde(default, rename = "rotateWithFather")]
-    pub rotate_with_father: bool,
+    #[serde(rename = "Texture")]
+    pub texture: String, // ignored
+    pub anchor: (f32, f32), // ignored
+
     /// Before a certain version, the field will be `null` if there's no events in this layer (ref: https://teamflos.github.io/phira-docs/chart-standard/chart-format/rpe/judgeLine.html)
     #[serde(default, deserialize_with = "deserialize_event_layers")]
     pub event_layers: Vec<RpeEventLayer>,
+
+    /// The parent line; -1 indicates no parent
+    pub father: i32,
+
+    #[serde(default, rename = "isCover")]
+    pub is_cover: i32,
+
     #[serde(default)]
     pub notes: Vec<RpeNote>,
+    #[serde(default, rename = "numOfNotes")]
     pub num_of_notes: usize,
+
+    #[serde(default, rename = "zOrder")]
+    pub z_order: i32,
+
     /// Attach this line to a UI element
     /// Lines with this field are not actual lines but UI control lines
     #[serde(default, rename = "attachUI")]
     pub attach_ui: Option<String>,
+
+    #[serde(default, rename = "isGif")]
+    pub is_gif: bool,
+
+    /// Does the child line inherit the parent line's rotation angle
+    #[serde(default, rename = "rotateWithFather")]
+    pub rotate_with_father: bool,
+}
+
+impl Default for RpeJudgeLine {
+    fn default() -> Self {
+        Self {
+            group: 0,
+            name: "Untitled".to_string(),
+            texture: "line.png".to_string(),
+            anchor: (0.5, 0.5),
+            event_layers: Default::default(),
+            father: -1,
+            is_cover: 1,
+            notes: Default::default(),
+            num_of_notes: 0,
+            z_order: 0,
+            attach_ui: None,
+            is_gif: false,
+            rotate_with_father: true,
+        }
+    }
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]

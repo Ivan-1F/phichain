@@ -143,7 +143,8 @@ fn push_line(line: &SerializedLine, parent_index: Option<usize>, target: &mut Ve
             .iter()
             .filter(|note| !note.kind.is_hold())
             .count(),
-        attach_ui: None,
+
+        ..Default::default()
     });
 
     for child in &line.children {
