@@ -101,7 +101,12 @@ fn event_layer_from_line(line: &SerializedLine) -> RpeEventLayer {
                         event_layer.move_y_events.push(rpe_event);
                     }
                     LineEventKind::Rotation => {
-                        event_layer.rotate_events.push(rpe_event);
+                        // RPE rotation uses opposite sign convention
+                        event_layer.rotate_events.push(RpeCommonEvent {
+                            start: -rpe_event.start,
+                            end: -rpe_event.end,
+                            ..rpe_event
+                        });
                     }
                     LineEventKind::Opacity => {
                         let easing_info = easing(event.value.easing());
