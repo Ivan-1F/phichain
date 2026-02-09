@@ -199,7 +199,7 @@ fn build_nested_line(
         // No meaningful event layers, create a line with default events and notes
         return SerializedLine {
             line: Line {
-                name: format_line_name(line_name),
+                name: format_line_name(""),
             },
             notes,
             ..Default::default()
