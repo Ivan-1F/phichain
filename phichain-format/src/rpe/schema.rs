@@ -78,15 +78,16 @@ where
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RpeJudgeLine {
-    #[serde(rename = "Group")]
+    #[serde(default, rename = "Group")]
     pub group: i32,
 
     /// The name of the line
-    #[serde(rename = "Name")]
+    #[serde(default, rename = "Name")]
     pub name: String,
 
-    #[serde(rename = "Texture")]
+    #[serde(default, rename = "Texture")]
     pub texture: String, // ignored
+    #[serde(default)]
     pub anchor: (f32, f32), // ignored
 
     /// Before a certain version, the field will be `null` if there's no events in this layer (ref: https://teamflos.github.io/phira-docs/chart-standard/chart-format/rpe/judgeLine.html)
@@ -94,6 +95,7 @@ pub struct RpeJudgeLine {
     pub event_layers: Vec<RpeEventLayer>,
 
     /// The parent line; -1 indicates no parent
+    #[serde(default)]
     pub father: i32,
 
     #[serde(default, rename = "isCover")]
@@ -181,7 +183,9 @@ pub struct RpeSpeedEvent {
 #[serde(rename_all = "camelCase")]
 pub struct RpeNote {
     /// 1 => above, other values => below
+    #[serde(default)]
     pub above: i32,
+    #[serde(default)]
     pub alpha: i32, // ignored, default 255
     pub end_time: RpeBeat,
     pub start_time: RpeBeat,
@@ -189,11 +193,14 @@ pub struct RpeNote {
     #[serde(default, rename = "isFake")]
     pub is_fake: i32,
     pub position_x: f32,
+    #[serde(default)]
     pub size: f32, // ignored, default 1.0
     pub speed: f32,
     #[serde(rename = "type")]
     pub kind: RpeNoteKind,
+    #[serde(default)]
     pub visible_time: f32, // ignored, default 999999.0000
+    #[serde(default)]
     pub y_offset: f32,     // ignored, default 0.0
 }
 
