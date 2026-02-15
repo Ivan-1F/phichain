@@ -201,7 +201,7 @@ pub struct RpeNote {
     #[serde(default)]
     pub visible_time: f32, // ignored, default 999999.0000
     #[serde(default)]
-    pub y_offset: f32,     // ignored, default 0.0
+    pub y_offset: f32, // ignored, default 0.0
 }
 
 impl Default for RpeNote {
