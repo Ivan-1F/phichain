@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.86"
-clap = { version = "4.5.4", features = ["derive"] }
+clap = { version = "4.5.4", features = ["derive", "cargo"] }
 o2o = "0.5.4"
 phichain-chart = { path = "../phichain-chart" }
 phichain-format = { path = "../phichain-format" }
