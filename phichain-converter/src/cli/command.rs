@@ -1,5 +1,6 @@
 use clap::{command, value_parser, Arg, ArgAction, Command, ValueEnum};
 use phichain_chart::beat::Beat;
+use std::path::PathBuf;
 
 #[derive(ValueEnum, Debug, Clone)]
 #[clap(rename_all = "kebab_case")]
@@ -25,9 +26,11 @@ pub fn command() -> Command {
                 .short('i')
                 .action(ArgAction::Append)
                 .required(true)
+                .value_parser(value_parser!(PathBuf))
                 .help("Input file"),
             Arg::new("output")
                 .action(ArgAction::Set)
+                .value_parser(value_parser!(PathBuf))
                 .help("Output file"),
         ])
         .next_help_heading("Per-file options - Common")
