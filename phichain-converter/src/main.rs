@@ -1,5 +1,6 @@
 mod options;
 mod utils;
+mod cli;
 
 use crate::options::{
     CliCommonOutputOptions, CliOfficialInputOptions, CliOfficialOutputOptions, CliRpeInputOptions,
@@ -269,6 +270,10 @@ fn main() {
     tracing_subscriber::fmt().init();
 
     rust_i18n::set_locale(&locale());
+
+    cli::command::command().get_matches();
+
+    return;
 
     let args = Args::parse();
     let parsed_args = match args.parse_args(&extract_format_order()) {
