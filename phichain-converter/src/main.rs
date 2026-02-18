@@ -89,66 +89,34 @@ pub struct Args {
     common_output_options: CliCommonOutputOptions,
 }
 
-#[derive(Debug, Clone)]
-struct ParsedArgs {
-    input: Option<Format>,
-    input_path: PathBuf,
-
-    output: Format,
-    output_path: PathBuf,
-
-    official_input_options: CliOfficialInputOptions,
-    official_output_options: CliOfficialOutputOptions,
-    rpe_input_options: CliRpeInputOptions,
-    common_output_options: CliCommonOutputOptions,
-}
-
-impl From<Args> for ParsedArgs {
-    fn from(value: Args) -> Self {
-        Self {
-            input: value.from,
-            input_path: value.input,
-            output: value.to,
-            output_path: value.output,
-            official_input_options: value.official_input_options,
-            official_output_options: value.official_output_options,
-            rpe_input_options: value.rpe_input_options,
-            common_output_options: value.common_output_options,
-        }
-    }
-}
-
-fn convert(args: ParsedArgs) -> anyhow::Result<()> {
-    if !args.input_path.exists() {
-        anyhow::bail!("No such file: {}", args.input_path.display());
+fn convert(args: Args) -> anyhow::Result<()> {
+    if !args.input.exists() {
+        bail!("No such file: {}", args.input.display());
     }
 
-    if args.input_path.is_dir() {
-        anyhow::bail!(
-            "Expected a file, got a directory: {}",
-            args.input_path.display()
-        );
+    if args.input.is_dir() {
+        bail!("Expected a file, got a directory: {}", args.input.display());
     }
 
-    let file = std::fs::File::open(&args.input_path)?;
+    let file = std::fs::File::open(&args.input)?;
 
-    let Some(input) = args.input else {
-        bail!("Inference format is not yet supported")
+    let Some(from) = args.from else {
+        bail!("Format inference is not yet supported")
     };
 
-    let input = match input {
+    let chart = match from {
         Format::Official => Chart::Official(serde_json::from_reader(file)?),
         Format::Phichain => Chart::Phichain(serde_json::from_reader(file)?),
         Format::Rpe => Chart::Rpe(serde_json::from_reader(file)?),
     };
 
-    let phichain = match input {
+    let phichain = match chart {
         Chart::Official(official) => official.to_phichain(&args.official_input_options.into())?,
         Chart::Phichain(phichain) => phichain.to_phichain(&())?,
         Chart::Rpe(rpe) => rpe.to_phichain(&args.rpe_input_options.into())?,
     };
 
-    let output = match args.output {
+    let output = match args.to {
         Format::Official => Chart::Official(OfficialChart::from_phichain(
             phichain,
             &args.official_output_options.into(),
@@ -159,7 +127,7 @@ fn convert(args: ParsedArgs) -> anyhow::Result<()> {
 
     let output = output.apply_common_output_options(&args.common_output_options.into());
 
-    let output_file = std::fs::File::create(&args.output_path)?;
+    let output_file = std::fs::File::create(&args.output)?;
     serde_json::to_writer(output_file, &output)?;
 
     Ok(())
@@ -197,8 +165,7 @@ fn main() {
     rust_i18n::set_locale(&locale());
 
     let args = Args::parse();
-    let parsed_args = ParsedArgs::from(args);
-    if let Err(err) = convert(parsed_args) {
+    if let Err(err) = convert(args) {
         eprintln!("Error: {err}");
         std::process::exit(1);
     }
