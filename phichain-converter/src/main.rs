@@ -1,6 +1,7 @@
 mod options;
 mod utils;
 mod cli;
+mod next;
 
 use crate::options::{
     CliCommonOutputOptions, CliOfficialInputOptions, CliOfficialOutputOptions, CliRpeInputOptions,
@@ -271,7 +272,7 @@ fn main() {
 
     rust_i18n::set_locale(&locale());
 
-    cli::command::command().get_matches();
+    next::cli();
 
     return;
 
