@@ -3,15 +3,12 @@ cli:
 
   examples: |
     Examples:
-    
-    phichain-converter --rpe RPE.json --phichain chart.json: Convert the RPE chart `RPE.json` to a Phichain chart named `chart.json`
-    phichain-converter --phichain chart.json --official:     Convert the Phichain chart `chart.json` to the official format named `output.json`
 
-  format_args:
-    heading: 'Format Options - Must provide two format flags: the first one for the input format and second one for the output format. The output path is optional.'
-    phichain: Use Phichain chart as input or output
-    official: Use official chart as input or output
-    rpe: Use RPE chart as input or output
+    phichain-converter --from rpe --to phichain RPE.json chart.json
+        Convert RPE chart to Phichain format
+
+    phichain-converter --to official chart.json
+        Convert input chart to official format (outputs to output.json)
 
   input: Input
   output: Output
