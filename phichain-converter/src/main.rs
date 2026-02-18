@@ -116,6 +116,7 @@ impl From<Args> for ParsedArgs {
         }
     }
 }
+
 fn convert(args: ParsedArgs) -> anyhow::Result<()> {
     if !args.input_path.exists() {
         anyhow::bail!("No such file: {}", args.input_path.display());
