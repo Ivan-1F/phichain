@@ -20,7 +20,7 @@ pub struct CliOfficialInputOptions {
     constant_event_shrink_to: Beat,
 }
 
-/// CLI wrapper for OfficialInputOptions
+/// CLI wrapper for OfficialOutputOptions
 #[derive(Debug, Clone, clap::Args, o2o)]
 #[map(OfficialOutputOptions)]
 pub struct CliOfficialOutputOptions {
