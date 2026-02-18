@@ -1,10 +1,10 @@
+mod i18n;
 mod options;
-mod utils;
 
+use crate::i18n::i18n_str;
 use crate::options::{
     CliCommonOutputOptions, CliOfficialInputOptions, CliOfficialOutputOptions, CliRpeInputOptions,
 };
-use crate::utils::i18n_str;
 use anyhow::bail;
 use clap::{Parser, ValueEnum};
 use phichain_chart::serialization::PhichainChart;
