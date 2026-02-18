@@ -1,4 +1,3 @@
-mod cli;
 mod options;
 mod utils;
 
