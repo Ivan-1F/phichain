@@ -13,6 +13,11 @@ cli:
     official: 使用官谱作为输入或输出
     rpe: 使用 RPE 谱面作为输入或输出
 
+  input: 输入
+  output: 输出
+  from: 输入格式。若不提供则根据输入文件自动推断
+  to: 输出格式
+
   official_input:
     heading: '输入选项 · 官谱'
     no_easing_fitting: 禁用缓动拟合

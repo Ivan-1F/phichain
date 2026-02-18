@@ -13,6 +13,11 @@ cli:
     official: Use official chart as input or output
     rpe: Use RPE chart as input or output
 
+  input: Input
+  output: Output
+  from: Input format. Automatically inferred from the input file if not provided.
+  to: Output format
+
   official_input:
     heading: 'Input Options - Official'
     no_easing_fitting: Disable easing fitting

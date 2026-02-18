@@ -11,6 +11,7 @@ use phichain_chart::serialization::PhichainChart;
 use phichain_format::official::OfficialChart;
 use phichain_format::rpe::RpeChart;
 use phichain_format::{ChartFormat, CommonOutputOptions};
+use rust_i18n::t;
 use serde::Serialize;
 use std::path::PathBuf;
 use strum::Display;
@@ -53,14 +54,14 @@ enum Format {
 #[command(about = i18n_str("cli.about"))]
 #[command(after_help = i18n_str("cli.examples"))]
 pub struct Args {
-    #[arg(required = true)]
+    #[arg(required = true, help = t!("cli.input").to_string())]
     input: PathBuf,
-    #[arg(required = false)]
+    #[arg(required = false, default_value = "output.json", help = t!("cli.output").to_string())]
     output: PathBuf,
 
-    #[arg(long)]
+    #[arg(long, help = t!("cli.from").to_string())]
     from: Option<Format>,
-    #[arg(long)]
+    #[arg(long, help = t!("cli.to").to_string())]
     to: Format,
 
     #[command(flatten)]
