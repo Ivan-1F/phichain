@@ -1,12 +1,12 @@
+mod cli;
 mod options;
 mod utils;
-mod cli;
-mod next;
 
 use crate::options::{
     CliCommonOutputOptions, CliOfficialInputOptions, CliOfficialOutputOptions, CliRpeInputOptions,
 };
 use crate::utils::i18n_str;
+use anyhow::bail;
 use clap::{Parser, ValueEnum};
 use phichain_chart::serialization::PhichainChart;
 use phichain_format::official::OfficialChart;
@@ -17,15 +17,6 @@ use std::path::PathBuf;
 use strum::Display;
 
 rust_i18n::i18n!("locales", fallback = "en-US");
-
-#[derive(ValueEnum, Debug, Display, Clone)]
-#[clap(rename_all = "kebab_case")]
-#[strum(serialize_all = "snake_case")]
-enum Formats {
-    Official,
-    Phichain,
-    Rpe,
-}
 
 #[derive(Serialize)]
 #[serde(untagged)]
@@ -49,84 +40,29 @@ impl Chart {
     }
 }
 
-macro_rules! define_format_args {
-    (
-        $(
-            $field:ident => $variant:ident
-        ),* $(,)?
-    ) => {
-        #[derive(Debug, Parser)]
-        struct FormatArgs {
-            $(
-                #[arg(long, num_args = 0..=1, help = i18n_str(concat!("cli.format_args.", stringify!($field))))]
-                $field: Option<Option<PathBuf>>,
-            )*
-        }
-
-        impl FormatArgs {
-            fn collect_formats(&self, order: &[String]) -> Vec<(Formats, Option<PathBuf>)> {
-                // Create a map of format name -> (Format, PathBuf)
-                let mut format_map = std::collections::HashMap::new();
-                $(
-                    if let Some(path) = &self.$field {
-                        format_map.insert(
-                            stringify!($field).to_string(),
-                            (Formats::$variant, path.clone())
-                        );
-                    }
-                )*
-
-                // Build result in the order specified by command line
-                let mut format_args = vec![];
-                for arg in order {
-                    if let Some(entry) = format_map.get(arg) {
-                        format_args.push(entry.clone());
-                    }
-                }
-
-                format_args
-            }
-
-            /// Get the list of all supported format flag names
-            fn format_flags() -> &'static [&'static str] {
-                &[$(stringify!($field)),*]
-            }
-        }
-    };
+#[derive(ValueEnum, Debug, Display, Clone)]
+#[clap(rename_all = "kebab_case")]
+#[strum(serialize_all = "snake_case")]
+enum Format {
+    Official,
+    Phichain,
+    Rpe,
 }
 
-define_format_args! {
-    phichain => Phichain,
-    official => Official,
-    rpe => Rpe,
-}
-
-/// Extract the order of format flags from command line arguments
-fn extract_format_order() -> Vec<String> {
-    let format_flags = FormatArgs::format_flags();
-
-    std::env::args()
-        .filter_map(|arg| {
-            if let Some(flag) = arg.strip_prefix("--") {
-                if format_flags.contains(&flag) {
-                    return Some(flag.to_string());
-                }
-            }
-            None
-        })
-        .collect()
-}
-
-#[derive(Debug, Parser)]
+#[derive(Parser, Debug, Clone)]
 #[command(name = "phichain-converter")]
 #[command(about = i18n_str("cli.about"))]
 #[command(after_help = i18n_str("cli.examples"))]
-struct Args {
-    #[command(flatten)]
-    #[command(
-        next_help_heading = i18n_str("cli.format_args.heading")
-    )]
-    formats: FormatArgs,
+pub struct Args {
+    #[arg(required = true)]
+    input: PathBuf,
+    #[arg(required = false)]
+    output: PathBuf,
+
+    #[arg(long)]
+    from: Option<Format>,
+    #[arg(long)]
+    to: Format,
 
     #[command(flatten)]
     #[command(
@@ -153,69 +89,56 @@ struct Args {
     common_output_options: CliCommonOutputOptions,
 }
 
-impl Args {
-    fn parse_args(self, format_order: &[String]) -> anyhow::Result<ParsedArgs> {
-        let format_args = self.formats.collect_formats(format_order);
-
-        if format_args.len() != 2 {
-            anyhow::bail!(
-                "Expected exactly 2 format flags, got {}. Usage: <input-format> <input-path> <output-format> [output-path]",
-                format_args.len()
-            );
-        }
-
-        let (input_format, input_path) = &format_args[0];
-        let (output_format, output_path) = &format_args[1];
-
-        let input_path = input_path
-            .clone()
-            .ok_or_else(|| anyhow::anyhow!("Input format must have a path specified"))?;
-
-        let output_path = output_path
-            .clone()
-            .unwrap_or_else(|| PathBuf::from("output.json"));
-
-        Ok(ParsedArgs {
-            input: input_format.clone(),
-            path: input_path,
-            output: output_format.clone(),
-            output_path,
-            official_input_options: self.official_input_options,
-            official_output_options: self.official_output_options,
-            rpe_input_options: self.rpe_input_options,
-            common_output_options: self.common_output_options,
-        })
-    }
-}
-
+#[derive(Debug, Clone)]
 struct ParsedArgs {
-    input: Formats,
-    path: PathBuf,
-    output: Formats,
+    input: Option<Format>,
+    input_path: PathBuf,
+
+    output: Format,
     output_path: PathBuf,
 
     official_input_options: CliOfficialInputOptions,
     official_output_options: CliOfficialOutputOptions,
     rpe_input_options: CliRpeInputOptions,
-
     common_output_options: CliCommonOutputOptions,
 }
 
+impl From<Args> for ParsedArgs {
+    fn from(value: Args) -> Self {
+        Self {
+            input: value.from,
+            input_path: value.input,
+            output: value.to,
+            output_path: value.output,
+            official_input_options: value.official_input_options.into(),
+            official_output_options: value.official_output_options.into(),
+            rpe_input_options: value.rpe_input_options.into(),
+            common_output_options: value.common_output_options.into(),
+        }
+    }
+}
 fn convert(args: ParsedArgs) -> anyhow::Result<()> {
-    if !args.path.exists() {
-        anyhow::bail!("No such file: {}", args.path.display());
+    if !args.input_path.exists() {
+        anyhow::bail!("No such file: {}", args.input_path.display());
     }
 
-    if args.path.is_dir() {
-        anyhow::bail!("Expected a file, got a directory: {}", args.path.display());
+    if args.input_path.is_dir() {
+        anyhow::bail!(
+            "Expected a file, got a directory: {}",
+            args.input_path.display()
+        );
     }
 
-    let file = std::fs::File::open(&args.path)?;
+    let file = std::fs::File::open(&args.input_path)?;
 
-    let input = match args.input {
-        Formats::Official => Chart::Official(serde_json::from_reader(file)?),
-        Formats::Phichain => Chart::Phichain(serde_json::from_reader(file)?),
-        Formats::Rpe => Chart::Rpe(serde_json::from_reader(file)?),
+    let Some(input) = args.input else {
+        bail!("Inference format is not yet supported")
+    };
+
+    let input = match input {
+        Format::Official => Chart::Official(serde_json::from_reader(file)?),
+        Format::Phichain => Chart::Phichain(serde_json::from_reader(file)?),
+        Format::Rpe => Chart::Rpe(serde_json::from_reader(file)?),
     };
 
     let phichain = match input {
@@ -225,12 +148,12 @@ fn convert(args: ParsedArgs) -> anyhow::Result<()> {
     };
 
     let output = match args.output {
-        Formats::Official => Chart::Official(OfficialChart::from_phichain(
+        Format::Official => Chart::Official(OfficialChart::from_phichain(
             phichain,
             &args.official_output_options.into(),
         )?),
-        Formats::Phichain => Chart::Phichain(PhichainChart::from_phichain(phichain, &())?),
-        Formats::Rpe => Chart::Rpe(RpeChart::from_phichain(phichain, &())?),
+        Format::Phichain => Chart::Phichain(PhichainChart::from_phichain(phichain, &())?),
+        Format::Rpe => Chart::Rpe(RpeChart::from_phichain(phichain, &())?),
     };
 
     let output = output.apply_common_output_options(&args.common_output_options.into());
@@ -272,18 +195,8 @@ fn main() {
 
     rust_i18n::set_locale(&locale());
 
-    next::cli();
-
-    return;
-
     let args = Args::parse();
-    let parsed_args = match args.parse_args(&extract_format_order()) {
-        Ok(parsed) => parsed,
-        Err(err) => {
-            eprintln!("Error: {err}");
-            std::process::exit(1);
-        }
-    };
+    let parsed_args = ParsedArgs::from(args);
     if let Err(err) = convert(parsed_args) {
         eprintln!("Error: {err}");
         std::process::exit(1);
