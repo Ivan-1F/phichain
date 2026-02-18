@@ -109,10 +109,10 @@ impl From<Args> for ParsedArgs {
             input_path: value.input,
             output: value.to,
             output_path: value.output,
-            official_input_options: value.official_input_options.into(),
-            official_output_options: value.official_output_options.into(),
-            rpe_input_options: value.rpe_input_options.into(),
-            common_output_options: value.common_output_options.into(),
+            official_input_options: value.official_input_options,
+            official_output_options: value.official_output_options,
+            rpe_input_options: value.rpe_input_options,
+            common_output_options: value.common_output_options,
         }
     }
 }
