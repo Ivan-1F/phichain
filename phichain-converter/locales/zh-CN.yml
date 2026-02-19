@@ -33,3 +33,7 @@ cli:
   common_output:
     heading: '输出选项 · 通用'
     round: 输出数值的小数位数 (适用于事件值和音符 x 坐标)
+
+  status:
+    inferred_format: "推断输入格式: %{format}"
+    converted: "已转换 %{input} (%{from}) -> %{output} (%{to})"

@@ -7,6 +7,7 @@ use crate::options::{
 };
 use anyhow::bail;
 use clap::{Parser, ValueEnum};
+use owo_colors::OwoColorize;
 use phichain_chart::serialization::PhichainChart;
 use phichain_format::official::OfficialChart;
 use phichain_format::rpe::RpeChart;
@@ -122,10 +123,20 @@ fn convert(args: Args) -> anyhow::Result<()> {
 
     let file = std::fs::File::open(&args.input)?;
 
-    let from = match args.from {
-        Some(f) => f,
-        None => infer_format(&args.input)?,
+    let (from, inferred) = match args.from {
+        Some(f) => (f, false),
+        None => (infer_format(&args.input)?, true),
     };
+
+    if inferred {
+        eprintln!(
+            "{}",
+            t!(
+                "cli.status.inferred_format",
+                format = from.to_string().cyan()
+            )
+        );
+    }
 
     let chart = match from {
         Format::Official => Chart::Official(serde_json::from_reader(file)?),
@@ -152,6 +163,17 @@ fn convert(args: Args) -> anyhow::Result<()> {
 
     let output_file = std::fs::File::create(&args.output)?;
     serde_json::to_writer(output_file, &output)?;
+
+    eprintln!(
+        "{}",
+        t!(
+            "cli.status.converted",
+            input = args.input.display().to_string().cyan(),
+            from = from.to_string().cyan(),
+            output = args.output.display().to_string().green(),
+            to = args.to.to_string().green()
+        )
+    );
 
     Ok(())
 }

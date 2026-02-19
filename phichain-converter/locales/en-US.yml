@@ -33,3 +33,7 @@ cli:
   common_output:
     heading: 'Output Options - Common'
     round: Number of decimal places to round output values (event values and note x positions)
+
+  status:
+    inferred_format: "Inferred input format: %{format}"
+    converted: "Converted %{input} (%{from}) -> %{output} (%{to})"
