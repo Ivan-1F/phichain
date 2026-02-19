@@ -25,22 +25,35 @@ fn unwrap_infallible<T>(result: Result<T, std::convert::Infallible>) -> T {
     }
 }
 
-#[derive(Error, Debug)]
+#[derive(Debug, Error)]
 enum ConvertError {
-    #[error("No such file: {0}")]
     NoSuchFile(PathBuf),
-    #[error("Expected a file, got a directory: {0}")]
     ExpectedFile(PathBuf),
-    #[error("Unable to infer format from file content")]
     UnableToInferFormat,
-    #[error(transparent)]
     Io(#[from] std::io::Error),
-    #[error(transparent)]
     Json(#[from] serde_json::Error),
-    #[error(transparent)]
     OfficialInput(#[from] phichain_format::official::OfficialInputError),
-    #[error(transparent)]
     OfficialOutput(#[from] phichain_format::official::OfficialOutputError),
+}
+
+impl std::fmt::Display for ConvertError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ConvertError::NoSuchFile(path) => {
+                write!(f, "{}", t!("cli.error.no_such_file", path = path.display()))
+            }
+            ConvertError::ExpectedFile(path) => {
+                write!(f, "{}", t!("cli.error.expected_file", path = path.display()))
+            }
+            ConvertError::UnableToInferFormat => {
+                write!(f, "{}", t!("cli.error.unable_to_infer_format"))
+            }
+            ConvertError::Io(e) => write!(f, "{e}"),
+            ConvertError::Json(e) => write!(f, "{e}"),
+            ConvertError::OfficialInput(e) => write!(f, "{e}"),
+            ConvertError::OfficialOutput(e) => write!(f, "{e}"),
+        }
+    }
 }
 
 rust_i18n::i18n!("locales", fallback = "en-US");

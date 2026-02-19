@@ -4,7 +4,6 @@ version = "1.0.0-beta.5"
 edition = "2021"
 
 [dependencies]
-thiserror = "2"
 clap = { version = "4.5.4", features = ["derive", "cargo"] }
 o2o = "0.5.4"
 phichain-chart = { path = "../phichain-chart" }
@@ -15,4 +14,5 @@ strum = { version = "0.27.1", features = ["derive"] }
 sys-locale = "0.3.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 serde = { version = "1.0.228", features = ["derive"] }
+thiserror = "2"
 owo-colors = "4"

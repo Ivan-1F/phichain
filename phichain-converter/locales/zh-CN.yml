@@ -38,3 +38,8 @@ cli:
     inferred_format: "推断输入格式: %{format}"
     converted: "已转换 %{input} (%{from}) -> %{output} (%{to})"
     stdout: "<标准输出>"
+
+  error:
+    no_such_file: "文件不存在: %{path}"
+    expected_file: "期望文件，但得到目录: %{path}"
+    unable_to_infer_format: "无法从文件内容推断格式"

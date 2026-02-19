@@ -38,3 +38,8 @@ cli:
     inferred_format: "Inferred input format: %{format}"
     converted: "Converted %{input} (%{from}) -> %{output} (%{to})"
     stdout: "<stdout>"
+
+  error:
+    no_such_file: "No such file: %{path}"
+    expected_file: "Expected a file, got a directory: %{path}"
+    unable_to_infer_format: "Unable to infer format from file content"
