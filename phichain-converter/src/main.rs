@@ -5,7 +5,6 @@ use crate::i18n::{i18n_str, locale};
 use crate::options::{
     CliCommonOutputOptions, CliOfficialInputOptions, CliOfficialOutputOptions, CliRpeInputOptions,
 };
-use anyhow::bail;
 use clap::{Parser, ValueEnum};
 use owo_colors::OwoColorize;
 use phichain_chart::serialization::PhichainChart;
@@ -16,6 +15,33 @@ use rust_i18n::t;
 use serde::Serialize;
 use std::path::PathBuf;
 use strum::Display;
+use thiserror::Error;
+
+/// Extract value from `Result<T, Infallible>`.
+fn unwrap_infallible<T>(result: Result<T, std::convert::Infallible>) -> T {
+    match result {
+        Ok(v) => v,
+        Err(e) => match e {},
+    }
+}
+
+#[derive(Error, Debug)]
+enum ConvertError {
+    #[error("No such file: {0}")]
+    NoSuchFile(PathBuf),
+    #[error("Expected a file, got a directory: {0}")]
+    ExpectedFile(PathBuf),
+    #[error("Unable to infer format from file content")]
+    UnableToInferFormat,
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    #[error(transparent)]
+    Json(#[from] serde_json::Error),
+    #[error(transparent)]
+    OfficialInput(#[from] phichain_format::official::OfficialInputError),
+    #[error(transparent)]
+    OfficialOutput(#[from] phichain_format::official::OfficialOutputError),
+}
 
 rust_i18n::i18n!("locales", fallback = "en-US");
 
@@ -90,7 +116,7 @@ pub struct Args {
     common_output_options: CliCommonOutputOptions,
 }
 
-fn infer_format(path: &std::path::Path) -> anyhow::Result<Format> {
+fn infer_format(path: &std::path::Path) -> Result<Format, ConvertError> {
     let content = std::fs::read_to_string(path)?;
     let value: serde_json::Value = serde_json::from_str(&content)?;
 
@@ -109,16 +135,16 @@ fn infer_format(path: &std::path::Path) -> anyhow::Result<Format> {
         return Ok(Format::Phichain);
     }
 
-    bail!("Unable to infer format from file content")
+    Err(ConvertError::UnableToInferFormat)
 }
 
-fn convert(args: Args) -> anyhow::Result<()> {
+fn convert(args: Args) -> Result<(), ConvertError> {
     if !args.input.exists() {
-        bail!("No such file: {}", args.input.display());
+        return Err(ConvertError::NoSuchFile(args.input.clone()));
     }
 
     if args.input.is_dir() {
-        bail!("Expected a file, got a directory: {}", args.input.display());
+        return Err(ConvertError::ExpectedFile(args.input.clone()));
     }
 
     let file = std::fs::File::open(&args.input)?;
@@ -146,8 +172,8 @@ fn convert(args: Args) -> anyhow::Result<()> {
 
     let phichain = match chart {
         Chart::Official(official) => official.to_phichain(&args.official_input_options.into())?,
-        Chart::Phichain(phichain) => phichain.to_phichain(&())?,
-        Chart::Rpe(rpe) => rpe.to_phichain(&args.rpe_input_options.into())?,
+        Chart::Phichain(phichain) => unwrap_infallible(phichain.to_phichain(&())),
+        Chart::Rpe(rpe) => unwrap_infallible(rpe.to_phichain(&args.rpe_input_options.into())),
     };
 
     let output = match args.to {
@@ -155,8 +181,10 @@ fn convert(args: Args) -> anyhow::Result<()> {
             phichain,
             &args.official_output_options.into(),
         )?),
-        Format::Phichain => Chart::Phichain(PhichainChart::from_phichain(phichain, &())?),
-        Format::Rpe => Chart::Rpe(RpeChart::from_phichain(phichain, &())?),
+        Format::Phichain => {
+            Chart::Phichain(unwrap_infallible(PhichainChart::from_phichain(phichain, &())))
+        }
+        Format::Rpe => Chart::Rpe(unwrap_infallible(RpeChart::from_phichain(phichain, &()))),
     };
 
     let output = output.apply_common_output_options(&args.common_output_options.into());

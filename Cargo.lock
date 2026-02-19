@@ -5606,7 +5606,6 @@ dependencies = [
 name = "phichain-converter"
 version = "1.0.0-beta.5"
 dependencies = [
- "anyhow",
  "clap",
  "o2o",
  "owo-colors",
@@ -5617,6 +5616,7 @@ dependencies = [
  "serde_json",
  "strum 0.27.1",
  "sys-locale",
+ "thiserror 2.0.17",
  "tracing-subscriber",
 ]
 
