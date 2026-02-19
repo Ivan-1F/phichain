@@ -89,6 +89,28 @@ pub struct Args {
     common_output_options: CliCommonOutputOptions,
 }
 
+fn infer_format(path: &std::path::Path) -> anyhow::Result<Format> {
+    let content = std::fs::read_to_string(path)?;
+    let value: serde_json::Value = serde_json::from_str(&content)?;
+
+    if value.get("BPMList").is_some() && value.get("META").is_some() {
+        return Ok(Format::Rpe);
+    }
+
+    if value.get("formatVersion").is_some() && value.get("judgeLineList").is_some() {
+        return Ok(Format::Official);
+    }
+
+    if value.get("format").is_some()
+        && value.get("bpm_list").is_some()
+        && value.get("lines").is_some()
+    {
+        return Ok(Format::Phichain);
+    }
+
+    bail!("Unable to infer format from file content")
+}
+
 fn convert(args: Args) -> anyhow::Result<()> {
     if !args.input.exists() {
         bail!("No such file: {}", args.input.display());
@@ -100,8 +122,9 @@ fn convert(args: Args) -> anyhow::Result<()> {
 
     let file = std::fs::File::open(&args.input)?;
 
-    let Some(from) = args.from else {
-        bail!("Format inference is not yet supported")
+    let from = match args.from {
+        Some(f) => f,
+        None => infer_format(&args.input)?,
     };
 
     let chart = match from {
