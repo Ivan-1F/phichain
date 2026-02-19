@@ -233,7 +233,7 @@ fn main() {
 
     let args = Args::parse();
     if let Err(err) = convert(args) {
-        eprintln!("Error: {err}");
+        eprintln!("{}", err.red());
         std::process::exit(1);
     }
 }
