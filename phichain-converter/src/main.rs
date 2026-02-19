@@ -43,7 +43,11 @@ impl std::fmt::Display for ConvertError {
                 write!(f, "{}", t!("cli.error.no_such_file", path = path.display()))
             }
             ConvertError::ExpectedFile(path) => {
-                write!(f, "{}", t!("cli.error.expected_file", path = path.display()))
+                write!(
+                    f,
+                    "{}",
+                    t!("cli.error.expected_file", path = path.display())
+                )
             }
             ConvertError::UnableToInferFormat => {
                 write!(f, "{}", t!("cli.error.unable_to_infer_format"))
@@ -194,9 +198,10 @@ fn convert(args: Args) -> Result<(), ConvertError> {
             phichain,
             &args.official_output_options.into(),
         )?),
-        Format::Phichain => {
-            Chart::Phichain(unwrap_infallible(PhichainChart::from_phichain(phichain, &())))
-        }
+        Format::Phichain => Chart::Phichain(unwrap_infallible(PhichainChart::from_phichain(
+            phichain,
+            &(),
+        ))),
         Format::Rpe => Chart::Rpe(unwrap_infallible(RpeChart::from_phichain(phichain, &()))),
     };
 
