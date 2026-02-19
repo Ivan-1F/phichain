@@ -37,3 +37,4 @@ cli:
   status:
     inferred_format: "推断输入格式: %{format}"
     converted: "已转换 %{input} (%{from}) -> %{output} (%{to})"
+    stdout: "<标准输出>"

@@ -161,8 +161,15 @@ fn convert(args: Args) -> anyhow::Result<()> {
 
     let output = output.apply_common_output_options(&args.common_output_options.into());
 
-    let output_file = std::fs::File::create(&args.output)?;
-    serde_json::to_writer(output_file, &output)?;
+    let output_name = if args.output.as_os_str() == "-" {
+        serde_json::to_writer(std::io::stdout(), &output)?;
+        println!(); // newline after JSON
+        t!("cli.status.stdout").to_string()
+    } else {
+        let output_file = std::fs::File::create(&args.output)?;
+        serde_json::to_writer(output_file, &output)?;
+        args.output.display().to_string()
+    };
 
     eprintln!(
         "{}",
@@ -170,7 +177,7 @@ fn convert(args: Args) -> anyhow::Result<()> {
             "cli.status.converted",
             input = args.input.display().to_string().cyan(),
             from = from.to_string().cyan(),
-            output = args.output.display().to_string().green(),
+            output = output_name.green(),
             to = args.to.to_string().green()
         )
     );
