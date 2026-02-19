@@ -1,6 +1,8 @@
+mod error;
 mod i18n;
 mod options;
 
+use crate::error::{unwrap_infallible, ConvertError};
 use crate::i18n::{i18n_str, locale};
 use crate::options::{
     CliCommonOutputOptions, CliOfficialInputOptions, CliOfficialOutputOptions, CliRpeInputOptions,
@@ -15,50 +17,6 @@ use rust_i18n::t;
 use serde::Serialize;
 use std::path::PathBuf;
 use strum::Display;
-use thiserror::Error;
-
-/// Extract value from `Result<T, Infallible>`.
-fn unwrap_infallible<T>(result: Result<T, std::convert::Infallible>) -> T {
-    match result {
-        Ok(v) => v,
-        Err(e) => match e {},
-    }
-}
-
-#[derive(Debug, Error)]
-enum ConvertError {
-    NoSuchFile(PathBuf),
-    ExpectedFile(PathBuf),
-    UnableToInferFormat,
-    Io(#[from] std::io::Error),
-    Json(#[from] serde_json::Error),
-    OfficialInput(#[from] phichain_format::official::OfficialInputError),
-    OfficialOutput(#[from] phichain_format::official::OfficialOutputError),
-}
-
-impl std::fmt::Display for ConvertError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ConvertError::NoSuchFile(path) => {
-                write!(f, "{}", t!("cli.error.no_such_file", path = path.display()))
-            }
-            ConvertError::ExpectedFile(path) => {
-                write!(
-                    f,
-                    "{}",
-                    t!("cli.error.expected_file", path = path.display())
-                )
-            }
-            ConvertError::UnableToInferFormat => {
-                write!(f, "{}", t!("cli.error.unable_to_infer_format"))
-            }
-            ConvertError::Io(e) => write!(f, "{e}"),
-            ConvertError::Json(e) => write!(f, "{e}"),
-            ConvertError::OfficialInput(e) => write!(f, "{e}"),
-            ConvertError::OfficialOutput(e) => write!(f, "{e}"),
-        }
-    }
-}
 
 rust_i18n::i18n!("locales", fallback = "en-US");
 
