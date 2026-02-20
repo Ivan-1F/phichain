@@ -71,7 +71,8 @@ fn deserialize_event_layers<'de, D>(deserializer: D) -> Result<Vec<RpeEventLayer
 where
     D: serde::Deserializer<'de>,
 {
-    let layers: Vec<Option<RpeEventLayer>> = Vec::deserialize(deserializer)?;
+    let layers: Option<Vec<Option<RpeEventLayer>>> = Option::deserialize(deserializer)?;
+    let layers = layers.unwrap_or_default();
     Ok(layers.into_iter().flatten().collect())
 }
 
@@ -89,7 +90,9 @@ pub struct RpeJudgeLine {
     pub texture: String, // ignored
     pub anchor: (f32, f32), // ignored
 
-    /// Before a certain version, the field will be `null` if there's no events in this layer (ref: https://teamflos.github.io/phira-docs/chart-standard/chart-format/rpe/judgeLine.html)
+    /// Before a certain version, this field may be `null` when layers are empty.
+    /// In newer versions, the field may be missing when layers are empty.
+    /// Each layer may omit event arrays when that event type is absent.
     #[serde(deserialize_with = "deserialize_event_layers")]
     pub event_layers: Vec<RpeEventLayer>,
 
@@ -251,3 +254,40 @@ pub static RPE_EASING: [Easing; 30] = [
     Easing::EaseInOutBounce,
     Easing::EaseInOutElastic,
 ];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn deserialize_judge_line_when_event_layers_missing() {
+        let line: RpeJudgeLine = serde_json::from_str("{}")
+            .expect("failed to deserialize RpeJudgeLine with missing fields");
+
+        assert!(line.event_layers.is_empty());
+        assert_eq!(line.father, -1);
+        assert!(line.rotate_with_father);
+    }
+
+    #[test]
+    fn deserialize_judge_line_when_event_layers_null() {
+        let line: RpeJudgeLine = serde_json::from_str(r#"{"eventLayers":null}"#)
+            .expect("failed to deserialize RpeJudgeLine with null eventLayers");
+
+        assert!(line.event_layers.is_empty());
+    }
+
+    #[test]
+    fn deserialize_judge_line_when_layer_event_arrays_missing() {
+        let line: RpeJudgeLine = serde_json::from_str(r#"{"eventLayers":[{},null]}"#)
+            .expect("failed to deserialize RpeJudgeLine with sparse eventLayers");
+
+        assert_eq!(line.event_layers.len(), 1);
+        let layer = &line.event_layers[0];
+        assert!(layer.move_x_events.is_empty());
+        assert!(layer.move_y_events.is_empty());
+        assert!(layer.rotate_events.is_empty());
+        assert!(layer.alpha_events.is_empty());
+        assert!(layer.speed_events.is_empty());
+    }
+}
