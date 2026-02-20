@@ -214,9 +214,9 @@ pub fn cut_with_options(event: LineEvent, minimum: Beat, options: CutOptions) ->
             let mut events = vec![];
             let mut current = event.start_beat;
 
-            while current + minimum <= event.end_beat {
+            while current < event.end_beat {
                 let start_beat = current;
-                let end_beat = current + minimum;
+                let end_beat = std::cmp::min(current + minimum, event.end_beat);
 
                 let start_value = event
                     .evaluate_inclusive(start_beat.value())
@@ -364,4 +364,30 @@ pub fn fill_gap(events: &[LineEvent], default: f32) -> Result<Vec<LineEvent>, Ev
         events.last().map(|x| x.end_beat).unwrap_or(beat!(0)),
         default,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use phichain_chart::event::LineEventKind;
+
+    #[test]
+    fn cut_preserves_tail_for_non_divisible_duration() {
+        let source = LineEvent {
+            kind: LineEventKind::X,
+            start_beat: beat!(0),
+            end_beat: beat!(1, 3),
+            value: LineEventValue::transition(10.0, 20.0, Easing::EaseInSine),
+        };
+
+        let cut = cut(source, beat!(1, 32));
+
+        assert!(!cut.is_empty(), "expected cut output to be non-empty");
+        assert_eq!(cut[0].start_beat, source.start_beat);
+        assert_eq!(
+            cut.last().unwrap().end_beat,
+            source.end_beat,
+            "tail segment should reach original end beat"
+        );
+    }
 }
