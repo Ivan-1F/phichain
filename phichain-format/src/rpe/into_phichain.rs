@@ -13,6 +13,13 @@ use phichain_chart::offset::Offset;
 use phichain_chart::serialization::{PhichainChart, SerializedLine};
 use tracing::warn;
 
+struct LineWithParent {
+    line: SerializedLine,
+    /// Index of the parent line, -1 means no parent (root line)
+    father: i32,
+    rotate_with_father: bool,
+}
+
 /// Convert RpeNotes to Phichain notes
 fn convert_rpe_notes(rpe_notes: &[RpeNote]) -> Vec<Note> {
     rpe_notes
@@ -185,7 +192,7 @@ pub fn rpe_to_phichain(rpe: RpeChart, options: &RpeInputOptions) -> PhichainChar
         })
     };
 
-    let lines_with_parent: Vec<(SerializedLine, i32, bool)> = rpe
+    let lines_with_parent: Vec<LineWithParent> = rpe
         .judge_line_list
         .into_iter()
         .enumerate()
@@ -225,14 +232,18 @@ pub fn rpe_to_phichain(rpe: RpeChart, options: &RpeInputOptions) -> PhichainChar
             };
 
             let notes = convert_rpe_notes(&filtered_notes);
-            let serialized_line = build_flattened_line(index, &rpe_line.name, rpe_line.event_layers, notes, &easing_fn);
-            (serialized_line, rpe_line.father, rpe_line.rotate_with_father)
+            let line = build_flattened_line(index, &rpe_line.name, rpe_line.event_layers, notes, &easing_fn);
+            LineWithParent {
+                line,
+                father: rpe_line.father,
+                rotate_with_father: rpe_line.rotate_with_father,
+            }
         })
         .collect();
 
     // Warn about rotate_with_father = false, as Phichain doesn't currently support this
-    for (index, (_, _, rotate_with_father)) in lines_with_parent.iter().enumerate() {
-        if !rotate_with_father {
+    for (index, line_with_parent) in lines_with_parent.iter().enumerate() {
+        if !line_with_parent.rotate_with_father {
             warn!(
                 "Line {} has rotate_with_father = false, but Phichain currently doesn't support \
                  disabling rotation inheritance. The line will inherit its parent's rotation.",
@@ -273,9 +284,7 @@ fn remove_empty_placeholder_lines(lines: Vec<SerializedLine>) -> Vec<SerializedL
 }
 
 /// Build a tree structure from flat list of lines with parent indices
-fn build_parent_child_tree(
-    lines_with_parent: Vec<(SerializedLine, i32, bool)>,
-) -> Vec<SerializedLine> {
+fn build_parent_child_tree(lines_with_parent: Vec<LineWithParent>) -> Vec<SerializedLine> {
     if lines_with_parent.is_empty() {
         return vec![];
     }
@@ -283,7 +292,7 @@ fn build_parent_child_tree(
     // Separate lines and parent information
     let (mut lines, parent_info): (Vec<_>, Vec<_>) = lines_with_parent
         .into_iter()
-        .map(|(line, father, _)| (Some(line), father))
+        .map(|lwp| (Some(lwp.line), lwp.father))
         .unzip();
 
     // Helper function to build a subtree rooted at a given index
