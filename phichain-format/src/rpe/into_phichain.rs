@@ -290,62 +290,78 @@ fn remove_empty_placeholder_lines(lines: Vec<SerializedLine>) -> Vec<SerializedL
     lines.into_iter().flat_map(remove_from_line).collect()
 }
 
-/// Build a tree structure from flat list of lines with parent indices
+/// Converts a flat list of lines with parent indices into a tree structure.
+///
+/// Lines with `father = -1` become roots. Lines whose parent is unreachable
+/// (invalid index, broken chain, or cycle) are promoted to roots with a warning.
 fn build_parent_child_tree(lines_with_parent: Vec<LineWithParent>) -> Vec<SerializedLine> {
-    if lines_with_parent.is_empty() {
-        return vec![];
-    }
+    let mut builder = TreeBuilder::new(lines_with_parent);
+    builder.build()
+}
 
-    // Separate lines and parent information
-    let mut lines: Vec<Option<SerializedLine>> = Vec::with_capacity(lines_with_parent.len());
-    let mut parent_info: Vec<i32> = Vec::with_capacity(lines_with_parent.len());
-    // Pre-build parent -> children index mapping for O(1) child lookup
-    let mut children_map: HashMap<i32, Vec<usize>> = HashMap::new();
+struct LineSlot {
+    /// `Some` until the line is taken to build the tree
+    line: Option<SerializedLine>,
+    /// Original father index (-1 = root)
+    father: i32,
+}
 
-    for lwp in lines_with_parent {
-        let index = lines.len();
-        lines.push(Some(lwp.line));
-        parent_info.push(lwp.father);
-        children_map.entry(lwp.father).or_default().push(index);
-    }
+struct TreeBuilder {
+    slots: Vec<LineSlot>,
+    /// parent index -> child indices for O(1) lookup
+    children_of: HashMap<i32, Vec<usize>>,
+}
 
-    // Helper function to build a subtree rooted at a given index
-    fn build_subtree(
-        index: usize,
-        lines: &mut [Option<SerializedLine>],
-        children_map: &HashMap<i32, Vec<usize>>,
-    ) -> Option<SerializedLine> {
-        let mut line = lines[index].take()?;
+impl TreeBuilder {
+    fn new(lines_with_parent: Vec<LineWithParent>) -> Self {
+        let mut slots = Vec::with_capacity(lines_with_parent.len());
+        let mut children_of: HashMap<i32, Vec<usize>> = HashMap::new();
 
-        // Find all children of this line
-        if let Some(children) = children_map.get(&(index as i32)) {
-            for &child_index in children {
-                if let Some(child) = build_subtree(child_index, lines, children_map) {
-                    line.children.push(child);
-                }
-            }
+        for lwp in lines_with_parent {
+            let index = slots.len();
+            children_of.entry(lwp.father).or_default().push(index);
+            slots.push(LineSlot {
+                line: Some(lwp.line),
+                father: lwp.father,
+            });
         }
 
-        Some(line)
+        Self { slots, children_of }
     }
 
-    // Find all root lines (father = -1) and build their subtrees
-    let mut result = Vec::new();
-    if let Some(roots) = children_map.get(&-1) {
-        for &i in roots {
-            if let Some(root) = build_subtree(i, &mut lines, &children_map) {
-                result.push(root);
+    fn build(&mut self) -> Vec<SerializedLine> {
+        let mut result = self.take_roots();
+        result.extend(self.promote_orphans());
+        result
+    }
+
+    /// Take all root lines (father = -1) and recursively attach their children
+    fn take_roots(&mut self) -> Vec<SerializedLine> {
+        let root_indices: Vec<usize> = self
+            .children_of
+            .get(&-1)
+            .cloned()
+            .unwrap_or_default();
+
+        root_indices
+            .iter()
+            .filter_map(|&i| self.take_subtree(i))
+            .collect()
+    }
+
+    /// Promote any remaining lines to roots to avoid silent data loss.
+    /// This handles invalid parent indices, broken parent chains, or cycles.
+    fn promote_orphans(&mut self) -> Vec<SerializedLine> {
+        let n = self.slots.len();
+        let mut promoted = Vec::new();
+
+        for i in 0..n {
+            if self.slots[i].line.is_none() {
+                continue;
             }
-        }
-    }
 
-    // Promote unmounted lines to roots to avoid silent data loss.
-    // This can happen for invalid parent indices, broken parent chains, or cycles
-    // that are not reachable from a `father = -1` root.
-    for i in 0..lines.len() {
-        if lines[i].is_some() {
-            let father = parent_info[i];
-            if father < -1 || father as usize >= parent_info.len() {
+            let father = self.slots[i].father;
+            if father < -1 || father as usize >= n {
                 warn!(
                     "Line {} has invalid father index {}. It will be promoted to root.",
                     i, father
@@ -357,11 +373,30 @@ fn build_parent_child_tree(lines_with_parent: Vec<LineWithParent>) -> Vec<Serial
                 );
             }
 
-            if let Some(root) = build_subtree(i, &mut lines, &children_map) {
-                result.push(root);
+            if let Some(root) = self.take_subtree(i) {
+                promoted.push(root);
             }
         }
+
+        promoted
     }
 
-    result
+    /// Take a line and recursively attach all its descendants
+    fn take_subtree(&mut self, index: usize) -> Option<SerializedLine> {
+        let mut line = self.slots[index].line.take()?;
+
+        let child_indices: Vec<usize> = self
+            .children_of
+            .get(&(index as i32))
+            .cloned()
+            .unwrap_or_default();
+
+        for child_index in child_indices {
+            if let Some(child) = self.take_subtree(child_index) {
+                line.children.push(child);
+            }
+        }
+
+        Some(line)
+    }
 }
