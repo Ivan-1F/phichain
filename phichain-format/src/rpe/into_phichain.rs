@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::rpe::errors::RpeInputError;
 use crate::rpe::schema::{
     RpeChart, RpeCommonEvent, RpeEventLayer, RpeNote, RpeNoteKind, RPE_EASING,
@@ -295,23 +297,30 @@ fn build_parent_child_tree(lines_with_parent: Vec<LineWithParent>) -> Vec<Serial
     }
 
     // Separate lines and parent information
-    let (mut lines, parent_info): (Vec<_>, Vec<_>) = lines_with_parent
-        .into_iter()
-        .map(|lwp| (Some(lwp.line), lwp.father))
-        .unzip();
+    let mut lines: Vec<Option<SerializedLine>> = Vec::with_capacity(lines_with_parent.len());
+    let mut parent_info: Vec<i32> = Vec::with_capacity(lines_with_parent.len());
+    // Pre-build parent -> children index mapping for O(1) child lookup
+    let mut children_map: HashMap<i32, Vec<usize>> = HashMap::new();
+
+    for lwp in lines_with_parent {
+        let index = lines.len();
+        lines.push(Some(lwp.line));
+        parent_info.push(lwp.father);
+        children_map.entry(lwp.father).or_default().push(index);
+    }
 
     // Helper function to build a subtree rooted at a given index
     fn build_subtree(
         index: usize,
         lines: &mut [Option<SerializedLine>],
-        parent_info: &[i32],
+        children_map: &HashMap<i32, Vec<usize>>,
     ) -> Option<SerializedLine> {
         let mut line = lines[index].take()?;
 
         // Find all children of this line
-        for child_index in 0..parent_info.len() {
-            if parent_info[child_index] == index as i32 {
-                if let Some(child) = build_subtree(child_index, lines, parent_info) {
+        if let Some(children) = children_map.get(&(index as i32)) {
+            for &child_index in children {
+                if let Some(child) = build_subtree(child_index, lines, children_map) {
                     line.children.push(child);
                 }
             }
@@ -322,9 +331,9 @@ fn build_parent_child_tree(lines_with_parent: Vec<LineWithParent>) -> Vec<Serial
 
     // Find all root lines (father = -1) and build their subtrees
     let mut result = Vec::new();
-    for i in 0..parent_info.len() {
-        if parent_info[i] == -1 {
-            if let Some(root) = build_subtree(i, &mut lines, &parent_info) {
+    if let Some(roots) = children_map.get(&-1) {
+        for &i in roots {
+            if let Some(root) = build_subtree(i, &mut lines, &children_map) {
                 result.push(root);
             }
         }
@@ -333,7 +342,7 @@ fn build_parent_child_tree(lines_with_parent: Vec<LineWithParent>) -> Vec<Serial
     // Promote unmounted lines to roots to avoid silent data loss.
     // This can happen for invalid parent indices, broken parent chains, or cycles
     // that are not reachable from a `father = -1` root.
-    for i in 0..parent_info.len() {
+    for i in 0..lines.len() {
         if lines[i].is_some() {
             let father = parent_info[i];
             if father < -1 || father as usize >= parent_info.len() {
@@ -348,7 +357,7 @@ fn build_parent_child_tree(lines_with_parent: Vec<LineWithParent>) -> Vec<Serial
                 );
             }
 
-            if let Some(root) = build_subtree(i, &mut lines, &parent_info) {
+            if let Some(root) = build_subtree(i, &mut lines, &children_map) {
                 result.push(root);
             }
         }
