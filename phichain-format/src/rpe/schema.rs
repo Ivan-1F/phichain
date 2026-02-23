@@ -2,6 +2,7 @@
 //!
 //! Credit: https://teamflos.github.io/phira-docs/chart-standard/chart-format/rpe
 
+use crate::rpe::errors::RpeInputError;
 use num::{Num, Rational32};
 use phichain_chart::beat::Beat;
 use phichain_chart::easing::Easing;
@@ -22,9 +23,16 @@ pub enum RpeNoteKind {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RpeBeat(pub i32, pub i32, pub i32);
 
-impl From<RpeBeat> for Beat {
-    fn from(value: RpeBeat) -> Self {
-        Beat::new(value.0, Rational32::new(value.1, value.2))
+impl TryFrom<RpeBeat> for Beat {
+    type Error = RpeInputError;
+
+    fn try_from(value: RpeBeat) -> Result<Self, Self::Error> {
+        let denom = match (value.1, value.2) {
+            (0, 0) => 1,
+            (_, 0) => return Err(RpeInputError::ZeroDenominator(value.1, value)),
+            (_, d) => d,
+        };
+        Ok(Beat::new(value.0, Rational32::new(value.1, denom)))
     }
 }
 

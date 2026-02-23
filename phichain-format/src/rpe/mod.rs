@@ -4,22 +4,24 @@ use crate::{ChartFormat, CommonOutputOptions};
 use phichain_chart::serialization::PhichainChart;
 use std::convert::Infallible;
 
+pub mod errors;
 mod from_phichain;
 mod into_phichain;
 mod options;
 mod schema;
 
+pub use errors::RpeInputError;
 pub use options::RpeInputOptions;
 pub use schema::RpeChart;
 
 impl ChartFormat for RpeChart {
     type InputOptions = RpeInputOptions;
-    type InputError = Infallible;
+    type InputError = RpeInputError;
     type OutputOptions = ();
     type OutputError = Infallible;
 
     fn to_phichain(self, opts: &Self::InputOptions) -> Result<PhichainChart, Self::InputError> {
-        Ok(rpe_to_phichain(self, opts))
+        rpe_to_phichain(self, opts)
     }
 
     fn from_phichain(

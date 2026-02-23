@@ -148,7 +148,7 @@ fn convert(args: Args) -> Result<(), ConvertError> {
     let phichain = match chart {
         Chart::Official(official) => official.to_phichain(&args.official_input_options.into())?,
         Chart::Phichain(phichain) => unwrap_infallible(phichain.to_phichain(&())),
-        Chart::Rpe(rpe) => unwrap_infallible(rpe.to_phichain(&args.rpe_input_options.into())),
+        Chart::Rpe(rpe) => rpe.to_phichain(&args.rpe_input_options.into())?,
     };
 
     let output = match args.to {

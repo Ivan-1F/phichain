@@ -11,6 +11,7 @@ pub enum ConvertError {
     Json(#[from] serde_json::Error),
     OfficialInput(#[from] phichain_format::official::OfficialInputError),
     OfficialOutput(#[from] phichain_format::official::OfficialOutputError),
+    RpeInput(#[from] phichain_format::rpe::RpeInputError),
 }
 
 impl std::fmt::Display for ConvertError {
@@ -33,6 +34,7 @@ impl std::fmt::Display for ConvertError {
             ConvertError::Json(e) => write!(f, "{e}"),
             ConvertError::OfficialInput(e) => write!(f, "{e}"),
             ConvertError::OfficialOutput(e) => write!(f, "{e}"),
+            ConvertError::RpeInput(e) => write!(f, "{e}"),
         }
     }
 }

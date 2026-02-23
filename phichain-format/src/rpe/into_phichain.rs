@@ -1,3 +1,4 @@
+use crate::rpe::errors::RpeInputError;
 use crate::rpe::schema::{
     RpeChart, RpeCommonEvent, RpeEventLayer, RpeNote, RpeNoteKind, RPE_EASING,
 };
@@ -21,12 +22,12 @@ struct LineWithParent {
 }
 
 /// Convert RpeNotes to Phichain notes
-fn convert_rpe_notes(rpe_notes: &[RpeNote]) -> Vec<Note> {
+fn convert_rpe_notes(rpe_notes: &[RpeNote]) -> Result<Vec<Note>, RpeInputError> {
     rpe_notes
         .iter()
         .map(|note| {
-            let start_beat = Beat::from(note.start_time.clone());
-            let end_beat = Beat::from(note.end_time.clone());
+            let start_beat: Beat = note.start_time.clone().try_into()?;
+            let end_beat: Beat = note.end_time.clone().try_into()?;
             let kind: NoteKind = match note.kind {
                 RpeNoteKind::Tap => NoteKind::Tap,
                 RpeNoteKind::Drag => NoteKind::Drag,
@@ -36,13 +37,13 @@ fn convert_rpe_notes(rpe_notes: &[RpeNote]) -> Vec<Note> {
                 RpeNoteKind::Flick => NoteKind::Flick,
             };
 
-            Note::new(
+            Ok(Note::new(
                 kind,
                 note.above == 1,
                 start_beat,
                 note.position_x,
                 note.speed,
-            )
+            ))
         })
         .collect()
 }
@@ -51,18 +52,18 @@ fn convert_rpe_notes(rpe_notes: &[RpeNote]) -> Vec<Note> {
 fn convert_event_layer(
     layer: &RpeEventLayer,
     easing_fn: &impl Fn(i32) -> Easing,
-) -> Vec<LineEvent> {
+) -> Result<Vec<LineEvent>, RpeInputError> {
     let mut events = Vec::new();
 
     fn convert_event<T: Num + ToPrimitive>(
         kind: LineEventKind,
         event: RpeCommonEvent<T>,
         easing_fn: &impl Fn(i32) -> Easing,
-    ) -> LineEvent {
-        LineEvent {
+    ) -> Result<LineEvent, RpeInputError> {
+        Ok(LineEvent {
             kind,
-            start_beat: event.start_time.into(),
-            end_beat: event.end_time.into(),
+            start_beat: event.start_time.try_into()?,
+            end_beat: event.end_time.try_into()?,
             value: if event.start == event.end {
                 LineEventValue::constant(event.start.to_f32().unwrap_or_default())
             } else {
@@ -72,22 +73,22 @@ fn convert_event_layer(
                     easing_fn(event.easing_type),
                 )
             },
-        }
+        })
     }
 
     // Convert moveX events
     for event in &layer.move_x_events {
-        events.push(convert_event(LineEventKind::X, event.clone(), easing_fn));
+        events.push(convert_event(LineEventKind::X, event.clone(), easing_fn)?);
     }
 
     // Convert moveY events
     for event in &layer.move_y_events {
-        events.push(convert_event(LineEventKind::Y, event.clone(), easing_fn));
+        events.push(convert_event(LineEventKind::Y, event.clone(), easing_fn)?);
     }
 
     // Convert rotate events (negate values)
     for event in &layer.rotate_events {
-        let mut phichain_event = convert_event(LineEventKind::Rotation, event.clone(), easing_fn);
+        let mut phichain_event = convert_event(LineEventKind::Rotation, event.clone(), easing_fn)?;
 
         phichain_event.value = phichain_event.value.negated();
 
@@ -100,15 +101,15 @@ fn convert_event_layer(
             LineEventKind::Opacity,
             event.clone(),
             easing_fn,
-        ));
+        )?);
     }
 
     // Convert speed events
     for event in &layer.speed_events {
         events.push(LineEvent {
             kind: LineEventKind::Speed,
-            start_beat: event.start_time.clone().into(),
-            end_beat: event.end_time.clone().into(),
+            start_beat: event.start_time.clone().try_into()?,
+            end_beat: event.end_time.clone().try_into()?,
             value: if event.start == event.end {
                 LineEventValue::constant(event.start)
             } else {
@@ -117,7 +118,7 @@ fn convert_event_layer(
         });
     }
 
-    events
+    Ok(events)
 }
 
 /// Extract the first event layer, ignoring all other layers
@@ -140,7 +141,7 @@ fn build_flattened_line(
     event_layers: Vec<RpeEventLayer>,
     notes: Vec<Note>,
     easing_fn: &impl Fn(i32) -> Easing,
-) -> SerializedLine {
+) -> Result<SerializedLine, RpeInputError> {
     // Format line name
     let name = if line_name.is_empty() || line_name == "Untitled" {
         format!("#{}", line_index)
@@ -162,26 +163,32 @@ fn build_flattened_line(
     let first_layer = extract_first_layer(event_layers);
 
     // Convert the first layer to events
-    let events = convert_event_layer(&first_layer, easing_fn);
+    let events = convert_event_layer(&first_layer, easing_fn)?;
 
-    SerializedLine {
+    Ok(SerializedLine {
         line: Line { name },
         notes,
         events,
         children: vec![],
         curve_note_tracks: vec![],
-    }
+    })
 }
 
-pub fn rpe_to_phichain(rpe: RpeChart, options: &RpeInputOptions) -> PhichainChart {
+pub fn rpe_to_phichain(
+    rpe: RpeChart,
+    options: &RpeInputOptions,
+) -> Result<PhichainChart, RpeInputError> {
+    let bpm_points: Result<Vec<_>, _> = rpe
+        .bpm_list
+        .iter()
+        .map(|x| -> Result<BpmPoint, RpeInputError> {
+            Ok(BpmPoint::new(x.start_time.clone().try_into()?, x.bpm))
+        })
+        .collect();
+
     let mut phichain = PhichainChart {
         offset: Offset(rpe.meta.offset as f32),
-        bpm_list: BpmList::new(
-            rpe.bpm_list
-                .iter()
-                .map(|x| BpmPoint::new(x.start_time.clone().into(), x.bpm))
-                .collect(),
-        ),
+        bpm_list: BpmList::new(bpm_points?),
         ..PhichainChart::empty()
     };
 
@@ -196,7 +203,7 @@ pub fn rpe_to_phichain(rpe: RpeChart, options: &RpeInputOptions) -> PhichainChar
         .judge_line_list
         .into_iter()
         .enumerate()
-        .map(|(index, rpe_line)| {
+        .map(|(index, rpe_line)| -> Result<LineWithParent, RpeInputError> {
             let mut rpe_line = rpe_line.clone();
             // Always warn about UI control lines
             if let Some(attach_ui) = &rpe_line.attach_ui {
@@ -231,15 +238,15 @@ pub fn rpe_to_phichain(rpe: RpeChart, options: &RpeInputOptions) -> PhichainChar
                 rpe_line.notes.clone()
             };
 
-            let notes = convert_rpe_notes(&filtered_notes);
-            let line = build_flattened_line(index, &rpe_line.name, rpe_line.event_layers, notes, &easing_fn);
-            LineWithParent {
+            let notes = convert_rpe_notes(&filtered_notes)?;
+            let line = build_flattened_line(index, &rpe_line.name, rpe_line.event_layers, notes, &easing_fn)?;
+            Ok(LineWithParent {
                 line,
                 father: rpe_line.father,
                 rotate_with_father: rpe_line.rotate_with_father,
-            }
+            })
         })
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     // Warn about rotate_with_father = false, as Phichain doesn't currently support this
     for (index, line_with_parent) in lines_with_parent.iter().enumerate() {
@@ -260,7 +267,7 @@ pub fn rpe_to_phichain(rpe: RpeChart, options: &RpeInputOptions) -> PhichainChar
     let lines = remove_empty_placeholder_lines(lines);
 
     phichain.lines = lines;
-    phichain
+    Ok(phichain)
 }
 
 fn is_empty_placeholder_line(line: &SerializedLine) -> bool {
