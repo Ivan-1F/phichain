@@ -48,8 +48,6 @@ pub struct GeneralSettings {
     pub pause_when_scroll: bool,
 
     pub send_telemetry: bool,
-
-    pub vsync: bool,
 }
 
 impl Default for GeneralSettings {
@@ -64,8 +62,6 @@ impl Default for GeneralSettings {
             pause_when_scroll: false,
 
             send_telemetry: true,
-
-            vsync: true,
         }
     }
 }
@@ -161,6 +157,18 @@ impl Default for AutoSaveSettings {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct GraphicsSettings {
+    pub vsync: bool,
+}
+
+impl Default for GraphicsSettings {
+    fn default() -> Self {
+        Self { vsync: true }
+    }
+}
+
 #[derive(Resource, Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct EditorSettings {
@@ -168,4 +176,5 @@ pub struct EditorSettings {
     pub audio: AudioSettings,
     pub game: GameSettings,
     pub autosave: AutoSaveSettings,
+    pub graphics: GraphicsSettings,
 }

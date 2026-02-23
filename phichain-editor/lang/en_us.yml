@@ -191,6 +191,9 @@ tab:
         language:
           label: Language
           description: The language used by the editor
+      graphics:
+        title: Graphics
+        description: Graphics and display settings
         vsync:
           label: VSync
           description: Enable vertical sync to match display refresh rate

@@ -182,17 +182,6 @@ impl SettingCategory for General {
                 },
             );
 
-            ui.separator();
-
-            finished |= ui.item(
-                t!("tab.settings.category.general.vsync.label"),
-                Some(t!("tab.settings.category.general.vsync.description")),
-                |ui| {
-                    let response = ui.checkbox(&mut settings.general.vsync, "");
-                    response.changed()
-                },
-            );
-
             finished
         })
         .is_some()

@@ -201,7 +201,7 @@ fn apply_editor_settings_system(
 
     // Apply initial VSync setting
     if let Ok(mut window) = windows.single_mut() {
-        window.present_mode = if settings.general.vsync {
+        window.present_mode = if settings.graphics.vsync {
             bevy::window::PresentMode::AutoVsync
         } else {
             bevy::window::PresentMode::AutoNoVsync
@@ -233,7 +233,7 @@ fn update_ui_scale_changes_system(
             current_resolution.set(current_width, current_height);
 
             // Update VSync setting
-            window.present_mode = if settings.general.vsync {
+            window.present_mode = if settings.graphics.vsync {
                 bevy::window::PresentMode::AutoVsync
             } else {
                 bevy::window::PresentMode::AutoNoVsync

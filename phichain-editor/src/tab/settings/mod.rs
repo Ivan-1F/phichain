@@ -2,6 +2,7 @@ mod audio;
 mod autosave;
 mod game;
 mod general;
+mod graphics;
 mod hotkey;
 
 use crate::notification::{ToastsExt, ToastsStorage};
@@ -10,6 +11,7 @@ use crate::tab::settings::audio::Audio;
 use crate::tab::settings::autosave::AutoSave;
 use crate::tab::settings::game::Game;
 use crate::tab::settings::general::General;
+use crate::tab::settings::graphics::Graphics;
 use crate::tab::settings::hotkey::Hotkey;
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
@@ -61,6 +63,7 @@ pub trait SettingCategory {
 #[derive(Copy, Clone, PartialEq, Eq, Debug, EnumIter)]
 enum SettingCategories {
     General,
+    Graphics,
     Audio,
     Game,
     AutoSave,

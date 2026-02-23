@@ -191,6 +191,9 @@ tab:
         language:
           label: 语言
           description: 编辑器使用的语言
+      graphics:
+        title: 图像
+        description: 图像和显示设置
         vsync:
           label: 垂直同步
           description: 启用垂直同步以匹配显示器刷新率
