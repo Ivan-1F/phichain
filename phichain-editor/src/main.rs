@@ -11,6 +11,7 @@ mod events;
 mod export;
 mod file;
 mod fps;
+mod graphics;
 mod hit_sound;
 mod home;
 mod hotkey;
@@ -48,6 +49,7 @@ use crate::events::EventPlugin;
 use crate::export::ExportPlugin;
 use crate::file::FilePickingPlugin;
 use crate::fps::{FpsDisplay, FpsPlugin};
+use crate::graphics::GraphicsPlugin;
 use crate::hit_sound::HitSoundPlugin;
 use crate::home::HomePlugin;
 use crate::hotkey::HotkeyPlugin;
@@ -144,6 +146,7 @@ fn main() {
                     ..default()
                 }),
         )
+        .add_plugins(GraphicsPlugin)
         .add_plugins(ImeCompatPlugin)
         .add_plugins(GamePlugin)
         .add_plugins(ActionPlugin)
@@ -184,8 +187,7 @@ fn main() {
         .add_systems(
             Startup,
             (apply_args_config_system, apply_editor_settings_system),
-        )
-        .add_systems(Update, update_ui_scale_changes_system);
+        );
 
     // #[cfg(debug_assertions)]
     // app.add_plugins(bevy_inspector_egui::quick::WorldInspectorPlugin::new());
@@ -193,20 +195,8 @@ fn main() {
     app.run();
 }
 
-fn apply_editor_settings_system(
-    settings: Res<Persistent<EditorSettings>>,
-    mut windows: Query<&mut Window>,
-) {
+fn apply_editor_settings_system(settings: Res<Persistent<EditorSettings>>) {
     set_locale(settings.general.language.as_str());
-
-    // Apply initial VSync setting
-    if let Ok(mut window) = windows.single_mut() {
-        window.present_mode = if settings.graphics.vsync {
-            bevy::window::PresentMode::AutoVsync
-        } else {
-            bevy::window::PresentMode::AutoNoVsync
-        };
-    }
 }
 
 /// Apply configurations from the command line args
@@ -214,31 +204,6 @@ fn apply_args_config_system(args: Res<Args>, mut events: EventWriter<LoadProject
     // load chart if specified
     if let Some(path) = &args.project {
         events.write(LoadProjectEvent(path.into()));
-    }
-}
-
-fn update_ui_scale_changes_system(
-    settings: Res<Persistent<EditorSettings>>,
-    mut windows: Query<&mut Window>,
-) {
-    if settings.is_changed() {
-        if let Ok(mut window) = windows.single_mut() {
-            // Preserve current window dimensions and only update scale factor
-            let current_resolution = &mut window.resolution;
-            current_resolution.set_scale_factor_override(Some(settings.graphics.ui_scale));
-
-            // Force window to apply the new scale by triggering a minimal resize using logical dimensions
-            let current_width = current_resolution.width();
-            let current_height = current_resolution.height();
-            current_resolution.set(current_width, current_height);
-
-            // Update VSync setting
-            window.present_mode = if settings.graphics.vsync {
-                bevy::window::PresentMode::AutoVsync
-            } else {
-                bevy::window::PresentMode::AutoNoVsync
-            };
-        }
     }
 }
 
