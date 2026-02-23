@@ -74,7 +74,9 @@ fn create_note_system(
 
     mut pending_note_query: Query<(&mut Note, Entity), With<Pending>>,
 ) -> Result {
-    let window = window_query.single()?;
+    let Ok(window) = window_query.single() else {
+        return Ok(());
+    };
     let Some(cursor_position) = window.cursor_position() else {
         return Ok(());
     };

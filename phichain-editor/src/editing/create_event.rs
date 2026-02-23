@@ -64,7 +64,9 @@ fn create_event_system(
 
     event_query: Query<(&LineEvent, &EventOf), Without<Pending>>,
 ) -> Result {
-    let window = window_query.single()?;
+    let Ok(window) = window_query.single() else {
+        return Ok(());
+    };
     let Some(cursor_position) = window.cursor_position() else {
         return Ok(());
     };

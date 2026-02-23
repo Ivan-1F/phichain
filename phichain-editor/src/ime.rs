@@ -16,7 +16,10 @@ fn update_ime_system(
     mut window_query: Query<&mut Window, With<PrimaryWindow>>,
 ) -> Result {
     let ctx = contexts.ctx_mut()?;
-    window_query.single_mut()?.ime_enabled = ctx.wants_keyboard_input();
+    let Ok(mut window) = window_query.single_mut() else {
+        return Ok(());
+    };
+    window.ime_enabled = ctx.wants_keyboard_input();
 
     Ok(())
 }
