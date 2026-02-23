@@ -17,25 +17,20 @@ impl SettingCategory for Graphics {
     }
 
     fn ui(&self, ui: &mut Ui, settings: &mut EditorSettings, _world: &mut World) -> bool {
-        latch::latch(
-            ui,
-            "graphics-settings",
-            settings.graphics.clone(),
-            |ui| {
-                let mut finished = false;
+        latch::latch(ui, "graphics-settings", settings.graphics.clone(), |ui| {
+            let mut finished = false;
 
-                finished |= ui.item(
-                    t!("tab.settings.category.graphics.vsync.label"),
-                    Some(t!("tab.settings.category.graphics.vsync.description")),
-                    |ui| {
-                        let response = ui.checkbox(&mut settings.graphics.vsync, "");
-                        response.changed()
-                    },
-                );
+            finished |= ui.item(
+                t!("tab.settings.category.graphics.vsync.label"),
+                Some(t!("tab.settings.category.graphics.vsync.description")),
+                |ui| {
+                    let response = ui.checkbox(&mut settings.graphics.vsync, "");
+                    response.changed()
+                },
+            );
 
-                finished
-            },
-        )
+            finished
+        })
         .is_some()
     }
 }
