@@ -271,9 +271,7 @@ pub fn rpe_to_phichain(
 }
 
 fn is_empty_placeholder_line(line: &SerializedLine) -> bool {
-    line.notes.is_empty()
-        && line.curve_note_tracks.is_empty()
-        && line.events == SerializedLine::default().events
+    line.notes.is_empty() && line.curve_note_tracks.is_empty() && line.events.is_empty()
 }
 
 fn remove_empty_placeholder_lines(lines: Vec<SerializedLine>) -> Vec<SerializedLine> {
