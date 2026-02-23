@@ -225,7 +225,7 @@ fn update_ui_scale_changes_system(
         if let Ok(mut window) = windows.single_mut() {
             // Preserve current window dimensions and only update scale factor
             let current_resolution = &mut window.resolution;
-            current_resolution.set_scale_factor_override(Some(settings.general.ui_scale));
+            current_resolution.set_scale_factor_override(Some(settings.graphics.ui_scale));
 
             // Force window to apply the new scale by triggering a minimal resize using logical dimensions
             let current_width = current_resolution.width();

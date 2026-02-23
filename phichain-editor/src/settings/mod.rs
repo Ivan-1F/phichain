@@ -40,7 +40,6 @@ pub enum ShowLineAnchorOption {
 #[serde(default)]
 pub struct GeneralSettings {
     pub language: String,
-    pub ui_scale: f32,
     pub timeline_scroll_sensitivity: f32,
     pub timeline_smooth_seeking: bool,
     pub highlight_selected_line: bool,
@@ -54,7 +53,6 @@ impl Default for GeneralSettings {
     fn default() -> Self {
         Self {
             language: "en_us".to_owned(),
-            ui_scale: 1.0,
             timeline_scroll_sensitivity: 10.0,
             timeline_smooth_seeking: true,
             highlight_selected_line: true,
@@ -160,12 +158,16 @@ impl Default for AutoSaveSettings {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct GraphicsSettings {
+    pub ui_scale: f32,
     pub vsync: bool,
 }
 
 impl Default for GraphicsSettings {
     fn default() -> Self {
-        Self { vsync: true }
+        Self {
+            ui_scale: 1.0,
+            vsync: true,
+        }
     }
 }
 
