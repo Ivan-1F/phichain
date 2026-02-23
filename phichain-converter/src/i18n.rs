@@ -27,9 +27,9 @@ pub fn locale() -> String {
         .unwrap_or_else(|| "en-US".to_string())
 }
 
-pub fn i18n_str(key: &str) -> &str {
+pub fn i18n_str(key: &'static str) -> &'static str {
     match t!(key) {
         Cow::Borrowed(s) => s,
-        Cow::Owned(_) => unreachable!(),
+        Cow::Owned(s) => Box::leak(s.into_boxed_str()),
     }
 }
