@@ -400,3 +400,113 @@ impl TreeBuilder {
         Some(line)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use phichain_chart::line::Line;
+
+    /// Helper to create a LineWithParent for testing
+    fn line(name: &str, father: i32) -> LineWithParent {
+        LineWithParent {
+            line: SerializedLine {
+                line: Line {
+                    name: name.to_string(),
+                },
+                notes: vec![],
+                events: vec![],
+                children: vec![],
+                curve_note_tracks: vec![],
+            },
+            father,
+            rotate_with_father: true,
+        }
+    }
+
+    /// Recursively collect the tree as a string like "A(B(D),C)" for easy comparison
+    fn tree_repr(lines: &[SerializedLine]) -> String {
+        lines
+            .iter()
+            .map(|l| {
+                if l.children.is_empty() {
+                    l.line.name.clone()
+                } else {
+                    format!("{}({})", l.line.name, tree_repr(&l.children))
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(",")
+    }
+
+    #[test]
+    fn flat_roots_no_children() {
+        let input = vec![line("A", -1), line("B", -1), line("C", -1)];
+        let result = build_parent_child_tree(input);
+        assert_eq!(tree_repr(&result), "A,B,C");
+    }
+
+    #[test]
+    fn single_level_nesting() {
+        // A is root, B and C are children of A
+        let input = vec![line("A", -1), line("B", 0), line("C", 0)];
+        let result = build_parent_child_tree(input);
+        assert_eq!(tree_repr(&result), "A(B,C)");
+    }
+
+    #[test]
+    fn deep_nesting() {
+        // A -> B -> C -> D
+        let input = vec![
+            line("A", -1),
+            line("B", 0),
+            line("C", 1),
+            line("D", 2),
+        ];
+        let result = build_parent_child_tree(input);
+        assert_eq!(tree_repr(&result), "A(B(C(D)))");
+    }
+
+    #[test]
+    fn multiple_roots_with_children() {
+        // Root A with child B, Root C with child D
+        let input = vec![
+            line("A", -1),
+            line("B", 0),
+            line("C", -1),
+            line("D", 2),
+        ];
+        let result = build_parent_child_tree(input);
+        assert_eq!(tree_repr(&result), "A(B),C(D)");
+    }
+
+    #[test]
+    fn invalid_father_promoted_to_root() {
+        // B has father=99 which is out of range
+        let input = vec![line("A", -1), line("B", 99)];
+        let result = build_parent_child_tree(input);
+        assert_eq!(tree_repr(&result), "A,B");
+    }
+
+    #[test]
+    fn cycle_promotes_to_root() {
+        // A -> B -> A (cycle, neither is father=-1)
+        let input = vec![line("A", 1), line("B", 0)];
+        let result = build_parent_child_tree(input);
+        // Both are orphans, promoted to roots; A is processed first and takes B as child
+        assert_eq!(tree_repr(&result), "A(B)");
+    }
+
+    #[test]
+    fn self_referencing_promoted_to_root() {
+        // A's father is itself
+        let input = vec![line("A", 0)];
+        let result = build_parent_child_tree(input);
+        assert_eq!(tree_repr(&result), "A");
+    }
+
+    #[test]
+    fn empty_input() {
+        let result = build_parent_child_tree(vec![]);
+        assert!(result.is_empty());
+    }
+}
