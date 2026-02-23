@@ -165,7 +165,7 @@ pub struct GraphicsSettings {
 impl Default for GraphicsSettings {
     fn default() -> Self {
         Self {
-            ui_scale: 1.0,
+            ui_scale: 2.0,
             vsync: true,
         }
     }
