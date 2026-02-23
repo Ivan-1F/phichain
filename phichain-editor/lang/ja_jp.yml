@@ -191,6 +191,9 @@ tab:
         language:
           label: 言語
           description: エディタが使用する言語
+        vsync:
+          label: 垂直同期
+          description: ディスプレイのリフレッシュレートに合わせて垂直同期を有効にする
       audio:
         title: オーディオ
         description: エディタのオーディオ設定

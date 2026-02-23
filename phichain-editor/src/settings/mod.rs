@@ -48,6 +48,8 @@ pub struct GeneralSettings {
     pub pause_when_scroll: bool,
 
     pub send_telemetry: bool,
+
+    pub vsync: bool,
 }
 
 impl Default for GeneralSettings {
@@ -62,6 +64,8 @@ impl Default for GeneralSettings {
             pause_when_scroll: false,
 
             send_telemetry: true,
+
+            vsync: true,
         }
     }
 }

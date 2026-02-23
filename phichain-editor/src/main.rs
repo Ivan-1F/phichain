@@ -193,8 +193,20 @@ fn main() {
     app.run();
 }
 
-fn apply_editor_settings_system(settings: Res<Persistent<EditorSettings>>) {
+fn apply_editor_settings_system(
+    settings: Res<Persistent<EditorSettings>>,
+    mut windows: Query<&mut Window>,
+) {
     set_locale(settings.general.language.as_str());
+
+    // Apply initial VSync setting
+    if let Ok(mut window) = windows.single_mut() {
+        window.present_mode = if settings.general.vsync {
+            bevy::window::PresentMode::AutoVsync
+        } else {
+            bevy::window::PresentMode::AutoNoVsync
+        };
+    }
 }
 
 /// Apply configurations from the command line args
@@ -219,6 +231,13 @@ fn update_ui_scale_changes_system(
             let current_width = current_resolution.width();
             let current_height = current_resolution.height();
             current_resolution.set(current_width, current_height);
+
+            // Update VSync setting
+            window.present_mode = if settings.general.vsync {
+                bevy::window::PresentMode::AutoVsync
+            } else {
+                bevy::window::PresentMode::AutoNoVsync
+            };
         }
     }
 }

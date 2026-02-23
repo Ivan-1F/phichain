@@ -191,6 +191,9 @@ tab:
         language:
           label: 语言
           description: 编辑器使用的语言
+        vsync:
+          label: 垂直同步
+          description: 启用垂直同步以匹配显示器刷新率
       audio:
         title: 音频
         description: 编辑器的音频设置
