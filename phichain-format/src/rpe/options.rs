@@ -1,4 +1,4 @@
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct RpeInputOptions {
     /// If true, notes with `isFake = true` will be removed. Otherwise, it will retain as a real note
     pub remove_fake_notes: bool,
