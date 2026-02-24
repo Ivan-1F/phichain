@@ -520,6 +520,32 @@ mod tests {
     }
 
     #[test]
+    fn test_from_str_leading_zero_denominator() {
+        // "1/02" is valid (denominator is 2, not 0), should parse successfully
+        let result: Result<Beat, _> = "1/02".parse();
+        assert!(result.is_ok(), "1/02 should parse as 1/2, got error: {:?}", result.unwrap_err());
+        assert_eq!(result.unwrap(), beat!(1, 2));
+    }
+
+    #[test]
+    fn test_from_str_zero_denominator_error_message() {
+        // "1/0" should give a "zero" error, not a generic parse error
+        let result: Result<Beat, _> = "1/0".parse();
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.contains("zero"), "error for 1/0 should mention 'zero', got: {}", err);
+    }
+
+    #[test]
+    fn test_from_str_whole_plus_zero_denom() {
+        // "2+1/0" should error with "zero" message
+        let result: Result<Beat, _> = "2+1/0".parse();
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.contains("zero"), "error for 2+1/0 should mention 'zero', got: {}", err);
+    }
+
+    #[test]
     fn test_checked_add_consistent_with_add() {
         let a = beat!(1, 3, 4);
         let b = beat!(2, 1, 2);
