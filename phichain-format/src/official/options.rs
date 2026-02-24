@@ -22,6 +22,7 @@ impl Default for OfficialInputOptions {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct OfficialOutputOptions {
     pub minimum_beat: Beat,
 }
