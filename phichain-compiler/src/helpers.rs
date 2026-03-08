@@ -194,7 +194,11 @@ pub struct CutOptions {
     pub force_linear: bool,
 }
 
+/// # Panics
+///
+/// Panics if `minimum` is zero, which would cause an infinite loop.
 pub fn cut_with_options(event: LineEvent, minimum: Beat, options: CutOptions) -> Vec<LineEvent> {
+    assert!(minimum > beat!(0), "minimum beat must be positive");
     match event.value {
         LineEventValue::Constant(_) => vec![event],
         LineEventValue::Transition { start, end, easing } => {

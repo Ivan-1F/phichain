@@ -5,6 +5,14 @@ use phichain_format::rpe::RpeInputOptions;
 use phichain_format::CommonOutputOptions;
 use rust_i18n::t;
 
+fn parse_positive_beat(s: &str) -> Result<Beat, String> {
+    let beat: Beat = s.parse().map_err(|e| format!("{}", e))?;
+    if beat.value() <= 0.0 {
+        return Err("minimum beat must be positive".to_string());
+    }
+    Ok(beat)
+}
+
 /// CLI wrapper for OfficialInputOptions
 #[derive(Debug, Clone, clap::Args, o2o)]
 #[map(OfficialInputOptions)]
@@ -24,7 +32,7 @@ pub struct CliOfficialInputOptions {
 #[derive(Debug, Clone, clap::Args, o2o)]
 #[map(OfficialOutputOptions)]
 pub struct CliOfficialOutputOptions {
-    #[arg(long, value_parser = clap::value_parser!(Beat), default_value = "1/32", help = t!("cli.official_output.minimum_beat").to_string())]
+    #[arg(long, value_parser = parse_positive_beat, default_value = "1/32", help = t!("cli.official_output.minimum_beat").to_string())]
     minimum_beat: Beat,
 }
 
