@@ -72,7 +72,7 @@ fn convert_event<T: Num + ToPrimitive>(
     })
 }
 
-/// Convert a single RpeEventLayer to LineEvents
+/// Convert a single [RpeEventLayer] to [LineEvent]s
 fn convert_event_layer(
     layer: &RpeEventLayer,
     easing_fn: &impl Fn(i32) -> Easing,
