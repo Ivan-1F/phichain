@@ -50,6 +50,28 @@ fn convert_rpe_notes(rpe_notes: &[RpeNote]) -> Result<Vec<Note>, RpeInputError> 
         .collect()
 }
 
+/// Convert a single [RpeCommonEvent] to phichain's [LineEvent]
+fn convert_event<T: Num + ToPrimitive>(
+    kind: LineEventKind,
+    event: RpeCommonEvent<T>,
+    easing_fn: &impl Fn(i32) -> Easing,
+) -> Result<LineEvent, RpeInputError> {
+    Ok(LineEvent {
+        kind,
+        start_beat: event.start_time.try_into()?,
+        end_beat: event.end_time.try_into()?,
+        value: if event.start == event.end {
+            LineEventValue::constant(event.start.to_f32().unwrap_or_default())
+        } else {
+            LineEventValue::transition(
+                event.start.to_f32().unwrap_or_default(),
+                event.end.to_f32().unwrap_or_default(),
+                easing_fn(event.easing_type),
+            )
+        },
+    })
+}
+
 /// Convert a single RpeEventLayer to LineEvents
 fn convert_event_layer(
     layer: &RpeEventLayer,
@@ -57,26 +79,6 @@ fn convert_event_layer(
 ) -> Result<Vec<LineEvent>, RpeInputError> {
     let mut events = Vec::new();
 
-    fn convert_event<T: Num + ToPrimitive>(
-        kind: LineEventKind,
-        event: RpeCommonEvent<T>,
-        easing_fn: &impl Fn(i32) -> Easing,
-    ) -> Result<LineEvent, RpeInputError> {
-        Ok(LineEvent {
-            kind,
-            start_beat: event.start_time.try_into()?,
-            end_beat: event.end_time.try_into()?,
-            value: if event.start == event.end {
-                LineEventValue::constant(event.start.to_f32().unwrap_or_default())
-            } else {
-                LineEventValue::transition(
-                    event.start.to_f32().unwrap_or_default(),
-                    event.end.to_f32().unwrap_or_default(),
-                    easing_fn(event.easing_type),
-                )
-            },
-        })
-    }
 
     // Convert moveX events
     for event in &layer.move_x_events {
