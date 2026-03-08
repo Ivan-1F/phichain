@@ -50,11 +50,18 @@ fn convert_rpe_notes(rpe_notes: &[RpeNote]) -> Result<Vec<Note>, RpeInputError> 
         .collect()
 }
 
+/// Look up the RPE easing type by its integer ID
+fn rpe_easing(id: i32) -> Easing {
+    RPE_EASING.get(id as usize).copied().unwrap_or_else(|| {
+        warn!("Unknown easing type: {}", id);
+        Easing::Linear
+    })
+}
+
 /// Convert a single [RpeCommonEvent] to phichain's [LineEvent]
 fn convert_event<T: Num + ToPrimitive>(
     kind: LineEventKind,
     event: RpeCommonEvent<T>,
-    easing_fn: &impl Fn(i32) -> Easing,
 ) -> Result<LineEvent, RpeInputError> {
     Ok(LineEvent {
         kind,
@@ -66,33 +73,29 @@ fn convert_event<T: Num + ToPrimitive>(
             LineEventValue::transition(
                 event.start.to_f32().unwrap_or_default(),
                 event.end.to_f32().unwrap_or_default(),
-                easing_fn(event.easing_type),
+                rpe_easing(event.easing_type),
             )
         },
     })
 }
 
 /// Convert a single [RpeEventLayer] to [LineEvent]s
-fn convert_event_layer(
-    layer: &RpeEventLayer,
-    easing_fn: &impl Fn(i32) -> Easing,
-) -> Result<Vec<LineEvent>, RpeInputError> {
+fn convert_event_layer(layer: &RpeEventLayer) -> Result<Vec<LineEvent>, RpeInputError> {
     let mut events = Vec::new();
-
 
     // Convert moveX events
     for event in &layer.move_x_events {
-        events.push(convert_event(LineEventKind::X, event.clone(), easing_fn)?);
+        events.push(convert_event(LineEventKind::X, event.clone())?);
     }
 
     // Convert moveY events
     for event in &layer.move_y_events {
-        events.push(convert_event(LineEventKind::Y, event.clone(), easing_fn)?);
+        events.push(convert_event(LineEventKind::Y, event.clone())?);
     }
 
     // Convert rotate events (negate values)
     for event in &layer.rotate_events {
-        let mut phichain_event = convert_event(LineEventKind::Rotation, event.clone(), easing_fn)?;
+        let mut phichain_event = convert_event(LineEventKind::Rotation, event.clone())?;
 
         phichain_event.value = phichain_event.value.negated();
 
@@ -101,11 +104,7 @@ fn convert_event_layer(
 
     // Convert alpha events
     for event in &layer.alpha_events {
-        events.push(convert_event(
-            LineEventKind::Opacity,
-            event.clone(),
-            easing_fn,
-        )?);
+        events.push(convert_event(LineEventKind::Opacity, event.clone())?);
     }
 
     // Convert speed events
@@ -144,7 +143,6 @@ fn build_flattened_line(
     line_name: &str,
     event_layers: Vec<RpeEventLayer>,
     notes: Vec<Note>,
-    easing_fn: &impl Fn(i32) -> Easing,
 ) -> Result<SerializedLine, RpeInputError> {
     // Format line name
     let name = if line_name.is_empty() || line_name == "Untitled" {
@@ -167,7 +165,7 @@ fn build_flattened_line(
     let first_layer = extract_first_layer(event_layers);
 
     // Convert the first layer to events
-    let events = convert_event_layer(&first_layer, easing_fn)?;
+    let events = convert_event_layer(&first_layer)?;
 
     Ok(SerializedLine {
         line: Line { name },
@@ -194,13 +192,6 @@ pub fn rpe_to_phichain(
         offset: Offset(rpe.meta.offset as f32),
         bpm_list: BpmList::new(bpm_points?),
         ..PhichainChart::empty()
-    };
-
-    let easing_fn = |id: i32| {
-        RPE_EASING.get(id as usize).copied().unwrap_or_else(|| {
-            warn!("Unknown easing type: {}", id);
-            Easing::Linear
-        })
     };
 
     let lines_with_parent: Vec<LineWithParent> = rpe
@@ -243,7 +234,7 @@ pub fn rpe_to_phichain(
             };
 
             let notes = convert_rpe_notes(&filtered_notes)?;
-            let line = build_flattened_line(index, &rpe_line.name, rpe_line.event_layers, notes, &easing_fn)?;
+            let line = build_flattened_line(index, &rpe_line.name, rpe_line.event_layers, notes)?;
             Ok(LineWithParent {
                 line,
                 father: rpe_line.father,
@@ -339,11 +330,7 @@ impl TreeBuilder {
 
     /// Take all root lines (father = -1) and recursively attach their children
     fn take_roots(&mut self) -> Vec<SerializedLine> {
-        let root_indices: Vec<usize> = self
-            .children_of
-            .get(&-1)
-            .cloned()
-            .unwrap_or_default();
+        let root_indices: Vec<usize> = self.children_of.get(&-1).cloned().unwrap_or_default();
 
         root_indices
             .iter()
@@ -406,6 +393,7 @@ impl TreeBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::rpe::schema::RpeBeat;
     use phichain_chart::line::Line;
 
     /// Helper to create a LineWithParent for testing
@@ -458,12 +446,7 @@ mod tests {
     #[test]
     fn deep_nesting() {
         // A -> B -> C -> D
-        let input = vec![
-            line("A", -1),
-            line("B", 0),
-            line("C", 1),
-            line("D", 2),
-        ];
+        let input = vec![line("A", -1), line("B", 0), line("C", 1), line("D", 2)];
         let result = build_parent_child_tree(input);
         assert_eq!(tree_repr(&result), "A(B(C(D)))");
     }
@@ -471,12 +454,7 @@ mod tests {
     #[test]
     fn multiple_roots_with_children() {
         // Root A with child B, Root C with child D
-        let input = vec![
-            line("A", -1),
-            line("B", 0),
-            line("C", -1),
-            line("D", 2),
-        ];
+        let input = vec![line("A", -1), line("B", 0), line("C", -1), line("D", 2)];
         let result = build_parent_child_tree(input);
         assert_eq!(tree_repr(&result), "A(B),C(D)");
     }
