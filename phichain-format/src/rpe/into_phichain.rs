@@ -63,6 +63,13 @@ fn convert_event<T: Num + ToPrimitive>(
     kind: LineEventKind,
     event: RpeCommonEvent<T>,
 ) -> Result<LineEvent, RpeInputError> {
+    let easing = if event.bezier == 1 {
+        let [a, b, c, d] = event.bezier_points;
+        Easing::Custom(a, b, c, d)
+    } else {
+        rpe_easing(event.easing_type)
+    };
+
     Ok(LineEvent {
         kind,
         start_beat: event.start_time.try_into()?,
@@ -73,7 +80,7 @@ fn convert_event<T: Num + ToPrimitive>(
             LineEventValue::transition(
                 event.start.to_f32().unwrap_or_default(),
                 event.end.to_f32().unwrap_or_default(),
-                rpe_easing(event.easing_type),
+                easing,
             )
         },
     })
@@ -488,5 +495,21 @@ mod tests {
     fn empty_input() {
         let result = build_parent_child_tree(vec![]);
         assert!(result.is_empty());
+    }
+
+    #[test]
+    fn convert_event_preserves_custom_bezier_easing() {
+        let event = RpeCommonEvent {
+            bezier: 1,
+            bezier_points: [0.25, 0.1, 0.25, 1.0],
+            easing_type: 1,
+            start: 0.0,
+            start_time: RpeBeat(0, 0, 1),
+            end: 100.0,
+            end_time: RpeBeat(1, 0, 1),
+        };
+
+        let result = convert_event(LineEventKind::X, event).unwrap();
+        assert_eq!(result.value.easing(), Easing::Custom(0.25, 0.1, 0.25, 1.0),);
     }
 }
