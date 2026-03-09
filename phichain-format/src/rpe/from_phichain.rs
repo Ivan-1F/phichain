@@ -166,7 +166,7 @@ pub fn phichain_to_rpe(phichain: PhichainChart) -> RpeChart {
             })
             .collect(),
         meta: RpeMeta {
-            offset: phichain.offset.0 as i32,
+            offset: phichain.offset.0.round() as i32,
             ..RpeMeta::default()
         },
         judge_line_list: vec![],
