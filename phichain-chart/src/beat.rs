@@ -523,7 +523,11 @@ mod tests {
     fn test_from_str_leading_zero_denominator() {
         // "1/02" is valid (denominator is 2, not 0), should parse successfully
         let result: Result<Beat, _> = "1/02".parse();
-        assert!(result.is_ok(), "1/02 should parse as 1/2, got error: {:?}", result.unwrap_err());
+        assert!(
+            result.is_ok(),
+            "1/02 should parse as 1/2, got error: {:?}",
+            result.unwrap_err()
+        );
         assert_eq!(result.unwrap(), beat!(1, 2));
     }
 
@@ -533,7 +537,11 @@ mod tests {
         let result: Result<Beat, _> = "1/0".parse();
         assert!(result.is_err());
         let err = result.unwrap_err();
-        assert!(err.contains("zero"), "error for 1/0 should mention 'zero', got: {}", err);
+        assert!(
+            err.contains("zero"),
+            "error for 1/0 should mention 'zero', got: {}",
+            err
+        );
     }
 
     #[test]
@@ -542,7 +550,11 @@ mod tests {
         let result: Result<Beat, _> = "2+1/0".parse();
         assert!(result.is_err());
         let err = result.unwrap_err();
-        assert!(err.contains("zero"), "error for 2+1/0 should mention 'zero', got: {}", err);
+        assert!(
+            err.contains("zero"),
+            "error for 2+1/0 should mention 'zero', got: {}",
+            err
+        );
     }
 
     #[test]
