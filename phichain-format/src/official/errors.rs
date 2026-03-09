@@ -12,6 +12,8 @@ pub enum OfficialInputError {
 
 #[derive(Debug, Error)]
 pub enum OfficialOutputError {
+    #[error("BPM list is empty")]
+    EmptyBpmList,
     #[error("event sequence error in line '{line_name}' for event kind {event_kind:?}: {source}")]
     EventSequenceError {
         line_name: String,

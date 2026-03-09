@@ -20,7 +20,12 @@ pub fn phichain_to_official(
     let phichain = merge_children_line(phichain);
     let phichain = evaluate_curve_note_tracks(phichain);
 
-    let bpm = phichain.bpm_list.0[0].bpm; // take first bpm as base bpm for all lines, normalize all beats using this bpm
+    let bpm = phichain
+        .bpm_list
+        .0
+        .first()
+        .ok_or(OfficialOutputError::EmptyBpmList)?
+        .bpm;
     let offset = phichain.offset.0 / 1000.0;
 
     let time = |beat: Beat| phichain.bpm_list.normalize_beat(bpm, beat).value() * 60.0 / 1.875;
