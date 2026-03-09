@@ -6,7 +6,7 @@ use phichain_format::CommonOutputOptions;
 use rust_i18n::t;
 
 fn parse_positive_beat(s: &str) -> Result<Beat, String> {
-    let beat: Beat = s.parse().map_err(|e| format!("{}", e))?;
+    let beat: Beat = s.parse()?;
     if beat.value() <= 0.0 {
         return Err("minimum beat must be positive".to_string());
     }
