@@ -18,15 +18,15 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use zip::write::SimpleFileOptions;
 
-picking_event!(ExportOfficialPicking);
-picking_event!(ExportRpePicking);
+picking_event!(PickedExportOfficial);
+picking_event!(PickedExportRpe);
 
 pub struct ExportPlugin;
 
 impl Plugin for ExportPlugin {
     fn build(&self, app: &mut App) {
-        app.register_picking_event::<ExportOfficialPicking>()
-            .register_picking_event::<ExportRpePicking>()
+        app.register_picking_event::<PickedExportOfficial>()
+            .register_picking_event::<PickedExportRpe>()
             .add_observer(export_official_observer)
             .add_observer(export_rpe_observer)
             .add_heavy_action(
@@ -42,13 +42,13 @@ impl Plugin for ExportPlugin {
 }
 
 fn export_as_official_system(world: &mut World) -> Result {
-    pick_folder::<ExportOfficialPicking>(world, FileDialog::new());
+    pick_folder::<PickedExportOfficial>(world, FileDialog::new());
 
     Ok(())
 }
 
 fn export_as_rpe_system(world: &mut World) -> Result {
-    pick_folder::<ExportRpePicking>(world, FileDialog::new());
+    pick_folder::<PickedExportRpe>(world, FileDialog::new());
 
     Ok(())
 }
@@ -145,7 +145,7 @@ fn export_official(path: &Path, project: &Project) -> anyhow::Result<PathBuf> {
 }
 
 fn export_official_observer(
-    trigger: Trigger<ExportOfficialPicking>,
+    trigger: Trigger<PickedExportOfficial>,
     project: Res<Project>,
     mut toasts: ResMut<ToastsStorage>,
 ) {
@@ -172,7 +172,7 @@ fn export_rpe(path: &Path, project: &Project) -> anyhow::Result<PathBuf> {
 }
 
 fn export_rpe_observer(
-    trigger: Trigger<ExportRpePicking>,
+    trigger: Trigger<PickedExportRpe>,
     project: Res<Project>,
     mut toasts: ResMut<ToastsStorage>,
 ) {

@@ -19,10 +19,10 @@ use phichain_game::loader::nonblocking::LoadingProject;
 use rfd::FileDialog;
 use std::path::PathBuf;
 
-picking_event!(OpenProjectPicking);
-picking_event!(SelectIllustrationPicking);
-picking_event!(SelectMusicPicking);
-picking_event!(CreateProjectPicking);
+picking_event!(PickedProject);
+picking_event!(PickedIllustration);
+picking_event!(PickedMusic);
+picking_event!(PickedCreateProject);
 
 #[derive(Resource, Debug, Default)]
 pub struct CreateProjectForm {
@@ -45,10 +45,10 @@ pub struct HomePlugin;
 
 impl Plugin for HomePlugin {
     fn build(&self, app: &mut App) {
-        app.register_picking_event::<OpenProjectPicking>()
-            .register_picking_event::<SelectIllustrationPicking>()
-            .register_picking_event::<SelectMusicPicking>()
-            .register_picking_event::<CreateProjectPicking>()
+        app.register_picking_event::<PickedProject>()
+            .register_picking_event::<PickedIllustration>()
+            .register_picking_event::<PickedMusic>()
+            .register_picking_event::<PickedCreateProject>()
             .insert_resource(CreateProjectForm::default())
             .add_systems(
                 EguiPrimaryContextPass,
@@ -120,7 +120,7 @@ fn ui_system(world: &mut World) {
                     .striped(true)
                     .show(ui, |ui| {
                         if ui.button(t!("home.create_project.select_music")).clicked() {
-                            pick_file::<SelectMusicPicking>(
+                            pick_file::<PickedMusic>(
                                 world,
                                 FileDialog::new()
                                     .add_filter("Music", &["wav", "mp3", "ogg", "flac"]),
@@ -138,7 +138,7 @@ fn ui_system(world: &mut World) {
                             .button(t!("home.create_project.select_illustration"))
                             .clicked()
                         {
-                            pick_file::<SelectIllustrationPicking>(
+                            pick_file::<PickedIllustration>(
                                 world,
                                 FileDialog::new()
                                     .add_filter("Illustration", &["png", "jpg", "jpeg"]),
@@ -183,7 +183,7 @@ fn ui_system(world: &mut World) {
                         return;
                     };
 
-                    pick_folder::<CreateProjectPicking>(world, FileDialog::new());
+                    pick_folder::<PickedCreateProject>(world, FileDialog::new());
                 }
             });
 
@@ -207,7 +207,7 @@ fn ui_system(world: &mut World) {
             |ui| {
                 ui.horizontal(|ui| {
                     if ui.button(t!("home.open_project.load")).clicked() {
-                        pick_folder::<OpenProjectPicking>(world, FileDialog::new());
+                        pick_folder::<PickedProject>(world, FileDialog::new());
                     }
                     if ui.button(t!("home.create_project.create")).clicked() {
                         world.insert_resource(CreatingProject);
@@ -313,7 +313,7 @@ fn ui_system(world: &mut World) {
 }
 
 fn load_project_observer(
-    trigger: Trigger<OpenProjectPicking>,
+    trigger: Trigger<PickedProject>,
     mut commands: Commands,
     mut events: EventWriter<LoadProjectEvent>,
 ) {
@@ -324,21 +324,21 @@ fn load_project_observer(
 }
 
 fn handle_select_illustration_observer(
-    trigger: Trigger<SelectIllustrationPicking>,
+    trigger: Trigger<PickedIllustration>,
     mut form: ResMut<CreateProjectForm>,
 ) {
     form.illustration.clone_from(&trigger.event().0);
 }
 
 fn handle_select_music_observer(
-    trigger: Trigger<SelectMusicPicking>,
+    trigger: Trigger<PickedMusic>,
     mut form: ResMut<CreateProjectForm>,
 ) {
     form.music.clone_from(&trigger.event().0);
 }
 
 fn handle_create_project_observer(
-    trigger: Trigger<CreateProjectPicking>,
+    trigger: Trigger<PickedCreateProject>,
     mut commands: Commands,
     form: Res<CreateProjectForm>,
     mut load_project_events: EventWriter<LoadProjectEvent>,
