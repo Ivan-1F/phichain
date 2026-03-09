@@ -1,5 +1,5 @@
 use crate::action::ActionRegistrationExt;
-use crate::file::{pick_folder, PickingEvent, PickingKind};
+use crate::file::{pick_folder, picking_event, FilePickingAppExt};
 use crate::hotkey::modifier::Modifier;
 use crate::hotkey::Hotkey;
 use crate::notification::{ToastsExt, ToastsStorage};
@@ -18,11 +18,16 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use zip::write::SimpleFileOptions;
 
+picking_event!(ExportOfficialPicking);
+picking_event!(ExportRpePicking);
+
 pub struct ExportPlugin;
 
 impl Plugin for ExportPlugin {
     fn build(&self, app: &mut App) {
-        app.add_observer(export_official_observer)
+        app.register_picking_event::<ExportOfficialPicking>()
+            .register_picking_event::<ExportRpePicking>()
+            .add_observer(export_official_observer)
             .add_observer(export_rpe_observer)
             .add_heavy_action(
                 "phichain.export_as_official",
@@ -37,13 +42,13 @@ impl Plugin for ExportPlugin {
 }
 
 fn export_as_official_system(world: &mut World) -> Result {
-    pick_folder(world, PickingKind::ExportOfficial, FileDialog::new());
+    pick_folder::<ExportOfficialPicking>(world, FileDialog::new());
 
     Ok(())
 }
 
 fn export_as_rpe_system(world: &mut World) -> Result {
-    pick_folder(world, PickingKind::ExportRpe, FileDialog::new());
+    pick_folder::<ExportRpePicking>(world, FileDialog::new());
 
     Ok(())
 }
@@ -140,16 +145,11 @@ fn export_official(path: &Path, project: &Project) -> anyhow::Result<PathBuf> {
 }
 
 fn export_official_observer(
-    trigger: Trigger<PickingEvent>,
+    trigger: Trigger<ExportOfficialPicking>,
     project: Res<Project>,
     mut toasts: ResMut<ToastsStorage>,
 ) {
-    let PickingEvent { path, kind } = trigger.event();
-    if !matches!(kind, PickingKind::ExportOfficial) {
-        return;
-    }
-
-    let Some(path) = path else {
+    let Some(ref path) = trigger.event().0 else {
         return;
     };
 
@@ -172,16 +172,11 @@ fn export_rpe(path: &Path, project: &Project) -> anyhow::Result<PathBuf> {
 }
 
 fn export_rpe_observer(
-    trigger: Trigger<PickingEvent>,
+    trigger: Trigger<ExportRpePicking>,
     project: Res<Project>,
     mut toasts: ResMut<ToastsStorage>,
 ) {
-    let PickingEvent { path, kind } = trigger.event();
-    if !matches!(kind, PickingKind::ExportRpe) {
-        return;
-    }
-
-    let Some(path) = path else {
+    let Some(ref path) = trigger.event().0 else {
         return;
     };
 

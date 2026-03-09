@@ -46,7 +46,6 @@ use crate::editing::history::EditorHistory;
 use crate::editing::EditingPlugin;
 use crate::events::EventPlugin;
 use crate::export::ExportPlugin;
-use crate::file::FilePickingPlugin;
 use crate::fps::{FpsDisplay, FpsPlugin};
 use crate::hit_sound::HitSoundPlugin;
 use crate::home::HomePlugin;
@@ -165,7 +164,6 @@ fn main() {
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(AssetsPlugin)
         .add_plugins(NotificationPlugin)
-        .add_plugins(FilePickingPlugin)
         .add_plugins(EventPlugin)
         .add_plugins(ZoomPlugin)
         .add_plugins(FpsPlugin)
