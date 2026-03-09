@@ -330,7 +330,10 @@ fn handle_select_illustration_observer(
     form.illustration.clone_from(path);
 }
 
-fn handle_select_music_observer(trigger: Trigger<PickingEvent>, mut form: ResMut<CreateProjectForm>) {
+fn handle_select_music_observer(
+    trigger: Trigger<PickingEvent>,
+    mut form: ResMut<CreateProjectForm>,
+) {
     let PickingEvent { path, kind } = trigger.event();
     if !matches!(kind, PickingKind::SelectMusic) {
         return;
