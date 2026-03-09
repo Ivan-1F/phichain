@@ -43,10 +43,10 @@ impl Plugin for HomePlugin {
                 EguiPrimaryContextPass,
                 ui_system.run_if(project_not_loaded()),
             )
-            .add_observer(load_project_system)
-            .add_observer(handle_select_illustration_system)
-            .add_observer(handle_select_music_system)
-            .add_observer(handle_create_project_system);
+            .add_observer(load_project_observer)
+            .add_observer(handle_select_illustration_observer)
+            .add_observer(handle_select_music_observer)
+            .add_observer(handle_create_project_observer);
     }
 }
 
@@ -303,7 +303,7 @@ fn ui_system(world: &mut World) {
     });
 }
 
-fn load_project_system(
+fn load_project_observer(
     trigger: Trigger<PickingEvent>,
 
     mut commands: Commands,
@@ -319,7 +319,7 @@ fn load_project_system(
     }
 }
 
-fn handle_select_illustration_system(
+fn handle_select_illustration_observer(
     trigger: Trigger<PickingEvent>,
     mut form: ResMut<CreateProjectForm>,
 ) {
@@ -330,7 +330,7 @@ fn handle_select_illustration_system(
     form.illustration.clone_from(path);
 }
 
-fn handle_select_music_system(trigger: Trigger<PickingEvent>, mut form: ResMut<CreateProjectForm>) {
+fn handle_select_music_observer(trigger: Trigger<PickingEvent>, mut form: ResMut<CreateProjectForm>) {
     let PickingEvent { path, kind } = trigger.event();
     if !matches!(kind, PickingKind::SelectMusic) {
         return;
@@ -338,7 +338,7 @@ fn handle_select_music_system(trigger: Trigger<PickingEvent>, mut form: ResMut<C
     form.music.clone_from(path);
 }
 
-fn handle_create_project_system(
+fn handle_create_project_observer(
     trigger: Trigger<PickingEvent>,
 
     mut commands: Commands,

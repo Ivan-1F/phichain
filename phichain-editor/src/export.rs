@@ -22,8 +22,8 @@ pub struct ExportPlugin;
 
 impl Plugin for ExportPlugin {
     fn build(&self, app: &mut App) {
-        app.add_observer(export_official_system)
-            .add_observer(export_rpe_system)
+        app.add_observer(export_official_observer)
+            .add_observer(export_rpe_observer)
             .add_heavy_action(
                 "phichain.export_as_official",
                 export_as_official_system,
@@ -139,7 +139,7 @@ fn export_official(path: &Path, project: &Project) -> anyhow::Result<PathBuf> {
     export(path, project, &serde_json::to_string(&official)?)
 }
 
-fn export_official_system(
+fn export_official_observer(
     trigger: Trigger<PickingEvent>,
     project: Res<Project>,
     mut toasts: ResMut<ToastsStorage>,
@@ -171,7 +171,7 @@ fn export_rpe(path: &Path, project: &Project) -> anyhow::Result<PathBuf> {
     export(path, project, &serde_json::to_string(&rpe)?)
 }
 
-fn export_rpe_system(
+fn export_rpe_observer(
     trigger: Trigger<PickingEvent>,
     project: Res<Project>,
     mut toasts: ResMut<ToastsStorage>,
