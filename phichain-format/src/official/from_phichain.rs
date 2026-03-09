@@ -52,6 +52,7 @@ pub fn phichain_to_official(
         fn process<F, T>(
             line: &SerializedLine,
             kind: LineEventKind,
+            minimum_beat: Beat,
             mut transform: F,
             target: &mut Vec<T>,
         ) -> Result<(), OfficialOutputError>
@@ -77,7 +78,7 @@ pub fn phichain_to_official(
             for event in filled_gap {
                 let event_segments = cut_with_options(
                     event,
-                    beat!(1, 32),
+                    minimum_beat,
                     CutOptions {
                         force_linear: kind.is_speed(),
                     },
@@ -95,6 +96,7 @@ pub fn phichain_to_official(
         process(
             &line,
             LineEventKind::Rotation,
+            options.minimum_beat,
             |e| OfficialNumericLineEvent {
                 start_time: time(e.start_beat),
                 end_time: time(e.end_beat),
@@ -107,6 +109,7 @@ pub fn phichain_to_official(
         process(
             &line,
             LineEventKind::Opacity,
+            options.minimum_beat,
             |e| OfficialNumericLineEvent {
                 start_time: time(e.start_beat),
                 end_time: time(e.end_beat),
@@ -119,6 +122,7 @@ pub fn phichain_to_official(
         process(
             &line,
             LineEventKind::Speed,
+            options.minimum_beat,
             |e| OfficialSpeedEvent {
                 start_time: time(e.start_beat),
                 end_time: time(e.end_beat),
