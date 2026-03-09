@@ -33,20 +33,15 @@ pub struct FilePickingPlugin;
 
 impl Plugin for FilePickingPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<PickingEvent>()
-            .add_systems(Update, poll_system);
+        app.add_systems(Update, poll_system);
     }
 }
 
-fn poll_system(
-    mut commands: Commands,
-    mut tasks: Query<(Entity, &mut PendingPicking)>,
-    mut events: EventWriter<PickingEvent>,
-) {
+fn poll_system(mut commands: Commands, mut tasks: Query<(Entity, &mut PendingPicking)>) {
     for (entity, mut pending) in &mut tasks {
         if let Some(path) = future::block_on(future::poll_once(&mut pending.task)) {
             commands.entity(entity).despawn();
-            events.write(PickingEvent {
+            commands.trigger(PickingEvent {
                 path,
                 kind: pending.kind,
             });

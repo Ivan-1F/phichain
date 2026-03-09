@@ -3,7 +3,7 @@ use crate::file::{pick_folder, PickingEvent, PickingKind};
 use crate::hotkey::modifier::Modifier;
 use crate::hotkey::Hotkey;
 use crate::notification::{ToastsExt, ToastsStorage};
-use crate::project::{project_loaded, Project};
+use crate::project::Project;
 use anyhow::Context;
 use bevy::app::App;
 use bevy::prelude::*;
@@ -22,8 +22,8 @@ pub struct ExportPlugin;
 
 impl Plugin for ExportPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, export_official_system.run_if(project_loaded()))
-            .add_systems(Update, export_rpe_system.run_if(project_loaded()))
+        app.add_observer(export_official_system)
+            .add_observer(export_rpe_system)
             .add_heavy_action(
                 "phichain.export_as_official",
                 export_as_official_system,
@@ -140,26 +140,25 @@ fn export_official(path: &Path, project: &Project) -> anyhow::Result<PathBuf> {
 }
 
 fn export_official_system(
-    mut event_reader: EventReader<PickingEvent>,
+    trigger: Trigger<PickingEvent>,
     project: Res<Project>,
     mut toasts: ResMut<ToastsStorage>,
 ) {
-    for PickingEvent { path, kind } in event_reader.read() {
-        if !matches!(kind, PickingKind::ExportOfficial) {
-            continue;
+    let PickingEvent { path, kind } = trigger.event();
+    if !matches!(kind, PickingKind::ExportOfficial) {
+        return;
+    }
+
+    let Some(path) = path else {
+        return;
+    };
+
+    match export_official(path, &project) {
+        Ok(path) => {
+            toasts.success(t!("export.official.success", path = path.to_string_lossy()));
         }
-
-        let Some(path) = path else {
-            return;
-        };
-
-        match export_official(path, &project) {
-            Ok(path) => {
-                toasts.success(t!("export.official.success", path = path.to_string_lossy()));
-            }
-            Err(error) => {
-                toasts.error(t!("export.official.failed", error = error));
-            }
+        Err(error) => {
+            toasts.error(t!("export.official.failed", error = error));
         }
     }
 }
@@ -173,26 +172,25 @@ fn export_rpe(path: &Path, project: &Project) -> anyhow::Result<PathBuf> {
 }
 
 fn export_rpe_system(
-    mut event_reader: EventReader<PickingEvent>,
+    trigger: Trigger<PickingEvent>,
     project: Res<Project>,
     mut toasts: ResMut<ToastsStorage>,
 ) {
-    for PickingEvent { path, kind } in event_reader.read() {
-        if !matches!(kind, PickingKind::ExportRpe) {
-            continue;
+    let PickingEvent { path, kind } = trigger.event();
+    if !matches!(kind, PickingKind::ExportRpe) {
+        return;
+    }
+
+    let Some(path) = path else {
+        return;
+    };
+
+    match export_rpe(path, &project) {
+        Ok(path) => {
+            toasts.success(t!("export.rpe.success", path = path.to_string_lossy()));
         }
-
-        let Some(path) = path else {
-            return;
-        };
-
-        match export_rpe(path, &project) {
-            Ok(path) => {
-                toasts.success(t!("export.rpe.success", path = path.to_string_lossy()));
-            }
-            Err(error) => {
-                toasts.error(t!("export.rpe.failed", error = error));
-            }
+        Err(error) => {
+            toasts.error(t!("export.rpe.failed", error = error));
         }
     }
 }

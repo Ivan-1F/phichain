@@ -43,16 +43,10 @@ impl Plugin for HomePlugin {
                 EguiPrimaryContextPass,
                 ui_system.run_if(project_not_loaded()),
             )
-            .add_systems(Update, load_project_system.run_if(project_not_loaded()))
-            .add_systems(
-                Update,
-                (
-                    handle_select_illustration_system,
-                    handle_select_music_system,
-                    handle_create_project_system,
-                )
-                    .run_if(project_not_loaded().and(resource_exists::<CreateProjectForm>)),
-            );
+            .add_observer(load_project_system)
+            .add_observer(handle_select_illustration_system)
+            .add_observer(handle_select_music_system)
+            .add_observer(handle_create_project_system);
     }
 }
 
@@ -310,77 +304,72 @@ fn ui_system(world: &mut World) {
 }
 
 fn load_project_system(
+    trigger: Trigger<PickingEvent>,
+
     mut commands: Commands,
-    mut picking_events: EventReader<PickingEvent>,
     mut events: EventWriter<LoadProjectEvent>,
 ) {
-    for PickingEvent { path, kind } in picking_events.read() {
-        if !matches!(kind, PickingKind::OpenProject) {
-            continue;
-        }
-        if let Some(root_dir) = path {
-            events.write(LoadProjectEvent(root_dir.to_path_buf()));
-            commands.remove_resource::<CreatingProject>();
-        }
+    let PickingEvent { path, kind } = trigger.event();
+    if !matches!(kind, PickingKind::OpenProject) {
+        return;
+    }
+    if let Some(root_dir) = path {
+        events.write(LoadProjectEvent(root_dir.to_path_buf()));
+        commands.remove_resource::<CreatingProject>();
     }
 }
 
 fn handle_select_illustration_system(
-    mut events: EventReader<PickingEvent>,
+    trigger: Trigger<PickingEvent>,
     mut form: ResMut<CreateProjectForm>,
 ) {
-    for PickingEvent { path, kind } in events.read() {
-        if !matches!(kind, PickingKind::SelectIllustration) {
-            continue;
-        }
-        form.illustration.clone_from(path);
+    let PickingEvent { path, kind } = trigger.event();
+    if !matches!(kind, PickingKind::SelectIllustration) {
+        return;
     }
+    form.illustration.clone_from(path);
 }
 
-fn handle_select_music_system(
-    mut events: EventReader<PickingEvent>,
-    mut form: ResMut<CreateProjectForm>,
-) {
-    for PickingEvent { path, kind } in events.read() {
-        if !matches!(kind, PickingKind::SelectMusic) {
-            continue;
-        }
-        form.music.clone_from(path);
+fn handle_select_music_system(trigger: Trigger<PickingEvent>, mut form: ResMut<CreateProjectForm>) {
+    let PickingEvent { path, kind } = trigger.event();
+    if !matches!(kind, PickingKind::SelectMusic) {
+        return;
     }
+    form.music.clone_from(path);
 }
 
 fn handle_create_project_system(
+    trigger: Trigger<PickingEvent>,
+
     mut commands: Commands,
-    mut events: EventReader<PickingEvent>,
     form: Res<CreateProjectForm>,
     mut load_project_events: EventWriter<LoadProjectEvent>,
 
     mut toasts: ResMut<ToastsStorage>,
 ) {
-    for PickingEvent { path, kind } in events.read() {
-        if !matches!(kind, PickingKind::CreateProject) {
-            continue;
+    let PickingEvent { path, kind } = trigger.event();
+    if !matches!(kind, PickingKind::CreateProject) {
+        return;
+    }
+
+    let Some(root_path) = path else {
+        return;
+    };
+
+    let Some(ref music_path) = form.music else {
+        return;
+    };
+
+    match create_project(
+        root_path.clone(),
+        music_path.clone(),
+        form.illustration.clone(),
+        form.meta.clone(),
+    ) {
+        Ok(_) => {
+            load_project_events.write(LoadProjectEvent(root_path.clone()));
+            commands.remove_resource::<CreatingProject>();
         }
-
-        let Some(root_path) = path else {
-            return;
-        };
-
-        let Some(ref music_path) = form.music else {
-            return;
-        };
-
-        match create_project(
-            root_path.clone(),
-            music_path.clone(),
-            form.illustration.clone(),
-            form.meta.clone(),
-        ) {
-            Ok(_) => {
-                load_project_events.write(LoadProjectEvent(root_path.clone()));
-                commands.remove_resource::<CreatingProject>();
-            }
-            Err(error) => toasts.error(format!("{error:?}")),
-        }
+        Err(error) => toasts.error(format!("{error:?}")),
     }
 }
