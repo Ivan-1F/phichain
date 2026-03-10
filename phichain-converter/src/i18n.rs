@@ -27,6 +27,8 @@ pub fn locale() -> String {
         .unwrap_or_else(|| "en-US".to_string())
 }
 
+// Leaks owned translations to produce `&'static str`.
+// Acceptable here because the converter is a short-lived CLI process.
 pub fn i18n_str(key: &'static str) -> &'static str {
     match t!(key) {
         Cow::Borrowed(s) => s,
