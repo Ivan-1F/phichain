@@ -1,103 +1,202 @@
+mod error;
+mod i18n;
+mod options;
+
+use crate::error::{unwrap_infallible, ConvertError};
+use crate::i18n::{i18n_str, locale};
+use crate::options::{
+    CliCommonOutputOptions, CliOfficialInputOptions, CliOfficialOutputOptions, CliRpeInputOptions,
+};
 use clap::{Parser, ValueEnum};
-use phichain_chart::format::official::OfficialChart;
-use phichain_chart::format::rpe::RpeChart;
-use phichain_chart::primitive::{Format, PrimitiveChart};
+use owo_colors::OwoColorize;
 use phichain_chart::serialization::PhichainChart;
-use std::io::Write;
+use phichain_format::official::OfficialChart;
+use phichain_format::rpe::RpeChart;
+use phichain_format::{ChartFormat, CommonOutputOptions};
+use rust_i18n::t;
+use serde::Serialize;
 use std::path::PathBuf;
 use strum::Display;
+
+rust_i18n::i18n!("locales", fallback = "en-US");
+
+#[derive(Serialize)]
+#[serde(untagged)]
+enum Chart {
+    Official(OfficialChart),
+    Phichain(PhichainChart),
+    Rpe(RpeChart),
+}
+
+impl Chart {
+    fn apply_common_output_options(self, common_options: &CommonOutputOptions) -> Self {
+        match self {
+            Chart::Official(chart) => {
+                Chart::Official(chart.apply_common_output_options(common_options))
+            }
+            Chart::Phichain(chart) => {
+                Chart::Phichain(chart.apply_common_output_options(common_options))
+            }
+            Chart::Rpe(chart) => Chart::Rpe(chart.apply_common_output_options(common_options)),
+        }
+    }
+}
 
 #[derive(ValueEnum, Debug, Display, Clone)]
 #[clap(rename_all = "kebab_case")]
 #[strum(serialize_all = "snake_case")]
-enum Formats {
+enum Format {
     Official,
     Phichain,
     Rpe,
-    Primitive,
 }
 
-#[derive(Debug, Parser)]
+#[derive(Parser, Debug, Clone)]
 #[command(name = "phichain-converter")]
-#[command(about = "Converts Phigros charts between different formats")]
-struct Args {
-    /// The input chart format
-    #[arg(short, long, required = true)]
-    input: Formats,
-    /// The output chart format
-    #[arg(short, long, required = true)]
-    output: Formats,
+#[command(about = i18n_str("cli.about"))]
+#[command(after_help = i18n_str("cli.examples"))]
+pub struct Args {
+    #[arg(required = true, help = t!("cli.input").to_string())]
+    input: PathBuf,
+    #[arg(required = false, default_value = "output.json", help = t!("cli.output").to_string())]
+    output: PathBuf,
 
-    /// The path of the input chart
-    #[arg(required = true)]
-    path: PathBuf,
+    #[arg(long, help = t!("cli.from").to_string())]
+    from: Option<Format>,
+    #[arg(long, help = t!("cli.to").to_string())]
+    to: Format,
+
+    #[command(flatten)]
+    #[command(
+        next_help_heading = i18n_str("cli.official_input.heading")
+    )]
+    official_input_options: CliOfficialInputOptions,
+
+    #[command(flatten)]
+    #[command(
+        next_help_heading = i18n_str("cli.official_output.heading")
+    )]
+    official_output_options: CliOfficialOutputOptions,
+
+    #[command(flatten)]
+    #[command(
+        next_help_heading = i18n_str("cli.rpe_input.heading")
+    )]
+    rpe_input_options: CliRpeInputOptions,
+
+    #[command(flatten)]
+    #[command(
+        next_help_heading = i18n_str("cli.common_output.heading")
+    )]
+    common_output_options: CliCommonOutputOptions,
 }
 
-fn convert(args: Args) -> anyhow::Result<()> {
-    if !args.path.exists() {
-        anyhow::bail!("No such file: {}", args.path.display());
+fn infer_format(path: &std::path::Path) -> Result<Format, ConvertError> {
+    let content = std::fs::read_to_string(path)?;
+    let value: serde_json::Value = serde_json::from_str(&content)?;
+
+    if value.get("BPMList").is_some() && value.get("META").is_some() {
+        return Ok(Format::Rpe);
     }
 
-    if args.path.is_dir() {
-        anyhow::bail!("Expected a file, got a directory: {}", args.path.display());
+    if value.get("formatVersion").is_some() && value.get("judgeLineList").is_some() {
+        return Ok(Format::Official);
     }
 
-    let file = std::fs::File::open(&args.path)?;
+    if value.get("format").is_some()
+        && value.get("bpm_list").is_some()
+        && value.get("lines").is_some()
+    {
+        return Ok(Format::Phichain);
+    }
 
-    println!("Converting chart into primitive chart...");
+    Err(ConvertError::UnableToInferFormat)
+}
 
-    let primitive = match args.input {
-        Formats::Official => {
-            let chart: OfficialChart = serde_json::from_reader(file)?;
-            chart.into_primitive()?
-        }
-        Formats::Phichain => {
-            let chart: PhichainChart = serde_json::from_reader(file)?;
-            phichain_compiler::compile(chart)?
-        }
-        Formats::Rpe => {
-            let chart: RpeChart = serde_json::from_reader(file)?;
-            chart.into_primitive()?
-        }
-        Formats::Primitive => {
-            let chart: PrimitiveChart = serde_json::from_reader(file)?;
-            chart.into_primitive()?
-        }
+fn convert(args: Args) -> Result<(), ConvertError> {
+    if !args.input.exists() {
+        return Err(ConvertError::NoSuchFile(args.input.clone()));
+    }
+
+    if args.input.is_dir() {
+        return Err(ConvertError::ExpectedFile(args.input.clone()));
+    }
+
+    let file = std::fs::File::open(&args.input)?;
+
+    let (from, inferred) = match args.from {
+        Some(f) => (f, false),
+        None => (infer_format(&args.input)?, true),
     };
 
-    println!("Converting chart into `{}` chart...", args.output);
+    if inferred {
+        eprintln!(
+            "{}",
+            t!(
+                "cli.status.inferred_format",
+                format = from.to_string().cyan()
+            )
+        );
+    }
 
-    let output = match args.output {
-        Formats::Official => {
-            let chart = OfficialChart::from_primitive(primitive)?;
-            serde_json::to_string(&chart)?
-        }
-        Formats::Phichain => {
-            let chart = PhichainChart::from_primitive(primitive)?;
-            serde_json::to_string(&chart)?
-        }
-        Formats::Rpe => {
-            let chart = RpeChart::from_primitive(primitive)?;
-            serde_json::to_string(&chart)?
-        }
-        Formats::Primitive => {
-            let chart = PrimitiveChart::from_primitive(primitive)?;
-            serde_json::to_string(&chart)?
-        }
+    let chart = match from {
+        Format::Official => Chart::Official(serde_json::from_reader(file)?),
+        Format::Phichain => Chart::Phichain(serde_json::from_reader(file)?),
+        Format::Rpe => Chart::Rpe(serde_json::from_reader(file)?),
     };
 
-    let output_path = args.path.with_extension(format!("{}.json", args.output));
+    let phichain = match chart {
+        Chart::Official(official) => official.to_phichain(&args.official_input_options.into())?,
+        Chart::Phichain(phichain) => unwrap_infallible(phichain.to_phichain(&())),
+        Chart::Rpe(rpe) => rpe.to_phichain(&args.rpe_input_options.into())?,
+    };
 
-    let mut output_file = std::fs::File::create(output_path)?;
-    output_file.write_all(output.as_bytes())?;
+    let output = match args.to {
+        Format::Official => Chart::Official(OfficialChart::from_phichain(
+            phichain,
+            &args.official_output_options.into(),
+        )?),
+        Format::Phichain => Chart::Phichain(unwrap_infallible(PhichainChart::from_phichain(
+            phichain,
+            &(),
+        ))),
+        Format::Rpe => Chart::Rpe(unwrap_infallible(RpeChart::from_phichain(phichain, &()))),
+    };
+
+    let output = output.apply_common_output_options(&args.common_output_options.into());
+
+    let output_name = if args.output.as_os_str() == "-" {
+        serde_json::to_writer(std::io::stdout(), &output)?;
+        println!(); // newline after JSON
+        t!("cli.status.stdout").to_string()
+    } else {
+        let output_file = std::fs::File::create(&args.output)?;
+        serde_json::to_writer(output_file, &output)?;
+        args.output.display().to_string()
+    };
+
+    eprintln!(
+        "{}",
+        t!(
+            "cli.status.converted",
+            input = args.input.display().to_string().cyan(),
+            from = from.to_string().cyan(),
+            output = output_name.green(),
+            to = args.to.to_string().green()
+        )
+    );
 
     Ok(())
 }
 
 fn main() {
+    tracing_subscriber::fmt().init();
+
+    rust_i18n::set_locale(&locale());
+
     let args = Args::parse();
     if let Err(err) = convert(args) {
-        eprintln!("Error: {err}");
+        eprintln!("{}", err.red());
         std::process::exit(1);
     }
 }

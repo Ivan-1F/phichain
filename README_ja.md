@@ -17,5 +17,6 @@ RustとBevyをベースにしたPhigrosの譜面制作ツールチェインで�
 
 ## 謝辞
 
+- [Phira](https://github.com/teamflos/phira)
 - [cmdysj](https://space.bilibili.com/252635690) 氏の Re:PhiEdit
 - `assets/image` および `assets/audio` ディレクトリ内のアセットファイルは [https://github.com/MisaLiu/phi-chart-render] に由来し、[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) ライセンスに従います。

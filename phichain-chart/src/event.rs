@@ -1,13 +1,17 @@
+use crate::beat::Beat;
 use crate::easing::{Easing, Tween};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 
-use crate::beat::Beat;
-use crate::primitive;
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Boundary {
+    Inclusive,
+    Exclusive,
+}
 
 #[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, IntoPrimitive, TryFromPrimitive,
+    Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, IntoPrimitive, TryFromPrimitive,
 )]
 #[serde(rename_all = "snake_case")]
 #[repr(u8)]
@@ -52,6 +56,13 @@ pub enum LineEventValue {
     Constant(f32),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Direction {
+    Increasing,
+    Decreasing,
+    Equal,
+}
+
 impl LineEventValue {
     pub fn transition(start: f32, end: f32, easing: Easing) -> Self {
         Self::Transition { start, end, easing }
@@ -80,6 +91,14 @@ impl LineEventValue {
         matches!(self, LineEventValue::Constant(_))
     }
 
+    pub fn is_numeric_constant(&self) -> bool {
+        match self {
+            LineEventValue::Constant(_) => true,
+            LineEventValue::Transition { start, end, .. } if start == end => true,
+            _ => false,
+        }
+    }
+
     pub fn start(&self) -> f32 {
         match self {
             LineEventValue::Transition { start, .. } => *start,
@@ -94,6 +113,19 @@ impl LineEventValue {
         }
     }
 
+    pub fn direction(&self) -> Direction {
+        let start = self.start();
+        let end = self.end();
+
+        if start < end {
+            Direction::Increasing
+        } else if start > end {
+            Direction::Decreasing
+        } else {
+            Direction::Equal
+        }
+    }
+
     pub fn into_constant(self) -> Self {
         match self {
             LineEventValue::Transition { start, .. } => Self::constant(start),
@@ -105,6 +137,13 @@ impl LineEventValue {
         match self {
             LineEventValue::Transition { .. } => self,
             LineEventValue::Constant(value) => Self::transition(value, value, Easing::Linear),
+        }
+    }
+
+    pub fn easing(&self) -> Easing {
+        match self {
+            LineEventValue::Transition { easing, .. } => *easing,
+            LineEventValue::Constant(_) => Easing::Linear,
         }
     }
 }
@@ -214,9 +253,16 @@ impl EventEvaluationResult {
 }
 
 impl LineEvent {
-    pub fn evaluate(&self, beat: f32) -> EventEvaluationResult {
+    pub fn duration(&self) -> Beat {
+        self.end_beat - self.start_beat
+    }
+
+    pub fn evaluate(&self, beat: f32, boundary: Boundary) -> EventEvaluationResult {
         let start_beat = self.start_beat.value();
         let end_beat = self.end_beat.value();
+        if matches!(boundary, Boundary::Exclusive) && beat <= start_beat {
+            return EventEvaluationResult::Unaffected;
+        }
         match self.value {
             LineEventValue::Transition { start, end, easing } => {
                 if beat >= start_beat && beat <= end_beat {
@@ -246,69 +292,38 @@ impl LineEvent {
         }
     }
 
-    pub fn evaluate_start_no_effect(&self, beat: f32) -> EventEvaluationResult {
-        let start_beat = self.start_beat.value();
-        let end_beat = self.end_beat.value();
-        match self.value {
-            LineEventValue::Transition { start, end, easing } => {
-                if beat > start_beat && beat <= end_beat {
-                    let percent = (beat - start_beat) / (end_beat - start_beat);
-                    EventEvaluationResult::Affecting(start.ease_to(end, percent, easing))
-                } else if beat > end_beat {
-                    EventEvaluationResult::Inherited {
-                        from: self.end_beat,
-                        value: end,
-                    }
-                } else {
-                    EventEvaluationResult::Unaffected
-                }
-            }
-            LineEventValue::Constant(value) => {
-                if beat > start_beat && beat <= end_beat {
-                    EventEvaluationResult::Affecting(value)
-                } else if beat > end_beat {
-                    EventEvaluationResult::Inherited {
-                        from: self.end_beat,
-                        value,
-                    }
-                } else {
-                    EventEvaluationResult::Unaffected
-                }
-            }
-        }
+    pub fn evaluate_inclusive(&self, beat: f32) -> EventEvaluationResult {
+        self.evaluate(beat, Boundary::Inclusive)
+    }
+
+    pub fn evaluate_exclusive(&self, beat: f32) -> EventEvaluationResult {
+        self.evaluate(beat, Boundary::Exclusive)
     }
 }
 
-impl From<LineEvent> for primitive::event::LineEvent {
-    fn from(event: LineEvent) -> Self {
-        match event.value {
-            LineEventValue::Transition { start, end, easing } => Self {
-                kind: event.kind,
-                start_beat: event.start_beat,
-                end_beat: event.end_beat,
-                start,
-                end,
-                easing,
-            },
-            LineEventValue::Constant(value) => Self {
-                kind: event.kind,
-                start_beat: event.start_beat,
-                end_beat: event.end_beat,
-                start: value,
-                end: value,
-                easing: Easing::Linear,
-            },
+#[macro_export]
+macro_rules! event {
+    ($kind:expr, $from:expr => $to:expr, $start_value:expr => $end_value:expr, $easing:expr $(,)?) => {
+        $crate::event::LineEvent {
+            kind: $kind,
+            start_beat: $from,
+            end_beat: $to,
+            value: $crate::event::LineEventValue::transition(
+                $start_value as f32,
+                $end_value as f32,
+                $easing,
+            ),
         }
-    }
-}
-
-impl From<primitive::event::LineEvent> for LineEvent {
-    fn from(event: primitive::event::LineEvent) -> Self {
-        Self {
-            kind: event.kind,
-            start_beat: event.start_beat,
-            end_beat: event.end_beat,
-            value: LineEventValue::transition(event.start, event.end, event.easing),
+    };
+    ($kind:expr, $from:expr => $to:expr, $start_value:expr => $end_value:expr $(,)?) => {
+        event!($kind, $from => $to, $start_value => $end_value, $crate::easing::Easing::Linear)
+    };
+    ($kind:expr, $from:expr => $to:expr, $value:expr $(,)?) => {
+        $crate::event::LineEvent {
+            kind: $kind,
+            start_beat: $from,
+            end_beat: $to,
+            value: $crate::event::LineEventValue::constant($value as f32),
         }
-    }
+    };
 }

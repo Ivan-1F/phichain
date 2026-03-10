@@ -334,10 +334,10 @@ pub fn create_project(
             .context("Failed to copy illustration file")?;
     }
 
-    let meta_string = serde_json::to_string_pretty(&project_meta).unwrap();
+    let meta_string = serde_json::to_string_pretty(&project_meta)?;
     std::fs::write(project_path.meta_path(), meta_string).context("Failed to write meta")?;
 
-    let chart_string = serde_json::to_string_pretty(&PhichainChart::default()).unwrap();
+    let chart_string = serde_json::to_string_pretty(&PhichainChart::default())?;
     std::fs::write(project_path.chart_path(), chart_string).context("Failed to write chart")?;
 
     Ok(())

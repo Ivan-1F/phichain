@@ -1,0 +1,45 @@
+cli:
+  about: 在不同格式之间转换 Phigros 谱面
+
+  examples: |
+    示例：
+
+    phichain-converter --from rpe --to phichain RPE.json chart.json
+        将 RPE 谱面转换为 Phichain 谱面
+
+    phichain-converter --to official chart.json
+        将输入谱面转换为官谱 (输出到 output.json)
+
+  input: 输入
+  output: 输出
+  from: 输入格式。若不提供则根据输入文件自动推断
+  to: 输出格式
+
+  official_input:
+    heading: '输入选项 · 官谱'
+    no_easing_fitting: 禁用缓动拟合
+    easing_fitting_epsilon: 缓动拟合时使用的误差值
+    constant_event_shrink_to: '对于常量事件，将其缩短到的长度 (格式: "分子/分母" 或 "整数+分子/分母" 或 "整数")'
+
+  official_output:
+    heading: '输出选项 · 官谱'
+    minimum_beat: 进行事件切割时使用的最小拍数单位
+
+  rpe_input:
+    heading: '输入选项 · RPE'
+    remove_fake_notes: 若开启，带有 `isFake = true` 的音符会被移除。否则，它们将被保留但被视为真音符
+    remove_ui_controls: 若开启，带有非空 `attachUI` 的判定线会被移除。否则，它们将被保留但被视为常规判定线
+
+  common_output:
+    heading: '输出选项 · 通用'
+    round: 输出数值的小数位数 (适用于事件值和音符 x 坐标)
+
+  status:
+    inferred_format: "推断输入格式: %{format}"
+    converted: "已转换 %{input} (%{from}) -> %{output} (%{to})"
+    stdout: "<标准输出>"
+
+  error:
+    no_such_file: "文件不存在: %{path}"
+    expected_file: "期望文件，但得到目录: %{path}"
+    unable_to_infer_format: "无法从文件内容推断格式"

@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Formatter};
 use std::hash::Hash;
 use std::ops::{AddAssign, SubAssign};
+use std::str::FromStr;
 use std::{
     cmp::Ordering,
     ops::{Add, Sub},
@@ -24,7 +25,7 @@ macro_rules! beat {
         $crate::beat::Beat::new($whole as i32, num::Rational32::new(0, 1))
     };
     () => {
-        $crate::beat::Beat::new(0, num::Rational32::new(0, 1))
+        $crate::beat::Beat::ZERO
     };
 }
 
@@ -64,9 +65,16 @@ impl Hash for Beat {
 
 impl Beat {
     pub fn reduce(&mut self) {
-        let value = Rational32::from_integer(self.0) + self.1;
-        self.0 = value.to_integer();
-        self.1 = value.fract();
+        let denom = i64::from(*self.1.denom());
+        let total = i64::from(self.0) * denom + i64::from(*self.1.numer());
+        let whole = total.div_euclid(denom);
+        let numer = total.rem_euclid(denom);
+
+        self.0 = i32::try_from(whole).expect("reduced whole part out of i32 range");
+        self.1 = Rational32::new(
+            i32::try_from(numer).expect("reduced numerator out of i32 range"),
+            i32::try_from(denom).expect("denominator out of i32 range"),
+        );
     }
 
     pub fn reduced(&self) -> Self {
@@ -244,6 +252,57 @@ impl Ord for Beat {
     }
 }
 
+impl FromStr for Beat {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        use nom::{
+            branch::alt,
+            character::complete::{char, i32 as nom_i32, multispace0},
+            combinator::{all_consuming, verify},
+            error::Error,
+            sequence::{delimited, preceded, separated_pair},
+            Finish, Parser,
+        };
+
+        let fraction = || {
+            separated_pair(
+                delimited(multispace0::<_, Error<_>>, nom_i32, multispace0),
+                char('/'),
+                delimited(multispace0, verify(nom_i32, |&d| d != 0), multispace0),
+            )
+        };
+
+        // "whole+numer/denom" with optional spaces around '+'
+        let whole_and_fraction = (
+            delimited(multispace0, nom_i32, multispace0),
+            preceded(char('+'), fraction()),
+        )
+            .map(|(whole, (numer, denom))| beat!(whole, numer, denom));
+
+        // "numer/denom" only
+        let fraction_only = fraction().map(|(numer, denom)| beat!(numer, denom));
+
+        // "whole" only
+        let whole_only = delimited(multispace0, nom_i32, multispace0).map(|whole| beat!(whole));
+
+        // try parsers in order: whole+fraction, fraction, whole
+        all_consuming(alt((whole_and_fraction, fraction_only, whole_only)))
+            .parse(s)
+            .finish()
+            .map(|(_, beat)| beat)
+            .map_err(|e| {
+                let err_msg = format!("{}", e);
+                // improve error message for zero denominator
+                if err_msg.contains("Verify") || s.contains("/0") {
+                    "Denominator cannot be zero".to_string()
+                } else {
+                    format!("Invalid beat format '{}': {}", s, e)
+                }
+            })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -339,7 +398,6 @@ mod tests {
         let mut beat = beat!(1, 3, 2);
         beat.reduce();
         assert_eq!(beat, beat!(2, 1, 2));
-        // panic!();
     }
 
     #[test]
@@ -354,6 +412,14 @@ mod tests {
         let beat = beat!(1, -1, 2);
         let reduced = beat.reduced();
         assert_eq!(reduced, beat!(0, 1, 2));
+    }
+
+    #[test]
+    fn test_reduced_negative_large() {
+        let beat = beat!(-31249, -23, 32);
+        let reduced = beat.reduced();
+        assert_eq!(reduced, beat!(-31250, 9, 32));
+        assert!(reduced.numer() >= 0);
     }
 
     #[test]
@@ -381,6 +447,43 @@ mod tests {
         let beat = beat!(1, 1, 2);
         let rational: Rational32 = beat.into();
         assert_eq!(rational, Rational32::new(3, 2));
+    }
+
+    #[test]
+    fn test_from_str_fraction() {
+        let beat: Beat = "1/4".parse().unwrap();
+        assert_eq!(beat, beat!(1, 4));
+    }
+
+    #[test]
+    fn test_from_str_whole_and_fraction() {
+        let beat: Beat = "1+1/4".parse().unwrap();
+        assert_eq!(beat, beat!(1, 1, 4));
+    }
+
+    #[test]
+    fn test_from_str_whole() {
+        let beat: Beat = "2".parse().unwrap();
+        assert_eq!(beat, beat!(2));
+    }
+
+    #[test]
+    fn test_from_str_with_spaces() {
+        let beat: Beat = " 1 + 1 / 4 ".parse().unwrap();
+        assert_eq!(beat, beat!(1, 1, 4));
+    }
+
+    #[test]
+    fn test_from_str_zero_denominator() {
+        let result: Result<Beat, _> = "1/0".parse();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("zero"));
+    }
+
+    #[test]
+    fn test_from_str_invalid_format() {
+        let result: Result<Beat, _> = "abc".parse();
+        assert!(result.is_err());
     }
 
     #[test]
@@ -414,6 +517,44 @@ mod tests {
         let d = beat!(1);
         assert_eq!(c, d);
         assert_eq!(hash(c), hash(d));
+    }
+
+    #[test]
+    fn test_from_str_leading_zero_denominator() {
+        // "1/02" is valid (denominator is 2, not 0), should parse successfully
+        let result: Result<Beat, _> = "1/02".parse();
+        assert!(
+            result.is_ok(),
+            "1/02 should parse as 1/2, got error: {:?}",
+            result.unwrap_err()
+        );
+        assert_eq!(result.unwrap(), beat!(1, 2));
+    }
+
+    #[test]
+    fn test_from_str_zero_denominator_error_message() {
+        // "1/0" should give a "zero" error, not a generic parse error
+        let result: Result<Beat, _> = "1/0".parse();
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(
+            err.contains("zero"),
+            "error for 1/0 should mention 'zero', got: {}",
+            err
+        );
+    }
+
+    #[test]
+    fn test_from_str_whole_plus_zero_denom() {
+        // "2+1/0" should error with "zero" message
+        let result: Result<Beat, _> = "2+1/0".parse();
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(
+            err.contains("zero"),
+            "error for 2+1/0 should mention 'zero', got: {}",
+            err
+        );
     }
 
     #[test]

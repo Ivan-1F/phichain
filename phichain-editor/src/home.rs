@@ -5,17 +5,24 @@ use crate::translation::Languages;
 use crate::ui::sides::SidesExt;
 use crate::ui::widgets::language_combobox::language_combobox;
 use crate::{
-    file::{pick_file, pick_folder, PickingEvent, PickingKind},
+    file::{pick_file, pick_folder, picking_event, FilePickingAppExt},
     notification::{ToastsExt, ToastsStorage},
     project::{create_project, project_not_loaded, LoadProjectEvent, ProjectMeta},
 };
+
 use bevy::prelude::*;
 use bevy_egui::{EguiContext, EguiPrimaryContextPass};
 use bevy_persistent::Persistent;
 use egui::{Color32, CursorIcon, Id, RichText, ScrollArea, Sense};
+
 use phichain_game::loader::nonblocking::LoadingProject;
 use rfd::FileDialog;
 use std::path::PathBuf;
+
+picking_event!(PickedProject);
+picking_event!(PickedIllustration);
+picking_event!(PickedMusic);
+picking_event!(PickedCreateProject);
 
 #[derive(Resource, Debug, Default)]
 pub struct CreateProjectForm {
@@ -38,21 +45,19 @@ pub struct HomePlugin;
 
 impl Plugin for HomePlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(CreateProjectForm::default())
+        app.register_picking_event::<PickedProject>()
+            .register_picking_event::<PickedIllustration>()
+            .register_picking_event::<PickedMusic>()
+            .register_picking_event::<PickedCreateProject>()
+            .insert_resource(CreateProjectForm::default())
             .add_systems(
                 EguiPrimaryContextPass,
                 ui_system.run_if(project_not_loaded()),
             )
-            .add_systems(Update, load_project_system.run_if(project_not_loaded()))
-            .add_systems(
-                Update,
-                (
-                    handle_select_illustration_system,
-                    handle_select_music_system,
-                    handle_create_project_system,
-                )
-                    .run_if(project_not_loaded().and(resource_exists::<CreateProjectForm>)),
-            );
+            .add_observer(load_project_observer)
+            .add_observer(handle_select_illustration_observer)
+            .add_observer(handle_select_music_observer)
+            .add_observer(handle_create_project_observer);
     }
 }
 
@@ -115,9 +120,8 @@ fn ui_system(world: &mut World) {
                     .striped(true)
                     .show(ui, |ui| {
                         if ui.button(t!("home.create_project.select_music")).clicked() {
-                            pick_file(
+                            pick_file::<PickedMusic>(
                                 world,
-                                PickingKind::SelectMusic,
                                 FileDialog::new()
                                     .add_filter("Music", &["wav", "mp3", "ogg", "flac"]),
                             );
@@ -134,9 +138,8 @@ fn ui_system(world: &mut World) {
                             .button(t!("home.create_project.select_illustration"))
                             .clicked()
                         {
-                            pick_file(
+                            pick_file::<PickedIllustration>(
                                 world,
-                                PickingKind::SelectIllustration,
                                 FileDialog::new()
                                     .add_filter("Illustration", &["png", "jpg", "jpeg"]),
                             );
@@ -180,7 +183,7 @@ fn ui_system(world: &mut World) {
                         return;
                     };
 
-                    pick_folder(world, PickingKind::CreateProject, FileDialog::new());
+                    pick_folder::<PickedCreateProject>(world, FileDialog::new());
                 }
             });
 
@@ -204,7 +207,7 @@ fn ui_system(world: &mut World) {
             |ui| {
                 ui.horizontal(|ui| {
                     if ui.button(t!("home.open_project.load")).clicked() {
-                        pick_folder(world, PickingKind::OpenProject, FileDialog::new());
+                        pick_folder::<PickedProject>(world, FileDialog::new());
                     }
                     if ui.button(t!("home.create_project.create")).clicked() {
                         world.insert_resource(CreatingProject);
@@ -309,78 +312,56 @@ fn ui_system(world: &mut World) {
     });
 }
 
-fn load_project_system(
+fn load_project_observer(
+    trigger: Trigger<PickedProject>,
     mut commands: Commands,
-    mut picking_events: EventReader<PickingEvent>,
     mut events: EventWriter<LoadProjectEvent>,
 ) {
-    for PickingEvent { path, kind } in picking_events.read() {
-        if !matches!(kind, PickingKind::OpenProject) {
-            continue;
-        }
-        if let Some(root_dir) = path {
-            events.write(LoadProjectEvent(root_dir.to_path_buf()));
-            commands.remove_resource::<CreatingProject>();
-        }
+    if let Some(ref root_dir) = trigger.event().0 {
+        events.write(LoadProjectEvent(root_dir.to_path_buf()));
+        commands.remove_resource::<CreatingProject>();
     }
 }
 
-fn handle_select_illustration_system(
-    mut events: EventReader<PickingEvent>,
+fn handle_select_illustration_observer(
+    trigger: Trigger<PickedIllustration>,
     mut form: ResMut<CreateProjectForm>,
 ) {
-    for PickingEvent { path, kind } in events.read() {
-        if !matches!(kind, PickingKind::SelectIllustration) {
-            continue;
-        }
-        form.illustration.clone_from(path);
-    }
+    form.illustration.clone_from(&trigger.event().0);
 }
 
-fn handle_select_music_system(
-    mut events: EventReader<PickingEvent>,
+fn handle_select_music_observer(
+    trigger: Trigger<PickedMusic>,
     mut form: ResMut<CreateProjectForm>,
 ) {
-    for PickingEvent { path, kind } in events.read() {
-        if !matches!(kind, PickingKind::SelectMusic) {
-            continue;
-        }
-        form.music.clone_from(path);
-    }
+    form.music.clone_from(&trigger.event().0);
 }
 
-fn handle_create_project_system(
+fn handle_create_project_observer(
+    trigger: Trigger<PickedCreateProject>,
     mut commands: Commands,
-    mut events: EventReader<PickingEvent>,
     form: Res<CreateProjectForm>,
     mut load_project_events: EventWriter<LoadProjectEvent>,
-
     mut toasts: ResMut<ToastsStorage>,
 ) {
-    for PickingEvent { path, kind } in events.read() {
-        if !matches!(kind, PickingKind::CreateProject) {
-            continue;
+    let Some(ref root_path) = trigger.event().0 else {
+        return;
+    };
+
+    let Some(ref music_path) = form.music else {
+        return;
+    };
+
+    match create_project(
+        root_path.clone(),
+        music_path.clone(),
+        form.illustration.clone(),
+        form.meta.clone(),
+    ) {
+        Ok(_) => {
+            load_project_events.write(LoadProjectEvent(root_path.clone()));
+            commands.remove_resource::<CreatingProject>();
         }
-
-        let Some(root_path) = path else {
-            return;
-        };
-
-        let Some(ref music_path) = form.music else {
-            return;
-        };
-
-        match create_project(
-            root_path.clone(),
-            music_path.clone(),
-            form.illustration.clone(),
-            form.meta.clone(),
-        ) {
-            Ok(_) => {
-                load_project_events.write(LoadProjectEvent(root_path.clone()));
-                commands.remove_resource::<CreatingProject>();
-            }
-            Err(error) => toasts.error(format!("{error:?}")),
-        }
+        Err(error) => toasts.error(format!("{error:?}")),
     }
 }
