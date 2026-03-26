@@ -200,7 +200,7 @@ pub struct CutOptions {
 pub fn cut_with_options(event: LineEvent, minimum: Beat, options: CutOptions) -> Vec<LineEvent> {
     assert!(minimum > beat!(0), "minimum beat must be positive");
     match event.value {
-        LineEventValue::Constant(_) => vec![event],
+        LineEventValue::Constant { .. } => vec![event],
         LineEventValue::Transition { start, end, easing } => {
             if matches!(easing, Easing::Linear) && !(options.force_linear && start != end) {
                 return vec![event];
@@ -335,7 +335,7 @@ pub fn fill_gap_until(
                 kind,
                 start_beat: last_end,
                 end_beat: event.start_beat,
-                value: LineEventValue::Constant(last_value),
+                value: LineEventValue::Constant { value: last_value },
             });
         }
         filled.push(event);
@@ -349,7 +349,7 @@ pub fn fill_gap_until(
             kind,
             start_beat: last_end,
             end_beat: until,
-            value: LineEventValue::Constant(last_value),
+            value: LineEventValue::Constant { value: last_value },
         });
     }
 

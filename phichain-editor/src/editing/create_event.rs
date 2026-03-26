@@ -120,7 +120,7 @@ fn create_event_system(
                             LineEventValue::Transition { ref mut start, .. } => {
                                 *start = last_event.value.end();
                             }
-                            LineEventValue::Constant(ref mut value) => {
+                            LineEventValue::Constant { ref mut value } => {
                                 *value = last_event.value.end();
                             }
                         }
@@ -138,7 +138,7 @@ fn create_event_system(
                             LineEventValue::Transition { ref mut end, .. } => {
                                 *end = next_event.value.start();
                             }
-                            LineEventValue::Constant(ref mut value) => {
+                            LineEventValue::Constant { ref mut value } => {
                                 *value = next_event.value.start();
                             }
                         }
