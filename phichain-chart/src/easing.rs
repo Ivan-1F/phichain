@@ -11,7 +11,7 @@ use strum::EnumIter;
 
 /// TODO: this can be replaced with bevy::prelude::EaseFunction and bevy::prelude::FunctionCurve
 #[derive(Debug, Default, Copy, Clone, PartialEq, Serialize, Deserialize, EnumIter)]
-#[serde(rename_all = "snake_case")]
+#[serde(tag = "type", rename_all = "snake_case")]
 #[repr(u8)]
 pub enum Easing {
     #[default]
@@ -57,10 +57,10 @@ pub enum Easing {
     EaseOutBounce,
     EaseInOutBounce,
 
-    Custom(f32, f32, f32, f32),
+    Custom { x1: f32, y1: f32, x2: f32, y2: f32 },
 
-    Steps(usize),
-    Elastic(f32),
+    Steps { count: usize },
+    Elastic { omega: f32 },
 }
 
 impl Easing {
@@ -119,17 +119,17 @@ impl Easing {
     }
 
     pub fn is_custom(self) -> bool {
-        matches!(self, Easing::Custom(_, _, _, _))
+        matches!(self, Easing::Custom { .. })
     }
 
     #[allow(dead_code)]
     pub fn is_steps(self) -> bool {
-        matches!(self, Easing::Steps(_))
+        matches!(self, Easing::Steps { .. })
     }
 
     #[allow(dead_code)]
     pub fn is_elastic(self) -> bool {
-        matches!(self, Easing::Elastic(_))
+        matches!(self, Easing::Elastic { .. })
     }
 }
 
@@ -168,12 +168,12 @@ impl Easing {
             Self::EaseOutBounce => bounce_out(x),
             Self::EaseInOutBounce => bounce_in_out(x),
 
-            Self::Custom(x1, y1, x2, y2) => {
+            Self::Custom { x1, y1, x2, y2 } => {
                 CubicSegment::new_bezier_easing([x1, y1], [x2, y2]).ease(x)
             }
 
-            Self::Steps(num_steps) => (x * num_steps as f32).round() / num_steps.max(1) as f32,
-            Self::Elastic(omega) => {
+            Self::Steps { count } => (x * count as f32).round() / count.max(1) as f32,
+            Self::Elastic { omega } => {
                 1.0 - (1.0 - x).squared()
                     * (2.0 * ops::sin(omega * x) / omega + ops::cos(omega * x))
             }
@@ -184,7 +184,7 @@ impl Easing {
 impl Display for Easing {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Easing::Custom(_, _, _, _) => write!(f, "Custom"),
+            Easing::Custom { .. } => write!(f, "Custom"),
             _ => write!(f, "{self:?}"),
         }
     }

@@ -18,7 +18,7 @@ struct RpeEasingInfo {
 fn easing(easing: Easing) -> RpeEasingInfo {
     match easing {
         // RPE custom bezier: easingType = 1 + bezier = 1 + bezierPoints
-        Easing::Custom(a, b, c, d) => RpeEasingInfo {
+        Easing::Custom { x1: a, y1: b, x2: c, y2: d } => RpeEasingInfo {
             easing_type: 1,
             bezier: 1,
             bezier_points: [a, b, c, d],

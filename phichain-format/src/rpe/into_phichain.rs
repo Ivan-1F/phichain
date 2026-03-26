@@ -65,7 +65,7 @@ fn convert_event<T: Num + ToPrimitive>(
 ) -> Result<LineEvent, RpeInputError> {
     let easing = if event.bezier == 1 {
         let [a, b, c, d] = event.bezier_points;
-        Easing::Custom(a, b, c, d)
+        Easing::Custom { x1: a, y1: b, x2: c, y2: d }
     } else {
         rpe_easing(event.easing_type)
     };
@@ -510,6 +510,6 @@ mod tests {
         };
 
         let result = convert_event(LineEventKind::X, event).unwrap();
-        assert_eq!(result.value.easing(), Easing::Custom(0.25, 0.1, 0.25, 1.0),);
+        assert_eq!(result.value.easing(), Easing::Custom { x1: 0.25, y1: 0.1, x2: 0.25, y2: 1.0 },);
     }
 }
