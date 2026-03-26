@@ -5,7 +5,7 @@ use std::fmt;
 use std::fmt::Formatter;
 
 #[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[serde(tag = "kind", rename_all = "snake_case")]
 pub enum NoteKind {
     Tap,
     Drag,
@@ -54,6 +54,7 @@ impl NoteKind {
 #[cfg_attr(feature = "bevy", derive(bevy::prelude::Component))]
 #[cfg_attr(feature = "bevy", require(bevy::prelude::Sprite))]
 pub struct Note {
+    #[serde(flatten)]
     pub kind: NoteKind,
     pub above: bool,
     pub beat: Beat,
@@ -129,6 +130,86 @@ impl Note {
     pub fn set_end_beat(&mut self, end_beat: Beat) {
         if let NoteKind::Hold { ref mut hold_beat } = self.kind {
             *hold_beat = end_beat - self.beat
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::beat;
+    use serde_json::{json, Value};
+
+    #[test]
+    fn test_serialize_tap() {
+        let note = Note::new(NoteKind::Tap, true, beat!(0, 1, 4), 0.0, 1.0);
+        let value: Value = serde_json::to_value(&note).unwrap();
+        assert_eq!(
+            value,
+            json!({"kind": "tap", "above": true, "beat": [0, 1, 4], "x": 0.0, "speed": 1.0})
+        );
+    }
+
+    #[test]
+    fn test_serialize_hold() {
+        let note = Note::new(
+            NoteKind::Hold {
+                hold_beat: beat!(1, 0, 1),
+            },
+            true,
+            beat!(0, 1, 4),
+            0.0,
+            1.0,
+        );
+        let value: Value = serde_json::to_value(&note).unwrap();
+        assert_eq!(
+            value,
+            json!({"kind": "hold", "hold_beat": [1, 0, 1], "above": true, "beat": [0, 1, 4], "x": 0.0, "speed": 1.0})
+        );
+    }
+
+    #[test]
+    fn test_deserialize_tap() {
+        let json = json!({"kind": "tap", "above": true, "beat": [0, 1, 4], "x": 0.0, "speed": 1.0});
+        let note: Note = serde_json::from_value(json).unwrap();
+        assert_eq!(note.kind, NoteKind::Tap);
+        assert!(note.above);
+        assert_eq!(note.beat, beat!(0, 1, 4));
+    }
+
+    #[test]
+    fn test_deserialize_hold() {
+        let json = json!({"kind": "hold", "hold_beat": [1, 0, 1], "above": true, "beat": [0, 1, 4], "x": 0.0, "speed": 1.0});
+        let note: Note = serde_json::from_value(json).unwrap();
+        assert_eq!(
+            note.kind,
+            NoteKind::Hold {
+                hold_beat: beat!(1, 0, 1)
+            }
+        );
+    }
+
+    #[test]
+    fn test_roundtrip() {
+        let notes = vec![
+            Note::new(NoteKind::Tap, true, beat!(0, 1, 4), 0.0, 1.0),
+            Note::new(NoteKind::Drag, false, beat!(1), 10.0, 2.0),
+            Note::new(
+                NoteKind::Hold {
+                    hold_beat: beat!(2, 1, 2),
+                },
+                true,
+                beat!(3, 0, 1),
+                -5.0,
+                1.5,
+            ),
+            Note::new(NoteKind::Flick, true, beat!(4, 3, 4), 100.0, 1.0),
+        ];
+
+        for note in &notes {
+            let json = serde_json::to_string(note).unwrap();
+            let deserialized: Note = serde_json::from_str(&json).unwrap();
+            assert_eq!(*note, deserialized);
         }
     }
 }
