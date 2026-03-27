@@ -56,3 +56,77 @@ pub fn migrate(chart: &Value) -> anyhow::Result<Value> {
         Ok(new_chart)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::serialization::PhichainChart;
+
+    /// Migrate a v0 chart all the way to the latest format and verify
+    /// that the result can be deserialized into PhichainChart
+    #[test]
+    fn test_full_migration_chain_and_deserialize() {
+        let v0 = json!({
+          "offset": 0.0,
+          "bpm_list": [
+            { "beat": [0, 0, 1], "bpm": 120.0, "time": 0.0 }
+          ],
+          "lines": [
+            [
+              [
+                {
+                  "kind": "Tap",
+                  "above": true,
+                  "beat": [0, 1, 1],
+                  "x": 0.0,
+                  "speed": 3.0
+                },
+                {
+                  "kind": {
+                    "Hold": {
+                      "hold_beat": [1, 0, 1]
+                    }
+                  },
+                  "above": true,
+                  "beat": [0, 1, 1],
+                  "x": 0.0,
+                  "speed": 3.0
+                }
+              ],
+              [
+                {
+                  "kind": "X",
+                  "start": 0.0,
+                  "end": 0.0,
+                  "start_beat": [0, 0, 1],
+                  "end_beat": [1, 0, 1],
+                  "easing": "Linear"
+                },
+                {
+                  "kind": "Y",
+                  "start": -300.0,
+                  "end": -300.0,
+                  "start_beat": [0, 0, 1],
+                  "end_beat": [1, 0, 1],
+                  "easing": {
+                    "Custom": [0.5, 0.0, 0.5, 1.0]
+                  }
+                }
+              ]
+            ]
+          ]
+        });
+
+        let migrated = migrate(&v0).unwrap();
+
+        assert_eq!(
+            migrated.get("format").and_then(|v| v.as_u64()),
+            Some(CURRENT_FORMAT),
+        );
+
+        let chart: PhichainChart = serde_json::from_value(migrated).unwrap();
+        assert_eq!(chart.lines.len(), 1);
+        assert_eq!(chart.lines[0].notes.len(), 2);
+        assert_eq!(chart.lines[0].events.len(), 2);
+    }
+}
