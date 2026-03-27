@@ -41,66 +41,70 @@ impl Migration for Migration0To1 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::migration::test_utils::assert_can_deserialize_after_migrating_to_latest;
     use serde_json::json;
+
+    fn old_chart() -> Value {
+        json!({
+            "offset": 0.0,
+            "bpm_list": [
+                {
+                    "beat": [0, 0, 1],
+                    "bpm": 120.0,
+                    "time": 0.0
+                }
+            ],
+            "lines": [
+                [
+                    [
+                        {
+                            "kind": "Tap",
+                            "above": true,
+                            "beat": [0, 1, 1],
+                            "x": 0.0,
+                            "speed": 3.0
+                        },
+                        {
+                            "kind": "Tap",
+                            "above": true,
+                            "beat": [1, 0, 1],
+                            "x": 337.5,
+                            "speed": 1.0
+                        }
+                    ],
+                    [
+                        {
+                            "kind": "X",
+                            "start": 0.0,
+                            "end": 0.0,
+                            "start_beat": [0, 0, 1],
+                            "end_beat": [1, 0, 1],
+                            "easing": "Linear"
+                        },
+                        {
+                            "kind": "Y",
+                            "start": -300.0,
+                            "end": -300.0,
+                            "start_beat": [0, 0, 1],
+                            "end_beat": [1, 0, 1],
+                            "easing": {
+                                "Custom": [
+                                    0.5,
+                                    0.0,
+                                    0.5,
+                                    1.0
+                                ]
+                            }
+                        }
+                    ]
+                ]
+            ]
+        })
+    }
 
     #[test]
     fn test_migration_1_to_2() {
-        let old = json!({
-          "offset": 0.0,
-          "bpm_list": [
-            {
-              "beat": [0, 0, 1],
-              "bpm": 120.0,
-              "time": 0.0
-            }
-          ],
-          "lines": [
-            [
-              [
-                {
-                  "kind": "Tap",
-                  "above": true,
-                  "beat": [0, 1, 1],
-                  "x": 0.0,
-                  "speed": 3.0
-                },
-                {
-                  "kind": "Tap",
-                  "above": true,
-                  "beat": [1, 0, 1],
-                  "x": 337.5,
-                  "speed": 1.0
-                }
-              ],
-              [
-                {
-                  "kind": "X",
-                  "start": 0.0,
-                  "end": 0.0,
-                  "start_beat": [0, 0, 1],
-                  "end_beat": [1, 0, 1],
-                  "easing": "Linear"
-                },
-                {
-                  "kind": "Y",
-                  "start": -300.0,
-                  "end": -300.0,
-                  "start_beat": [0, 0, 1],
-                  "end_beat": [1, 0, 1],
-                  "easing": {
-                    "Custom": [
-                      0.5,
-                      0.0,
-                      0.5,
-                      1.0
-                    ]
-                  }
-                }
-              ]
-            ]
-          ]
-        });
-
+        let old = old_chart();
         let new = json!({
           "format": 1,
           "offset": 0.0,
@@ -159,5 +163,11 @@ mod tests {
         });
 
         assert_eq!(Migration0To1::migrate(&old).unwrap(), new);
+    }
+
+    #[test]
+    fn test_migration_1_to_2_output_can_reach_latest_and_deserialize() {
+        let new = Migration0To1::migrate(&old_chart()).unwrap();
+        assert_can_deserialize_after_migrating_to_latest(&new);
     }
 }

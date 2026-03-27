@@ -173,129 +173,133 @@ impl Migration for Migration5To6 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::migration::test_utils::assert_can_deserialize_after_migrating_to_latest;
+
+    fn old_chart() -> Value {
+        json!({
+            "format": 5,
+            "offset": 0.0,
+            "bpm_list": [
+                { "beat": [0, 0, 1], "bpm": 120.0, "time": 0.0 }
+            ],
+            "lines": [
+                {
+                    "name": "Unnamed Line",
+                    "notes": [
+                        {
+                            "kind": "tap",
+                            "above": true,
+                            "beat": [0, 1, 1],
+                            "x": 0.0,
+                            "speed": 3.0
+                        },
+                        {
+                            "kind": {
+                                "hold": {
+                                    "hold_beat": [1, 0, 1]
+                                }
+                            },
+                            "above": true,
+                            "beat": [0, 1, 1],
+                            "x": 0.0,
+                            "speed": 3.0
+                        }
+                    ],
+                    "events": [
+                        {
+                            "kind": "x",
+                            "start_beat": [0, 0, 1],
+                            "end_beat": [1, 0, 1],
+                            "value": {
+                                "constant": 50.0
+                            }
+                        },
+                        {
+                            "kind": "y",
+                            "start_beat": [0, 0, 1],
+                            "end_beat": [1, 0, 1],
+                            "value": {
+                                "transition": {
+                                    "start": -300.0,
+                                    "end": 0.0,
+                                    "easing": "linear"
+                                }
+                            }
+                        },
+                        {
+                            "kind": "y",
+                            "start_beat": [1, 0, 1],
+                            "end_beat": [2, 0, 1],
+                            "value": {
+                                "transition": {
+                                    "start": 0.0,
+                                    "end": 100.0,
+                                    "easing": {
+                                        "custom": [0.5, 0.0, 0.5, 1.0]
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "x",
+                            "start_beat": [2, 0, 1],
+                            "end_beat": [3, 0, 1],
+                            "value": {
+                                "transition": {
+                                    "start": 0.0,
+                                    "end": 10.0,
+                                    "easing": {
+                                        "steps": 4
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "x",
+                            "start_beat": [3, 0, 1],
+                            "end_beat": [4, 0, 1],
+                            "value": {
+                                "transition": {
+                                    "start": 0.0,
+                                    "end": 10.0,
+                                    "easing": {
+                                        "elastic": 20.0
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "children": [],
+                    "curve_note_tracks": [
+                        {
+                            "from": 0,
+                            "to": 1,
+                            "kind": "drag",
+                            "density": 16,
+                            "curve": "ease_in_sine"
+                        },
+                        {
+                            "from": 1,
+                            "to": 2,
+                            "kind": {
+                                "hold": {
+                                    "hold_beat": [0, 1, 2]
+                                }
+                            },
+                            "density": 8,
+                            "curve": {
+                                "custom": [0.25, 0.1, 0.25, 1.0]
+                            }
+                        }
+                    ]
+                }
+            ]
+        })
+    }
 
     #[test]
     fn test_migration_5_to_6() {
-        let old = json!({
-          "format": 5,
-          "offset": 0.0,
-          "bpm_list": [
-            { "beat": [0, 0, 1], "bpm": 120.0, "time": 0.0 }
-          ],
-          "lines": [
-            {
-              "name": "Unnamed Line",
-              "notes": [
-                {
-                  "kind": "tap",
-                  "above": true,
-                  "beat": [0, 1, 1],
-                  "x": 0.0,
-                  "speed": 3.0
-                },
-                {
-                  "kind": {
-                    "hold": {
-                      "hold_beat": [1, 0, 1]
-                    }
-                  },
-                  "above": true,
-                  "beat": [0, 1, 1],
-                  "x": 0.0,
-                  "speed": 3.0
-                }
-              ],
-              "events": [
-                {
-                  "kind": "x",
-                  "start_beat": [0, 0, 1],
-                  "end_beat": [1, 0, 1],
-                  "value": {
-                    "constant": 50.0
-                  }
-                },
-                {
-                  "kind": "y",
-                  "start_beat": [0, 0, 1],
-                  "end_beat": [1, 0, 1],
-                  "value": {
-                    "transition": {
-                      "start": -300.0,
-                      "end": 0.0,
-                      "easing": "linear"
-                    }
-                  }
-                },
-                {
-                  "kind": "y",
-                  "start_beat": [1, 0, 1],
-                  "end_beat": [2, 0, 1],
-                  "value": {
-                    "transition": {
-                      "start": 0.0,
-                      "end": 100.0,
-                      "easing": {
-                        "custom": [0.5, 0.0, 0.5, 1.0]
-                      }
-                    }
-                  }
-                },
-                {
-                  "kind": "x",
-                  "start_beat": [2, 0, 1],
-                  "end_beat": [3, 0, 1],
-                  "value": {
-                    "transition": {
-                      "start": 0.0,
-                      "end": 10.0,
-                      "easing": {
-                        "steps": 4
-                      }
-                    }
-                  }
-                },
-                {
-                  "kind": "x",
-                  "start_beat": [3, 0, 1],
-                  "end_beat": [4, 0, 1],
-                  "value": {
-                    "transition": {
-                      "start": 0.0,
-                      "end": 10.0,
-                      "easing": {
-                        "elastic": 20.0
-                      }
-                    }
-                  }
-                }
-              ],
-              "children": [],
-              "curve_note_tracks": [
-                {
-                  "from": 0,
-                  "to": 1,
-                  "kind": "drag",
-                  "density": 16,
-                  "curve": "ease_in_sine"
-                },
-                {
-                  "from": 1,
-                  "to": 2,
-                  "kind": {
-                    "hold": {
-                      "hold_beat": [0, 1, 2]
-                    }
-                  },
-                  "density": 8,
-                  "curve": {
-                    "custom": [0.25, 0.1, 0.25, 1.0]
-                  }
-                }
-              ]
-            }
-          ]
-        });
-
+        let old = old_chart();
         let new = json!({
           "format": 6,
           "offset": 0.0,
@@ -400,5 +404,11 @@ mod tests {
         });
 
         assert_eq!(Migration5To6::migrate(&old).unwrap(), new);
+    }
+
+    #[test]
+    fn test_migration_5_to_6_output_can_reach_latest_and_deserialize() {
+        let new = Migration5To6::migrate(&old_chart()).unwrap();
+        assert_can_deserialize_after_migrating_to_latest(&new);
     }
 }

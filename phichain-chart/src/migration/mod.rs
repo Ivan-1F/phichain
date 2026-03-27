@@ -5,6 +5,9 @@ pub trait Migration {
     fn migrate(old: &Value) -> anyhow::Result<Value>;
 }
 
+#[cfg(test)]
+pub(crate) mod test_utils;
+
 macro_rules! define_migrations {
     ($( $from:literal => $to:literal : $mod:ident :: $type:ident ),* $(,)?) => {
         $( mod $mod; )*
