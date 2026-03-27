@@ -72,7 +72,9 @@ impl ChartFormat for PhichainChart {
 
             for event in &mut line.events {
                 event.value = match event.value {
-                    LineEventValue::Constant { value: v } => LineEventValue::Constant { value: round(v) },
+                    LineEventValue::Constant { value: v } => {
+                        LineEventValue::Constant { value: round(v) }
+                    }
                     LineEventValue::Transition { start, end, easing } => {
                         LineEventValue::Transition {
                             start: round(start),

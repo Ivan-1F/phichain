@@ -116,7 +116,12 @@ impl Widget for EasingGraph<'_> {
             }
 
             if p1.x != *x1 || p1.y != *y1 || p2.x != *x2 || p2.y != *y2 {
-                *self.value = Easing::Custom { x1: p1.x, y1: 1.0 - p1.y, x2: p2.x, y2: 1.0 - p2.y };
+                *self.value = Easing::Custom {
+                    x1: p1.x,
+                    y1: 1.0 - p1.y,
+                    x2: p2.x,
+                    y2: 1.0 - p2.y,
+                };
             }
 
             painter.circle(to_screen * p1, 4.0, Color32::WHITE, Stroke::NONE);
@@ -270,7 +275,12 @@ impl Widget for EasingValue<'_> {
                                         .clicked()
                                     {
                                         combobox_changed = true;
-                                        *self.value = Easing::Custom { x1: 0.5, y1: 0.0, x2: 0.5, y2: 1.0 };
+                                        *self.value = Easing::Custom {
+                                            x1: 0.5,
+                                            y1: 0.0,
+                                            x2: 0.5,
+                                            y2: 1.0,
+                                        };
                                     }
                                 },
                             );
