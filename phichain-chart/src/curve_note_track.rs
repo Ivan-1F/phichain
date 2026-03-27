@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CurveNoteTrackOptions {
+    #[serde(flatten)]
     pub kind: NoteKind,
     pub density: u32,
     pub curve: Easing,
@@ -70,4 +71,71 @@ pub fn generate_notes(from: Note, to: Note, options: &CurveNoteTrackOptions) -> 
         .collect::<Vec<_>>();
 
     notes
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::{json, Value};
+
+    #[test]
+    fn test_serialize_curve_note_track_with_hold_kind() {
+        let track = CurveNoteTrack {
+            from: 1,
+            to: 2,
+            options: CurveNoteTrackOptions {
+                kind: NoteKind::Hold {
+                    hold_beat: beat!(0, 1, 2),
+                },
+                density: 8,
+                curve: Easing::Custom {
+                    x1: 0.25,
+                    y1: 0.1,
+                    x2: 0.25,
+                    y2: 1.0,
+                },
+            },
+        };
+
+        let value: Value = serde_json::to_value(track).unwrap();
+
+        assert_eq!(
+            value,
+            json!({
+                "from": 1,
+                "to": 2,
+                "kind": "hold",
+                "hold_beat": [0, 1, 2],
+                "density": 8,
+                "curve": {
+                    "type": "custom",
+                    "x1": 0.25_f32,
+                    "y1": 0.1_f32,
+                    "x2": 0.25_f32,
+                    "y2": 1.0_f32
+                }
+            })
+        );
+    }
+
+    #[test]
+    fn test_deserialize_curve_note_track_with_drag_kind() {
+        let value = json!({
+            "from": 0,
+            "to": 1,
+            "kind": "drag",
+            "density": 16,
+            "curve": {
+                "type": "linear"
+            }
+        });
+
+        let track: CurveNoteTrack = serde_json::from_value(value).unwrap();
+
+        assert_eq!(track.from, 0);
+        assert_eq!(track.to, 1);
+        assert!(matches!(track.options.kind, NoteKind::Drag));
+        assert_eq!(track.options.density, 16);
+        assert_eq!(track.options.curve, Easing::Linear);
+    }
 }
