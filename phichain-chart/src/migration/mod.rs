@@ -1,24 +1,40 @@
-use crate::migration::migration_0_1::Migration0To1;
-use crate::migration::migration_1_2::Migration1To2;
-use crate::migration::migration_2_3::Migration2To3;
-use crate::migration::migration_3_4::Migration3To4;
-use crate::migration::migration_4_5::Migration4To5;
-use crate::migration::migration_5_6::Migration5To6;
 use anyhow::{bail, Context};
 use serde_json::{json, Value};
-
-mod migration_0_1;
-mod migration_1_2;
-mod migration_2_3;
-mod migration_3_4;
-mod migration_4_5;
-mod migration_5_6;
 
 pub trait Migration {
     fn migrate(old: &Value) -> anyhow::Result<Value>;
 }
 
-pub const CURRENT_FORMAT: u64 = 6;
+macro_rules! define_migrations {
+    ($( $from:literal => $to:literal : $mod:ident :: $type:ident ),* $(,)?) => {
+        $( mod $mod; )*
+        $( use $mod::$type; )*
+
+        // CURRENT_FORMAT is the largest target version
+        pub const CURRENT_FORMAT: u64 = {
+            let mut max = 0u64;
+            $( if $to > max { max = $to; } )*
+            max
+        };
+
+        /// Run the migration for a given format version, returns None if unsupported
+        fn migrate_step(format: u64, chart: &Value) -> Option<anyhow::Result<Value>> {
+            match format {
+                $( $from => Some(<$type as Migration>::migrate(chart)), )*
+                _ => None,
+            }
+        }
+    };
+}
+
+define_migrations! {
+    0 => 1: migration_0_1::Migration0To1,
+    1 => 2: migration_1_2::Migration1To2,
+    2 => 3: migration_2_3::Migration2To3,
+    3 => 4: migration_3_4::Migration3To4,
+    4 => 5: migration_4_5::Migration4To5,
+    5 => 6: migration_5_6::Migration5To6,
+}
 
 fn get_format(chart: &Value) -> anyhow::Result<u64> {
     let version = chart
@@ -38,14 +54,9 @@ pub fn migrate(chart: &Value) -> anyhow::Result<Value> {
         return Ok(chart.clone());
     }
 
-    let new_chart = match format {
-        0 => Migration0To1::migrate(chart)?,
-        1 => Migration1To2::migrate(chart)?,
-        2 => Migration2To3::migrate(chart)?,
-        3 => Migration3To4::migrate(chart)?,
-        4 => Migration4To5::migrate(chart)?,
-        5 => Migration5To6::migrate(chart)?,
-        _ => bail!("Unsupported chart format {}", format),
+    let new_chart = match migrate_step(format, chart) {
+        Some(result) => result?,
+        None => bail!("Unsupported chart format {}", format),
     };
 
     let new_format = get_format(&new_chart)?;
