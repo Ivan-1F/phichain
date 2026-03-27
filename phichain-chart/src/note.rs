@@ -143,7 +143,7 @@ mod tests {
     #[test]
     fn test_serialize_tap() {
         let note = Note::new(NoteKind::Tap, true, beat!(0, 1, 4), 0.0, 1.0);
-        let value: Value = serde_json::to_value(&note).unwrap();
+        let value: Value = serde_json::to_value(note).unwrap();
         assert_eq!(
             value,
             json!({"kind": "tap", "above": true, "beat": [0, 1, 4], "x": 0.0, "speed": 1.0})
@@ -161,7 +161,7 @@ mod tests {
             0.0,
             1.0,
         );
-        let value: Value = serde_json::to_value(&note).unwrap();
+        let value: Value = serde_json::to_value(note).unwrap();
         assert_eq!(
             value,
             json!({"kind": "hold", "hold_beat": [1, 0, 1], "above": true, "beat": [0, 1, 4], "x": 0.0, "speed": 1.0})
