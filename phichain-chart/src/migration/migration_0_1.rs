@@ -103,7 +103,7 @@ mod tests {
     }
 
     #[test]
-    fn test_migration_1_to_2() {
+    fn test_migration_0_to_1() {
         let old = old_chart();
         let new = json!({
           "format": 1,
@@ -166,7 +166,7 @@ mod tests {
     }
 
     #[test]
-    fn test_migration_1_to_2_output_can_reach_latest_and_deserialize() {
+    fn test_migration_0_to_1_output_can_reach_latest_and_deserialize() {
         let new = Migration0To1::migrate(&old_chart()).unwrap();
         assert_can_deserialize_after_migrating_to_latest(&new);
     }
