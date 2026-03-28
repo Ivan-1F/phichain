@@ -219,7 +219,21 @@ fn main() {
     rust_i18n::set_locale(&locale());
 
     let args = Args::parse();
-    if let Err(err) = convert(args) {
+    let start = std::time::Instant::now();
+    let result = convert(args.clone());
+    let duration_ms = start.elapsed().as_millis() as u64;
+
+    let _ = telemetry::track("phichain.converter.convert", serde_json::json!({
+        "locale": locale(),
+        "from": args.from.as_ref().map(|f| f.to_string()),
+        "to": args.to.to_string(),
+        "format_inferred": args.from.is_none(),
+        "success": result.is_ok(),
+        "error_kind": result.as_ref().err().map(|e| e.variant_name()),
+        "duration_ms": duration_ms,
+    }));
+
+    if let Err(err) = result {
         eprintln!("{}", err.red());
         std::process::exit(1);
     }

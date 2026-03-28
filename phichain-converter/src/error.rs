@@ -39,6 +39,21 @@ impl std::fmt::Display for ConvertError {
     }
 }
 
+impl ConvertError {
+    pub fn variant_name(&self) -> &'static str {
+        match self {
+            ConvertError::NoSuchFile(_) => "NoSuchFile",
+            ConvertError::ExpectedFile(_) => "ExpectedFile",
+            ConvertError::UnableToInferFormat => "UnableToInferFormat",
+            ConvertError::Io(_) => "Io",
+            ConvertError::Json(_) => "Json",
+            ConvertError::OfficialInput(_) => "OfficialInput",
+            ConvertError::OfficialOutput(_) => "OfficialOutput",
+            ConvertError::RpeInput(_) => "RpeInput",
+        }
+    }
+}
+
 /// Extract value from `Result<T, Infallible>`.
 pub fn unwrap_infallible<T>(result: Result<T, std::convert::Infallible>) -> T {
     match result {
