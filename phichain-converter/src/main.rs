@@ -1,6 +1,7 @@
 mod error;
 mod i18n;
 mod options;
+mod telemetry;
 
 use crate::error::{unwrap_infallible, ConvertError};
 use crate::i18n::{i18n_str, locale};
