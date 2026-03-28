@@ -8,7 +8,7 @@ use crate::i18n::{i18n_str, locale};
 use crate::options::{
     CliCommonOutputOptions, CliOfficialInputOptions, CliOfficialOutputOptions, CliRpeInputOptions,
 };
-use clap::{Parser, ValueEnum};
+use clap::{Parser, Subcommand, ValueEnum};
 use owo_colors::OwoColorize;
 use phichain_chart::serialization::PhichainChart;
 use phichain_format::official::OfficialChart;
@@ -50,6 +50,19 @@ enum Format {
     Official,
     Phichain,
     Rpe,
+}
+
+#[derive(Parser, Debug, Clone)]
+#[command(name = "phichain-converter telemetry")]
+#[command(hide = true)]
+struct TelemetryCli {
+    #[command(subcommand)]
+    command: TelemetryCommand,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+enum TelemetryCommand {
+    Flush { path: PathBuf },
 }
 
 #[derive(Parser, Debug, Clone)]
@@ -191,8 +204,18 @@ fn convert(args: Args) -> Result<(), ConvertError> {
 }
 
 fn main() {
-    tracing_subscriber::fmt().init();
+    // Route `phichain-converter telemetry <subcommand>` before normal arg parsing
+    if std::env::args().nth(1).as_deref() == Some("telemetry") {
+        let cli = TelemetryCli::parse_from(std::env::args().skip(1));
+        match cli.command {
+            TelemetryCommand::Flush { path } => {
+                let _ = telemetry::flush(path);
+            }
+        }
+        return;
+    }
 
+    tracing_subscriber::fmt().init();
     rust_i18n::set_locale(&locale());
 
     let args = Args::parse();
