@@ -46,14 +46,16 @@ impl LineEventKind {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[serde(tag = "type", rename_all = "snake_case")]
 pub enum LineEventValue {
     Transition {
         start: f32,
         end: f32,
         easing: Easing,
     },
-    Constant(f32),
+    Constant {
+        value: f32,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -69,7 +71,7 @@ impl LineEventValue {
     }
 
     pub fn constant(value: f32) -> Self {
-        Self::Constant(value)
+        Self::Constant { value }
     }
 
     pub fn negated(&self) -> Self {
@@ -79,7 +81,7 @@ impl LineEventValue {
                 end: -end,
                 easing,
             },
-            LineEventValue::Constant(value) => LineEventValue::Constant(-value),
+            LineEventValue::Constant { value } => LineEventValue::Constant { value: -value },
         }
     }
 
@@ -88,12 +90,12 @@ impl LineEventValue {
     }
 
     pub fn is_constant(&self) -> bool {
-        matches!(self, LineEventValue::Constant(_))
+        matches!(self, LineEventValue::Constant { .. })
     }
 
     pub fn is_numeric_constant(&self) -> bool {
         match self {
-            LineEventValue::Constant(_) => true,
+            LineEventValue::Constant { .. } => true,
             LineEventValue::Transition { start, end, .. } if start == end => true,
             _ => false,
         }
@@ -102,14 +104,14 @@ impl LineEventValue {
     pub fn start(&self) -> f32 {
         match self {
             LineEventValue::Transition { start, .. } => *start,
-            LineEventValue::Constant(value) => *value,
+            LineEventValue::Constant { value } => *value,
         }
     }
 
     pub fn end(&self) -> f32 {
         match self {
             LineEventValue::Transition { end, .. } => *end,
-            LineEventValue::Constant(value) => *value,
+            LineEventValue::Constant { value } => *value,
         }
     }
 
@@ -129,21 +131,21 @@ impl LineEventValue {
     pub fn into_constant(self) -> Self {
         match self {
             LineEventValue::Transition { start, .. } => Self::constant(start),
-            LineEventValue::Constant(_) => self,
+            LineEventValue::Constant { .. } => self,
         }
     }
 
     pub fn into_transition(self) -> Self {
         match self {
             LineEventValue::Transition { .. } => self,
-            LineEventValue::Constant(value) => Self::transition(value, value, Easing::Linear),
+            LineEventValue::Constant { value } => Self::transition(value, value, Easing::Linear),
         }
     }
 
     pub fn easing(&self) -> Easing {
         match self {
             LineEventValue::Transition { easing, .. } => *easing,
-            LineEventValue::Constant(_) => Easing::Linear,
+            LineEventValue::Constant { .. } => Easing::Linear,
         }
     }
 }
@@ -277,7 +279,7 @@ impl LineEvent {
                     EventEvaluationResult::Unaffected
                 }
             }
-            LineEventValue::Constant(value) => {
+            LineEventValue::Constant { value } => {
                 if beat >= start_beat && beat <= end_beat {
                     EventEvaluationResult::Affecting(value)
                 } else if beat > end_beat {

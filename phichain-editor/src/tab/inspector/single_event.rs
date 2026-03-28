@@ -132,7 +132,7 @@ pub fn single_event_inspector(
                 );
                 finished |= response.drag_stopped();
             }
-            LineEventValue::Constant(ref mut value) => {
+            LineEventValue::Constant { ref mut value } => {
                 let range = match event.kind {
                     LineEventKind::Opacity => 0.0..=255.0,
                     _ => f32::MIN..=f32::MAX,

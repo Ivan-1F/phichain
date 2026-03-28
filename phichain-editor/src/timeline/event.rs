@@ -232,7 +232,7 @@ impl Timeline for EventTimeline {
             } else {
                 match event.value {
                     LineEventValue::Transition { .. } => Color32::LIGHT_BLUE,
-                    LineEventValue::Constant(_) => Color32::LIGHT_RED,
+                    LineEventValue::Constant { .. } => Color32::LIGHT_RED,
                 }
             };
 

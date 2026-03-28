@@ -65,7 +65,7 @@ impl Widget for EasingGraph<'_> {
             response.rect,
         );
 
-        if let Easing::Custom(x1, y1, x2, y2) = self.value {
+        if let Easing::Custom { x1, y1, x2, y2 } = self.value {
             let mut p1 = Pos2::new(*x1, 1.0 - *y1);
             let mut p2 = Pos2::new(*x2, 1.0 - *y2);
             let size = Vec2::splat(2.0 * 4.0);
@@ -116,7 +116,12 @@ impl Widget for EasingGraph<'_> {
             }
 
             if p1.x != *x1 || p1.y != *y1 || p2.x != *x2 || p2.y != *y2 {
-                *self.value = Easing::Custom(p1.x, 1.0 - p1.y, p2.x, 1.0 - p2.y);
+                *self.value = Easing::Custom {
+                    x1: p1.x,
+                    y1: 1.0 - p1.y,
+                    x2: p2.x,
+                    y2: 1.0 - p2.y,
+                };
             }
 
             painter.circle(to_screen * p1, 4.0, Color32::WHITE, Stroke::NONE);
@@ -270,7 +275,12 @@ impl Widget for EasingValue<'_> {
                                         .clicked()
                                     {
                                         combobox_changed = true;
-                                        *self.value = Easing::Custom(0.5, 0.0, 0.5, 1.0);
+                                        *self.value = Easing::Custom {
+                                            x1: 0.5,
+                                            y1: 0.0,
+                                            x2: 0.5,
+                                            y2: 1.0,
+                                        };
                                     }
                                 },
                             );
@@ -304,40 +314,40 @@ impl Widget for EasingValue<'_> {
 
                             if draw_easing_options(
                                 ui,
-                                Easing::Steps(4),
+                                Easing::Steps { count: 4 },
                                 self.value.is_steps(),
                                 "Steps",
                             )
                             .clicked()
                             {
                                 combobox_changed = true;
-                                *self.value = Easing::Steps(4);
+                                *self.value = Easing::Steps { count: 4 };
                             }
 
                             if draw_easing_options(
                                 ui,
-                                Easing::Elastic(20.0),
+                                Easing::Elastic { omega: 20.0 },
                                 self.value.is_elastic(),
                                 "Elastic",
                             )
                             .clicked()
                             {
                                 combobox_changed = true;
-                                *self.value = Easing::Elastic(20.0);
+                                *self.value = Easing::Elastic { omega: 20.0 };
                             }
                         });
                     });
                 })
                 .response;
 
-            if let Easing::Steps(steps) = self.value {
+            if let Easing::Steps { count: steps } = self.value {
                 let dv_response = ui.add(egui::DragValue::new(steps).speed(1).range(1..=64));
                 if dv_response.changed() {
                     response.flags |= Flags::DRAG_STOPPED;
                 }
             }
 
-            if let Easing::Elastic(omega) = self.value {
+            if let Easing::Elastic { omega } = self.value {
                 let dv_response =
                     ui.add(egui::DragValue::new(omega).speed(0.1).range(10.0..=128.0));
                 if dv_response.changed() {
