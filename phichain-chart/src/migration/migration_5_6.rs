@@ -72,26 +72,17 @@ fn migrate_event_value(value: &Value) -> Value {
     value.clone()
 }
 
-fn migrate_note(note: &mut Value) {
-    if let Some(kind) = note.get("kind").cloned() {
-        match &kind {
-            // "tap", "drag", "flick" — already a string, wrap into {"kind": "tap"} style
-            // Actually these are already fine as-is for the new format
-            Value::String(_) => {
-                // kind is already a plain string, add "kind" tag field for NoteKind
-                let kind_str = kind.as_str().unwrap();
-                note["kind"] = json!(kind_str);
+/// Migrate a NoteKind `kind` field from externally tagged to internally tagged.
+/// Works for both notes and curve_note_tracks.
+///
+/// `{"kind": {"hold": {"hold_beat": [1, 0, 1]}}}` → `{"kind": "hold", "hold_beat": [1, 0, 1]}`
+fn migrate_note_kind(obj: &mut Value) {
+    if let Some(Value::Object(map)) = obj.get("kind").cloned() {
+        if let Some(hold_inner) = map.get("hold") {
+            if let Some(hold_beat) = hold_inner.get("hold_beat") {
+                obj["kind"] = json!("hold");
+                obj["hold_beat"] = hold_beat.clone();
             }
-            // {"hold": {"hold_beat": [...]}} — flatten
-            Value::Object(map) => {
-                if let Some(hold_inner) = map.get("hold") {
-                    if let Some(hold_beat) = hold_inner.get("hold_beat") {
-                        note["kind"] = json!("hold");
-                        note["hold_beat"] = hold_beat.clone();
-                    }
-                }
-            }
-            _ => {}
         }
     }
 }
@@ -100,7 +91,7 @@ fn migrate_line(line: &mut Value) -> anyhow::Result<()> {
     // Migrate notes
     if let Some(notes) = line.get_mut("notes").and_then(|v| v.as_array_mut()) {
         for note in notes {
-            migrate_note(note);
+            migrate_note_kind(note);
         }
     }
 
@@ -119,21 +110,7 @@ fn migrate_line(line: &mut Value) -> anyhow::Result<()> {
         .and_then(|v| v.as_array_mut())
     {
         for track in tracks {
-            // Migrate the NoteKind `kind` field
-            if let Some(kind) = track.get("kind").cloned() {
-                match &kind {
-                    Value::String(_) => {}
-                    Value::Object(map) => {
-                        if let Some(hold_inner) = map.get("hold") {
-                            if let Some(hold_beat) = hold_inner.get("hold_beat") {
-                                track["kind"] = json!("hold");
-                                track["hold_beat"] = hold_beat.clone();
-                            }
-                        }
-                    }
-                    _ => {}
-                }
-            }
+            migrate_note_kind(track);
             // Migrate the Easing `curve` field
             if let Some(curve) = track.get("curve").cloned() {
                 track["curve"] = migrate_easing(&curve);
