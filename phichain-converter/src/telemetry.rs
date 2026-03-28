@@ -1,12 +1,43 @@
 use serde_json::Value;
+use sha2::{Digest, Sha256};
 use std::fs::File;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
-pub fn track(payload: Value) -> Result<(), std::io::Error> {
+pub fn get_device_id() -> String {
+    let machine_id = machine_uid::get().unwrap_or_else(|_| uuid::Uuid::new_v4().to_string());
+    let mut hasher = Sha256::new();
+    hasher.update(machine_id.as_bytes());
+    let hash_result = hasher.finalize();
+    hash_result.iter().map(|b| format!("{b:02x}")).collect()
+}
+
+pub fn track(event_type: &str, metadata: Value) -> Result<(), std::io::Error> {
+    let info = os_info::get();
+    let payload = serde_json::json!({
+        "timestamp": std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs(),
+        "reporter": "phichain-converter",
+        "device_id": get_device_id(),
+        "type": event_type,
+        "system": {
+            "arch": std::env::consts::ARCH,
+            "os": std::env::consts::OS,
+            "name": info.os_type().to_string(),
+            "version": info.version().to_string(),
+        },
+        "phichain": {
+            "version": env!("CARGO_PKG_VERSION"),
+            "debug": cfg!(debug_assertions),
+        },
+        "metadata": metadata,
+    });
+
     let pid = std::process::id();
     let timestamp = std::time::SystemTime::now()
-        .duration_since(std::time::SystemTime::UNIX_EPOCH)
+        .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_millis();
     let path = std::env::temp_dir().join(format!("phichain-telemetry-{pid}-{timestamp}.json"));
@@ -62,7 +93,8 @@ pub fn flush(file: PathBuf) -> Result<(), std::io::Error> {
         ));
     }
 
-    // TODO: POST content to telemetry endpoint
+    // TODO: replace with actual HTTP POST
+    eprintln!("[telemetry] {}", String::from_utf8_lossy(&content));
 
     let _ = std::fs::remove_file(&file);
     Ok(())
