@@ -138,7 +138,11 @@ struct ChartMetrics {
 }
 
 fn collect_chart_metrics(lines: &[phichain_chart::serialization::SerializedLine]) -> ChartMetrics {
-    let mut metrics = ChartMetrics { lines: 0, notes: 0, events: 0 };
+    let mut metrics = ChartMetrics {
+        lines: 0,
+        notes: 0,
+        events: 0,
+    };
     for line in lines {
         metrics.lines += 1;
         metrics.notes += line.notes.len();
@@ -163,24 +167,41 @@ impl Chart {
             Chart::Phichain(c) => collect_chart_metrics(&c.lines),
             Chart::Official(c) => ChartMetrics {
                 lines: c.lines.len(),
-                notes: c.lines.iter().map(|l| l.notes_above.len() + l.notes_below.len()).sum(),
-                events: c.lines.iter().map(|l| {
-                    l.move_events.len() + l.rotate_events.len()
-                        + l.opacity_events.len() + l.speed_events.len()
-                }).sum(),
+                notes: c
+                    .lines
+                    .iter()
+                    .map(|l| l.notes_above.len() + l.notes_below.len())
+                    .sum(),
+                events: c
+                    .lines
+                    .iter()
+                    .map(|l| {
+                        l.move_events.len()
+                            + l.rotate_events.len()
+                            + l.opacity_events.len()
+                            + l.speed_events.len()
+                    })
+                    .sum(),
             },
             Chart::Rpe(c) => ChartMetrics {
                 lines: c.judge_line_list.len(),
                 notes: c.judge_line_list.iter().map(|l| l.notes.len()).sum(),
-                events: c.judge_line_list.iter().map(|l| {
-                    l.event_layers.iter().map(|layer| {
-                        layer.move_x_events.len()
-                            + layer.move_y_events.len()
-                            + layer.rotate_events.len()
-                            + layer.alpha_events.len()
-                            + layer.speed_events.len()
-                    }).sum::<usize>()
-                }).sum(),
+                events: c
+                    .judge_line_list
+                    .iter()
+                    .map(|l| {
+                        l.event_layers
+                            .iter()
+                            .map(|layer| {
+                                layer.move_x_events.len()
+                                    + layer.move_y_events.len()
+                                    + layer.rotate_events.len()
+                                    + layer.alpha_events.len()
+                                    + layer.speed_events.len()
+                            })
+                            .sum::<usize>()
+                    })
+                    .sum(),
             },
         }
     }

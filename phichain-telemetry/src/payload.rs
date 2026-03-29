@@ -140,7 +140,8 @@ impl<S: telemetry_payload_builder::State> TelemetryPayloadBuilder<S> {
     /// .extra("hardware", json!({...}))
     /// ```
     pub fn extra(mut self, key: impl Into<String>, value: impl Serialize) -> Self {
-        self.extra.insert(key.into(), serde_json::to_value(value).unwrap());
+        self.extra
+            .insert(key.into(), serde_json::to_value(value).unwrap());
         self
     }
 }

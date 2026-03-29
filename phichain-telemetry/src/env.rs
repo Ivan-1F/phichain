@@ -16,7 +16,9 @@ fn is_truthy_value(value: &str) -> bool {
 ///
 /// Returns `false` if the variable is unset or set to a non-truthy value.
 fn env_var_is_truthy(name: &str) -> bool {
-    std::env::var(name).map(|v| is_truthy_value(&v)).unwrap_or(false)
+    std::env::var(name)
+        .map(|v| is_truthy_value(&v))
+        .unwrap_or(false)
 }
 
 /// Returns `true` if telemetry has been disabled via environment variables.

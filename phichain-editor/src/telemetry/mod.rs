@@ -15,8 +15,8 @@ use phichain_chart::note::Note;
 use phichain_chart::project::Project;
 use phichain_telemetry::payload::{PhichainMeta, TelemetryPayload};
 use serde_json::{json, Value};
-use std::time::Duration;
 use std::process;
+use std::time::Duration;
 use sysinfo::Pid;
 use uuid::Uuid;
 
@@ -108,7 +108,8 @@ fn handle_push_telemetry_event_system(
         let pid = process::id();
         let process = system.process(Pid::from_u32(pid)).unwrap();
 
-        let mut phichain_meta = PhichainMeta::new(env!("CARGO_PKG_VERSION"), cfg!(debug_assertions));
+        let mut phichain_meta =
+            PhichainMeta::new(env!("CARGO_PKG_VERSION"), cfg!(debug_assertions));
         phichain_meta.beta = constants::IS_BETA;
 
         let payload = TelemetryPayload::builder()
@@ -141,7 +142,9 @@ fn handle_push_telemetry_event_system(
                 serde_json::to_string_pretty(&payload).unwrap()
             );
         } else {
-            telemetry_manager.queue.push(serde_json::to_value(&payload).unwrap());
+            telemetry_manager
+                .queue
+                .push(serde_json::to_value(&payload).unwrap());
         }
     }
 }
