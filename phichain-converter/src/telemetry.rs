@@ -27,6 +27,32 @@ fn debug() -> bool {
         .unwrap_or(false)
 }
 
+fn is_ci() -> bool {
+    std::env::var("CI").is_ok()
+}
+
+fn container_environment() -> Option<&'static str> {
+    if std::env::var("KUBERNETES_SERVICE_HOST").is_ok() {
+        return Some("kubernetes");
+    }
+    if std::path::Path::new("/.dockerenv").exists()
+        || std::path::Path::new("/run/.dockerenv").exists()
+    {
+        return Some("docker");
+    }
+    if let Ok(container) = std::env::var("container") {
+        match container.to_lowercase().as_str() {
+            "docker" => return Some("docker"),
+            "podman" => return Some("podman"),
+            _ => {}
+        }
+    }
+    if std::path::Path::new("/run/.containerenv").exists() {
+        return Some("podman");
+    }
+    None
+}
+
 pub fn track(event_type: &str, metadata: Value) -> Result<(), std::io::Error> {
     let info = os_info::get();
     let payload = serde_json::json!({
@@ -43,7 +69,13 @@ pub fn track(event_type: &str, metadata: Value) -> Result<(), std::io::Error> {
             "name": info.os_type().to_string(),
             "version": info.version().to_string(),
         },
+        "environment": {
+            "container": container_environment().unwrap_or("none"),
+            "ci": is_ci(),
+            "test": cfg!(test),
+        },
         "phichain": {
+            "beta": env!("CARGO_PKG_VERSION").contains("beta"),
             "version": env!("CARGO_PKG_VERSION"),
             "debug": cfg!(debug_assertions),
         },
