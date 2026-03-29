@@ -127,7 +127,63 @@ fn infer_format(path: &std::path::Path) -> Result<Format, ConvertError> {
     Err(ConvertError::UnableToInferFormat)
 }
 
-fn convert(args: Args) -> Result<(), ConvertError> {
+#[derive(Serialize)]
+struct ChartMetrics {
+    lines: usize,
+    notes: usize,
+    events: usize,
+}
+
+fn collect_chart_metrics(lines: &[phichain_chart::serialization::SerializedLine]) -> ChartMetrics {
+    let mut metrics = ChartMetrics { lines: 0, notes: 0, events: 0 };
+    for line in lines {
+        metrics.lines += 1;
+        metrics.notes += line.notes.len();
+        metrics.events += line.events.len();
+        let child = collect_chart_metrics(&line.children);
+        metrics.lines += child.lines;
+        metrics.notes += child.notes;
+        metrics.events += child.events;
+    }
+    metrics
+}
+
+#[derive(Serialize)]
+struct ConvertMetrics {
+    input: ChartMetrics,
+    output: ChartMetrics,
+}
+
+impl Chart {
+    fn metrics(&self) -> ChartMetrics {
+        match self {
+            Chart::Phichain(c) => collect_chart_metrics(&c.lines),
+            Chart::Official(c) => ChartMetrics {
+                lines: c.lines.len(),
+                notes: c.lines.iter().map(|l| l.notes_above.len() + l.notes_below.len()).sum(),
+                events: c.lines.iter().map(|l| {
+                    l.move_events.len() + l.rotate_events.len()
+                        + l.opacity_events.len() + l.speed_events.len()
+                }).sum(),
+            },
+            Chart::Rpe(c) => ChartMetrics {
+                lines: c.judge_line_list.len(),
+                notes: c.judge_line_list.iter().map(|l| l.notes.len()).sum(),
+                events: c.judge_line_list.iter().map(|l| {
+                    l.event_layers.iter().map(|layer| {
+                        layer.move_x_events.len()
+                            + layer.move_y_events.len()
+                            + layer.rotate_events.len()
+                            + layer.alpha_events.len()
+                            + layer.speed_events.len()
+                    }).sum::<usize>()
+                }).sum(),
+            },
+        }
+    }
+}
+
+fn convert(args: Args) -> Result<ConvertMetrics, ConvertError> {
     if !args.input.exists() {
         return Err(ConvertError::NoSuchFile(args.input.clone()));
     }
@@ -159,6 +215,8 @@ fn convert(args: Args) -> Result<(), ConvertError> {
         Format::Rpe => Chart::Rpe(serde_json::from_reader(file)?),
     };
 
+    let input_metrics = chart.metrics();
+
     let phichain = match chart {
         Chart::Official(official) => official.to_phichain(&args.official_input_options.into())?,
         Chart::Phichain(phichain) => unwrap_infallible(phichain.to_phichain(&())),
@@ -176,6 +234,8 @@ fn convert(args: Args) -> Result<(), ConvertError> {
         ))),
         Format::Rpe => Chart::Rpe(unwrap_infallible(RpeChart::from_phichain(phichain, &()))),
     };
+
+    let output_metrics = output.metrics();
 
     let output = output.apply_common_output_options(&args.common_output_options.into());
 
@@ -200,7 +260,10 @@ fn convert(args: Args) -> Result<(), ConvertError> {
         )
     );
 
-    Ok(())
+    Ok(ConvertMetrics {
+        input: input_metrics,
+        output: output_metrics,
+    })
 }
 
 fn main() {
@@ -231,6 +294,14 @@ fn main() {
         "success": result.is_ok(),
         "error_kind": result.as_ref().err().map(|e| e.variant_name()),
         "duration_ms": duration_ms,
+        "input": result.as_ref().ok().map(|m| &m.input),
+        "output": result.as_ref().ok().map(|m| &m.output),
+        "options": {
+            "official_input": args.official_input_options,
+            "official_output": args.official_output_options,
+            "rpe_input": args.rpe_input_options,
+            "common_output": args.common_output_options,
+        },
     }));
 
     if let Err(err) = result {
