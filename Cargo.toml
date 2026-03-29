@@ -1,11 +1,14 @@
 [workspace]
 members = [
     "phichain-assets",
-    "phichain-chart", "phichain-compiler",
+    "phichain-chart",
+    "phichain-compiler",
     "phichain-converter",
-    "phichain-editor", "phichain-format",
+    "phichain-editor",
+    "phichain-format",
     "phichain-game",
     "phichain-renderer",
+    "phichain-telemetry",
 ]
 resolver = "2"
 
