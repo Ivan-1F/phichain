@@ -12,6 +12,15 @@ pub fn get_device_id() -> String {
     hash_result.iter().map(|b| format!("{b:02x}")).collect()
 }
 
+pub fn disabled() -> bool {
+    std::env::var("PHICHAIN_TELEMETRY_DISABLED")
+        .map(|v| matches!(v.to_lowercase().as_str(), "true" | "yes" | "1"))
+        .unwrap_or(false)
+        || std::env::var("DO_NOT_TRACK")
+            .map(|v| matches!(v.to_lowercase().as_str(), "true" | "yes" | "1"))
+            .unwrap_or(false)
+}
+
 pub fn track(event_type: &str, metadata: Value) -> Result<(), std::io::Error> {
     let info = os_info::get();
     let payload = serde_json::json!({

@@ -103,6 +103,9 @@ pub struct Args {
         next_help_heading = i18n_str("cli.common_output.heading")
     )]
     common_output_options: CliCommonOutputOptions,
+
+    #[arg(long, help = "Disable telemetry reporting")]
+    no_telemetry: bool,
 }
 
 fn infer_format(path: &std::path::Path) -> Result<Format, ConvertError> {
@@ -286,23 +289,28 @@ fn main() {
     let result = convert(args.clone());
     let duration_ms = start.elapsed().as_millis() as u64;
 
-    let _ = telemetry::track("phichain.converter.convert", serde_json::json!({
-        "locale": locale(),
-        "from": args.from.as_ref().map(|f| f.to_string()),
-        "to": args.to.to_string(),
-        "format_inferred": args.from.is_none(),
-        "success": result.is_ok(),
-        "error_kind": result.as_ref().err().map(|e| e.variant_name()),
-        "duration_ms": duration_ms,
-        "input": result.as_ref().ok().map(|m| &m.input),
-        "output": result.as_ref().ok().map(|m| &m.output),
-        "options": {
-            "official_input": args.official_input_options,
-            "official_output": args.official_output_options,
-            "rpe_input": args.rpe_input_options,
-            "common_output": args.common_output_options,
-        },
-    }));
+    if !args.no_telemetry && !telemetry::disabled() {
+        let _ = telemetry::track(
+            "phichain.converter.convert",
+            serde_json::json!({
+                "locale": locale(),
+                "from": args.from.as_ref().map(|f| f.to_string()),
+                "to": args.to.to_string(),
+                "format_inferred": args.from.is_none(),
+                "success": result.is_ok(),
+                "error_kind": result.as_ref().err().map(|e| e.variant_name()),
+                "duration_ms": duration_ms,
+                "input": result.as_ref().ok().map(|m| &m.input),
+                "output": result.as_ref().ok().map(|m| &m.output),
+                "options": {
+                    "official_input": args.official_input_options,
+                    "official_output": args.official_output_options,
+                    "rpe_input": args.rpe_input_options,
+                    "common_output": args.common_output_options,
+                },
+            }),
+        );
+    }
 
     if let Err(err) = result {
         eprintln!("{}", err.red());
