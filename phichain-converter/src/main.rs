@@ -289,7 +289,7 @@ fn main() {
     let result = convert(args.clone());
     let duration_ms = start.elapsed().as_millis() as u64;
 
-    if !args.no_telemetry && !telemetry::disabled() {
+    if !args.no_telemetry && !phichain_telemetry::env::telemetry_disabled() {
         let _ = telemetry::track(
             "phichain.converter.convert",
             serde_json::json!({

@@ -16,7 +16,4 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 serde = { version = "1.0.228", features = ["derive"] }
 thiserror = "2"
 owo-colors = "4"
-os_info = "3.14.0"
-machine-uid = "0.5.4"
-sha2 = "0.11.0"
-uuid = { version = "1.23.0", features = ["v4"] }
+phichain-telemetry = { path = "../phichain-telemetry" }

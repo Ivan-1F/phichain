@@ -1,92 +1,22 @@
+use phichain_telemetry::payload::{PhichainMeta, TelemetryPayload};
 use serde_json::Value;
-use sha2::{Digest, Sha256};
 use std::fs::File;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
-pub fn get_device_id() -> String {
-    let machine_id = machine_uid::get().unwrap_or_else(|_| uuid::Uuid::new_v4().to_string());
-    let mut hasher = Sha256::new();
-    hasher.update(machine_id.as_bytes());
-    let hash_result = hasher.finalize();
-    hash_result.iter().map(|b| format!("{b:02x}")).collect()
-}
-
-pub fn disabled() -> bool {
-    std::env::var("PHICHAIN_TELEMETRY_DISABLED")
-        .map(|v| matches!(v.to_lowercase().as_str(), "true" | "yes" | "1"))
-        .unwrap_or(false)
-        || std::env::var("DO_NOT_TRACK")
-            .map(|v| matches!(v.to_lowercase().as_str(), "true" | "yes" | "1"))
-            .unwrap_or(false)
-}
-
-fn debug() -> bool {
-    std::env::var("PHICHAIN_TELEMETRY_DEBUG")
-        .map(|v| matches!(v.to_lowercase().as_str(), "true" | "yes" | "1"))
-        .unwrap_or(false)
-}
-
-fn is_ci() -> bool {
-    std::env::var("CI").is_ok()
-}
-
-fn container_environment() -> Option<&'static str> {
-    if std::env::var("KUBERNETES_SERVICE_HOST").is_ok() {
-        return Some("kubernetes");
-    }
-    if std::path::Path::new("/.dockerenv").exists()
-        || std::path::Path::new("/run/.dockerenv").exists()
-    {
-        return Some("docker");
-    }
-    if let Ok(container) = std::env::var("container") {
-        match container.to_lowercase().as_str() {
-            "docker" => return Some("docker"),
-            "podman" => return Some("podman"),
-            _ => {}
-        }
-    }
-    if std::path::Path::new("/run/.containerenv").exists() {
-        return Some("podman");
-    }
-    None
-}
-
 pub fn track(event_type: &str, metadata: Value) -> Result<(), std::io::Error> {
-    let info = os_info::get();
-    let payload = serde_json::json!({
-        "timestamp": std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs(),
-        "reporter": "phichain-converter",
-        "device_id": get_device_id(),
-        "type": event_type,
-        "system": {
-            "arch": std::env::consts::ARCH,
-            "os": std::env::consts::OS,
-            "name": info.os_type().to_string(),
-            "version": info.version().to_string(),
-        },
-        "environment": {
-            "container": container_environment().unwrap_or("none"),
-            "ci": is_ci(),
-            "test": cfg!(test),
-        },
-        "phichain": {
-            "beta": env!("CARGO_PKG_VERSION").contains("beta"),
-            "version": env!("CARGO_PKG_VERSION"),
-            "debug": cfg!(debug_assertions),
-        },
-        "metadata": metadata,
-    });
+    let payload = TelemetryPayload::builder()
+        .reporter("phichain-converter")
+        .event_type(event_type)
+        .phichain(PhichainMeta::new(
+            env!("CARGO_PKG_VERSION"),
+            cfg!(debug_assertions),
+        ))
+        .metadata(metadata)
+        .build();
 
-    if debug() {
-        eprintln!(
-            "[telemetry] {}",
-            serde_json::to_string_pretty(&payload).unwrap()
-        );
+    if phichain_telemetry::env::telemetry_debug() {
+        eprintln!("[telemetry] {}", serde_json::to_string_pretty(&payload)?);
         return Ok(());
     }
 
