@@ -21,6 +21,12 @@ pub fn disabled() -> bool {
             .unwrap_or(false)
 }
 
+fn debug() -> bool {
+    std::env::var("PHICHAIN_TELEMETRY_DEBUG")
+        .map(|v| matches!(v.to_lowercase().as_str(), "true" | "yes" | "1"))
+        .unwrap_or(false)
+}
+
 pub fn track(event_type: &str, metadata: Value) -> Result<(), std::io::Error> {
     let info = os_info::get();
     let payload = serde_json::json!({
@@ -43,6 +49,14 @@ pub fn track(event_type: &str, metadata: Value) -> Result<(), std::io::Error> {
         },
         "metadata": metadata,
     });
+
+    if debug() {
+        eprintln!(
+            "[telemetry] {}",
+            serde_json::to_string_pretty(&payload).unwrap()
+        );
+        return Ok(());
+    }
 
     let pid = std::process::id();
     let timestamp = std::time::SystemTime::now()
