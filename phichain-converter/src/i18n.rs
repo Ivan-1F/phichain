@@ -14,6 +14,7 @@ fn normalize_locale(locale: &str) -> String {
         "zh-Hant-CN" | "zh-Hant-TW" | "zh-Hant" | "zh-Hant-HK" | "zh-Hant-MO" => {
             "zh-TW".to_string()
         }
+        // Japanese (already matches filename ja-JP.yml)
         // already normalized
         _ => base,
     }

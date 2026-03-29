@@ -1,0 +1,46 @@
+cli:
+  about: Phigros 譜面を異なるフォーマット間で変換します
+
+  examples: |
+    例:
+
+    phichain-converter --from rpe --to phichain RPE.json chart.json
+        RPE 譜面を Phichain フォーマットに変換
+
+    phichain-converter --to official chart.json
+        入力譜面を公式フォーマットに変換 (output.json に出力)
+
+  input: 入力
+  output: 出力
+  from: 入力フォーマット。指定しない場合、入力ファイルから自動推論します
+  to: 出力フォーマット
+  no_telemetry: テレメトリ送信を無効にする
+
+  official_input:
+    heading: '入力オプション・公式'
+    no_easing_fitting: イージングフィッティングを無効にする
+    easing_fitting_epsilon: イージングフィッティングに使用する誤差値
+    constant_event_shrink_to: '定数イベントの縮小先の長さ (形式: "分子/分母" または "整数+分子/分母" または "整数")'
+
+  official_output:
+    heading: '出力オプション・公式'
+    minimum_beat: イベント分割に使用する最小拍数単位
+
+  rpe_input:
+    heading: '入力オプション・RPE'
+    remove_fake_notes: 有効にすると、`isFake = true` のノートが削除されます。無効の場合、通常のノートとして保持されます
+    remove_ui_controls: 有効にすると、`attachUI` が空でない判定ラインが削除されます。無効の場合、通常の判定ラインとして保持されます
+
+  common_output:
+    heading: '出力オプション・共通'
+    round: 出力値の小数点以下の桁数 (イベント値とノートの x 座標に適用)
+
+  status:
+    inferred_format: "入力フォーマットを推論しました: %{format}"
+    converted: "変換完了 %{input} (%{from}) -> %{output} (%{to})"
+    stdout: "<標準出力>"
+
+  error:
+    no_such_file: "ファイルが見つかりません: %{path}"
+    expected_file: "ファイルを期待しましたが、ディレクトリです: %{path}"
+    unable_to_infer_format: "ファイル内容からフォーマットを推論できません"
