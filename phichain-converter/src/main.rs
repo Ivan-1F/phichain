@@ -104,7 +104,7 @@ pub struct Args {
     )]
     common_output_options: CliCommonOutputOptions,
 
-    #[arg(long, help = "Disable telemetry reporting")]
+    #[arg(long, help = t!("cli.no_telemetry").to_string())]
     no_telemetry: bool,
 }
 

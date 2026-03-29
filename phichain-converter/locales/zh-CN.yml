@@ -14,6 +14,7 @@ cli:
   output: 输出
   from: 输入格式。若不提供则根据输入文件自动推断
   to: 输出格式
+  no_telemetry: 禁用遥测上报
 
   official_input:
     heading: '输入选项 · 官谱'
