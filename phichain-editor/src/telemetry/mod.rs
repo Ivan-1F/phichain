@@ -176,13 +176,12 @@ fn flush_telemetry_queue_system(
         return;
     }
 
-    let data: Vec<Value> = telemetry_manager.queue.drain(..).collect();
+    let data = std::mem::take(&mut telemetry_manager.queue);
     if data.is_empty() {
         return;
     }
 
-    let count = data.len();
-    debug!("Flushing telemetry queue with {} entries", count);
+    debug!("Flushing telemetry queue with {} entries", data.len());
 
     let request = reqwest
         .post(phichain_telemetry::TELEMETRY_URL)
@@ -197,8 +196,7 @@ fn flush_telemetry_queue_system(
             let response = trigger.event();
             if response.status().is_success() {
                 info!(
-                    "Successfully sent {} telemetry events, response: {}",
-                    count,
+                    "Successfully sent telemetry event, response: {}",
                     response.as_str().unwrap_or("<unknown>")
                 );
             } else {
