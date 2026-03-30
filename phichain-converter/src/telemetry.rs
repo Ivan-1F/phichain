@@ -70,19 +70,22 @@ pub fn flush(file: PathBuf) -> Result<(), std::io::Error> {
 
     // Validate: content must be valid JSON
     let content = std::fs::read(&file)?;
-    if serde_json::from_slice::<Value>(&content).is_err() {
+    let payload: Value = serde_json::from_slice(&content).map_err(|_| {
         let _ = std::fs::remove_file(&file);
-        return Err(std::io::Error::new(
+        std::io::Error::new(
             std::io::ErrorKind::InvalidData,
             "telemetry file contains invalid JSON",
-        ));
-    }
+        )
+    })?;
+
+    // wrap in array to match the batch format
+    let batch = serde_json::to_vec(&[payload])?;
 
     let agent = ureq::Agent::new_with_defaults();
     let _ = agent
         .post(phichain_telemetry::TELEMETRY_URL)
         .header("Content-Type", "application/json")
-        .send(&*content);
+        .send(&*batch);
 
     let _ = std::fs::remove_file(&file);
     Ok(())
