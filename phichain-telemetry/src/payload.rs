@@ -36,20 +36,14 @@ impl SystemInfo {
 pub struct EnvironmentInfo {
     pub container: &'static str,
     pub ci: bool,
-    pub test: bool,
 }
 
 impl EnvironmentInfo {
     /// Collects environment information.
-    ///
-    /// `is_test` should be passed as `cfg!(test)` by the caller, since
-    /// the `cfg!` macro is evaluated in the caller's compilation context,
-    /// not the library's.
-    pub fn collect(is_test: bool) -> Self {
+    pub fn collect() -> Self {
         Self {
             container: env::container_environment().unwrap_or("none"),
             ci: env::is_ci(),
-            test: is_test,
         }
     }
 }
@@ -119,8 +113,8 @@ pub struct TelemetryPayload {
     #[builder(default = SystemInfo::collect())]
     pub system: SystemInfo,
 
-    /// Container/CI/test environment info. Auto-populated if not set.
-    #[builder(default = EnvironmentInfo::collect(false))]
+    /// Container and CI environment info. Auto-populated if not set.
+    #[builder(default = EnvironmentInfo::collect())]
     pub environment: EnvironmentInfo,
 
     /// Application version metadata.
@@ -178,12 +172,6 @@ mod tests {
 
         let meta = PhichainMeta::new("1.0.0", false);
         assert!(!meta.debug);
-    }
-
-    #[test]
-    fn environment_info_collect() {
-        let info = EnvironmentInfo::collect(false);
-        assert!(!info.test);
     }
 
     #[test]
