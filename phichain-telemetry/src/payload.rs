@@ -108,9 +108,8 @@ pub struct TelemetryPayload {
     /// The reporting application name (e.g., `"phichain-editor"`).
     pub reporter: String,
 
-    /// Stable anonymous device identifier. Auto-populated if not set.
-    #[builder(default = crate::device::get_device_id())]
-    pub device_id: String,
+    /// Stable anonymous device identifier, or `null` when unavailable.
+    pub device_id: Option<String>,
 
     /// The event type (e.g., `"phichain.editor.started"`).
     #[serde(rename = "type")]
@@ -198,7 +197,7 @@ mod tests {
 
         assert_eq!(payload.reporter, "test-reporter");
         assert_eq!(payload.event_type, "test.event");
-        assert!(!payload.device_id.is_empty());
+        assert!(payload.device_id.is_none());
         assert!(!payload.timestamp.is_empty());
         assert!(payload.extra.is_empty());
     }

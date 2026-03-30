@@ -8,6 +8,7 @@ pub fn track(event_type: &str, metadata: Value) -> Result<(), std::io::Error> {
     let payload = TelemetryPayload::builder()
         .reporter("phichain-converter")
         .event_type(event_type)
+        .maybe_device_id(phichain_telemetry::device::get_device_id())
         .phichain(PhichainMeta::new(
             env!("CARGO_PKG_VERSION"),
             cfg!(debug_assertions),

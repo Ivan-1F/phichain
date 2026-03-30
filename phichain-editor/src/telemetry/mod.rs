@@ -26,7 +26,7 @@ const TELEMETRY_REPORT_INTERVAL: Duration = Duration::from_secs(60);
 #[derive(Debug, Clone, Resource)]
 pub struct TelemetryManager {
     uuid: Uuid,
-    device_id: String,
+    device_id: Option<String>,
     queue: Vec<Value>,
 }
 
@@ -115,7 +115,7 @@ fn handle_push_telemetry_event_system(
         let payload = TelemetryPayload::builder()
             .reporter("phichain-editor")
             .event_type(event.event_type)
-            .device_id(telemetry_manager.device_id.clone())
+            .maybe_device_id(telemetry_manager.device_id.clone())
             .phichain(phichain_meta)
             .metadata(event.metadata.clone())
             .extra("session_id", telemetry_manager.uuid)
