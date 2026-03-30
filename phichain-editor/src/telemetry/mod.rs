@@ -169,19 +169,20 @@ fn log_telemetry_hint_system() {
 fn flush_telemetry_queue_system(
     mut reqwest: BevyReqwest,
     settings: Res<Persistent<EditorSettings>>,
-    telemetry_manager: Res<TelemetryManager>,
+    mut telemetry_manager: ResMut<TelemetryManager>,
 ) {
     if phichain_telemetry::env::telemetry_disabled() || !settings.general.send_telemetry {
         debug!("Telemetry disabled, skipping...");
         return;
     }
 
-    let data = telemetry_manager.queue.clone();
+    let data: Vec<Value> = telemetry_manager.queue.drain(..).collect();
     if data.is_empty() {
         return;
     }
 
-    debug!("Flushing telemetry queue with {} entries", data.len());
+    let count = data.len();
+    debug!("Flushing telemetry queue with {} entries", count);
 
     let request = reqwest
         .post(phichain_telemetry::TELEMETRY_URL)
@@ -192,24 +193,21 @@ fn flush_telemetry_queue_system(
 
     reqwest
         .send(request)
-        .on_response(
-            |trigger: Trigger<ReqwestResponseEvent>,
-             mut telemetry_manager: ResMut<TelemetryManager>| {
-                let response = trigger.event();
-                if response.status().is_success() {
-                    info!(
-                        "Successfully sent telemetry event, response: {}",
-                        response.as_str().unwrap_or("<unknown>")
-                    );
-                    telemetry_manager.queue.clear();
-                } else {
-                    error!(
-                        "Failed to send telemetry data, bad response, status code: {}",
-                        response.status()
-                    );
-                }
-            },
-        )
+        .on_response(move |trigger: Trigger<ReqwestResponseEvent>| {
+            let response = trigger.event();
+            if response.status().is_success() {
+                info!(
+                    "Successfully sent {} telemetry events, response: {}",
+                    count,
+                    response.as_str().unwrap_or("<unknown>")
+                );
+            } else {
+                error!(
+                    "Failed to send telemetry data, bad response, status code: {}",
+                    response.status()
+                );
+            }
+        })
         .on_error(|trigger: Trigger<ReqwestErrorEvent>| {
             let e = &trigger.event().0;
             error!("Failed to send telemetry data, request failed: {:?}", e);
