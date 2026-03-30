@@ -1,13 +1,14 @@
 mod error;
 mod i18n;
 mod options;
+mod telemetry;
 
 use crate::error::{unwrap_infallible, ConvertError};
 use crate::i18n::{i18n_str, locale};
 use crate::options::{
     CliCommonOutputOptions, CliOfficialInputOptions, CliOfficialOutputOptions, CliRpeInputOptions,
 };
-use clap::{Parser, ValueEnum};
+use clap::{Parser, Subcommand, ValueEnum};
 use owo_colors::OwoColorize;
 use phichain_chart::serialization::PhichainChart;
 use phichain_format::official::OfficialChart;
@@ -42,13 +43,27 @@ impl Chart {
     }
 }
 
-#[derive(ValueEnum, Debug, Display, Clone)]
+#[derive(ValueEnum, Debug, Display, Copy, Clone, Serialize)]
 #[clap(rename_all = "kebab_case")]
 #[strum(serialize_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
 enum Format {
     Official,
     Phichain,
     Rpe,
+}
+
+#[derive(Parser, Debug, Clone)]
+#[command(name = "phichain-converter telemetry")]
+#[command(hide = true)]
+struct TelemetryCli {
+    #[command(subcommand)]
+    command: TelemetryCommand,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+enum TelemetryCommand {
+    Flush { path: PathBuf },
 }
 
 #[derive(Parser, Debug, Clone)]
@@ -89,6 +104,9 @@ pub struct Args {
         next_help_heading = i18n_str("cli.common_output.heading")
     )]
     common_output_options: CliCommonOutputOptions,
+
+    #[arg(long, help = t!("cli.no_telemetry").to_string())]
+    no_telemetry: bool,
 }
 
 fn infer_format(path: &std::path::Path) -> Result<Format, ConvertError> {
@@ -113,7 +131,92 @@ fn infer_format(path: &std::path::Path) -> Result<Format, ConvertError> {
     Err(ConvertError::UnableToInferFormat)
 }
 
-fn convert(args: Args) -> Result<(), ConvertError> {
+#[derive(Serialize)]
+struct ChartMetrics {
+    lines: usize,
+    notes: usize,
+    events: usize,
+}
+
+fn collect_chart_metrics(lines: &[phichain_chart::serialization::SerializedLine]) -> ChartMetrics {
+    let mut metrics = ChartMetrics {
+        lines: 0,
+        notes: 0,
+        events: 0,
+    };
+    for line in lines {
+        metrics.lines += 1;
+        metrics.notes += line.notes.len();
+        metrics.events += line.events.len();
+        let child = collect_chart_metrics(&line.children);
+        metrics.lines += child.lines;
+        metrics.notes += child.notes;
+        metrics.events += child.events;
+    }
+    metrics
+}
+
+#[derive(Serialize)]
+struct ConvertTelemetry {
+    locale: String,
+    from: Option<Format>,
+    to: Format,
+    format_inferred: bool,
+    success: bool,
+    error_kind: Option<&'static str>,
+    duration_ms: u64,
+    input: Option<ChartMetrics>,
+    output: Option<ChartMetrics>,
+    options: serde_json::Value,
+}
+
+impl Chart {
+    fn metrics(&self) -> ChartMetrics {
+        match self {
+            Chart::Phichain(c) => collect_chart_metrics(&c.lines),
+            Chart::Official(c) => ChartMetrics {
+                lines: c.lines.len(),
+                notes: c
+                    .lines
+                    .iter()
+                    .map(|l| l.notes_above.len() + l.notes_below.len())
+                    .sum(),
+                events: c
+                    .lines
+                    .iter()
+                    .map(|l| {
+                        l.move_events.len()
+                            + l.rotate_events.len()
+                            + l.opacity_events.len()
+                            + l.speed_events.len()
+                    })
+                    .sum(),
+            },
+            Chart::Rpe(c) => ChartMetrics {
+                lines: c.judge_line_list.len(),
+                notes: c.judge_line_list.iter().map(|l| l.notes.len()).sum(),
+                events: c
+                    .judge_line_list
+                    .iter()
+                    .map(|l| {
+                        l.event_layers
+                            .iter()
+                            .map(|layer| {
+                                layer.move_x_events.len()
+                                    + layer.move_y_events.len()
+                                    + layer.rotate_events.len()
+                                    + layer.alpha_events.len()
+                                    + layer.speed_events.len()
+                            })
+                            .sum::<usize>()
+                    })
+                    .sum(),
+            },
+        }
+    }
+}
+
+fn convert(args: Args, meta: &mut ConvertTelemetry) -> Result<(), ConvertError> {
     if !args.input.exists() {
         return Err(ConvertError::NoSuchFile(args.input.clone()));
     }
@@ -139,19 +242,24 @@ fn convert(args: Args) -> Result<(), ConvertError> {
         );
     }
 
-    let chart = match from {
+    meta.from = Some(from);
+    meta.format_inferred = inferred;
+
+    let input_chart = match from {
         Format::Official => Chart::Official(serde_json::from_reader(file)?),
         Format::Phichain => Chart::Phichain(serde_json::from_reader(file)?),
         Format::Rpe => Chart::Rpe(serde_json::from_reader(file)?),
     };
 
-    let phichain = match chart {
+    meta.input = Some(input_chart.metrics());
+
+    let phichain = match input_chart {
         Chart::Official(official) => official.to_phichain(&args.official_input_options.into())?,
         Chart::Phichain(phichain) => unwrap_infallible(phichain.to_phichain(&())),
         Chart::Rpe(rpe) => rpe.to_phichain(&args.rpe_input_options.into())?,
     };
 
-    let output = match args.to {
+    let output_chart = match args.to {
         Format::Official => Chart::Official(OfficialChart::from_phichain(
             phichain,
             &args.official_output_options.into(),
@@ -163,7 +271,9 @@ fn convert(args: Args) -> Result<(), ConvertError> {
         Format::Rpe => Chart::Rpe(unwrap_infallible(RpeChart::from_phichain(phichain, &()))),
     };
 
-    let output = output.apply_common_output_options(&args.common_output_options.into());
+    meta.output = Some(output_chart.metrics());
+
+    let output = output_chart.apply_common_output_options(&args.common_output_options.into());
 
     let output_name = if args.output.as_os_str() == "-" {
         serde_json::to_writer(std::io::stdout(), &output)?;
@@ -190,12 +300,57 @@ fn convert(args: Args) -> Result<(), ConvertError> {
 }
 
 fn main() {
-    tracing_subscriber::fmt().init();
+    // Route `phichain-converter telemetry <subcommand>` before normal arg parsing
+    if std::env::args().nth(1).as_deref() == Some("telemetry") {
+        let cli = TelemetryCli::parse_from(std::env::args().skip(1));
+        match cli.command {
+            TelemetryCommand::Flush { path } => {
+                let _ = telemetry::flush(path);
+            }
+        }
+        return;
+    }
 
+    tracing_subscriber::fmt().init();
     rust_i18n::set_locale(&locale());
 
     let args = Args::parse();
-    if let Err(err) = convert(args) {
+    let no_telemetry = args.no_telemetry;
+
+    let mut meta = ConvertTelemetry {
+        locale: locale(),
+        from: args.from,
+        to: args.to,
+        format_inferred: args.from.is_none(),
+        success: false,
+        error_kind: None,
+        duration_ms: 0,
+        input: None,
+        output: None,
+        options: serde_json::json!({
+            "official_input": &args.official_input_options,
+            "official_output": &args.official_output_options,
+            "rpe_input": &args.rpe_input_options,
+            "common_output": &args.common_output_options,
+        }),
+    };
+
+    let start = std::time::Instant::now();
+    let result = convert(args, &mut meta);
+    meta.duration_ms = start.elapsed().as_millis() as u64;
+    meta.success = result.is_ok();
+    if let Err(ref e) = result {
+        meta.error_kind = Some(e.variant_name());
+    }
+
+    if !no_telemetry && !phichain_telemetry::env::telemetry_disabled() {
+        let _ = telemetry::track(
+            "phichain.converter.convert",
+            serde_json::to_value(&meta).unwrap(),
+        );
+    }
+
+    if let Err(err) = result {
         eprintln!("{}", err.red());
         std::process::exit(1);
     }

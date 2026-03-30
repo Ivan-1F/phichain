@@ -14,7 +14,7 @@ fn parse_positive_beat(s: &str) -> Result<Beat, String> {
 }
 
 /// CLI wrapper for OfficialInputOptions
-#[derive(Debug, Clone, clap::Args, o2o)]
+#[derive(Debug, Clone, serde::Serialize, clap::Args, o2o)]
 #[map(OfficialInputOptions)]
 pub struct CliOfficialInputOptions {
     #[arg(long, default_value_t = false, help = t!("cli.official_input.no_easing_fitting").to_string())]
@@ -29,7 +29,7 @@ pub struct CliOfficialInputOptions {
 }
 
 /// CLI wrapper for OfficialOutputOptions
-#[derive(Debug, Clone, clap::Args, o2o)]
+#[derive(Debug, Clone, serde::Serialize, clap::Args, o2o)]
 #[map(OfficialOutputOptions)]
 pub struct CliOfficialOutputOptions {
     #[arg(long, value_parser = parse_positive_beat, default_value = "1/32", help = t!("cli.official_output.minimum_beat").to_string())]
@@ -37,7 +37,7 @@ pub struct CliOfficialOutputOptions {
 }
 
 /// CLI wrapper for RpeInputOptions
-#[derive(Debug, Clone, clap::Args, o2o)]
+#[derive(Debug, Clone, serde::Serialize, clap::Args, o2o)]
 #[map(RpeInputOptions)]
 pub struct CliRpeInputOptions {
     #[arg(long, help = t!("cli.rpe_input.remove_fake_notes").to_string())]
@@ -47,7 +47,7 @@ pub struct CliRpeInputOptions {
 }
 
 /// CLI wrapper for CommonOutputOptions
-#[derive(Debug, Clone, clap::Args, o2o)]
+#[derive(Debug, Clone, serde::Serialize, clap::Args, o2o)]
 #[map(CommonOutputOptions)]
 pub struct CliCommonOutputOptions {
     #[arg(long, help = t!("cli.common_output.round").to_string(), default_value_t = 2)]
