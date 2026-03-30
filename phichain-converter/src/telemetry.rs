@@ -78,8 +78,11 @@ pub fn flush(file: PathBuf) -> Result<(), std::io::Error> {
         ));
     }
 
-    // TODO: replace with actual HTTP POST
-    eprintln!("[telemetry] {}", String::from_utf8_lossy(&content));
+    let agent = ureq::Agent::new_with_defaults();
+    let _ = agent
+        .post(phichain_telemetry::TELEMETRY_URL)
+        .header("Content-Type", "application/json")
+        .send(&*content);
 
     let _ = std::fs::remove_file(&file);
     Ok(())
