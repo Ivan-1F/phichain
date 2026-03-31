@@ -9,7 +9,48 @@ on:
         default: false
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
+      - name: Cache cargo files
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-check-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-check-
+
+      # https://github.com/bevyengine/bevy/blob/main/docs/linux_dependencies.md
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++ pkg-config libx11-dev libasound2-dev libudev-dev libxkbcommon-x11-0
+          sudo apt-get install -y libwayland-dev libxkbcommon-dev
+
+      - name: Run rustfmt check
+        run: cargo fmt --all -- --check
+
+      - name: Run clippy check
+        run: cargo clippy --all-features --all-targets -- -D warnings
+
+      - name: Test with cargo test
+        run: cargo test
+
   build:
+    needs: check
     strategy:
       matrix:
         include:
@@ -41,7 +82,6 @@ jobs:
         with:
           toolchain: stable
           targets: ${{ matrix.target }}
-          components: rustfmt, clippy
 
       - name: Cache cargo files
         uses: actions/cache@v4
@@ -52,7 +92,9 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-build-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-build-${{ matrix.target }}-
 
       # https://github.com/bevyengine/bevy/blob/main/docs/linux_dependencies.md
       - name: Install dependencies
@@ -94,15 +136,6 @@ jobs:
           file: phichain-editor/Cargo.toml
           key: package.version
           value: ${{ steps.full_version.outputs.phichain_version }}
-
-      - name: Run rustfmt check
-        run: cargo fmt --all -- --check
-
-      - name: Run clippy check
-        run: cargo clippy --all-features --all-targets -- -D warnings
-
-      - name: Test with cargo test
-        run: cargo test
 
       - name: Build with cargo
         # build all binary crates separately, see:
