@@ -24,6 +24,7 @@ fn normalize_locale(locale: &str) -> String {
 pub fn locale() -> String {
     std::env::var("PHICHAIN_LANG")
         .ok()
+        .map(|loc| normalize_locale(&loc))
         .or(sys_locale::get_locale().map(|loc| normalize_locale(&loc)))
         .unwrap_or_else(|| "en-US".to_string())
 }
