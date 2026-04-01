@@ -11,9 +11,9 @@ fn normalize_locale(locale: &str) -> String {
         "C" | "POSIX" => "en-US".to_string(),
         // macOS verbose formats
         "zh-Hans-CN" | "zh-Hans" | "zh-Hans-SG" => "zh-CN".to_string(),
-        "zh-Hant-CN" | "zh-Hant-TW" | "zh-Hant" | "zh-Hant-HK" | "zh-Hant-MO" => {
-            "zh-TW".to_string()
-        }
+        // TODO: map these to zh-TW once a Traditional Chinese is supported.
+        "zh-TW" | "zh-HK" | "zh-MO" | "zh-Hant-CN" | "zh-Hant-TW" | "zh-Hant" | "zh-Hant-HK"
+        | "zh-Hant-MO" => "zh-CN".to_string(),
         // Japanese (already matches filename ja-JP.yml)
         // already normalized
         _ => base,
