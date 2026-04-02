@@ -111,7 +111,14 @@ mod tests {
                             },
                         }
                     ],
-                    "children": [],
+                    "children": [
+                        {
+                            "name": "Child Line",
+                            "notes": [],
+                            "events": [],
+                            "children": []
+                        }
+                    ],
                 }
             ]
         })
@@ -193,7 +200,15 @@ mod tests {
                   },
                 }
               ],
-              "children": [],
+              "children": [
+                {
+                  "name": "Child Line",
+                  "notes": [],
+                  "events": [],
+                  "children": [],
+                  "curve_note_tracks": []
+                }
+              ],
               "curve_note_tracks": [],
             }
           ]
