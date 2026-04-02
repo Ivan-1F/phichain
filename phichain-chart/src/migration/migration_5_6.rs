@@ -1,5 +1,4 @@
-use crate::migration::Migration;
-use anyhow::Context;
+use crate::migration::{for_each_line_recursive, Migration};
 use serde_json::{json, Value};
 
 /// Migration from format `5` to `6`
@@ -118,13 +117,6 @@ fn migrate_line(line: &mut Value) -> anyhow::Result<()> {
         }
     }
 
-    // Recurse into children
-    if let Some(children) = line.get_mut("children").and_then(|v| v.as_array_mut()) {
-        for child in children {
-            migrate_line(child)?;
-        }
-    }
-
     Ok(())
 }
 
@@ -132,14 +124,10 @@ impl Migration for Migration5To6 {
     fn migrate(old: &Value) -> anyhow::Result<Value> {
         let mut chart = old.clone();
 
-        for line in chart
-            .get_mut("lines")
-            .context("Failed to get lines")?
-            .as_array_mut()
-            .context("`lines` is not an array")?
-        {
+        for_each_line_recursive(&mut chart, &mut |line| {
             migrate_line(line)?;
-        }
+            Ok(())
+        })?;
 
         chart["format"] = json!(6);
 

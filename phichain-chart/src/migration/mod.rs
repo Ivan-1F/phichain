@@ -8,6 +8,38 @@ pub trait Migration {
 #[cfg(test)]
 pub(crate) mod test_utils;
 
+/// Visit every line in a chart, including all nested child lines, in depth-first order.
+///
+/// This is intended for format migrations that need to apply the same transformation
+/// to both root lines and their descendants.
+pub(super) fn for_each_line_recursive(
+    chart: &mut Value,
+    f: &mut impl FnMut(&mut Value) -> anyhow::Result<()>,
+) -> anyhow::Result<()> {
+    fn visit_lines(
+        lines: &mut [Value],
+        f: &mut impl FnMut(&mut Value) -> anyhow::Result<()>,
+    ) -> anyhow::Result<()> {
+        for line in lines {
+            f(line)?;
+
+            if let Some(children) = line.get_mut("children").and_then(|v| v.as_array_mut()) {
+                visit_lines(children, f)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    let lines = chart
+        .get_mut("lines")
+        .context("Failed to get lines")?
+        .as_array_mut()
+        .context("`lines` is not an array")?;
+
+    visit_lines(lines, f)
+}
+
 macro_rules! define_migrations {
     ($( $from:literal => $to:literal : $mod:ident :: $type:ident ),* $(,)?) => {
         $( mod $mod; )*
