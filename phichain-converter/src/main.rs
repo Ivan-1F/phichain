@@ -16,6 +16,7 @@ use phichain_format::rpe::RpeChart;
 use phichain_format::{ChartFormat, CommonOutputOptions};
 use rust_i18n::t;
 use serde::Serialize;
+use std::io::Read;
 use std::path::PathBuf;
 use strum::Display;
 
@@ -109,9 +110,8 @@ pub struct Args {
     no_telemetry: bool,
 }
 
-fn infer_format(path: &std::path::Path) -> Result<Format, ConvertError> {
-    let content = std::fs::read_to_string(path)?;
-    let value: serde_json::Value = serde_json::from_str(&content)?;
+fn infer_format(content: &str) -> Result<Format, ConvertError> {
+    let value: serde_json::Value = serde_json::from_str(content)?;
 
     if value.get("BPMList").is_some() && value.get("META").is_some() {
         return Ok(Format::Rpe);
@@ -129,6 +129,24 @@ fn infer_format(path: &std::path::Path) -> Result<Format, ConvertError> {
     }
 
     Err(ConvertError::UnableToInferFormat)
+}
+
+fn read_input(path: &std::path::Path) -> Result<String, ConvertError> {
+    if path.as_os_str() == "-" {
+        let mut input = String::new();
+        std::io::stdin().read_to_string(&mut input)?;
+        return Ok(input);
+    }
+
+    if !path.exists() {
+        return Err(ConvertError::NoSuchFile(path.to_path_buf()));
+    }
+
+    if path.is_dir() {
+        return Err(ConvertError::ExpectedFile(path.to_path_buf()));
+    }
+
+    Ok(std::fs::read_to_string(path)?)
 }
 
 #[derive(Serialize)]
@@ -217,19 +235,11 @@ impl Chart {
 }
 
 fn convert(args: Args, meta: &mut ConvertTelemetry) -> Result<(), ConvertError> {
-    if !args.input.exists() {
-        return Err(ConvertError::NoSuchFile(args.input.clone()));
-    }
-
-    if args.input.is_dir() {
-        return Err(ConvertError::ExpectedFile(args.input.clone()));
-    }
-
-    let file = std::fs::File::open(&args.input)?;
+    let input = read_input(&args.input)?;
 
     let (from, inferred) = match args.from {
         Some(f) => (f, false),
-        None => (infer_format(&args.input)?, true),
+        None => (infer_format(&input)?, true),
     };
 
     if inferred {
@@ -246,9 +256,9 @@ fn convert(args: Args, meta: &mut ConvertTelemetry) -> Result<(), ConvertError> 
     meta.format_inferred = inferred;
 
     let input_chart = match from {
-        Format::Official => Chart::Official(serde_json::from_reader(file)?),
-        Format::Phichain => Chart::Phichain(serde_json::from_reader(file)?),
-        Format::Rpe => Chart::Rpe(serde_json::from_reader(file)?),
+        Format::Official => Chart::Official(serde_json::from_str(&input)?),
+        Format::Phichain => Chart::Phichain(serde_json::from_str(&input)?),
+        Format::Rpe => Chart::Rpe(serde_json::from_str(&input)?),
     };
 
     meta.input = Some(input_chart.metrics());
