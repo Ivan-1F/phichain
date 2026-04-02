@@ -1,26 +1,32 @@
 use phichain_chart::curve_note_track::generate_notes;
-use phichain_chart::serialization::PhichainChart;
+use phichain_chart::serialization::{PhichainChart, SerializedLine};
+
+fn evaluate_line(line: &mut SerializedLine) {
+    let original_notes = line.notes.clone();
+    for track in &line.curve_note_tracks {
+        if let (Some(from), Some(to)) =
+            (original_notes.get(track.from), original_notes.get(track.to))
+        {
+            line.notes
+                .extend(generate_notes(*from, *to, &track.options));
+        }
+    }
+
+    line.curve_note_tracks.clear();
+
+    for child in &mut line.children {
+        evaluate_line(child);
+    }
+}
 
 /// Evaluate all curve note tracks and transform them into real notes
 pub fn evaluate_curve_note_tracks(chart: PhichainChart) -> PhichainChart {
-    // This step is after `merge_children_line`, so all the lines should have zero children
     let lines: Vec<_> = chart
         .lines
         .iter()
-        .map(|line| {
-            let mut line = line.clone();
-            let original_notes = line.notes.clone();
-            for track in &line.curve_note_tracks {
-                if let (Some(from), Some(to)) =
-                    (original_notes.get(track.from), original_notes.get(track.to))
-                {
-                    line.notes
-                        .extend(generate_notes(*from, *to, &track.options));
-                }
-            }
-
-            line.curve_note_tracks.clear();
-
+        .cloned()
+        .map(|mut line| {
+            evaluate_line(&mut line);
             line
         })
         .collect();
