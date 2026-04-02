@@ -342,3 +342,182 @@ pub fn create_project(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+    use tempfile::TempDir;
+
+    /// Create a minimal WAV file for testing
+    fn create_dummy_wav(path: &std::path::Path) {
+        let mut file = std::fs::File::create(path).unwrap();
+        let data_size: u32 = 0;
+        let file_size: u32 = 36 + data_size;
+        file.write_all(b"RIFF").unwrap();
+        file.write_all(&file_size.to_le_bytes()).unwrap();
+        file.write_all(b"WAVE").unwrap();
+        file.write_all(b"fmt ").unwrap();
+        file.write_all(&16u32.to_le_bytes()).unwrap();
+        file.write_all(&1u16.to_le_bytes()).unwrap(); // PCM
+        file.write_all(&1u16.to_le_bytes()).unwrap(); // mono
+        file.write_all(&44100u32.to_le_bytes()).unwrap();
+        file.write_all(&88200u32.to_le_bytes()).unwrap();
+        file.write_all(&2u16.to_le_bytes()).unwrap();
+        file.write_all(&16u16.to_le_bytes()).unwrap();
+        file.write_all(b"data").unwrap();
+        file.write_all(&data_size.to_le_bytes()).unwrap();
+    }
+
+    /// Create a dummy PNG file for testing
+    fn create_dummy_png(path: &std::path::Path) {
+        let data: &[u8] = &[
+            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48,
+            0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x02, 0x00, 0x00,
+            0x00, 0x90, 0x77, 0x53, 0xDE, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,
+            0x42, 0x60, 0x82,
+        ];
+        std::fs::write(path, data).unwrap();
+    }
+
+    fn sample_meta() -> ProjectMeta {
+        ProjectMeta {
+            name: "Test Song".to_string(),
+            composer: "Test Composer".to_string(),
+            charter: "Test Charter".to_string(),
+            illustrator: "Test Illustrator".to_string(),
+            level: "IN Lv.15".to_string(),
+        }
+    }
+
+    #[test]
+    fn test_create_project_with_music_only() {
+        let tmp = TempDir::new().unwrap();
+        let project_dir = tmp.path().join("my_project");
+        std::fs::create_dir(&project_dir).unwrap();
+
+        let music_file = tmp.path().join("song.wav");
+        create_dummy_wav(&music_file);
+
+        let meta = sample_meta();
+        create_project(project_dir.clone(), music_file, None, meta.clone()).unwrap();
+
+        // Verify music was copied
+        assert!(project_dir.join("music.wav").exists());
+
+        // Verify meta.json was created with correct content
+        let saved_meta: ProjectMeta =
+            serde_json::from_str(&std::fs::read_to_string(project_dir.join("meta.json")).unwrap())
+                .unwrap();
+        assert_eq!(saved_meta, meta);
+
+        // Verify chart.json was created
+        assert!(project_dir.join("chart.json").exists());
+        let chart: PhichainChart =
+            serde_json::from_str(&std::fs::read_to_string(project_dir.join("chart.json")).unwrap())
+                .unwrap();
+        assert_eq!(chart.lines.len(), 1);
+
+        // Verify no illustration was created
+        assert!(ProjectPath(project_dir).illustration_path().is_none());
+    }
+
+    #[test]
+    fn test_create_project_with_illustration() {
+        let tmp = TempDir::new().unwrap();
+        let project_dir = tmp.path().join("my_project");
+        std::fs::create_dir(&project_dir).unwrap();
+
+        let music_file = tmp.path().join("song.mp3");
+        std::fs::write(&music_file, b"fake mp3").unwrap();
+
+        let illustration_file = tmp.path().join("cover.png");
+        create_dummy_png(&illustration_file);
+
+        create_project(
+            project_dir.clone(),
+            music_file,
+            Some(illustration_file),
+            sample_meta(),
+        )
+        .unwrap();
+
+        assert!(project_dir.join("music.mp3").exists());
+        assert!(project_dir.join("illustration.png").exists());
+    }
+
+    #[test]
+    fn test_create_and_open_project_round_trip() {
+        let tmp = TempDir::new().unwrap();
+        let project_dir = tmp.path().join("my_project");
+        std::fs::create_dir(&project_dir).unwrap();
+
+        let music_file = tmp.path().join("song.wav");
+        create_dummy_wav(&music_file);
+
+        let meta = sample_meta();
+        create_project(project_dir.clone(), music_file, None, meta.clone()).unwrap();
+
+        // Open the project we just created
+        let project = Project::open(project_dir).unwrap();
+
+        assert_eq!(project.meta, meta);
+        assert!(project.path.music_path().is_some());
+        assert!(project.path.chart_path().is_file());
+    }
+
+    #[test]
+    fn test_open_project_missing_music() {
+        let tmp = TempDir::new().unwrap();
+        let project_dir = tmp.path().join("incomplete_project");
+        std::fs::create_dir(&project_dir).unwrap();
+
+        // Only create chart.json and meta.json, no music
+        std::fs::write(
+            project_dir.join("chart.json"),
+            serde_json::to_string(&PhichainChart::default()).unwrap(),
+        )
+        .unwrap();
+        std::fs::write(
+            project_dir.join("meta.json"),
+            serde_json::to_string(&sample_meta()).unwrap(),
+        )
+        .unwrap();
+
+        let result = Project::open(project_dir);
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            OpenProjectError::MissingFile(_)
+        ));
+    }
+
+    #[test]
+    fn test_open_project_missing_chart() {
+        let tmp = TempDir::new().unwrap();
+        let project_dir = tmp.path().join("no_chart");
+        std::fs::create_dir(&project_dir).unwrap();
+
+        let music_file = project_dir.join("music.wav");
+        create_dummy_wav(&music_file);
+        std::fs::write(
+            project_dir.join("meta.json"),
+            serde_json::to_string(&sample_meta()).unwrap(),
+        )
+        .unwrap();
+
+        let result = Project::open(project_dir);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_create_project_missing_music_file() {
+        let tmp = TempDir::new().unwrap();
+        let project_dir = tmp.path().join("my_project");
+        std::fs::create_dir(&project_dir).unwrap();
+
+        let nonexistent_music = tmp.path().join("nonexistent.wav");
+        let result = create_project(project_dir, nonexistent_music, None, sample_meta());
+        assert!(result.is_err());
+    }
+}
