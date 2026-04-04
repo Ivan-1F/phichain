@@ -158,7 +158,7 @@ mod tests {
 
     #[test]
     fn phichain_meta_detects_beta() {
-        let meta = PhichainMeta::new("1.0.0-beta.5", false);
+        let meta = PhichainMeta::new("1.0.0-beta.6", false);
         assert!(meta.beta);
 
         let meta = PhichainMeta::new("1.0.0", false);

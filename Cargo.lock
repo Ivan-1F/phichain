@@ -5711,7 +5711,7 @@ dependencies = [
 
 [[package]]
 name = "phichain"
-version = "1.0.0-beta.5"
+version = "1.0.0-beta.6"
 dependencies = [
  "anyhow",
  "bevy",
@@ -5765,7 +5765,7 @@ dependencies = [
 
 [[package]]
 name = "phichain-assets"
-version = "1.0.0-beta.5"
+version = "1.0.0-beta.6"
 dependencies = [
  "bevy",
  "bevy_asset_loader",
@@ -5775,7 +5775,7 @@ dependencies = [
 
 [[package]]
 name = "phichain-chart"
-version = "1.0.0-beta.5"
+version = "1.0.0-beta.6"
 dependencies = [
  "anyhow",
  "bevy",
@@ -5795,7 +5795,7 @@ dependencies = [
 
 [[package]]
 name = "phichain-compiler"
-version = "1.0.0-beta.5"
+version = "1.0.0-beta.6"
 dependencies = [
  "anyhow",
  "itertools 0.14.0",
@@ -5807,7 +5807,7 @@ dependencies = [
 
 [[package]]
 name = "phichain-converter"
-version = "1.0.0-beta.5"
+version = "1.0.0-beta.6"
 dependencies = [
  "clap",
  "o2o",
@@ -5843,7 +5843,7 @@ dependencies = [
 
 [[package]]
 name = "phichain-game"
-version = "1.0.0-beta.5"
+version = "1.0.0-beta.6"
 dependencies = [
  "anyhow",
  "bevy",
@@ -5861,7 +5861,7 @@ dependencies = [
 
 [[package]]
 name = "phichain-renderer"
-version = "1.0.0-beta.5"
+version = "1.0.0-beta.6"
 dependencies = [
  "anyhow",
  "bevy",
