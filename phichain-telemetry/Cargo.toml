@@ -1,6 +1,6 @@
 [package]
 name = "phichain-telemetry"
-version = "0.1.0"
+version = "1.0.0-beta.6"
 edition = "2024"
 
 [dependencies]

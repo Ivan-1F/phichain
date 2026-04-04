@@ -5827,7 +5827,7 @@ dependencies = [
 
 [[package]]
 name = "phichain-format"
-version = "0.1.0"
+version = "1.0.0-beta.6"
 dependencies = [
  "anyhow",
  "nalgebra 0.34.1",
@@ -5876,7 +5876,7 @@ dependencies = [
 
 [[package]]
 name = "phichain-telemetry"
-version = "0.1.0"
+version = "1.0.0-beta.6"
 dependencies = [
  "bon",
  "chrono",
