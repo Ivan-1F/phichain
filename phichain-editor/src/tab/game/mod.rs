@@ -70,6 +70,7 @@ pub fn update_game_camera_viewport_system(
         || viewport_pos.x + viewport_size.x > window.width() * scale_factor
         || viewport_pos.y + viewport_size.y > window.height() * scale_factor
     {
+        game_camera.viewport = None;
         return Ok(());
     }
 
