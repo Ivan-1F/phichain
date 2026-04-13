@@ -1,0 +1,93 @@
+name: Bug Report
+description: Something doesn't seem correct and it might be a bug
+labels: []
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug description
+      description: |
+        A clear and concise description of what the bug is.
+        Is it a crash, an unexpected behavior, or has something gone wrong?
+        If applicable, add screenshots to help explain the bug.
+      placeholder: Describe what you see!
+    validations:
+      required: true
+
+  - type: textarea
+    id: to-reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Steps to reproduce the bug
+      placeholder: |
+        1. Go to '...'
+        2. Click on '....'
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual behavior
+      description: What actually happened?
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: |
+        If it's a crash, send the corresponding log in the `logs` folder here.
+        Short logs can be pasted directly; for longer logs, please upload as an attachment or upload to [pastebin](https://pastebin.com/) and paste the url here.
+        Leave empty if there is none.
+
+  - type: input
+    id: version
+    attributes:
+      label: Phichain version
+      description: The Phichain version(s) where this bug occurs in.
+      placeholder: 1.0.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Phichain component
+      description: The toolchain component where this bug occurs.
+      options:
+        - Phichain Core
+        - Phichain Editor
+        - Phichain Converter
+        - Phichain Renderer
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      description: Your operating system.
+      options:
+        - Windows
+        - macOS
+        - Linux
+
+  - type: textarea
+    id: other-information
+    attributes:
+      label: Other information
+      description: Other useful information to this bug report. Leave empty if there is none.
+
+  - type: checkboxes
+    id: check-list
+    attributes:
+      label: Check list
+      options:
+        - label: I have verified that the issue persists in the latest CI build.
+          required: true
+        - label: I have searched the existing issues and confirmed that this is not a duplicate.
+          required: true

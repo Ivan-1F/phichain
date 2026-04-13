@@ -1,0 +1,93 @@
+name: Bug 报告
+description: 某些功能似乎不太对劲，可能是一个 Bug
+labels: []
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug 描述
+      description: |
+        请清晰简洁地描述这个 Bug。
+        这是一个崩溃、意外行为，还是其他异常？
+        如果可以的话，请附上截图来帮助说明问题。
+      placeholder: 描述一下你遇到了什么问题！
+    validations:
+      required: true
+
+  - type: textarea
+    id: to-reproduce
+    attributes:
+      label: 复现步骤
+      description: 复现该 Bug 的步骤
+      placeholder: |
+        1. 打开 '...'
+        2. 点击 '...'
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: 期望行为
+      description: 你期望发生什么？
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: 实际行为
+      description: 实际发生了什么？
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 相关日志
+      description: |
+        如果是崩溃问题，请将 `logs` 文件夹中对应的日志发送到这里。
+        较短的日志可以直接粘贴；较长的日志请作为附件上传，或上传至 [pastebin](https://pastebin.com/) 并粘贴链接。
+        如果没有相关日志，请留空。
+
+  - type: input
+    id: version
+    attributes:
+      label: Phichain 版本
+      description: 出现该 Bug 的 Phichain 版本号。
+      placeholder: 1.0.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Phichain 组件
+      description: 出现该 Bug 的工具链组件。
+      options:
+        - Phichain Core
+        - Phichain Editor
+        - Phichain Converter
+        - Phichain Renderer
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: 操作系统
+      description: 你的操作系统。
+      options:
+        - Windows
+        - macOS
+        - Linux
+
+  - type: textarea
+    id: other-information
+    attributes:
+      label: 其他信息
+      description: 其他有用的信息。如果没有，请留空。
+
+  - type: checkboxes
+    id: check-list
+    attributes:
+      label: 检查清单
+      options:
+        - label: 我已确认该问题在最新的 CI 构建中仍然存在。
+          required: true
+        - label: 我已搜索现有的 Issue，确认这不是重复提交。
+          required: true
