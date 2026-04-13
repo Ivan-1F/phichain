@@ -61,10 +61,10 @@ body:
       label: Phichain 组件
       description: 出现该 Bug 的工具链组件。
       options:
-        - Phichain Core
-        - Phichain Editor
-        - Phichain Converter
-        - Phichain Renderer
+        - 谱面 / 游戏行为
+        - Phichain 制谱器
+        - Phichain 转谱器
+        - Phichain 渲染器
 
   - type: dropdown
     id: os

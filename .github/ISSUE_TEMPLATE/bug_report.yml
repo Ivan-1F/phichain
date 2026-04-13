@@ -61,7 +61,7 @@ body:
       label: Phichain component
       description: The toolchain component where this bug occurs.
       options:
-        - Phichain Core
+        - Chart / Gameplay
         - Phichain Editor
         - Phichain Converter
         - Phichain Renderer
