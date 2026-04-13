@@ -80,7 +80,9 @@ body:
     id: other-information
     attributes:
       label: 其他信息
-      description: 其他有用的信息。如果没有，请留空。
+      description: |
+        其他有用的信息。如果没有，请留空。
+        如果是渲染相关的问题，请提供你的硬件信息，如显卡型号等。
 
   - type: checkboxes
     id: check-list

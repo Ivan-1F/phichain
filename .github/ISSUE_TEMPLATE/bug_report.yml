@@ -80,7 +80,9 @@ body:
     id: other-information
     attributes:
       label: Other information
-      description: Other useful information to this bug report. Leave empty if there is none.
+      description: |
+        Other useful information to this bug report. Leave empty if there is none.
+        For rendering-related issues, please include your hardware information, such as GPU model.
 
   - type: checkboxes
     id: check-list
