@@ -150,8 +150,11 @@ fn handle_action_hotkey_system(world: &mut World) {
 #[derive(Debug, Clone, Event)]
 pub struct RunAction(pub Identifier);
 
-fn run_action_observer(event: On<RunAction>, world: &mut World) {
-    world.resource_scope(|world, mut registry: Mut<ActionRegistry>| {
-        registry.run_action(world, event.event().0.clone());
+fn run_action_observer(event: On<RunAction>, mut commands: Commands) {
+    let id = event.event().0.clone();
+    commands.queue(move |world: &mut World| {
+        world.resource_scope(|world, mut registry: Mut<ActionRegistry>| {
+            registry.run_action(world, id);
+        });
     });
 }
