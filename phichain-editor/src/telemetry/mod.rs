@@ -45,7 +45,7 @@ pub struct TelemetryPlugin;
 impl Plugin for TelemetryPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(TelemetryManager::new())
-            .add_event::<PushTelemetryEvent>()
+            .add_event::<PushTelemetry>()
             .add_systems(Update, handle_push_telemetry_event_system)
             .add_systems(
                 Update,
@@ -56,13 +56,13 @@ impl Plugin for TelemetryPlugin {
     }
 }
 
-#[derive(Debug, Clone, Event)]
-pub struct PushTelemetryEvent {
+#[derive(Debug, Clone, Message)]
+pub struct PushTelemetry {
     event_type: &'static str,
     metadata: Value,
 }
 
-impl PushTelemetryEvent {
+impl PushTelemetry {
     pub fn new(event_type: &'static str, metadata: Value) -> Self {
         Self {
             event_type,
@@ -72,7 +72,7 @@ impl PushTelemetryEvent {
 }
 
 fn handle_push_telemetry_event_system(
-    mut events: MessageReader<PushTelemetryEvent>,
+    mut events: MessageReader<PushTelemetry>,
     diagnostics: Res<DiagnosticsStore>,
     adapter_info: Res<RenderAdapterInfo>,
     entities: &Entities,
@@ -149,8 +149,8 @@ fn handle_push_telemetry_event_system(
     }
 }
 
-fn send_startup_event_system(mut events: MessageWriter<PushTelemetryEvent>) {
-    events.write(PushTelemetryEvent::new(
+fn send_startup_event_system(mut events: MessageWriter<PushTelemetry>) {
+    events.write(PushTelemetry::new(
         "phichain.editor.started",
         json!({}),
     ));

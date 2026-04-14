@@ -1,6 +1,6 @@
 use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
 use crate::identifier::Identifier;
-use crate::telemetry::PushTelemetryEvent;
+use crate::telemetry::PushTelemetry;
 use bevy::ecs::system::{BoxedSystem, SystemState};
 use bevy::log;
 use bevy::prelude::*;
@@ -37,7 +37,7 @@ impl ActionRegistry {
         let id = id.into();
         if let Some(action) = self.0.get_mut(&id) {
             if action.is_heavy {
-                world.write_message(PushTelemetryEvent::new(
+                world.write_message(PushTelemetry::new(
                     "phichain.editor.action.invoked",
                     json!({ "action": id }),
                 ));

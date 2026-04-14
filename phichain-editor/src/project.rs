@@ -8,7 +8,7 @@ use crate::hotkey::Hotkey;
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::recent_projects::{PersistentRecentProjectsExt, RecentProject, RecentProjects};
 use crate::spectrogram::{self, Spectrogram};
-use crate::telemetry::PushTelemetryEvent;
+use crate::telemetry::PushTelemetry;
 use bevy::ecs::system::SystemState;
 use bevy_kira_audio::{Audio, AudioControl, AudioSource};
 use bevy_persistent::Persistent;
@@ -153,14 +153,14 @@ fn project_loading_result_observer(
 
     mut commands: Commands,
     mut recent_projects: ResMut<Persistent<RecentProjects>>,
-    mut telemetry: MessageWriter<PushTelemetryEvent>,
+    mut telemetry: MessageWriter<PushTelemetry>,
     mut toasts: ResMut<ToastsStorage>,
 ) {
     let data = trigger.event();
 
     match &data.0 {
         Ok(data) => {
-            telemetry.write(PushTelemetryEvent::new(
+            telemetry.write(PushTelemetry::new(
                 "phichain.editor.project.loaded",
                 json!({ "duration": data.duration.as_millis() }),
             ));
@@ -216,7 +216,7 @@ fn project_loading_result_observer(
             };
 
             toasts.error(message);
-            telemetry.write(PushTelemetryEvent::new(
+            telemetry.write(PushTelemetry::new(
                 "phichain.editor.project.load.failed",
                 json!({}),
             ));
