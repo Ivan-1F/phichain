@@ -7,7 +7,7 @@ use crate::ui::widgets::language_combobox::language_combobox;
 use crate::{
     file::{pick_file, pick_folder, picking_event, FilePickingAppExt},
     notification::{ToastsExt, ToastsStorage},
-    project::{create_project, project_not_loaded, LoadProjectEvent, ProjectMeta},
+    project::{create_project, project_not_loaded, LoadProject, ProjectMeta},
 };
 
 use bevy::prelude::*;
@@ -33,7 +33,7 @@ pub struct CreateProjectForm {
 
 /// Marker resource to control the visibility of the create project dialog
 ///
-/// This should always be removed after sending [`LoadProjectEvent`]
+/// This should always be removed after sending [`LoadProject`]
 #[derive(Resource, Debug, Default)]
 pub struct CreatingProject;
 
@@ -306,7 +306,7 @@ fn ui_system(world: &mut World) {
         }
 
         if let Some(open) = open {
-            world.write_message(LoadProjectEvent(open));
+            world.write_message(LoadProject(open));
             world.remove_resource::<CreatingProject>();
         }
     });
@@ -315,10 +315,10 @@ fn ui_system(world: &mut World) {
 fn load_project_observer(
     trigger: Trigger<PickedProject>,
     mut commands: Commands,
-    mut events: MessageWriter<LoadProjectEvent>,
+    mut events: MessageWriter<LoadProject>,
 ) {
     if let Some(ref root_dir) = trigger.event().0 {
-        events.write(LoadProjectEvent(root_dir.to_path_buf()));
+        events.write(LoadProject(root_dir.to_path_buf()));
         commands.remove_resource::<CreatingProject>();
     }
 }
@@ -341,7 +341,7 @@ fn handle_create_project_observer(
     trigger: Trigger<PickedCreateProject>,
     mut commands: Commands,
     form: Res<CreateProjectForm>,
-    mut load_project_events: MessageWriter<LoadProjectEvent>,
+    mut load_project_events: MessageWriter<LoadProject>,
     mut toasts: ResMut<ToastsStorage>,
 ) {
     let Some(ref root_path) = trigger.event().0 else {
@@ -359,7 +359,7 @@ fn handle_create_project_observer(
         form.meta.clone(),
     ) {
         Ok(_) => {
-            load_project_events.write(LoadProjectEvent(root_path.clone()));
+            load_project_events.write(LoadProject(root_path.clone()));
             commands.remove_resource::<CreatingProject>();
         }
         Err(error) => toasts.error(format!("{error:?}")),

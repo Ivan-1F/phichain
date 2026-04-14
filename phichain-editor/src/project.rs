@@ -36,9 +36,9 @@ pub struct ProjectPlugin;
 
 impl Plugin for ProjectPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<LoadProjectEvent>()
+        app.add_event::<LoadProject>()
             .add_systems(Update, load_project_system.run_if(project_not_loaded()))
-            .add_event::<UnloadProjectEvent>()
+            .add_event::<UnloadProject>()
             .add_systems(PreUpdate, unload_project_system.run_if(project_loaded()))
             .add_observer(project_loading_result_observer)
             .add_action(
@@ -48,8 +48,8 @@ impl Plugin for ProjectPlugin {
             )
             .add_action(
                 "phichain.close_project",
-                |mut events: MessageWriter<UnloadProjectEvent>| {
-                    events.write(UnloadProjectEvent);
+                |mut events: MessageWriter<UnloadProject>| {
+                    events.write(UnloadProject);
 
                     Ok(())
                 },
@@ -100,8 +100,8 @@ fn save_project_system(
     Ok(())
 }
 
-#[derive(Event, Debug)]
-pub struct LoadProjectEvent(pub PathBuf);
+#[derive(Message, Debug)]
+pub struct LoadProject(pub PathBuf);
 
 /// Load a project into the editor
 ///
@@ -115,7 +115,7 @@ pub struct LoadProjectEvent(pub PathBuf);
 ///   indicating the editor is now in editing mode: all systems with run condition [`project_loaded`] will start working
 fn load_project_system(
     mut commands: Commands,
-    mut events: MessageReader<LoadProjectEvent>,
+    mut events: MessageReader<LoadProject>,
     mut toasts: ResMut<ToastsStorage>,
 ) {
     if events.len() > 1 {
@@ -224,13 +224,13 @@ fn project_loading_result_observer(
     }
 }
 
-#[derive(Event, Debug)]
-pub struct UnloadProjectEvent;
+#[derive(Message, Debug)]
+pub struct UnloadProject;
 
 /// Unload a project from the editor
 fn unload_project_system(
     world: &mut World,
-    params: &mut SystemState<MessageReader<UnloadProjectEvent>>,
+    params: &mut SystemState<MessageReader<UnloadProject>>,
 ) {
     let mut events = params.get_mut(world);
     if !events.is_empty() {

@@ -60,7 +60,7 @@ use crate::metronome::MetronomePlugin;
 use crate::misc::MiscPlugin;
 use crate::notification::NotificationPlugin;
 use crate::project::project_loaded;
-use crate::project::LoadProjectEvent;
+use crate::project::LoadProject;
 use crate::project::ProjectPlugin;
 use crate::recent_projects::RecentProjectsPlugin;
 use crate::schedule::EditorSet;
@@ -198,10 +198,10 @@ fn apply_editor_settings_system(settings: Res<Persistent<EditorSettings>>) {
 }
 
 /// Apply configurations from the command line args
-fn apply_args_config_system(args: Res<Args>, mut events: MessageWriter<LoadProjectEvent>) {
+fn apply_args_config_system(args: Res<Args>, mut events: MessageWriter<LoadProject>) {
     // load chart if specified
     if let Some(path) = &args.project {
-        events.write(LoadProjectEvent(path.into()));
+        events.write(LoadProject(path.into()));
     }
 }
 
