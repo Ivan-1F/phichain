@@ -154,8 +154,8 @@ fn update_volume_system(
     settings: Res<Persistent<EditorSettings>>,
 ) {
     if let Some(instance) = audio_instances.get_mut(&handle.0) {
-        instance.set_volume(
-            Volume::Amplitude(settings.audio.music_volume as f64),
+        instance.set_decibels(
+            crate::utils::audio::amplitude_to_db(settings.audio.music_volume),
             AudioTween::default(),
         );
     }

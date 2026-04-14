@@ -59,7 +59,7 @@ fn play_metronome_system(
         if (0.0..0.08).contains(&time_diff) {
             audio
                 .play(assets.metronome.clone())
-                .with_volume(Volume::Amplitude(settings.audio.metronome_volume as f64));
+                .with_volume(crate::utils::audio::amplitude_to_db(settings.audio.metronome_volume));
 
             metronome_state.last_beat_played = Some(current_beat.beat());
         }
