@@ -114,7 +114,7 @@ fn create_anchor_marker_observer(add: On<Add, Line>, mut commands: Commands) {
         ..default()
     };
 
-    commands.entity(add.target()).with_children(|p| {
+    commands.entity(add.entity).with_children(|p| {
         p.spawn((
             AnchorMarker,
             ShapeBuilder::with(&shape)

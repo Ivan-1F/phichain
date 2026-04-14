@@ -339,8 +339,8 @@ fn clean_dangle_timelines_observer(
             .timelines
             .iter()
             .position(|x| match &x.timeline {
-                TimelineItem::Note(timeline) => timeline.0 == Some(remove.target()),
-                TimelineItem::Event(timeline) => timeline.0 == Some(remove.target()),
+                TimelineItem::Note(timeline) => timeline.0 == Some(remove.entity),
+                TimelineItem::Event(timeline) => timeline.0 == Some(remove.entity),
             })
     {
         info!("Removed timeline due to removal of line");
