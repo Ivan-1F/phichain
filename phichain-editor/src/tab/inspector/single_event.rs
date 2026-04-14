@@ -16,7 +16,7 @@ pub fn single_event_inspector(
     In(mut ui): In<Ui>,
     event: Single<(&mut LineEvent, Entity), With<Selected>>,
     ctx: TimelineContext,
-    mut event_writer: EventWriter<DoCommandEvent>,
+    mut event_writer: MessageWriter<DoCommandEvent>,
 ) -> Result {
     let (mut event, entity) = event.into_inner();
     let event = event.as_mut();

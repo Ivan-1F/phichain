@@ -70,7 +70,7 @@ fn create_note_system(
     window_query: Query<&Window>,
     bpm_list: Res<BpmList>,
 
-    mut event: EventWriter<DoCommandEvent>,
+    mut event: MessageWriter<DoCommandEvent>,
 
     mut pending_note_query: Query<(&mut Note, Entity), With<Pending>>,
 ) -> Result {

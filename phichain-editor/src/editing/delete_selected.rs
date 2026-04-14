@@ -29,7 +29,7 @@ fn delete_selected_system(
         Query<Entity, (With<Selected>, With<LineEvent>)>,
         Query<Entity, (With<Selected>, With<CurveNoteTrack>)>,
     )>,
-    mut events: EventWriter<DoCommandEvent>,
+    mut events: MessageWriter<DoCommandEvent>,
 ) -> Result {
     let mut sequence = CommandSequence(vec![]);
     for note in &set.p0() {

@@ -8,7 +8,7 @@ use crate::timeline::{Timeline, TimelineContext};
 use crate::timing::SeekToEvent;
 use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
 use bevy::ecs::system::SystemState;
-use bevy::prelude::{Entity, EventWriter, Query, Res, World};
+use bevy::prelude::{Entity, MessageWriter, Query, Res, World};
 use egui::{Align2, Color32, FontId, Rect, Sense, Stroke, StrokeKind, Ui};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
@@ -130,9 +130,9 @@ impl Timeline for EventTimeline {
             Query<(&mut LineEvent, Entity, Option<&Selected>, Option<&Pending>)>,
             Query<&Events>,
             Res<BpmList>,
-            EventWriter<SelectEvent>,
-            EventWriter<DoCommandEvent>,
-            EventWriter<SeekToEvent>,
+            MessageWriter<SelectEvent>,
+            MessageWriter<DoCommandEvent>,
+            MessageWriter<SeekToEvent>,
         )> = SystemState::new(world);
 
         let (

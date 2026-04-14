@@ -72,7 +72,7 @@ impl PushTelemetryEvent {
 }
 
 fn handle_push_telemetry_event_system(
-    mut events: EventReader<PushTelemetryEvent>,
+    mut events: MessageReader<PushTelemetryEvent>,
     diagnostics: Res<DiagnosticsStore>,
     adapter_info: Res<RenderAdapterInfo>,
     entities: &Entities,
@@ -149,7 +149,7 @@ fn handle_push_telemetry_event_system(
     }
 }
 
-fn send_startup_event_system(mut events: EventWriter<PushTelemetryEvent>) {
+fn send_startup_event_system(mut events: MessageWriter<PushTelemetryEvent>) {
     events.write(PushTelemetryEvent::new(
         "phichain.editor.started",
         json!({}),

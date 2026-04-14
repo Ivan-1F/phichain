@@ -55,7 +55,7 @@ pub struct LineListParams<'w, 's> {
     >,
     child_of_query: Query<'w, 's, &'static ChildOf>,
     selected_line: ResMut<'w, SelectedLine>,
-    do_command_event: EventWriter<'w, DoCommandEvent>,
+    do_command_event: MessageWriter<'w, DoCommandEvent>,
 }
 
 impl<'w, 's> LineList<'w, 's> {

@@ -78,7 +78,7 @@ fn cut_system(
 
     selected_query: Query<Entity, With<Selected>>,
 
-    mut event_writer: EventWriter<DoCommandEvent>,
+    mut event_writer: MessageWriter<DoCommandEvent>,
 ) -> Result {
     clipboard.clear();
 
@@ -111,7 +111,7 @@ fn paste_system(
     ctx: TimelineContext,
     bpm_list: Res<BpmList>,
 
-    mut event_writer: EventWriter<DoCommandEvent>,
+    mut event_writer: MessageWriter<DoCommandEvent>,
 ) -> Result {
     let window = window_query.single()?;
     let Some(cursor_position) = window.cursor_position() else {

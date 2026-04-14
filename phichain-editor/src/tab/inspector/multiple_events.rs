@@ -9,7 +9,7 @@ use phichain_chart::event::{LineEvent, LineEventKind};
 pub fn multiple_events_inspector(
     In(mut ui): In<Ui>,
     query: Query<(&LineEvent, Entity), With<Selected>>,
-    mut event_writer: EventWriter<DoCommandEvent>,
+    mut event_writer: MessageWriter<DoCommandEvent>,
 ) -> Result {
     ui.label(t!(
         "tab.inspector.multiple_events.title",

@@ -63,8 +63,8 @@ impl Timeline for NoteTimeline {
             Res<ImageAssets>,
             Res<Assets<Image>>,
             Res<EguiUserTextures>,
-            EventWriter<SelectEvent>,
-            EventWriter<DoCommandEvent>,
+            MessageWriter<SelectEvent>,
+            MessageWriter<DoCommandEvent>,
         )> = SystemState::new(world);
 
         let (

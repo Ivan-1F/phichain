@@ -14,7 +14,7 @@ pub fn single_note_inspector(
     In(mut ui): In<Ui>,
     note: Single<(&mut Note, Entity), With<Selected>>,
     ctx: TimelineContext,
-    mut event_writer: EventWriter<DoCommandEvent>,
+    mut event_writer: MessageWriter<DoCommandEvent>,
 ) -> Result {
     let (mut note, entity) = note.into_inner();
 

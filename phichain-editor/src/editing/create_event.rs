@@ -58,7 +58,7 @@ fn create_event_system(
     window_query: Query<&Window>,
     bpm_list: Res<BpmList>,
 
-    mut event: EventWriter<DoCommandEvent>,
+    mut event: MessageWriter<DoCommandEvent>,
 
     mut pending_event_query: Query<(&mut LineEvent, Entity), With<Pending>>,
 

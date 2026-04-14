@@ -116,7 +116,7 @@ fn update_seek_system(
 ///
 /// No immediate seeking occurs here - all timing changes are processed by [`update_seek_system`]
 fn handle_seek_system(
-    mut events: EventReader<SeekEvent>,
+    mut events: MessageReader<SeekEvent>,
     mut seek_target_time: ResMut<SeekDeltaTime>,
 ) {
     for event in events.read() {
@@ -128,7 +128,7 @@ fn handle_seek_system(
 fn handle_seek_to_system(
     handle: Res<InstanceHandle>,
     mut audio_instances: ResMut<Assets<AudioInstance>>,
-    mut events: EventReader<SeekToEvent>,
+    mut events: MessageReader<SeekToEvent>,
     mut seek_delta_time: ResMut<SeekDeltaTime>,
     audio_duration: Res<AudioDuration>,
 

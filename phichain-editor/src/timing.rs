@@ -93,7 +93,7 @@ fn toggle_system(mut commands: Commands, paused: Res<Paused>) -> Result {
 }
 
 /// Use ArrowLeft and ArrowRight to control the progress
-fn progress_control_system(hotkey: HotkeyContext, mut events: EventWriter<SeekEvent>) {
+fn progress_control_system(hotkey: HotkeyContext, mut events: MessageWriter<SeekEvent>) {
     if hotkey.pressed(TimingHotkeys::Backward) {
         events.write(SeekEvent(-0.02));
     }

@@ -15,7 +15,7 @@ pub fn quick_action(ui: &mut Ui, world: &mut World) {
         Res<Timing>,
         Res<BpmList>,
         Res<AudioDuration>,
-        EventWriter<SeekToEvent>,
+        MessageWriter<SeekToEvent>,
     )> = SystemState::new(world);
 
     let (mut editor_settings, mut toasts, timing, bpm_list, duration, mut events) =

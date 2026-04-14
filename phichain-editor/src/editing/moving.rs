@@ -42,7 +42,7 @@ fn move_up_system(
     timeline_settings: Res<TimelineSettings>,
     selected_notes: Query<(&Note, Entity), With<Selected>>,
     selected_events: Query<(&LineEvent, Entity), With<Selected>>,
-    mut event_writer: EventWriter<DoCommandEvent>,
+    mut event_writer: MessageWriter<DoCommandEvent>,
 ) -> Result {
     if let Some((start, _)) = selected_notes.iter().min_by_key(|(note, _)| note.beat) {
         let to = timeline_settings.attach((start.beat + timeline_settings.minimum_beat()).value());
@@ -94,7 +94,7 @@ fn move_down_system(
     timeline_settings: Res<TimelineSettings>,
     selected_notes: Query<(&Note, Entity), With<Selected>>,
     selected_events: Query<(&LineEvent, Entity), With<Selected>>,
-    mut event_writer: EventWriter<DoCommandEvent>,
+    mut event_writer: MessageWriter<DoCommandEvent>,
 ) -> Result {
     if let Some((start, _)) = selected_notes.iter().min_by_key(|(note, _)| note.beat) {
         let to = timeline_settings.attach((start.beat - timeline_settings.minimum_beat()).value());
@@ -145,7 +145,7 @@ fn move_down_system(
 fn move_left_system(
     timeline_settings: Res<TimelineSettings>,
     selected_notes: Query<(&Note, Entity), With<Selected>>,
-    mut event_writer: EventWriter<DoCommandEvent>,
+    mut event_writer: MessageWriter<DoCommandEvent>,
 ) -> Result {
     if let Some((start, _)) = selected_notes
         .iter()
@@ -175,7 +175,7 @@ fn move_left_system(
 fn move_right_system(
     timeline_settings: Res<TimelineSettings>,
     selected_notes: Query<(&Note, Entity), With<Selected>>,
-    mut event_writer: EventWriter<DoCommandEvent>,
+    mut event_writer: MessageWriter<DoCommandEvent>,
 ) -> Result {
     if let Some((start, _)) = selected_notes
         .iter()

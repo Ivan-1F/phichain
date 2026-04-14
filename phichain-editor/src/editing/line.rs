@@ -28,7 +28,7 @@ impl Plugin for LineEditingPlugin {
     }
 }
 
-fn create_line_system(mut do_command_event: EventWriter<DoCommandEvent>) -> Result {
+fn create_line_system(mut do_command_event: MessageWriter<DoCommandEvent>) -> Result {
     do_command_event.write(DoCommandEvent(EditorCommand::CreateLine(CreateLine::new())));
     // TODO: switch to this line
 
@@ -36,7 +36,7 @@ fn create_line_system(mut do_command_event: EventWriter<DoCommandEvent>) -> Resu
 }
 
 fn create_line_from_selected_system(
-    mut do_command_event: EventWriter<DoCommandEvent>,
+    mut do_command_event: MessageWriter<DoCommandEvent>,
     selected_line: Res<SelectedLine>,
 ) -> Result {
     do_command_event.write(DoCommandEvent(EditorCommand::CreateLineFromSelected(

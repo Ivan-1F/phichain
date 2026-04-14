@@ -48,7 +48,7 @@ impl Plugin for ProjectPlugin {
             )
             .add_action(
                 "phichain.close_project",
-                |mut events: EventWriter<UnloadProjectEvent>| {
+                |mut events: MessageWriter<UnloadProjectEvent>| {
                     events.write(UnloadProjectEvent);
 
                     Ok(())
@@ -115,7 +115,7 @@ pub struct LoadProjectEvent(pub PathBuf);
 ///   indicating the editor is now in editing mode: all systems with run condition [`project_loaded`] will start working
 fn load_project_system(
     mut commands: Commands,
-    mut events: EventReader<LoadProjectEvent>,
+    mut events: MessageReader<LoadProjectEvent>,
     mut toasts: ResMut<ToastsStorage>,
 ) {
     if events.len() > 1 {
@@ -153,7 +153,7 @@ fn project_loading_result_observer(
 
     mut commands: Commands,
     mut recent_projects: ResMut<Persistent<RecentProjects>>,
-    mut telemetry: EventWriter<PushTelemetryEvent>,
+    mut telemetry: MessageWriter<PushTelemetryEvent>,
     mut toasts: ResMut<ToastsStorage>,
 ) {
     let data = trigger.event();
@@ -230,7 +230,7 @@ pub struct UnloadProjectEvent;
 /// Unload a project from the editor
 fn unload_project_system(
     world: &mut World,
-    params: &mut SystemState<EventReader<UnloadProjectEvent>>,
+    params: &mut SystemState<MessageReader<UnloadProjectEvent>>,
 ) {
     let mut events = params.get_mut(world);
     if !events.is_empty() {

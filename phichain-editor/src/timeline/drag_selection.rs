@@ -82,7 +82,7 @@ pub fn timeline_drag_selection(ui: &mut Ui, world: &mut World) -> Result {
                     );
                     all.extend(selected);
                 }
-                let mut state: SystemState<EventWriter<SelectEvent>> = SystemState::new(world);
+                let mut state: SystemState<MessageWriter<SelectEvent>> = SystemState::new(world);
                 let mut select_events = state.get_mut(world);
                 select_events.write(SelectEvent(all));
             }

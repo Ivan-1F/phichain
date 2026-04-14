@@ -12,7 +12,7 @@ pub fn chart_basic_setting_tab(
     mut offset: ResMut<Offset>,
     mut project: ResMut<Project>,
 
-    mut event_writer: EventWriter<DoCommandEvent>,
+    mut event_writer: MessageWriter<DoCommandEvent>,
 ) {
     egui::Grid::new("chart_basic_setting_grid")
         .num_columns(2)

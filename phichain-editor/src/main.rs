@@ -198,7 +198,7 @@ fn apply_editor_settings_system(settings: Res<Persistent<EditorSettings>>) {
 }
 
 /// Apply configurations from the command line args
-fn apply_args_config_system(args: Res<Args>, mut events: EventWriter<LoadProjectEvent>) {
+fn apply_args_config_system(args: Res<Args>, mut events: MessageWriter<LoadProjectEvent>) {
     // load chart if specified
     if let Some(path) = &args.project {
         events.write(LoadProjectEvent(path.into()));

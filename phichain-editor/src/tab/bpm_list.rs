@@ -12,7 +12,7 @@ use phichain_chart::bpm_list::{BpmList, BpmPoint};
 pub fn bpm_list_tab(
     In(mut ui): In<Ui>,
     mut bpm_list: ResMut<BpmList>,
-    mut event_writer: EventWriter<DoCommandEvent>,
+    mut event_writer: MessageWriter<DoCommandEvent>,
 ) {
     let mut changes = Vec::new();
     let mut deletes = Vec::new();

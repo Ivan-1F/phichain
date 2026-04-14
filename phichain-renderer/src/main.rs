@@ -490,7 +490,7 @@ fn update_system(
     receiver: Res<MainWorldReceiver>,
     mut images: ResMut<Assets<Image>>,
     mut scene_controller: ResMut<SceneController>,
-    mut app_exit_writer: EventWriter<AppExit>,
+    mut app_exit_writer: MessageWriter<AppExit>,
     mut frame: Local<u32>,
     mut chart_time: ResMut<ChartTime>,
 

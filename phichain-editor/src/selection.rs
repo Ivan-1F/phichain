@@ -106,7 +106,7 @@ pub fn unselect_all_system(
 
 pub fn handle_select_event(
     mut commands: Commands,
-    mut select_events: EventReader<SelectEvent>,
+    mut select_events: MessageReader<SelectEvent>,
 
     keyboard: Res<ButtonInput<KeyCode>>,
 

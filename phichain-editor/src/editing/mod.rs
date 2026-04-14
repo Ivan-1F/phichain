@@ -76,7 +76,7 @@ pub struct DoCommandEvent(pub EditorCommand);
 
 fn handle_edit_command_system(
     world: &mut World,
-    state: &mut SystemState<EventReader<DoCommandEvent>>,
+    state: &mut SystemState<MessageReader<DoCommandEvent>>,
 ) {
     let events: Vec<_> = {
         let mut event_reader = state.get_mut(world);

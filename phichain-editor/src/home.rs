@@ -315,7 +315,7 @@ fn ui_system(world: &mut World) {
 fn load_project_observer(
     trigger: Trigger<PickedProject>,
     mut commands: Commands,
-    mut events: EventWriter<LoadProjectEvent>,
+    mut events: MessageWriter<LoadProjectEvent>,
 ) {
     if let Some(ref root_dir) = trigger.event().0 {
         events.write(LoadProjectEvent(root_dir.to_path_buf()));
@@ -341,7 +341,7 @@ fn handle_create_project_observer(
     trigger: Trigger<PickedCreateProject>,
     mut commands: Commands,
     form: Res<CreateProjectForm>,
-    mut load_project_events: EventWriter<LoadProjectEvent>,
+    mut load_project_events: MessageWriter<LoadProjectEvent>,
     mut toasts: ResMut<ToastsStorage>,
 ) {
     let Some(ref root_path) = trigger.event().0 else {

@@ -10,7 +10,7 @@ use phichain_chart::note::{Note, NoteKind};
 pub fn multiple_notes_inspector(
     In(mut ui): In<Ui>,
     query: Query<(&Note, Entity), With<Selected>>,
-    mut event_writer: EventWriter<DoCommandEvent>,
+    mut event_writer: MessageWriter<DoCommandEvent>,
 ) -> Result {
     ui.label(t!(
         "tab.inspector.multiple_notes.title",
