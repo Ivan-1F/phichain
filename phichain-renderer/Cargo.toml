@@ -13,12 +13,7 @@ phichain-game = { path = "../phichain-game" }
 phichain-assets = { path = "../phichain-assets" }
 
 bevy = { workspace = true }
-bevy_kira_audio = { version = "0.23.0", features = [
-    "mp3",
-    "ogg",
-    "flac",
-    "wav",
-] }
+bevy_kira_audio = { workspace = true }
 clap = { version = "4.5.15", features = ["derive"] }
 crossbeam-channel = "0.5.15"
 image = "0.25.2"
