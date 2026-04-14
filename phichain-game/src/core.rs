@@ -191,7 +191,7 @@ pub fn update_note_y_system(
     query: Query<(&Children, Option<&Events>), With<Line>>,
     game_viewport: Res<GameViewport>,
     line_event_query: Query<&LineEvent>,
-    mut note_query: Query<(&mut Transform, &mut Sprite, &mut Visibility, &Note)>,
+    mut note_query: Query<(&mut Transform, &mut Anchor, &mut Visibility, &Note)>,
     time: Res<ChartTime>,
     bpm_list: Res<BpmList>,
 ) {
@@ -222,7 +222,7 @@ pub fn update_note_y_system(
         };
         let current_distance = distance(time.0);
         for child in children {
-            if let Ok((mut transform, mut sprite, mut visibility, note)) =
+            if let Ok((mut transform, mut anchor, mut visibility, note)) =
                 note_query.get_mut(*child)
             {
                 let mut y = (distance(bpm_list.time_at(note.beat)) - current_distance) * note.speed;
@@ -233,7 +233,7 @@ pub fn update_note_y_system(
                             - current_distance)
                             * note.speed
                             - y;
-                        sprite.anchor = Anchor::BottomCenter;
+                        *anchor = Anchor::BOTTOM_CENTER;
                         transform.rotation = Quat::from_rotation_z(
                             if note.above { 0.0_f32 } else { 180.0_f32 }.to_radians(),
                         );
@@ -245,7 +245,7 @@ pub fn update_note_y_system(
                         }
                     }
                     _ => {
-                        sprite.anchor = Anchor::Center;
+                        *anchor = Anchor::CENTER;
                         transform.rotation = Quat::from_rotation_z(0.0_f32.to_radians());
 
                         // hide notes behind line (cover)
@@ -281,19 +281,15 @@ pub fn update_note_texture_system(
 
 #[derive(Debug, Component, Default, Clone)]
 #[require(
-    Sprite {
-        anchor: Anchor::TopCenter,
-        ..default()
-    },
+    Sprite,
+    Anchor::TOP_CENTER,
     HoldComponent,
 )]
 pub struct HoldHead;
 #[derive(Debug, Component, Default, Clone)]
 #[require(
-    Sprite {
-        anchor: Anchor::BottomCenter,
-        ..default()
-    },
+    Sprite,
+    Anchor::BOTTOM_CENTER,
     HoldComponent,
 )]
 pub struct HoldTail;
