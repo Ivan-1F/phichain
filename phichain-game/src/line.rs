@@ -1,5 +1,5 @@
 use bevy::app::App;
-use bevy::ecs::component::HookContext;
+use bevy::ecs::lifecycle::HookContext;
 use bevy::ecs::world::DeferredWorld;
 use bevy::prelude::{Component, Plugin, Resource};
 use phichain_chart::line::Line;
