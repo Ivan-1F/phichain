@@ -17,7 +17,7 @@ use bevy::render::render_resource::{
     TexelCopyBufferInfo, TexelCopyBufferLayout, TextureDimension, TextureFormat, TextureUsages,
 };
 use bevy::render::renderer::{RenderContext, RenderDevice, RenderQueue};
-use bevy::render::{render_graph, Extract, Render, RenderApp, RenderSet};
+use bevy::render::{render_graph, Extract, Render, RenderApp, RenderSystems};
 use bevy_kira_audio::AudioPlugin;
 use clap::Parser;
 use crossbeam_channel::{Receiver, Sender};
@@ -236,7 +236,7 @@ impl Plugin for ImageCopyPlugin {
             // so we need to run it after the render graph is done
             .add_systems(
                 Render,
-                receive_image_from_buffer_system.after(RenderSet::Render),
+                receive_image_from_buffer_system.after(RenderSystems::Render),
             );
     }
 }
