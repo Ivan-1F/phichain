@@ -18,12 +18,12 @@ load-path = "lang"
 # Bevy Dependencies: Update according to Bevy version (see root Cargo.toml)
 
 bevy = { workspace = true }
-wgpu-types = { version = "24.0.0", features = ["serde"] }  # explictly enable serialization for wgpu types
+wgpu-types = { version = "27.0.0", features = ["serde"] }  # explictly enable serialization for wgpu types
 bevy_kira_audio = { workspace = true }
-bevy_egui = { version = "0.35.1", features = ["immutable_ctx"] }
+bevy_egui = { version = "0.39.1", features = ["immutable_ctx"] }
 bevy_prototype_lyon = { workspace = true }
-bevy-persistent = { version = "0.8.0", features = ["yaml", "json"] }
-bevy_mod_reqwest = "0.19.2"
+bevy-persistent = { version = "0.10.0", features = ["yaml", "json"] }
+bevy_mod_reqwest = "0.21.0"
 
 # Phichain Dependencies
 
@@ -34,11 +34,11 @@ phichain-format = { path = "../phichain-format" }
 
 # Egui Dependencies: Update according to egui version
 
-egui = "0.31.1"
-egui_dock = { version = "0.16.0", features = ["serde"] }
-egui_extras = { version = "0.31.1", features = ["all_loaders"] }
-egui-phosphor = "0.9.0"
-egui-toast = "0.17.0"
+egui = "0.33.3"
+egui_dock = { version = "0.18.0", features = ["serde"] }
+egui_extras = { version = "0.33.3", features = ["all_loaders"] }
+egui-phosphor = "0.11.0"
+egui-toast = "0.19.1"
 
 # Serde Dependencies
 
@@ -75,7 +75,7 @@ phichain-telemetry = { path = "../phichain-telemetry" }
 flate2 = "1.1.1"
 kakasi = "0.1.0"
 pinyin = "0.10.0"
-bevy-inspector-egui = "0.32.0"
+bevy-inspector-egui = "0.36.0"
 hound = "3.5.1"
 realfft = "3.5.0"
 colorous = "1.0.16"

@@ -28,7 +28,7 @@ incremental = false
 debug = false
 
 [workspace.dependencies]
-bevy = { version = "0.16.1", default-features = false, features = [
+bevy = { version = "0.18.1", default-features = false, features = [
     "animation",
     "bevy_asset",
     "bevy_color",
@@ -62,11 +62,10 @@ bevy = { version = "0.16.1", default-features = false, features = [
     "x11",
     "serialize",
 ] }
-bevy_kira_audio = { version = "0.23.0", features = [
+bevy_kira_audio = { version = "0.25.0", features = [
     "mp3",
     "ogg",
     "flac",
     "wav",
 ] }
-# TODO: revert this when bevy_prototype_lyon release support for bevy 0.16
-bevy_prototype_lyon = { git = "https://github.com/rparrett/bevy_prototype_lyon", branch = "fix-dynamic-examples" }
+bevy_prototype_lyon = "0.16.0"
