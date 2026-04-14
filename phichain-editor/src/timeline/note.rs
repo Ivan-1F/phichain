@@ -60,7 +60,7 @@ impl Timeline for NoteTimeline {
             Query<&Selected>,
             Query<(&mut CurveNoteTrack, &ChildOf, Entity)>,
             Res<BpmList>,
-            Res<ImageAssets>,
+            Res<phichain_assets::EguiImageAssets>,
             Res<Assets<Image>>,
             Res<EguiUserTextures>,
             MessageWriter<Select>,
