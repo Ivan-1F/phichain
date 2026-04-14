@@ -5,7 +5,7 @@ use crate::events::note::NoteEventPlugin;
 use bevy::app::{App, Plugin};
 use bevy::ecs::system::SystemState;
 use bevy::log::debug;
-use bevy::prelude::{Event, MessageReader, IntoScheduleConfigs, Update, World};
+use bevy::prelude::{Message, MessageReader, IntoScheduleConfigs, Update, World};
 use phichain_game::GameSet;
 use std::fmt::Debug;
 
@@ -26,7 +26,7 @@ impl Plugin for EventPlugin {
 }
 
 /// A event that can be run directly on a world
-pub trait EditorEvent: Event + Clone + Debug {
+pub trait EditorEvent: Message + Clone + Debug {
     /// The output of the event, only available when directly running
     type Output;
 

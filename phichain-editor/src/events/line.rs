@@ -21,7 +21,7 @@ impl Plugin for LineEventPlugin {
 ///
 /// If the target is the only root line in the world, do nothing
 /// If the target is the selected line or ancestors of the selected line (despawning target causing dangling selected line), update the selected line to the first root line
-#[derive(Debug, Clone, Event, Builder)]
+#[derive(Debug, Clone, Message, Builder)]
 pub struct DespawnLineEvent {
     target: Entity,
     #[builder(default)] // false
@@ -81,7 +81,7 @@ impl EditorEvent for DespawnLineEvent {
     }
 }
 
-#[derive(Debug, Clone, Event, Builder)]
+#[derive(Debug, Clone, Message, Builder)]
 pub struct SpawnLineEvent {
     /// The line data
     line: SerializedLine,
