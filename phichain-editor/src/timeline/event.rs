@@ -5,7 +5,7 @@ use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
 use crate::selection::{SelectEvent, Selected, SelectedLine};
 use crate::timeline::{Timeline, TimelineContext};
-use crate::timing::SeekToEvent;
+use crate::timing::SeekTo;
 use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::{Entity, MessageWriter, Query, Res, World};
@@ -132,7 +132,7 @@ impl Timeline for EventTimeline {
             Res<BpmList>,
             MessageWriter<SelectEvent>,
             MessageWriter<DoCommandEvent>,
-            MessageWriter<SeekToEvent>,
+            MessageWriter<SeekTo>,
         )> = SystemState::new(world);
 
         let (
@@ -316,7 +316,7 @@ impl Timeline for EventTimeline {
             {
                 if let Ok(event) = event_query.get(event) {
                     // TODO: refactor logic for navigation
-                    seek_to.write(SeekToEvent(bpm_list.time_at(event.0.start_beat)));
+                    seek_to.write(SeekTo(bpm_list.time_at(event.0.start_beat)));
                 }
             }
         };

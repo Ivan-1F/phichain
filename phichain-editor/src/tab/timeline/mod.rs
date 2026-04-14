@@ -5,7 +5,7 @@ use egui::Ui;
 use crate::settings::EditorSettings;
 use crate::timeline::settings::TimelineSettings;
 use crate::timeline::Timeline;
-use crate::timing::{Pause, Paused, SeekEvent};
+use crate::timing::{Pause, Paused, Seek};
 use crate::utils::convert::BevyEguiConvert;
 use crate::{spectrogram, timeline};
 use phichain_chart::note::Note;
@@ -49,7 +49,7 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
             } else {
                 // normal scroll: seek
                 let settings = world.resource::<Persistent<EditorSettings>>();
-                world.write_message(SeekEvent(
+                world.write_message(Seek(
                     scroll_delta / 5000.0 * settings.general.timeline_scroll_sensitivity,
                 ));
 

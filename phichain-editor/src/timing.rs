@@ -27,12 +27,12 @@ pub struct Pause;
 pub struct Resume;
 
 /// Seek the chart by certain delta
-#[derive(Event, Default)]
-pub struct SeekEvent(pub f32);
+#[derive(Message, Default)]
+pub struct Seek(pub f32);
 
 /// Seek the chart to certain point
-#[derive(Event, Default)]
-pub struct SeekToEvent(pub f32);
+#[derive(Message, Default)]
+pub struct SeekTo(pub f32);
 
 pub enum TimingHotkeys {
     Forward,
@@ -54,8 +54,8 @@ impl Plugin for TimingPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(ChartTime(0.0))
             .insert_resource(Paused(true))
-            .add_event::<SeekEvent>()
-            .add_event::<SeekToEvent>()
+            .add_event::<Seek>()
+            .add_event::<SeekTo>()
             .add_hotkey(
                 TimingHotkeys::Backward,
                 Hotkey::new(KeyCode::BracketLeft, vec![]),
@@ -93,12 +93,12 @@ fn toggle_system(mut commands: Commands, paused: Res<Paused>) -> Result {
 }
 
 /// Use ArrowLeft and ArrowRight to control the progress
-fn progress_control_system(hotkey: HotkeyContext, mut events: MessageWriter<SeekEvent>) {
+fn progress_control_system(hotkey: HotkeyContext, mut events: MessageWriter<Seek>) {
     if hotkey.pressed(TimingHotkeys::Backward) {
-        events.write(SeekEvent(-0.02));
+        events.write(Seek(-0.02));
     }
     if hotkey.pressed(TimingHotkeys::Forward) {
-        events.write(SeekEvent(0.02));
+        events.write(Seek(0.02));
     }
 }
 
