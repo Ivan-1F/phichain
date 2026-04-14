@@ -78,10 +78,7 @@ pub fn inspector_ui_system(In(mut ui): In<Ui>, world: &mut World) {
     for inspector in inspectors {
         let condition_met = match world.run_system(inspector.condition) {
             Ok(result) => result,
-            Err(RegisteredSystemError::InvalidParams {
-                err: SystemParamValidationError { skipped: true, .. },
-                ..
-            }) => false,
+            Err(RegisteredSystemError::Skipped(_)) => false,
             Err(_) => {
                 // TODO: add inspector name to log here
                 warn!("Failed to run condition for inspector");
