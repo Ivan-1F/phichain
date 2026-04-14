@@ -5,7 +5,7 @@ use crate::translation::Languages;
 use crate::ui::sides::SidesExt;
 use crate::ui::widgets::language_combobox::language_combobox;
 use crate::{
-    file::{pick_file, pick_folder, FilePickResult, FilePickingAppExt},
+    file::{pick_file, pick_folder, PickedFile, FilePickingAppExt},
     notification::{ToastsExt, ToastsStorage},
     project::{create_project, project_not_loaded, LoadProject, ProjectMeta},
 };
@@ -313,7 +313,7 @@ fn ui_system(world: &mut World) {
 }
 
 fn load_project_observer(
-    event: On<FilePickResult<ProjectPick>>,
+    event: On<PickedFile<ProjectPick>>,
     mut commands: Commands,
     mut events: MessageWriter<LoadProject>,
 ) {
@@ -324,21 +324,21 @@ fn load_project_observer(
 }
 
 fn handle_select_illustration_observer(
-    event: On<FilePickResult<IllustrationPick>>,
+    event: On<PickedFile<IllustrationPick>>,
     mut form: ResMut<CreateProjectForm>,
 ) {
     form.illustration.clone_from(&event.event().path);
 }
 
 fn handle_select_music_observer(
-    event: On<FilePickResult<MusicPick>>,
+    event: On<PickedFile<MusicPick>>,
     mut form: ResMut<CreateProjectForm>,
 ) {
     form.music.clone_from(&event.event().path);
 }
 
 fn handle_create_project_observer(
-    event: On<FilePickResult<CreateProjectPick>>,
+    event: On<PickedFile<CreateProjectPick>>,
     mut commands: Commands,
     form: Res<CreateProjectForm>,
     mut load_project_events: MessageWriter<LoadProject>,

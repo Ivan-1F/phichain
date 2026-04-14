@@ -9,12 +9,12 @@ use rfd::FileDialog;
 
 /// A file picking result event, parameterized by a marker type to distinguish different pick operations.
 #[derive(Event, Debug)]
-pub struct FilePickResult<M: Send + Sync + 'static> {
+pub struct PickedFile<M: Send + Sync + 'static> {
     pub path: Option<PathBuf>,
     _marker: PhantomData<M>,
 }
 
-impl<M: Send + Sync + 'static> FilePickResult<M> {
+impl<M: Send + Sync + 'static> PickedFile<M> {
     pub fn new(path: Option<PathBuf>) -> Self {
         Self {
             path,
@@ -36,7 +36,7 @@ fn poll_system<M: Send + Sync + 'static>(
     for (entity, mut pending) in &mut tasks {
         if let Some(path) = future::block_on(future::poll_once(&mut pending.task)) {
             commands.entity(entity).despawn();
-            commands.trigger(FilePickResult::<M>::new(path));
+            commands.trigger(PickedFile::<M>::new(path));
         }
     }
 }

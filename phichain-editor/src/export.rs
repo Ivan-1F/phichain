@@ -1,5 +1,5 @@
 use crate::action::ActionRegistrationExt;
-use crate::file::{pick_folder, FilePickResult, FilePickingAppExt};
+use crate::file::{pick_folder, PickedFile, FilePickingAppExt};
 use crate::hotkey::modifier::Modifier;
 use crate::hotkey::Hotkey;
 use crate::notification::{ToastsExt, ToastsStorage};
@@ -146,7 +146,7 @@ fn export_official(path: &Path, project: &Project) -> anyhow::Result<PathBuf> {
 }
 
 fn export_official_observer(
-    event: On<FilePickResult<ExportOfficialPick>>,
+    event: On<PickedFile<ExportOfficialPick>>,
     project: Res<Project>,
     mut toasts: ResMut<ToastsStorage>,
 ) {
@@ -173,7 +173,7 @@ fn export_rpe(path: &Path, project: &Project) -> anyhow::Result<PathBuf> {
 }
 
 fn export_rpe_observer(
-    event: On<FilePickResult<ExportRpePick>>,
+    event: On<PickedFile<ExportRpePick>>,
     project: Res<Project>,
     mut toasts: ResMut<ToastsStorage>,
 ) {
