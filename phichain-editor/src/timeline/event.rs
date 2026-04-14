@@ -2,7 +2,7 @@ use crate::constants::INDICATOR_POSITION;
 use crate::editing::command::event::EditEvent;
 use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
-use crate::editing::DoCommandEvent;
+use crate::editing::DoCommand;
 use crate::selection::{Select, Selected, SelectedLine};
 use crate::timeline::{Timeline, TimelineContext};
 use crate::timing::SeekTo;
@@ -131,7 +131,7 @@ impl Timeline for EventTimeline {
             Query<&Events>,
             Res<BpmList>,
             MessageWriter<Select>,
-            MessageWriter<DoCommandEvent>,
+            MessageWriter<DoCommand>,
             MessageWriter<SeekTo>,
         )> = SystemState::new(world);
 
@@ -256,7 +256,7 @@ impl Timeline for EventTimeline {
                 if let Some(drag) =
                     BeatRangeDragZone::new(rect, "event-drag", &ctx, &mut *event).show(ui)
                 {
-                    event_writer.write(DoCommandEvent(EditorCommand::EditEvent(EditEvent::new(
+                    event_writer.write(DoCommand(EditorCommand::EditEvent(EditEvent::new(
                         entity, drag.from, drag.to,
                     ))));
                 }

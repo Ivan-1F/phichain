@@ -1,6 +1,6 @@
 use crate::editing::command::event::EditEvent;
 use crate::editing::command::EditorCommand;
-use crate::editing::DoCommandEvent;
+use crate::editing::DoCommand;
 use crate::selection::Selected;
 use crate::timeline::TimelineContext;
 use crate::ui::latch;
@@ -16,7 +16,7 @@ pub fn single_event_inspector(
     In(mut ui): In<Ui>,
     event: Single<(&mut LineEvent, Entity), With<Selected>>,
     ctx: TimelineContext,
-    mut event_writer: MessageWriter<DoCommandEvent>,
+    mut event_writer: MessageWriter<DoCommand>,
 ) -> Result {
     let (mut event, entity) = event.into_inner();
     let event = event.as_mut();
@@ -72,7 +72,7 @@ pub fn single_event_inspector(
                     {
                         let mut new_event = *event;
                         new_event.value = new_event.value.into_transition();
-                        event_writer.write(DoCommandEvent(EditorCommand::EditEvent(
+                        event_writer.write(DoCommand(EditorCommand::EditEvent(
                             EditEvent::new(entity, *event, new_event),
                         )));
                     }
@@ -85,7 +85,7 @@ pub fn single_event_inspector(
                     {
                         let mut new_event = *event;
                         new_event.value = new_event.value.into_constant();
-                        event_writer.write(DoCommandEvent(EditorCommand::EditEvent(
+                        event_writer.write(DoCommand(EditorCommand::EditEvent(
                             EditEvent::new(entity, *event, new_event),
                         )));
                     }
@@ -153,7 +153,7 @@ pub fn single_event_inspector(
 
     if let Some(from) = result {
         if from != *event {
-            event_writer.write(DoCommandEvent(EditorCommand::EditEvent(EditEvent::new(
+            event_writer.write(DoCommand(EditorCommand::EditEvent(EditEvent::new(
                 entity, from, *event,
             ))));
         }

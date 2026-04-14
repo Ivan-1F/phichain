@@ -1,6 +1,6 @@
 use crate::editing::command::meta::{EditMeta, EditOffset};
 use crate::editing::command::EditorCommand;
-use crate::editing::DoCommandEvent;
+use crate::editing::DoCommand;
 use crate::project::Project;
 use crate::ui::latch;
 use bevy::prelude::*;
@@ -12,7 +12,7 @@ pub fn chart_basic_setting_tab(
     mut offset: ResMut<Offset>,
     mut project: ResMut<Project>,
 
-    mut event_writer: MessageWriter<DoCommandEvent>,
+    mut event_writer: MessageWriter<DoCommand>,
 ) {
     egui::Grid::new("chart_basic_setting_grid")
         .num_columns(2)
@@ -62,14 +62,14 @@ pub fn chart_basic_setting_tab(
 
             if let Some((meta_from, offset_from)) = result {
                 if meta_from != project.meta {
-                    event_writer.write(DoCommandEvent(EditorCommand::EditMeta(EditMeta::new(
+                    event_writer.write(DoCommand(EditorCommand::EditMeta(EditMeta::new(
                         meta_from,
                         project.meta.clone(),
                     ))));
                 }
 
                 if offset_from != offset.0 {
-                    event_writer.write(DoCommandEvent(EditorCommand::EditOffset(EditOffset::new(
+                    event_writer.write(DoCommand(EditorCommand::EditOffset(EditOffset::new(
                         offset_from,
                         offset.0,
                     ))));

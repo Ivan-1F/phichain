@@ -2,7 +2,7 @@ use crate::editing::command::curve_note_track::CreateCurveNoteTrack;
 use crate::editing::command::note::EditNote;
 use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
-use crate::editing::DoCommandEvent;
+use crate::editing::DoCommand;
 use crate::selection::{Select, Selected, SelectedLine};
 use crate::tab::timeline::TimelineFilter;
 use crate::timeline::{Timeline, TimelineContext};
@@ -64,7 +64,7 @@ impl Timeline for NoteTimeline {
             Res<Assets<Image>>,
             Res<EguiUserTextures>,
             MessageWriter<Select>,
-            MessageWriter<DoCommandEvent>,
+            MessageWriter<DoCommand>,
         )> = SystemState::new(world);
 
         let (
@@ -204,7 +204,7 @@ impl Timeline for NoteTimeline {
                 if let Some(drag) =
                     BeatRangeDragZone::new(rect, "hold-drag", &ctx, &mut *note).show(ui)
                 {
-                    event_writer.write(DoCommandEvent(EditorCommand::EditNote(EditNote::new(
+                    event_writer.write(DoCommand(EditorCommand::EditNote(EditNote::new(
                         entity, drag.from, drag.to,
                     ))));
                 }
@@ -223,7 +223,7 @@ impl Timeline for NoteTimeline {
                             let mut completed_track = track.clone();
                             completed_track.to(entity);
 
-                            event_writer.write(DoCommandEvent(
+                            event_writer.write(DoCommand(
                                 EditorCommand::CreateCurveNoteTrack(CreateCurveNoteTrack::new(
                                     child_of.parent(),
                                     completed_track,

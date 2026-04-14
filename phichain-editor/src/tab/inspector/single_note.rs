@@ -1,6 +1,6 @@
 use crate::editing::command::note::EditNote;
 use crate::editing::command::EditorCommand;
-use crate::editing::DoCommandEvent;
+use crate::editing::DoCommand;
 use crate::selection::Selected;
 use crate::timeline::TimelineContext;
 use crate::ui::latch;
@@ -14,7 +14,7 @@ pub fn single_note_inspector(
     In(mut ui): In<Ui>,
     note: Single<(&mut Note, Entity), With<Selected>>,
     ctx: TimelineContext,
-    mut event_writer: MessageWriter<DoCommandEvent>,
+    mut event_writer: MessageWriter<DoCommand>,
 ) -> Result {
     let (mut note, entity) = note.into_inner();
 
@@ -83,7 +83,7 @@ pub fn single_note_inspector(
 
     if let Some(from) = result {
         if from != *note {
-            event_writer.write(DoCommandEvent(EditorCommand::EditNote(EditNote::new(
+            event_writer.write(DoCommand(EditorCommand::EditNote(EditNote::new(
                 entity, from, *note,
             ))));
         }

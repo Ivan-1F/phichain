@@ -1,6 +1,6 @@
 use crate::editing::command::note::EditNote;
 use crate::editing::command::{CommandSequence, EditorCommand};
-use crate::editing::DoCommandEvent;
+use crate::editing::DoCommand;
 use crate::selection::Selected;
 use bevy::prelude::*;
 use egui::{Align, Layout, Ui};
@@ -10,7 +10,7 @@ use phichain_chart::note::{Note, NoteKind};
 pub fn multiple_notes_inspector(
     In(mut ui): In<Ui>,
     query: Query<(&Note, Entity), With<Selected>>,
-    mut event_writer: MessageWriter<DoCommandEvent>,
+    mut event_writer: MessageWriter<DoCommand>,
 ) -> Result {
     ui.label(t!(
         "tab.inspector.multiple_notes.title",
@@ -37,7 +37,7 @@ pub fn multiple_notes_inspector(
                 })
                 .collect::<Vec<_>>();
 
-            event_writer.write(DoCommandEvent(EditorCommand::CommandSequence(
+            event_writer.write(DoCommand(EditorCommand::CommandSequence(
                 CommandSequence(commands),
             )));
         }
@@ -62,7 +62,7 @@ pub fn multiple_notes_inspector(
                 })
                 .collect::<Vec<_>>();
 
-            event_writer.write(DoCommandEvent(EditorCommand::CommandSequence(
+            event_writer.write(DoCommand(EditorCommand::CommandSequence(
                 CommandSequence(commands),
             )));
         }
@@ -85,7 +85,7 @@ pub fn multiple_notes_inspector(
                 })
                 .collect::<Vec<_>>();
 
-            event_writer.write(DoCommandEvent(EditorCommand::CommandSequence(
+            event_writer.write(DoCommand(EditorCommand::CommandSequence(
                 CommandSequence(commands),
             )));
         }
@@ -98,7 +98,7 @@ pub fn multiple_notes_inspector(
                 })
                 .collect::<Vec<_>>();
 
-            event_writer.write(DoCommandEvent(EditorCommand::CommandSequence(
+            event_writer.write(DoCommand(EditorCommand::CommandSequence(
                 CommandSequence(commands),
             )));
         };
