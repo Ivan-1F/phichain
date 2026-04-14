@@ -207,7 +207,7 @@ fn flush_telemetry_queue_system(
             }
         })
         .on_error(|event: On<ReqwestErrorEvent>| {
-            let e = &event.event().0;
+            let e = &event.event().error;
             error!("Failed to send telemetry data, request failed: {:?}", e);
         });
 }
