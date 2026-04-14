@@ -56,7 +56,6 @@ impl Plugin for ActionPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ActionRegistry>()
             .add_systems(Update, handle_action_hotkey_system.in_set(GameSet))
-            .add_message::<RunAction>()
             .add_observer(run_action_observer);
     }
 }
