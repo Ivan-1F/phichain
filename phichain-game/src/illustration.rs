@@ -1,11 +1,11 @@
-use std::path::PathBuf;
-
 use crate::{
     constants::{ILLUSTRATION_ALPHA, ILLUSTRATION_BLUR},
     GameSet,
 };
-use bevy::{prelude::*, render::render_asset::RenderAssetUsages};
+use bevy::asset::RenderAssetUsages;
+use bevy::prelude::*;
 use image::{DynamicImage, ImageResult};
+use std::path::PathBuf;
 
 use super::GameViewport;
 
