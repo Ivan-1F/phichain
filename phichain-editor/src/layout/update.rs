@@ -9,12 +9,12 @@ use std::ops::IndexMut;
 pub struct UpdateLayout(pub usize);
 
 pub fn update_layout_observer(
-    trigger: On<UpdateLayout>,
+    event: On<UpdateLayout>,
     mut manager: ResMut<Persistent<LayoutPresetManager>>,
     ui_state: Res<UiState>,
     mut toasts: ResMut<ToastsStorage>,
 ) -> bevy::prelude::Result<()> {
-    manager.presets.index_mut(trigger.0).layout = ui_state.state.clone();
+    manager.presets.index_mut(event.0).layout = ui_state.state.clone();
 
     manager.persist()?;
 

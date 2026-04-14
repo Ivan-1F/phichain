@@ -7,11 +7,11 @@ use bevy_persistent::Persistent;
 pub struct DeleteLayout(pub usize);
 
 pub fn delete_layout_observer(
-    trigger: On<DeleteLayout>,
+    event: On<DeleteLayout>,
     mut manager: ResMut<Persistent<LayoutPresetManager>>,
     mut toasts: ResMut<ToastsStorage>,
 ) -> bevy::prelude::Result<()> {
-    manager.presets.remove(trigger.0);
+    manager.presets.remove(event.0);
 
     manager.persist()?;
 

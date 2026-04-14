@@ -313,38 +313,38 @@ fn ui_system(world: &mut World) {
 }
 
 fn load_project_observer(
-    trigger: On<PickedProject>,
+    event: On<PickedProject>,
     mut commands: Commands,
     mut events: MessageWriter<LoadProject>,
 ) {
-    if let Some(ref root_dir) = trigger.event().0 {
+    if let Some(ref root_dir) = event.event().0 {
         events.write(LoadProject(root_dir.to_path_buf()));
         commands.remove_resource::<CreatingProject>();
     }
 }
 
 fn handle_select_illustration_observer(
-    trigger: On<PickedIllustration>,
+    event: On<PickedIllustration>,
     mut form: ResMut<CreateProjectForm>,
 ) {
-    form.illustration.clone_from(&trigger.event().0);
+    form.illustration.clone_from(&event.event().0);
 }
 
 fn handle_select_music_observer(
-    trigger: On<PickedMusic>,
+    event: On<PickedMusic>,
     mut form: ResMut<CreateProjectForm>,
 ) {
-    form.music.clone_from(&trigger.event().0);
+    form.music.clone_from(&event.event().0);
 }
 
 fn handle_create_project_observer(
-    trigger: On<PickedCreateProject>,
+    event: On<PickedCreateProject>,
     mut commands: Commands,
     form: Res<CreateProjectForm>,
     mut load_project_events: MessageWriter<LoadProject>,
     mut toasts: ResMut<ToastsStorage>,
 ) {
-    let Some(ref root_path) = trigger.event().0 else {
+    let Some(ref root_path) = event.event().0 else {
         return;
     };
 

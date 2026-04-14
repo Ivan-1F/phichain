@@ -7,11 +7,11 @@ use bevy::prelude::{Event, ResMut, Trigger};
 pub struct ApplyLayout(pub Layout);
 
 pub fn apply_layout_observer(
-    trigger: On<ApplyLayout>,
+    event: On<ApplyLayout>,
     mut ui_state: ResMut<UiState>,
     mut toasts: ResMut<ToastsStorage>,
 ) -> bevy::prelude::Result<()> {
-    ui_state.state = trigger.0.clone();
+    ui_state.state = event.0.clone();
 
     toasts.success(t!("menu_bar.layout.messages.applied"));
 

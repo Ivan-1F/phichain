@@ -149,14 +149,14 @@ fn load_project_system(
 }
 
 fn project_loading_result_observer(
-    trigger: On<ProjectLoadingResult>,
+    event: On<ProjectLoadingResult>,
 
     mut commands: Commands,
     mut recent_projects: ResMut<Persistent<RecentProjects>>,
     mut telemetry: MessageWriter<PushTelemetry>,
     mut toasts: ResMut<ToastsStorage>,
 ) {
-    let data = trigger.event();
+    let data = event.event();
 
     match &data.0 {
         Ok(data) => {

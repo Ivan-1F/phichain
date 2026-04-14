@@ -11,11 +11,11 @@ pub struct RenameLayout {
 }
 
 pub fn rename_layout_observer(
-    trigger: On<RenameLayout>,
+    event: On<RenameLayout>,
     mut manager: ResMut<Persistent<LayoutPresetManager>>,
     mut toasts: ResMut<ToastsStorage>,
 ) -> bevy::prelude::Result<()> {
-    manager.presets.index_mut(trigger.index).name = trigger.name.clone();
+    manager.presets.index_mut(event.index).name = event.name.clone();
 
     manager.persist()?;
 

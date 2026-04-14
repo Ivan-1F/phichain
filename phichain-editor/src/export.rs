@@ -145,11 +145,11 @@ fn export_official(path: &Path, project: &Project) -> anyhow::Result<PathBuf> {
 }
 
 fn export_official_observer(
-    trigger: On<PickedExportOfficial>,
+    event: On<PickedExportOfficial>,
     project: Res<Project>,
     mut toasts: ResMut<ToastsStorage>,
 ) {
-    let Some(ref path) = trigger.event().0 else {
+    let Some(ref path) = event.event().0 else {
         return;
     };
 
@@ -172,11 +172,11 @@ fn export_rpe(path: &Path, project: &Project) -> anyhow::Result<PathBuf> {
 }
 
 fn export_rpe_observer(
-    trigger: On<PickedExportRpe>,
+    event: On<PickedExportRpe>,
     project: Res<Project>,
     mut toasts: ResMut<ToastsStorage>,
 ) {
-    let Some(ref path) = trigger.event().0 else {
+    let Some(ref path) = event.event().0 else {
         return;
     };
 

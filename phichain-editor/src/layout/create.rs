@@ -8,13 +8,13 @@ use bevy_persistent::Persistent;
 pub struct NewLayout(pub String);
 
 pub fn create_layout_observer(
-    trigger: On<NewLayout>,
+    event: On<NewLayout>,
     mut manager: ResMut<Persistent<LayoutPresetManager>>,
     ui_state: Res<UiState>,
     mut toasts: ResMut<ToastsStorage>,
 ) -> bevy::prelude::Result<()> {
     manager.presets.push(LayoutPreset {
-        name: trigger.0.clone(),
+        name: event.0.clone(),
         layout: ui_state.state.clone(),
     });
 
