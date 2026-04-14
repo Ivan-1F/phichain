@@ -115,7 +115,7 @@ pub fn update_curve_note_track_system(
                     // TODO bevy-0.16: maybe this is unnecessary now
                     commands
                         .entity(child_of.parent())
-                        .remove_children(&[note_entity]);
+                        .detach_children(&[note_entity]);
                     commands.entity(note_entity).despawn();
                 }
             }

@@ -405,7 +405,7 @@ pub fn despawn_hold_component_system(
             // https://github.com/bevyengine/bevy/issues/12235
             commands
                 .entity(child_of.parent())
-                .remove_children(&[entity]);
+                .detach_children(&[entity]);
 
             commands.entity(entity).despawn();
         }
