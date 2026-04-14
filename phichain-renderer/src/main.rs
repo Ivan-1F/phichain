@@ -4,20 +4,24 @@ mod args;
 mod utils;
 
 use crate::args::Args;
-use bevy::app::{AppExit, RunMode, ScheduleRunnerPlugin};
+use bevy::app::{AppExit, ScheduleRunnerPlugin};
+use bevy::camera::RenderTarget;
 use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::image::TextureFormatPixelInfo;
 use bevy::log::LogPlugin;
 use bevy::prelude::*;
-use bevy::render::camera::RenderTarget;
-use bevy::render::render_asset::{RenderAssetUsages, RenderAssets};
-use bevy::render::render_graph::{NodeRunError, RenderGraph, RenderGraphContext, RenderLabel};
+use bevy::render::render_asset::RenderAssets;
+use bevy::render::render_graph::{
+    self, NodeRunError, RenderGraph, RenderGraphContext, RenderLabel,
+};
 use bevy::render::render_resource::{
-    Buffer, BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, Maintain, MapMode,
-    TexelCopyBufferInfo, TexelCopyBufferLayout, TextureDimension, TextureFormat, TextureUsages,
+    Buffer, BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, MapMode, PollType,
+    TexelCopyBufferInfo, TexelCopyBufferLayout, TextureFormat, TextureUsages,
 };
 use bevy::render::renderer::{RenderContext, RenderDevice, RenderQueue};
-use bevy::render::{render_graph, Extract, Render, RenderApp, RenderSystems};
+use bevy::render::{Extract, Render, RenderApp, RenderSystems};
+use bevy::window::ExitCondition;
+use bevy::winit::WinitPlugin;
 use bevy_kira_audio::AudioPlugin;
 use clap::Parser;
 use crossbeam_channel::{Receiver, Sender};
@@ -30,7 +34,7 @@ use std::ops::DerefMut;
 use std::process::{Child, Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 /// This will receive asynchronously any data sent from the render world
 #[derive(Resource, Deref)]
@@ -55,24 +59,23 @@ fn main() {
         .add_plugins(
             DefaultPlugins
                 .set(ImagePlugin::default_nearest())
-                // Do not create a window on startup.
                 .set(WindowPlugin {
                     primary_window: None,
-                    exit_condition: bevy::window::ExitCondition::DontExit,
-                    close_when_requested: false,
+                    exit_condition: ExitCondition::DontExit,
+                    ..default()
                 })
                 .set(LogPlugin {
                     filter: "warn,phichain_renderer=info".to_string(),
                     level: bevy::log::Level::DEBUG,
                     ..default()
-                }),
+                })
+                // WinitPlugin will panic in environments without a display server.
+                .disable::<WinitPlugin>(),
         )
         .add_plugins(ImageCopyPlugin)
         // headless frame capture
         .add_plugins(CaptureFramePlugin)
-        .add_plugins(ScheduleRunnerPlugin {
-            run_mode: RunMode::Loop { wait: None },
-        })
+        .add_plugins(ScheduleRunnerPlugin::run_loop(Duration::ZERO))
         .init_resource::<SceneController>()
         .add_plugins(AudioPlugin)
         .add_plugins(AssetsPlugin)
@@ -201,11 +204,7 @@ fn setup_system(
 
     commands.spawn((
         Camera2d,
-        Camera {
-            // render to image
-            target: render_target,
-            ..default()
-        },
+        render_target,
         Tonemapping::None,
         IsDefaultUiCamera,
     ));
@@ -256,25 +255,14 @@ fn setup_render_target(
     };
 
     // This is the texture that will be rendered to.
-    let mut render_target_image = Image::new_fill(
-        size,
-        TextureDimension::D2,
-        &[0; 4],
-        TextureFormat::bevy_default(),
-        RenderAssetUsages::default(),
-    );
-    render_target_image.texture_descriptor.usage |=
-        TextureUsages::COPY_SRC | TextureUsages::RENDER_ATTACHMENT | TextureUsages::TEXTURE_BINDING;
+    let mut render_target_image =
+        Image::new_target_texture(size.width, size.height, TextureFormat::bevy_default(), None);
+    render_target_image.texture_descriptor.usage |= TextureUsages::COPY_SRC;
     let render_target_image_handle = images.add(render_target_image);
 
     // This is the texture that will be copied to.
-    let cpu_image = Image::new_fill(
-        size,
-        TextureDimension::D2,
-        &[0; 4],
-        TextureFormat::bevy_default(),
-        RenderAssetUsages::default(),
-    );
+    let cpu_image =
+        Image::new_target_texture(size.width, size.height, TextureFormat::bevy_default(), None);
     let cpu_image_handle = images.add(cpu_image);
 
     commands.spawn(ImageCopier::new(
@@ -315,7 +303,8 @@ impl ImageCopier {
         size: Extent3d,
         render_device: &RenderDevice,
     ) -> ImageCopier {
-        let padded_bytes_per_row = RenderDevice::align_copy_bytes_per_row(size.width as usize) * 4;
+        let padded_bytes_per_row =
+            RenderDevice::align_copy_bytes_per_row((size.width) as usize) * 4;
 
         let cpu_buffer = render_device.create_buffer(&BufferDescriptor {
             label: None,
@@ -393,7 +382,7 @@ impl render_graph::Node for ImageCopyDriver {
                     layout: TexelCopyBufferLayout {
                         offset: 0,
                         bytes_per_row: Some(
-                            std::num::NonZeroU32::new(padded_bytes_per_row as u32)
+                            std::num::NonZero::<u32>::new(padded_bytes_per_row as u32)
                                 .unwrap()
                                 .into(),
                         ),
@@ -422,50 +411,20 @@ fn receive_image_from_buffer_system(
             continue;
         }
 
-        // Finally time to get our data back from the gpu.
-        // First we get a buffer slice which represents a chunk of the buffer (which we
-        // can't access yet).
-        // We want the whole thing so use unbounded range.
         let buffer_slice = image_copier.buffer.slice(..);
-
-        // Now things get complicated. WebGPU, for safety reasons, only allows either the GPU
-        // or CPU to access a buffer's contents at a time. We need to "map" the buffer which means
-        // flipping ownership of the buffer over to the CPU and making access legal. We do this
-        // with `BufferSlice::map_async`.
-        //
-        // The problem is that map_async is not an async function so we can't await it. What
-        // we need to do instead is pass in a closure that will be executed when the slice is
-        // either mapped or the mapping has failed.
-        //
-        // The problem with this is that we don't have a reliable way to wait in the main
-        // code for the buffer to be mapped and even worse, calling get_mapped_range or
-        // get_mapped_range_mut prematurely will cause a panic, not return an error.
-        //
-        // Using channels solves this as awaiting the receiving of a message from
-        // the passed closure will force the outside code to wait. It also doesn't hurt
-        // if the closure finishes before the outside code catches up as the message is
-        // buffered and receiving will just pick that up.
-        //
-        // It may also be worth noting that although on native, the usage of asynchronous
-        // channels is wholly unnecessary, for the sake of portability to Wasm
-        // we'll use async channels that work on both native and Wasm.
 
         let (s, r) = crossbeam_channel::bounded(1);
 
         // Maps the buffer so it can be read on the cpu
         buffer_slice.map_async(MapMode::Read, move |r| match r {
-            // This will execute once the gpu is ready, so after the call to poll()
             Ok(r) => s.send(r).expect("Failed to send map update"),
             Err(err) => panic!("Failed to map buffer {err}"),
         });
 
-        // In order for the mapping to be completed, one of three things must happen.
-        // One of those can be calling `Device::poll`. This isn't necessary on the web as devices
-        // are polled automatically but natively, we need to make sure this happens manually.
-        // `Maintain::Wait` will cause the thread to wait on native but not on WebGpu.
-
         // This blocks until the gpu is done executing everything
-        render_device.poll(Maintain::wait()).panic_on_timeout();
+        render_device
+            .poll(PollType::wait_indefinitely())
+            .expect("Failed to poll device for map async");
 
         // This blocks until the buffer is mapped
         r.recv().expect("Failed to receive the map_async message");
@@ -473,8 +432,6 @@ fn receive_image_from_buffer_system(
         // This could fail on app exit, if Main world clears resources (including receiver) while Render world still renders
         let _ = sender.send(buffer_slice.get_mapped_range().to_vec());
 
-        // We need to make sure all `BufferView`'s are dropped before we do what we're about
-        // to do.
         // Unmap so that we can copy to the staging buffer in the next iteration.
         image_copier.buffer.unmap();
     }
@@ -539,7 +496,7 @@ fn update_system(
                     // If the image became wider when copying from the texture to the buffer,
                     // then the data is reduced to its original size when copying from the buffer to the image.
                     let row_bytes = img_bytes.width() as usize
-                        * img_bytes.texture_descriptor.format.pixel_size();
+                        * img_bytes.texture_descriptor.format.pixel_size().unwrap();
                     let aligned_row_bytes = RenderDevice::align_copy_bytes_per_row(row_bytes);
                     if row_bytes == aligned_row_bytes {
                         img_bytes.data.as_mut().unwrap().clone_from(&image_data);
