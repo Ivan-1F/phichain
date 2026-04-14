@@ -5,7 +5,8 @@ use crate::project::project_loaded;
 use crate::settings::{AspectRatio, EditorSettings};
 use crate::utils;
 use crate::utils::convert::BevyEguiConvert;
-use bevy::{prelude::*, render::camera::Viewport};
+use bevy::camera::Viewport;
+use bevy::prelude::*;
 use bevy_persistent::Persistent;
 use egui::Ui;
 
