@@ -22,13 +22,13 @@ use phichain_game::serialization::{serialize_chart, SerializeChartParam, Seriali
 use serde_json::json;
 use std::path::PathBuf;
 
-/// A [Condition] represents the project is loaded
-pub fn project_loaded() -> impl Condition<()> {
+/// A [SystemCondition] represents the project is loaded
+pub fn project_loaded() -> impl SystemCondition<()> {
     resource_exists::<Project>.and(|| true)
 }
 
-/// A [Condition] represents the project is not loaded
-pub fn project_not_loaded() -> impl Condition<()> {
+/// A [SystemCondition] represents the project is not loaded
+pub fn project_not_loaded() -> impl SystemCondition<()> {
     IntoSystem::into_system(resource_exists::<Project>.map(|x| !x))
 }
 
