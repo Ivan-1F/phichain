@@ -3,7 +3,7 @@ use crate::editing::command::event::EditEvent;
 use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
-use crate::selection::{SelectEvent, Selected, SelectedLine};
+use crate::selection::{Select, Selected, SelectedLine};
 use crate::timeline::{Timeline, TimelineContext};
 use crate::timing::SeekTo;
 use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
@@ -130,7 +130,7 @@ impl Timeline for EventTimeline {
             Query<(&mut LineEvent, Entity, Option<&Selected>, Option<&Pending>)>,
             Query<&Events>,
             Res<BpmList>,
-            MessageWriter<SelectEvent>,
+            MessageWriter<Select>,
             MessageWriter<DoCommandEvent>,
             MessageWriter<SeekTo>,
         )> = SystemState::new(world);
@@ -292,7 +292,7 @@ impl Timeline for EventTimeline {
             }
 
             if response.clicked() {
-                select_events.write(SelectEvent(vec![entity]));
+                select_events.write(Select(vec![entity]));
             }
         }
 

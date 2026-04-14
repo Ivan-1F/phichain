@@ -3,7 +3,7 @@ use crate::editing::command::note::EditNote;
 use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
 use crate::editing::DoCommandEvent;
-use crate::selection::{SelectEvent, Selected, SelectedLine};
+use crate::selection::{Select, Selected, SelectedLine};
 use crate::tab::timeline::TimelineFilter;
 use crate::timeline::{Timeline, TimelineContext};
 use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
@@ -63,7 +63,7 @@ impl Timeline for NoteTimeline {
             Res<ImageAssets>,
             Res<Assets<Image>>,
             Res<EguiUserTextures>,
-            MessageWriter<SelectEvent>,
+            MessageWriter<Select>,
             MessageWriter<DoCommandEvent>,
         )> = SystemState::new(world);
 
@@ -236,7 +236,7 @@ impl Timeline for NoteTimeline {
                 }
 
                 if !handled {
-                    select_events.write(SelectEvent(vec![entity]));
+                    select_events.write(Select(vec![entity]));
                 }
             }
         }

@@ -16,14 +16,14 @@ pub struct SelectedLine(pub Entity);
 pub struct Selected;
 
 /// Select a vec of [Entity] in the world
-#[derive(Event)]
-pub struct SelectEvent(pub Vec<Entity>);
+#[derive(Message)]
+pub struct Select(pub Vec<Entity>);
 
 pub struct SelectionPlugin;
 
 impl Plugin for SelectionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<SelectEvent>()
+        app.add_event::<Select>()
             .add_systems(Update, handle_select_event.run_if(project_loaded()))
             .add_action(
                 "phichain.unselect_all",
@@ -106,7 +106,7 @@ pub fn unselect_all_system(
 
 pub fn handle_select_event(
     mut commands: Commands,
-    mut select_events: MessageReader<SelectEvent>,
+    mut select_events: MessageReader<Select>,
 
     keyboard: Res<ButtonInput<KeyCode>>,
 
