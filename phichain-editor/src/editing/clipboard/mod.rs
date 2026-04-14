@@ -94,9 +94,9 @@ fn cut_system(
         }
     }
 
-    event_writer.write(DoCommand(EditorCommand::CommandSequence(
-        CommandSequence(commands),
-    )));
+    event_writer.write(DoCommand(EditorCommand::CommandSequence(CommandSequence(
+        commands,
+    ))));
 
     Ok(())
 }

@@ -72,9 +72,9 @@ pub fn single_event_inspector(
                     {
                         let mut new_event = *event;
                         new_event.value = new_event.value.into_transition();
-                        event_writer.write(DoCommand(EditorCommand::EditEvent(
-                            EditEvent::new(entity, *event, new_event),
-                        )));
+                        event_writer.write(DoCommand(EditorCommand::EditEvent(EditEvent::new(
+                            entity, *event, new_event,
+                        ))));
                     }
                     if ui
                         .selectable_label(
@@ -85,9 +85,9 @@ pub fn single_event_inspector(
                     {
                         let mut new_event = *event;
                         new_event.value = new_event.value.into_constant();
-                        event_writer.write(DoCommand(EditorCommand::EditEvent(
-                            EditEvent::new(entity, *event, new_event),
-                        )));
+                        event_writer.write(DoCommand(EditorCommand::EditEvent(EditEvent::new(
+                            entity, *event, new_event,
+                        ))));
                     }
                 });
             },

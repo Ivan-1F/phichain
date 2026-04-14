@@ -47,20 +47,18 @@ fn move_up_system(
     if let Some((start, _)) = selected_notes.iter().min_by_key(|(note, _)| note.beat) {
         let to = timeline_settings.attach((start.beat + timeline_settings.minimum_beat()).value());
         let delta = to - start.beat;
-        event_writer.write(DoCommand(EditorCommand::CommandSequence(
-            CommandSequence(
-                selected_notes
-                    .iter()
-                    .map(|(note, entity)| {
-                        let new_note = Note {
-                            beat: note.beat + delta,
-                            ..*note
-                        };
-                        EditorCommand::EditNote(EditNote::new(entity, *note, new_note))
-                    })
-                    .collect(),
-            ),
-        )));
+        event_writer.write(DoCommand(EditorCommand::CommandSequence(CommandSequence(
+            selected_notes
+                .iter()
+                .map(|(note, entity)| {
+                    let new_note = Note {
+                        beat: note.beat + delta,
+                        ..*note
+                    };
+                    EditorCommand::EditNote(EditNote::new(entity, *note, new_note))
+                })
+                .collect(),
+        ))));
     }
 
     if let Some((start, _)) = selected_events
@@ -70,21 +68,19 @@ fn move_up_system(
         let to =
             timeline_settings.attach((start.start_beat + timeline_settings.minimum_beat()).value());
         let delta = to - start.start_beat;
-        event_writer.write(DoCommand(EditorCommand::CommandSequence(
-            CommandSequence(
-                selected_events
-                    .iter()
-                    .map(|(event, entity)| {
-                        let new_event = LineEvent {
-                            start_beat: event.start_beat + delta,
-                            end_beat: event.end_beat + delta,
-                            ..*event
-                        };
-                        EditorCommand::EditEvent(EditEvent::new(entity, *event, new_event))
-                    })
-                    .collect(),
-            ),
-        )));
+        event_writer.write(DoCommand(EditorCommand::CommandSequence(CommandSequence(
+            selected_events
+                .iter()
+                .map(|(event, entity)| {
+                    let new_event = LineEvent {
+                        start_beat: event.start_beat + delta,
+                        end_beat: event.end_beat + delta,
+                        ..*event
+                    };
+                    EditorCommand::EditEvent(EditEvent::new(entity, *event, new_event))
+                })
+                .collect(),
+        ))));
     }
 
     Ok(())
@@ -99,20 +95,18 @@ fn move_down_system(
     if let Some((start, _)) = selected_notes.iter().min_by_key(|(note, _)| note.beat) {
         let to = timeline_settings.attach((start.beat - timeline_settings.minimum_beat()).value());
         let delta = to - start.beat;
-        event_writer.write(DoCommand(EditorCommand::CommandSequence(
-            CommandSequence(
-                selected_notes
-                    .iter()
-                    .map(|(note, entity)| {
-                        let new_note = Note {
-                            beat: note.beat + delta,
-                            ..*note
-                        };
-                        EditorCommand::EditNote(EditNote::new(entity, *note, new_note))
-                    })
-                    .collect(),
-            ),
-        )));
+        event_writer.write(DoCommand(EditorCommand::CommandSequence(CommandSequence(
+            selected_notes
+                .iter()
+                .map(|(note, entity)| {
+                    let new_note = Note {
+                        beat: note.beat + delta,
+                        ..*note
+                    };
+                    EditorCommand::EditNote(EditNote::new(entity, *note, new_note))
+                })
+                .collect(),
+        ))));
     }
 
     if let Some((start, _)) = selected_events
@@ -122,21 +116,19 @@ fn move_down_system(
         let to =
             timeline_settings.attach((start.start_beat - timeline_settings.minimum_beat()).value());
         let delta = to - start.start_beat;
-        event_writer.write(DoCommand(EditorCommand::CommandSequence(
-            CommandSequence(
-                selected_events
-                    .iter()
-                    .map(|(event, entity)| {
-                        let new_event = LineEvent {
-                            start_beat: event.start_beat + delta,
-                            end_beat: event.end_beat + delta,
-                            ..*event
-                        };
-                        EditorCommand::EditEvent(EditEvent::new(entity, *event, new_event))
-                    })
-                    .collect(),
-            ),
-        )));
+        event_writer.write(DoCommand(EditorCommand::CommandSequence(CommandSequence(
+            selected_events
+                .iter()
+                .map(|(event, entity)| {
+                    let new_event = LineEvent {
+                        start_beat: event.start_beat + delta,
+                        end_beat: event.end_beat + delta,
+                        ..*event
+                    };
+                    EditorCommand::EditEvent(EditEvent::new(entity, *event, new_event))
+                })
+                .collect(),
+        ))));
     }
 
     Ok(())
@@ -153,20 +145,18 @@ fn move_left_system(
     {
         let to = timeline_settings.attach_x(start.x - timeline_settings.minimum_lane());
         let delta = to - start.x;
-        event_writer.write(DoCommand(EditorCommand::CommandSequence(
-            CommandSequence(
-                selected_notes
-                    .iter()
-                    .map(|(note, entity)| {
-                        let new_note = Note {
-                            x: note.x + delta,
-                            ..*note
-                        };
-                        EditorCommand::EditNote(EditNote::new(entity, *note, new_note))
-                    })
-                    .collect(),
-            ),
-        )));
+        event_writer.write(DoCommand(EditorCommand::CommandSequence(CommandSequence(
+            selected_notes
+                .iter()
+                .map(|(note, entity)| {
+                    let new_note = Note {
+                        x: note.x + delta,
+                        ..*note
+                    };
+                    EditorCommand::EditNote(EditNote::new(entity, *note, new_note))
+                })
+                .collect(),
+        ))));
     }
 
     Ok(())
@@ -183,20 +173,18 @@ fn move_right_system(
     {
         let to = timeline_settings.attach_x(start.x + timeline_settings.minimum_lane());
         let delta = to - start.x;
-        event_writer.write(DoCommand(EditorCommand::CommandSequence(
-            CommandSequence(
-                selected_notes
-                    .iter()
-                    .map(|(note, entity)| {
-                        let new_note = Note {
-                            x: note.x + delta,
-                            ..*note
-                        };
-                        EditorCommand::EditNote(EditNote::new(entity, *note, new_note))
-                    })
-                    .collect(),
-            ),
-        )));
+        event_writer.write(DoCommand(EditorCommand::CommandSequence(CommandSequence(
+            selected_notes
+                .iter()
+                .map(|(note, entity)| {
+                    let new_note = Note {
+                        x: note.x + delta,
+                        ..*note
+                    };
+                    EditorCommand::EditNote(EditNote::new(entity, *note, new_note))
+                })
+                .collect(),
+        ))));
     }
 
     Ok(())

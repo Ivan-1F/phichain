@@ -5,7 +5,7 @@ use crate::events::note::NoteEventPlugin;
 use bevy::app::{App, Plugin};
 use bevy::ecs::system::SystemState;
 use bevy::log::debug;
-use bevy::prelude::{Message, MessageReader, IntoScheduleConfigs, Update, World};
+use bevy::prelude::{IntoScheduleConfigs, Message, MessageReader, Update, World};
 use phichain_game::GameSet;
 use std::fmt::Debug;
 

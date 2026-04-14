@@ -150,10 +150,7 @@ fn handle_push_telemetry_event_system(
 }
 
 fn send_startup_event_system(mut events: MessageWriter<PushTelemetry>) {
-    events.write(PushTelemetry::new(
-        "phichain.editor.started",
-        json!({}),
-    ));
+    events.write(PushTelemetry::new("phichain.editor.started", json!({})));
 }
 
 fn log_telemetry_hint_system() {

@@ -280,18 +280,10 @@ pub fn update_note_texture_system(
 }
 
 #[derive(Debug, Component, Default, Clone)]
-#[require(
-    Sprite,
-    Anchor::TOP_CENTER,
-    HoldComponent,
-)]
+#[require(Sprite, Anchor::TOP_CENTER, HoldComponent)]
 pub struct HoldHead;
 #[derive(Debug, Component, Default, Clone)]
-#[require(
-    Sprite,
-    Anchor::BOTTOM_CENTER,
-    HoldComponent,
-)]
+#[require(Sprite, Anchor::BOTTOM_CENTER, HoldComponent)]
 pub struct HoldTail;
 #[derive(Debug, Component, Default, Clone)]
 pub struct HoldComponent;

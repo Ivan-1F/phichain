@@ -144,9 +144,10 @@ fn create_event_system(
                         }
                     }
                     commands.entity(entity).despawn();
-                    event.write(DoCommand(EditorCommand::CreateEvent(
-                        CreateEvent::new(line_entity, new_event),
-                    )));
+                    event.write(DoCommand(EditorCommand::CreateEvent(CreateEvent::new(
+                        line_entity,
+                        new_event,
+                    ))));
                 } else {
                     let (track, beat) = calc_event_attrs();
                     let kind = LineEventKind::try_from(track).expect("Unknown event track");

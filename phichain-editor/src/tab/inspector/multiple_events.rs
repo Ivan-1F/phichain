@@ -37,9 +37,9 @@ pub fn multiple_events_inspector(
                 })
                 .collect::<Vec<_>>();
 
-            event_writer.write(DoCommand(EditorCommand::CommandSequence(
-                CommandSequence(commands),
-            )));
+            event_writer.write(DoCommand(EditorCommand::CommandSequence(CommandSequence(
+                commands,
+            ))));
         }
     });
 

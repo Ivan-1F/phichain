@@ -5,7 +5,7 @@ use crate::translation::Languages;
 use crate::ui::sides::SidesExt;
 use crate::ui::widgets::language_combobox::language_combobox;
 use crate::{
-    file::{pick_file, pick_folder, PickedFile, FilePickingAppExt},
+    file::{pick_file, pick_folder, FilePickingAppExt, PickedFile},
     notification::{ToastsExt, ToastsStorage},
     project::{create_project, project_not_loaded, LoadProject, ProjectMeta},
 };

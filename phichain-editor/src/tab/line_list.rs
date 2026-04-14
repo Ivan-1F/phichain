@@ -411,30 +411,30 @@ impl<'w, 's> LineList<'w, 's> {
 
             self.params
                 .commands
-                .write_message(DoCommand(EditorCommand::CommandSequence(
-                    CommandSequence(vec![
+                .write_message(DoCommand(EditorCommand::CommandSequence(CommandSequence(
+                    vec![
                         EditorCommand::CreateLine(CreateLine::with_target(new_line_entity)),
                         EditorCommand::MoveLineAsChild(MoveLineAsChild::new(
                             entity,
                             Some(new_line_entity),
                         )),
-                    ]),
-                )));
+                    ],
+                ))));
         }
 
         if add_child {
             let new_line_entity = self.params.commands.spawn_empty().id();
             self.params
                 .commands
-                .write_message(DoCommand(EditorCommand::CommandSequence(
-                    CommandSequence(vec![
+                .write_message(DoCommand(EditorCommand::CommandSequence(CommandSequence(
+                    vec![
                         EditorCommand::CreateLine(CreateLine::with_target(new_line_entity)),
                         EditorCommand::MoveLineAsChild(MoveLineAsChild::new(
                             new_line_entity,
                             Some(entity),
                         )),
-                    ]),
-                )));
+                    ],
+                ))));
         }
     }
 }

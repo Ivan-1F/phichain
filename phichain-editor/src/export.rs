@@ -1,5 +1,5 @@
 use crate::action::ActionRegistrationExt;
-use crate::file::{pick_folder, PickedFile, FilePickingAppExt};
+use crate::file::{pick_folder, FilePickingAppExt, PickedFile};
 use crate::hotkey::modifier::Modifier;
 use crate::hotkey::Hotkey;
 use crate::notification::{ToastsExt, ToastsStorage};
@@ -17,7 +17,6 @@ use std::fs;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use zip::write::SimpleFileOptions;
-
 
 struct ExportOfficialPick;
 struct ExportRpePick;
