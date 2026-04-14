@@ -1,7 +1,7 @@
 use crate::layout::ui_state::UiState;
 use crate::layout::Layout;
 use crate::notification::{ToastsExt, ToastsStorage};
-use bevy::prelude::{Event, ResMut, Trigger};
+use bevy::prelude::{Event, On, ResMut};
 
 #[derive(Debug, Clone, Event)]
 pub struct ApplyLayout(pub Layout);

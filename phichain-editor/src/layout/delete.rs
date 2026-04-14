@@ -1,6 +1,6 @@
 use crate::layout::LayoutPresetManager;
 use crate::notification::{ToastsExt, ToastsStorage};
-use bevy::prelude::{Event, ResMut, Trigger};
+use bevy::prelude::{Event, On, ResMut};
 use bevy_persistent::Persistent;
 
 #[derive(Debug, Clone, Event)]
