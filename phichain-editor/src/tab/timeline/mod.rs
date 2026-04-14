@@ -49,7 +49,7 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
             } else {
                 // normal scroll: seek
                 let settings = world.resource::<Persistent<EditorSettings>>();
-                world.send_event(SeekEvent(
+                world.write_message(SeekEvent(
                     scroll_delta / 5000.0 * settings.general.timeline_scroll_sensitivity,
                 ));
 

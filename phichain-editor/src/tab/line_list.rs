@@ -411,7 +411,7 @@ impl<'w, 's> LineList<'w, 's> {
 
             self.params
                 .commands
-                .send_event(DoCommandEvent(EditorCommand::CommandSequence(
+                .write_message(DoCommandEvent(EditorCommand::CommandSequence(
                     CommandSequence(vec![
                         EditorCommand::CreateLine(CreateLine::with_target(new_line_entity)),
                         EditorCommand::MoveLineAsChild(MoveLineAsChild::new(
@@ -426,7 +426,7 @@ impl<'w, 's> LineList<'w, 's> {
             let new_line_entity = self.params.commands.spawn_empty().id();
             self.params
                 .commands
-                .send_event(DoCommandEvent(EditorCommand::CommandSequence(
+                .write_message(DoCommandEvent(EditorCommand::CommandSequence(
                     CommandSequence(vec![
                         EditorCommand::CreateLine(CreateLine::with_target(new_line_entity)),
                         EditorCommand::MoveLineAsChild(MoveLineAsChild::new(

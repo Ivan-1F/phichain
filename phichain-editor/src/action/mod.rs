@@ -37,7 +37,7 @@ impl ActionRegistry {
         let id = id.into();
         if let Some(action) = self.0.get_mut(&id) {
             if action.is_heavy {
-                world.send_event(PushTelemetryEvent::new(
+                world.write_message(PushTelemetryEvent::new(
                     "phichain.editor.action.invoked",
                     json!({ "action": id }),
                 ));

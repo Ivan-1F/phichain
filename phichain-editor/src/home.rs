@@ -306,7 +306,7 @@ fn ui_system(world: &mut World) {
         }
 
         if let Some(open) = open {
-            world.send_event(LoadProjectEvent(open));
+            world.write_message(LoadProjectEvent(open));
             world.remove_resource::<CreatingProject>();
         }
     });
