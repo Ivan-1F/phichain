@@ -91,12 +91,12 @@ impl Plugin for AssetsPlugin {
 
 #[cfg(feature = "egui")]
 fn load_assets_system(mut egui_context: bevy_egui::EguiContexts, image_assets: Res<ImageAssets>) {
-    egui_context.add_image(image_assets.tap.clone());
-    egui_context.add_image(image_assets.drag.clone());
-    egui_context.add_image(image_assets.hold.clone());
-    egui_context.add_image(image_assets.flick.clone());
-    egui_context.add_image(image_assets.tap_highlight.clone());
-    egui_context.add_image(image_assets.drag_highlight.clone());
-    egui_context.add_image(image_assets.hold_highlight.clone());
-    egui_context.add_image(image_assets.flick_highlight.clone());
+    egui_context.add_image(bevy_egui::EguiTextureHandle::Strong(image_assets.tap.clone()));
+    egui_context.add_image(bevy_egui::EguiTextureHandle::Strong(image_assets.drag.clone()));
+    egui_context.add_image(bevy_egui::EguiTextureHandle::Strong(image_assets.hold.clone()));
+    egui_context.add_image(bevy_egui::EguiTextureHandle::Strong(image_assets.flick.clone()));
+    egui_context.add_image(bevy_egui::EguiTextureHandle::Strong(image_assets.tap_highlight.clone()));
+    egui_context.add_image(bevy_egui::EguiTextureHandle::Strong(image_assets.drag_highlight.clone()));
+    egui_context.add_image(bevy_egui::EguiTextureHandle::Strong(image_assets.hold_highlight.clone()));
+    egui_context.add_image(bevy_egui::EguiTextureHandle::Strong(image_assets.flick_highlight.clone()));
 }
