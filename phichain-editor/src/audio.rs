@@ -45,7 +45,7 @@ impl Plugin for AudioPlugin {
 
 // TODO: move this to separate plugin
 fn pause_observer(
-    _: Trigger<Pause>,
+    _: On<Pause>,
 
     handle: Res<InstanceHandle>,
     mut paused: ResMut<Paused>,
@@ -64,7 +64,7 @@ fn pause_observer(
 }
 
 fn resume_observer(
-    _: Trigger<Resume>,
+    _: On<Resume>,
 
     handle: Res<InstanceHandle>,
     mut paused: ResMut<Paused>,

@@ -11,7 +11,7 @@ pub struct RenameLayout {
 }
 
 pub fn rename_layout_observer(
-    trigger: Trigger<RenameLayout>,
+    trigger: On<RenameLayout>,
     mut manager: ResMut<Persistent<LayoutPresetManager>>,
     mut toasts: ResMut<ToastsStorage>,
 ) -> bevy::prelude::Result<()> {

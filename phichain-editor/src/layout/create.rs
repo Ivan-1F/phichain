@@ -8,7 +8,7 @@ use bevy_persistent::Persistent;
 pub struct NewLayout(pub String);
 
 pub fn create_layout_observer(
-    trigger: Trigger<NewLayout>,
+    trigger: On<NewLayout>,
     mut manager: ResMut<Persistent<LayoutPresetManager>>,
     ui_state: Res<UiState>,
     mut toasts: ResMut<ToastsStorage>,

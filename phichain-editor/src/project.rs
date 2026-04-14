@@ -149,7 +149,7 @@ fn load_project_system(
 }
 
 fn project_loading_result_observer(
-    trigger: Trigger<ProjectLoadingResult>,
+    trigger: On<ProjectLoadingResult>,
 
     mut commands: Commands,
     mut recent_projects: ResMut<Persistent<RecentProjects>>,

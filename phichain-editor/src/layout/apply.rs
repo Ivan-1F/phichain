@@ -7,7 +7,7 @@ use bevy::prelude::{Event, ResMut, Trigger};
 pub struct ApplyLayout(pub Layout);
 
 pub fn apply_layout_observer(
-    trigger: Trigger<ApplyLayout>,
+    trigger: On<ApplyLayout>,
     mut ui_state: ResMut<UiState>,
     mut toasts: ResMut<ToastsStorage>,
 ) -> bevy::prelude::Result<()> {

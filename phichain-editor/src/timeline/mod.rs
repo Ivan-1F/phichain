@@ -330,7 +330,7 @@ pub mod common {
 }
 
 fn clean_dangle_timelines_observer(
-    trigger: Trigger<OnRemove, Line>,
+    trigger: On<OnRemove, Line>,
     mut timeline_settings: ResMut<TimelineSettings>,
 ) {
     if let Some(index) =

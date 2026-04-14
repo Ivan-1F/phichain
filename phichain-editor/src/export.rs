@@ -145,7 +145,7 @@ fn export_official(path: &Path, project: &Project) -> anyhow::Result<PathBuf> {
 }
 
 fn export_official_observer(
-    trigger: Trigger<PickedExportOfficial>,
+    trigger: On<PickedExportOfficial>,
     project: Res<Project>,
     mut toasts: ResMut<ToastsStorage>,
 ) {
@@ -172,7 +172,7 @@ fn export_rpe(path: &Path, project: &Project) -> anyhow::Result<PathBuf> {
 }
 
 fn export_rpe_observer(
-    trigger: Trigger<PickedExportRpe>,
+    trigger: On<PickedExportRpe>,
     project: Res<Project>,
     mut toasts: ResMut<ToastsStorage>,
 ) {

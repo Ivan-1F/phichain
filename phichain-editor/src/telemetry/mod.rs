@@ -192,7 +192,7 @@ fn flush_telemetry_queue_system(
 
     reqwest
         .send(request)
-        .on_response(move |trigger: Trigger<ReqwestResponseEvent>| {
+        .on_response(move |trigger: On<ReqwestResponseEvent>| {
             let response = trigger.event();
             if response.status().is_success() {
                 info!(
@@ -206,7 +206,7 @@ fn flush_telemetry_queue_system(
                 );
             }
         })
-        .on_error(|trigger: Trigger<ReqwestErrorEvent>| {
+        .on_error(|trigger: On<ReqwestErrorEvent>| {
             let e = &trigger.event().0;
             error!("Failed to send telemetry data, request failed: {:?}", e);
         });

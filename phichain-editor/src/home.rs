@@ -313,7 +313,7 @@ fn ui_system(world: &mut World) {
 }
 
 fn load_project_observer(
-    trigger: Trigger<PickedProject>,
+    trigger: On<PickedProject>,
     mut commands: Commands,
     mut events: MessageWriter<LoadProject>,
 ) {
@@ -324,21 +324,21 @@ fn load_project_observer(
 }
 
 fn handle_select_illustration_observer(
-    trigger: Trigger<PickedIllustration>,
+    trigger: On<PickedIllustration>,
     mut form: ResMut<CreateProjectForm>,
 ) {
     form.illustration.clone_from(&trigger.event().0);
 }
 
 fn handle_select_music_observer(
-    trigger: Trigger<PickedMusic>,
+    trigger: On<PickedMusic>,
     mut form: ResMut<CreateProjectForm>,
 ) {
     form.music.clone_from(&trigger.event().0);
 }
 
 fn handle_create_project_observer(
-    trigger: Trigger<PickedCreateProject>,
+    trigger: On<PickedCreateProject>,
     mut commands: Commands,
     form: Res<CreateProjectForm>,
     mut load_project_events: MessageWriter<LoadProject>,

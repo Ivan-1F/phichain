@@ -9,7 +9,7 @@ use std::ops::IndexMut;
 pub struct UpdateLayout(pub usize);
 
 pub fn update_layout_observer(
-    trigger: Trigger<UpdateLayout>,
+    trigger: On<UpdateLayout>,
     mut manager: ResMut<Persistent<LayoutPresetManager>>,
     ui_state: Res<UiState>,
     mut toasts: ResMut<ToastsStorage>,

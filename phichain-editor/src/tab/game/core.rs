@@ -108,7 +108,7 @@ fn update_line_tint_system(
 #[derive(Debug, Component)]
 struct AnchorMarker;
 
-fn create_anchor_marker_observer(trigger: Trigger<OnAdd, Line>, mut commands: Commands) {
+fn create_anchor_marker_observer(trigger: On<OnAdd, Line>, mut commands: Commands) {
     let shape = shapes::Circle {
         radius: 4.0,
         ..default()
