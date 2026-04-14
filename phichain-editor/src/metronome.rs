@@ -15,15 +15,11 @@ struct MetronomeState {
     last_beat_played: Option<i32>,
 }
 
-#[derive(Event, Default)]
-pub struct ToggleMetronomeEvent;
-
 pub struct MetronomePlugin;
 
 impl Plugin for MetronomePlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<ToggleMetronomeEvent>()
-            .init_resource::<MetronomeState>()
+        app.init_resource::<MetronomeState>()
             .add_systems(Update, play_metronome_system.in_set(GameSet))
             .add_action(
                 "phichain.metronome.toggle",
