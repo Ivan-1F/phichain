@@ -195,7 +195,7 @@ impl Timeline for NoteTimeline {
                         .clicked()
                     {
                         start_track_note.replace(entity);
-                        ui.close_menu();
+                        ui.close();
                     }
                 });
             }

@@ -210,7 +210,7 @@ impl<'w, 's> LineList<'w, 's> {
                                         Some(self.params.selected_line.0),
                                     )),
                                 ));
-                                ui.close_menu();
+                                ui.close();
                             }
                         });
                         #[allow(clippy::collapsible_if)]
@@ -224,7 +224,7 @@ impl<'w, 's> LineList<'w, 's> {
                                         entity, None,
                                     )),
                                 ));
-                                ui.close_menu();
+                                ui.close();
                             }
                         }
                         ui.separator();
@@ -233,11 +233,11 @@ impl<'w, 's> LineList<'w, 's> {
                             .clicked()
                         {
                             add_parent.replace(parent.map(|x| x.parent()));
-                            ui.close_menu();
+                            ui.close();
                         }
                         if ui.button(t!("tab.line_list.hierarchy.add_child")).clicked() {
                             add_child = true;
-                            ui.close_menu();
+                            ui.close();
                         }
                         ui.separator();
                         ui.add_enabled_ui(!under_selected_node && !selected, |ui| {
@@ -245,7 +245,7 @@ impl<'w, 's> LineList<'w, 's> {
                                 self.params.do_command_event.write(DoCommand(
                                     EditorCommand::RemoveLine(RemoveLine::new(entity)),
                                 ));
-                                ui.close_menu();
+                                ui.close();
                             }
                         });
                     });

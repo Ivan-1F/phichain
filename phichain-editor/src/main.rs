@@ -262,13 +262,13 @@ fn ui_system(world: &mut World) {
                     world.resource_scope(|world, mut registry: Mut<ActionRegistry>| {
                         registry.run_action(world, "phichain.save_project");
                     });
-                    ui.close_menu();
+                    ui.close();
                 }
                 if ui.button(t!("menu_bar.file.close")).clicked() {
                     world.resource_scope(|world, mut registry: Mut<ActionRegistry>| {
                         registry.run_action(world, "phichain.close_project");
                     });
-                    ui.close_menu();
+                    ui.close();
                 }
                 ui.separator();
                 if ui.button(t!("menu_bar.file.quit")).clicked() {
@@ -293,10 +293,10 @@ fn ui_system(world: &mut World) {
                                     if let Some(node) = ui_state.state.find_tab(tab) {
                                         ui_state.state.remove_tab(node);
                                     }
-                                    ui.close_menu();
+                                    ui.close();
                                 } else {
                                     ui_state.state.add_window(vec![tab.clone()]);
-                                    ui.close_menu();
+                                    ui.close();
                                 }
                             }
                         }
@@ -310,7 +310,7 @@ fn ui_system(world: &mut World) {
                     world.resource_scope(|world, mut actions: Mut<ActionRegistry>| {
                         actions.run_action(world, "phichain.export_as_official");
                     });
-                    ui.close_menu();
+                    ui.close();
                 }
             });
 

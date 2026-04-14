@@ -92,7 +92,7 @@ pub fn timeline_setting_tab(In(mut ui): In<Ui>, world: &mut World) {
                         timeline_settings
                             .container
                             .push_right(TimelineItem::Note(NoteTimeline::new_binding()));
-                        ui.close_menu();
+                        ui.close();
                     }
                     ui.separator();
                     for (line, entity) in line_query.iter() {
@@ -101,7 +101,7 @@ pub fn timeline_setting_tab(In(mut ui): In<Ui>, world: &mut World) {
                             timeline_settings
                                 .container
                                 .push_right(TimelineItem::Note(NoteTimeline::new(entity)));
-                            ui.close_menu();
+                            ui.close();
                         }
                     }
                 },
@@ -118,7 +118,7 @@ pub fn timeline_setting_tab(In(mut ui): In<Ui>, world: &mut World) {
                         timeline_settings
                             .container
                             .push_right(TimelineItem::Event(EventTimeline::new_binding()));
-                        ui.close_menu();
+                        ui.close();
                     }
                     ui.separator();
                     for (line, entity) in line_query.iter() {
@@ -126,7 +126,7 @@ pub fn timeline_setting_tab(In(mut ui): In<Ui>, world: &mut World) {
                             timeline_settings
                                 .container
                                 .push_right(TimelineItem::Event(EventTimeline::new(entity)));
-                            ui.close_menu();
+                            ui.close();
                         }
                     }
                 },
