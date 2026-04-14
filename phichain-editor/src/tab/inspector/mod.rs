@@ -12,7 +12,7 @@ use crate::tab::inspector::multiple_events::multiple_events_inspector;
 use crate::tab::inspector::multiple_notes::multiple_notes_inspector;
 use crate::tab::inspector::single_event::single_event_inspector;
 use crate::tab::inspector::single_note::single_note_inspector;
-use bevy::ecs::system::{RegisteredSystemError, SystemId, SystemParamValidationError};
+use bevy::ecs::system::{RegisteredSystemError, SystemId};
 use bevy::prelude::*;
 use egui::{Ui, UiBuilder};
 use phichain_chart::event::LineEvent;
