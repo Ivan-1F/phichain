@@ -61,7 +61,7 @@ impl EditorEventAppExt for App {
     where
         T: EditorEvent,
     {
-        self.add_event::<T>()
+        self.add_message::<T>()
             .add_systems(Update, handle_editor_event_system::<T>.in_set(GameSet));
 
         self

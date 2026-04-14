@@ -23,7 +23,7 @@ pub struct SelectionPlugin;
 
 impl Plugin for SelectionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<Select>()
+        app.add_message::<Select>()
             .add_systems(Update, handle_select_event.run_if(project_loaded()))
             .add_action(
                 "phichain.unselect_all",

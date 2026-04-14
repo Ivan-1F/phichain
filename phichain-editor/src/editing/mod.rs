@@ -29,7 +29,7 @@ pub struct EditingPlugin;
 
 impl Plugin for EditingPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<DoCommand>()
+        app.add_message::<DoCommand>()
             .init_resource::<EditorHistory>()
             .add_plugins(DeleteSelectedPlugin)
             .add_plugins(CreateNotePlugin)

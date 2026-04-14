@@ -54,8 +54,8 @@ impl Plugin for TimingPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(ChartTime(0.0))
             .insert_resource(Paused(true))
-            .add_event::<Seek>()
-            .add_event::<SeekTo>()
+            .add_message::<Seek>()
+            .add_message::<SeekTo>()
             .add_hotkey(
                 TimingHotkeys::Backward,
                 Hotkey::new(KeyCode::BracketLeft, vec![]),

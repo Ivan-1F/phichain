@@ -45,7 +45,7 @@ pub struct TelemetryPlugin;
 impl Plugin for TelemetryPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(TelemetryManager::new())
-            .add_event::<PushTelemetry>()
+            .add_message::<PushTelemetry>()
             .add_systems(Update, handle_push_telemetry_event_system)
             .add_systems(
                 Update,
