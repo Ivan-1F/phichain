@@ -256,7 +256,7 @@ fn ui_system(world: &mut World) {
     let fps = fps_display.displayed_fps;
 
     egui::TopBottomPanel::top("phichain.MenuBar").show(ctx, |ui| {
-        egui::menu::bar(ui, |ui| {
+        egui::MenuBar::new().ui(ui, |ui| {
             ui.menu_button(t!("menu_bar.file.title"), |ui| {
                 if ui.button(t!("menu_bar.file.save")).clicked() {
                     world.resource_scope(|world, mut registry: Mut<ActionRegistry>| {
