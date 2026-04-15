@@ -22,4 +22,4 @@ thiserror = "2.0.17"
 uuid = { version = "1.13.1", features = ["v4"] }
 
 [features]
-bevy = ["bevy/bevy_sprite"]
+bevy = ["bevy/bevy_sprite", "bevy/bevy_picking"]
