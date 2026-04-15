@@ -6,7 +6,7 @@ use phichain_chart::note::{Note, NoteKind};
 use crate::editing::command::note::CreateNote;
 use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
-use crate::editing::DoCommandEvent;
+use crate::editing::DoCommand;
 use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
 use crate::identifier::{Identifier, IntoIdentifier};
 use crate::schedule::EditorSet;
@@ -70,7 +70,7 @@ fn create_note_system(
     window_query: Query<&Window>,
     bpm_list: Res<BpmList>,
 
-    mut event: EventWriter<DoCommandEvent>,
+    mut event: MessageWriter<DoCommand>,
 
     mut pending_note_query: Query<(&mut Note, Entity), With<Pending>>,
 ) -> Result {
@@ -118,7 +118,7 @@ fn create_note_system(
 
                 let note = Note::new(kind, true, beat, x * CANVAS_WIDTH, 1.0);
 
-                event.write(DoCommandEvent(EditorCommand::CreateNote(CreateNote::new(
+                event.write(DoCommand(EditorCommand::CreateNote(CreateNote::new(
                     line_entity,
                     note,
                 ))));
@@ -149,7 +149,7 @@ fn create_note_system(
             if hotkey.just_pressed(CreateNoteHotkeys::PlaceHold) {
                 if let Ok((pending_note, entity)) = pending_note_query.single() {
                     commands.entity(entity).despawn();
-                    event.write(DoCommandEvent(EditorCommand::CreateNote(CreateNote::new(
+                    event.write(DoCommand(EditorCommand::CreateNote(CreateNote::new(
                         line_entity,
                         *pending_note,
                     ))));

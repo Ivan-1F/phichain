@@ -15,15 +15,11 @@ struct MetronomeState {
     last_beat_played: Option<i32>,
 }
 
-#[derive(Event, Default)]
-pub struct ToggleMetronomeEvent;
-
 pub struct MetronomePlugin;
 
 impl Plugin for MetronomePlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<ToggleMetronomeEvent>()
-            .init_resource::<MetronomeState>()
+        app.init_resource::<MetronomeState>()
             .add_systems(Update, play_metronome_system.in_set(GameSet))
             .add_action(
                 "phichain.metronome.toggle",
@@ -63,7 +59,9 @@ fn play_metronome_system(
         if (0.0..0.08).contains(&time_diff) {
             audio
                 .play(assets.metronome.clone())
-                .with_volume(Volume::Amplitude(settings.audio.metronome_volume as f64));
+                .with_volume(crate::utils::audio::amplitude_to_db(
+                    settings.audio.metronome_volume,
+                ));
 
             metronome_state.last_beat_played = Some(current_beat.beat());
         }

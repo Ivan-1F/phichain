@@ -330,7 +330,7 @@ pub mod common {
 }
 
 fn clean_dangle_timelines_observer(
-    trigger: Trigger<OnRemove, Line>,
+    remove: On<Remove, Line>,
     mut timeline_settings: ResMut<TimelineSettings>,
 ) {
     if let Some(index) =
@@ -339,8 +339,8 @@ fn clean_dangle_timelines_observer(
             .timelines
             .iter()
             .position(|x| match &x.timeline {
-                TimelineItem::Note(timeline) => timeline.0 == Some(trigger.target()),
-                TimelineItem::Event(timeline) => timeline.0 == Some(trigger.target()),
+                TimelineItem::Note(timeline) => timeline.0 == Some(remove.entity),
+                TimelineItem::Event(timeline) => timeline.0 == Some(remove.entity),
             })
     {
         info!("Removed timeline due to removal of line");

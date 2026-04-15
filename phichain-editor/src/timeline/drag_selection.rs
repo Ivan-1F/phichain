@@ -1,4 +1,4 @@
-use crate::selection::SelectEvent;
+use crate::selection::Select;
 use crate::timeline::{Timeline, TimelineContext};
 use crate::utils::convert::BevyEguiConvert;
 use bevy::app::App;
@@ -82,9 +82,9 @@ pub fn timeline_drag_selection(ui: &mut Ui, world: &mut World) -> Result {
                     );
                     all.extend(selected);
                 }
-                let mut state: SystemState<EventWriter<SelectEvent>> = SystemState::new(world);
+                let mut state: SystemState<MessageWriter<Select>> = SystemState::new(world);
                 let mut select_events = state.get_mut(world);
-                select_events.write(SelectEvent(all));
+                select_events.write(Select(all));
             }
         }
     }

@@ -1,7 +1,7 @@
 use crate::action::ActionRegistrationExt;
 use crate::editing::command::line::{CreateLine, CreateLineFromSelected};
 use crate::editing::command::EditorCommand;
-use crate::editing::DoCommandEvent;
+use crate::editing::DoCommand;
 use crate::hotkey::modifier::Modifier;
 use crate::hotkey::Hotkey;
 use crate::selection::SelectedLine;
@@ -28,18 +28,18 @@ impl Plugin for LineEditingPlugin {
     }
 }
 
-fn create_line_system(mut do_command_event: EventWriter<DoCommandEvent>) -> Result {
-    do_command_event.write(DoCommandEvent(EditorCommand::CreateLine(CreateLine::new())));
+fn create_line_system(mut do_command_event: MessageWriter<DoCommand>) -> Result {
+    do_command_event.write(DoCommand(EditorCommand::CreateLine(CreateLine::new())));
     // TODO: switch to this line
 
     Ok(())
 }
 
 fn create_line_from_selected_system(
-    mut do_command_event: EventWriter<DoCommandEvent>,
+    mut do_command_event: MessageWriter<DoCommand>,
     selected_line: Res<SelectedLine>,
 ) -> Result {
-    do_command_event.write(DoCommandEvent(EditorCommand::CreateLineFromSelected(
+    do_command_event.write(DoCommand(EditorCommand::CreateLineFromSelected(
         CreateLineFromSelected::new(selected_line.0),
     )));
     // TODO: switch to this line

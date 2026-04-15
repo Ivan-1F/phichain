@@ -37,7 +37,7 @@ impl RegisteredTab {
                 .max_rect(ui.max_rect())
                 .layout(*ui.layout()),
         );
-        self.system.run(child, world);
+        let _ = self.system.run(child, world);
     }
 }
 

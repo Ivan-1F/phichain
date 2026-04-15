@@ -3,7 +3,7 @@ use crate::editing::command::curve_note_track::RemoveCurveNoteTrack;
 use crate::editing::command::event::RemoveEvent;
 use crate::editing::command::note::RemoveNote;
 use crate::editing::command::{CommandSequence, EditorCommand};
-use crate::editing::DoCommandEvent;
+use crate::editing::DoCommand;
 use crate::hotkey::Hotkey;
 use crate::selection::Selected;
 use bevy::prelude::*;
@@ -29,7 +29,7 @@ fn delete_selected_system(
         Query<Entity, (With<Selected>, With<LineEvent>)>,
         Query<Entity, (With<Selected>, With<CurveNoteTrack>)>,
     )>,
-    mut events: EventWriter<DoCommandEvent>,
+    mut events: MessageWriter<DoCommand>,
 ) -> Result {
     let mut sequence = CommandSequence(vec![]);
     for note in &set.p0() {
@@ -49,7 +49,7 @@ fn delete_selected_system(
     }
 
     if !sequence.0.is_empty() {
-        events.write(DoCommandEvent(EditorCommand::CommandSequence(sequence)));
+        events.write(DoCommand(EditorCommand::CommandSequence(sequence)));
     }
 
     Ok(())

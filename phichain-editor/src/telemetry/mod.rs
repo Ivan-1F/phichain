@@ -45,7 +45,7 @@ pub struct TelemetryPlugin;
 impl Plugin for TelemetryPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(TelemetryManager::new())
-            .add_event::<PushTelemetryEvent>()
+            .add_message::<PushTelemetry>()
             .add_systems(Update, handle_push_telemetry_event_system)
             .add_systems(
                 Update,
@@ -56,13 +56,13 @@ impl Plugin for TelemetryPlugin {
     }
 }
 
-#[derive(Debug, Clone, Event)]
-pub struct PushTelemetryEvent {
+#[derive(Debug, Clone, Message)]
+pub struct PushTelemetry {
     event_type: &'static str,
     metadata: Value,
 }
 
-impl PushTelemetryEvent {
+impl PushTelemetry {
     pub fn new(event_type: &'static str, metadata: Value) -> Self {
         Self {
             event_type,
@@ -72,7 +72,7 @@ impl PushTelemetryEvent {
 }
 
 fn handle_push_telemetry_event_system(
-    mut events: EventReader<PushTelemetryEvent>,
+    mut events: MessageReader<PushTelemetry>,
     diagnostics: Res<DiagnosticsStore>,
     adapter_info: Res<RenderAdapterInfo>,
     entities: &Entities,
@@ -149,11 +149,8 @@ fn handle_push_telemetry_event_system(
     }
 }
 
-fn send_startup_event_system(mut events: EventWriter<PushTelemetryEvent>) {
-    events.write(PushTelemetryEvent::new(
-        "phichain.editor.started",
-        json!({}),
-    ));
+fn send_startup_event_system(mut events: MessageWriter<PushTelemetry>) {
+    events.write(PushTelemetry::new("phichain.editor.started", json!({})));
 }
 
 fn log_telemetry_hint_system() {
@@ -192,8 +189,8 @@ fn flush_telemetry_queue_system(
 
     reqwest
         .send(request)
-        .on_response(move |trigger: Trigger<ReqwestResponseEvent>| {
-            let response = trigger.event();
+        .on_response(move |event: On<ReqwestResponseEvent>| {
+            let response = event.event();
             if response.status().is_success() {
                 info!(
                     "Successfully sent telemetry event, response: {}",
@@ -206,8 +203,8 @@ fn flush_telemetry_queue_system(
                 );
             }
         })
-        .on_error(|trigger: Trigger<ReqwestErrorEvent>| {
-            let e = &trigger.event().0;
+        .on_error(|event: On<ReqwestErrorEvent>| {
+            let e = &event.event().error;
             error!("Failed to send telemetry data, request failed: {:?}", e);
         });
 }

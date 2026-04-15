@@ -1,6 +1,6 @@
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::settings::{AspectRatio, EditorSettings};
-use crate::timing::{SeekToEvent, Timing};
+use crate::timing::{SeekTo, Timing};
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
@@ -15,7 +15,7 @@ pub fn quick_action(ui: &mut Ui, world: &mut World) {
         Res<Timing>,
         Res<BpmList>,
         Res<AudioDuration>,
-        EventWriter<SeekToEvent>,
+        MessageWriter<SeekTo>,
     )> = SystemState::new(world);
 
     let (mut editor_settings, mut toasts, timing, bpm_list, duration, mut events) =
@@ -130,11 +130,11 @@ pub fn quick_action(ui: &mut Ui, world: &mut World) {
         });
 
         if second_binding != seconds {
-            events.write(SeekToEvent(second_binding));
+            events.write(SeekTo(second_binding));
         }
 
         if beat_binding != beats {
-            events.write(SeekToEvent(bpm_list.time_at(beat_binding.into())));
+            events.write(SeekTo(bpm_list.time_at(beat_binding.into())));
         }
     });
 }

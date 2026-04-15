@@ -42,7 +42,9 @@ fn play_hit_sound_system(
             };
             audio
                 .play(handle)
-                .with_volume(Volume::Amplitude(settings.audio.hit_sound_volume as f64));
+                .with_volume(crate::utils::audio::amplitude_to_db(
+                    settings.audio.hit_sound_volume,
+                ));
             commands.entity(entity).insert(PlayedHitSound);
         } else if note_time > time.0 && played.is_some() {
             commands.entity(entity).remove::<PlayedHitSound>();

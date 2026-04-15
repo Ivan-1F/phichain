@@ -28,45 +28,47 @@ incremental = false
 debug = false
 
 [workspace.dependencies]
-bevy = { version = "0.16.1", default-features = false, features = [
-    "animation",
+bevy = { version = "0.18.1", default-features = false, features = [
     "bevy_asset",
+    "bevy_camera",
     "bevy_color",
     "bevy_core_pipeline",
     "bevy_gilrs",
     "bevy_gizmos",
-    "bevy_gltf",
+    "bevy_gizmos_render",
+    "bevy_image",
     "bevy_log",
-    "bevy_mesh_picking_backend",
-    "bevy_pbr",
+    "bevy_mesh",
     "bevy_picking",
+    "bevy_post_process",
     "bevy_render",
     "bevy_scene",
+    "bevy_shader",
     "bevy_sprite",
-    "bevy_sprite_picking_backend",
+    "bevy_sprite_render",
     "bevy_state",
     "bevy_text",
     "bevy_ui",
-    "bevy_ui_picking_backend",
+    "bevy_ui_render",
     "bevy_window",
     "bevy_winit",
     "custom_cursor",
     "default_font",
     "hdr",
+    "mesh_picking",
     "multi_threaded",
     "png",
-    "smaa_luts",
+    "serialize",
+    "sprite_picking",
     "sysinfo_plugin",
-    "tonemapping_luts",
+    "ui_picking",
     "webgl2",
     "x11",
-    "serialize",
 ] }
-bevy_kira_audio = { version = "0.23.0", features = [
+bevy_kira_audio = { version = "0.25.0", features = [
     "mp3",
     "ogg",
     "flac",
     "wav",
 ] }
-# TODO: revert this when bevy_prototype_lyon release support for bevy 0.16
-bevy_prototype_lyon = { git = "https://github.com/rparrett/bevy_prototype_lyon", branch = "fix-dynamic-examples" }
+bevy_prototype_lyon = "0.16.0"

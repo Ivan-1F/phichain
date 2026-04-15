@@ -1,6 +1,6 @@
 use crate::editing::command::bpm_list::{CreateBpmPoint, EditBpmPoint, RemoveBpmPoint};
 use crate::editing::command::EditorCommand;
-use crate::editing::DoCommandEvent;
+use crate::editing::DoCommand;
 use crate::ui::latch;
 use crate::ui::widgets::beat_value::BeatValue;
 use bevy::prelude::*;
@@ -12,7 +12,7 @@ use phichain_chart::bpm_list::{BpmList, BpmPoint};
 pub fn bpm_list_tab(
     In(mut ui): In<Ui>,
     mut bpm_list: ResMut<BpmList>,
-    mut event_writer: EventWriter<DoCommandEvent>,
+    mut event_writer: MessageWriter<DoCommand>,
 ) {
     let mut changes = Vec::new();
     let mut deletes = Vec::new();
@@ -66,7 +66,7 @@ pub fn bpm_list_tab(
 
                         if let Some(from) = result {
                             if from != *point {
-                                event_writer.write(DoCommandEvent(EditorCommand::EditBpmPoint(
+                                event_writer.write(DoCommand(EditorCommand::EditBpmPoint(
                                     EditBpmPoint::new(index, from, *point),
                                 )));
                             }
@@ -95,7 +95,7 @@ pub fn bpm_list_tab(
                 .last()
                 .map(|x| x.beat + Beat::ONE)
                 .unwrap_or(Beat::ONE);
-            event_writer.write(DoCommandEvent(EditorCommand::CreateBpmPoint(
+            event_writer.write(DoCommand(EditorCommand::CreateBpmPoint(
                 CreateBpmPoint::new(BpmPoint::new(beat, 120.0)),
             )));
         }
@@ -108,7 +108,7 @@ pub fn bpm_list_tab(
 
     if !deletes.is_empty() {
         for i in deletes {
-            event_writer.write(DoCommandEvent(EditorCommand::RemoveBpmPoint(
+            event_writer.write(DoCommand(EditorCommand::RemoveBpmPoint(
                 RemoveBpmPoint::new(i),
             )));
         }

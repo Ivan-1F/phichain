@@ -3,7 +3,7 @@ use crate::layer::HIT_EFFECT_LAYER;
 use crate::scale::NoteScale;
 use crate::{ChartTime, GameConfig, GameSet, GameViewport, Paused};
 use bevy::prelude::*;
-use bevy::transform::TransformSystem;
+use bevy::transform::TransformSystems;
 use bevy_prototype_lyon::prelude::*;
 use bevy_prototype_lyon::shapes;
 use phichain_assets::ImageAssets;
@@ -59,7 +59,7 @@ impl Plugin for HitEffectPlugin {
             .add_systems(
                 Update,
                 (
-                    spawn_hit_effect_system.after(TransformSystem::TransformPropagate),
+                    spawn_hit_effect_system.after(TransformSystems::Propagate),
                     update_hit_effect_system,
                     update_hit_effect_scale_system,
                     animate_hit_effect_system,

@@ -2,7 +2,7 @@ use crate::events::{EditorEvent, EditorEventAppExt};
 use crate::utils::entity::replace_with_empty;
 use bevy::app::{App, Plugin};
 use bevy::log::debug;
-use bevy::prelude::{ChildOf, Entity, Event, World};
+use bevy::prelude::{ChildOf, Entity, Message, World};
 use bon::Builder;
 use phichain_game::curve_note_track::CurveNoteTrack;
 
@@ -15,7 +15,7 @@ impl Plugin for CurveNoteTrackEventPlugin {
     }
 }
 
-#[derive(Debug, Clone, Event, Builder)]
+#[derive(Debug, Clone, Message, Builder)]
 pub struct SpawnCurveNoteTrackEvent {
     track: CurveNoteTrack,
     line_entity: Entity,
@@ -47,7 +47,7 @@ impl EditorEvent for SpawnCurveNoteTrackEvent {
     }
 }
 
-#[derive(Debug, Clone, Event, Builder)]
+#[derive(Debug, Clone, Message, Builder)]
 pub struct DespawnCurveNoteTrackEvent {
     target: Entity,
     #[builder(default = false)]

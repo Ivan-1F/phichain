@@ -12,7 +12,7 @@ use crate::tab::inspector::multiple_events::multiple_events_inspector;
 use crate::tab::inspector::multiple_notes::multiple_notes_inspector;
 use crate::tab::inspector::single_event::single_event_inspector;
 use crate::tab::inspector::single_note::single_note_inspector;
-use bevy::ecs::system::{RegisteredSystemError, SystemId, SystemParamValidationError};
+use bevy::ecs::system::{RegisteredSystemError, SystemId};
 use bevy::prelude::*;
 use egui::{Ui, UiBuilder};
 use phichain_chart::event::LineEvent;
@@ -35,14 +35,14 @@ pub trait InspectorRegistrationExt {
     fn add_inspector<S, M, C, Marker>(&mut self, inspector: S, condition: C) -> &mut Self
     where
         S: IntoSystem<In<Ui>, Result, M> + 'static,
-        C: Condition<Marker> + 'static;
+        C: SystemCondition<Marker> + 'static;
 }
 
 impl InspectorRegistrationExt for App {
     fn add_inspector<S, M, C, Marker>(&mut self, inspector: S, condition: C) -> &mut Self
     where
         S: IntoSystem<In<Ui>, Result, M> + 'static,
-        C: Condition<Marker> + 'static,
+        C: SystemCondition<Marker> + 'static,
     {
         let system_id = self.world_mut().register_system(inspector);
         let condition_id = self.world_mut().register_system(condition);
@@ -78,10 +78,7 @@ pub fn inspector_ui_system(In(mut ui): In<Ui>, world: &mut World) {
     for inspector in inspectors {
         let condition_met = match world.run_system(inspector.condition) {
             Ok(result) => result,
-            Err(RegisteredSystemError::InvalidParams {
-                err: SystemParamValidationError { skipped: true, .. },
-                ..
-            }) => false,
+            Err(RegisteredSystemError::Skipped(_)) => false,
             Err(_) => {
                 // TODO: add inspector name to log here
                 warn!("Failed to run condition for inspector");
@@ -105,7 +102,7 @@ pub fn inspector_ui_system(In(mut ui): In<Ui>, world: &mut World) {
     }
 }
 
-/// A [`Condition`]-satisfying system that returns true if there's exactly one entity with given component T is selected
+/// A [`SystemCondition`]-satisfying system that returns true if there's exactly one entity with given component T is selected
 pub fn single_selected<T>(
     selected_query: Option<Single<Entity, With<Selected>>>,
     query: Query<&T>,
@@ -120,7 +117,7 @@ where
     }
 }
 
-/// A [`Condition`]-satisfying system that returns true if there's more than one entity selected, and all of them have the give component T
+/// A [`SystemCondition`]-satisfying system that returns true if there's more than one entity selected, and all of them have the give component T
 pub fn multiple_selected<T>(selected_query: Query<Entity, With<Selected>>, query: Query<&T>) -> bool
 where
     T: Component,

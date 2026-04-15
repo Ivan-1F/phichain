@@ -1,7 +1,7 @@
 use crate::layout::ui_state::UiState;
 use crate::layout::LayoutPresetManager;
 use crate::notification::{ToastsExt, ToastsStorage};
-use bevy::prelude::{Event, Res, ResMut, Trigger};
+use bevy::prelude::{Event, On, Res, ResMut};
 use bevy_persistent::Persistent;
 use std::ops::IndexMut;
 
@@ -9,12 +9,12 @@ use std::ops::IndexMut;
 pub struct UpdateLayout(pub usize);
 
 pub fn update_layout_observer(
-    trigger: Trigger<UpdateLayout>,
+    event: On<UpdateLayout>,
     mut manager: ResMut<Persistent<LayoutPresetManager>>,
     ui_state: Res<UiState>,
     mut toasts: ResMut<ToastsStorage>,
 ) -> bevy::prelude::Result<()> {
-    manager.presets.index_mut(trigger.0).layout = ui_state.state.clone();
+    manager.presets.index_mut(event.0).layout = ui_state.state.clone();
 
     manager.persist()?;
 

@@ -1,7 +1,7 @@
 use crate::action::RunAction;
 use crate::editing::command::line::{CreateLine, MoveLineAsChild, RemoveLine};
 use crate::editing::command::{CommandSequence, EditorCommand};
-use crate::editing::DoCommandEvent;
+use crate::editing::DoCommand;
 use crate::selection::SelectedLine;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
@@ -55,7 +55,7 @@ pub struct LineListParams<'w, 's> {
     >,
     child_of_query: Query<'w, 's, &'static ChildOf>,
     selected_line: ResMut<'w, SelectedLine>,
-    do_command_event: EventWriter<'w, DoCommandEvent>,
+    do_command_event: MessageWriter<'w, DoCommand>,
 }
 
 impl<'w, 's> LineList<'w, 's> {
@@ -204,13 +204,13 @@ impl<'w, 's> LineList<'w, 's> {
                                 .button(t!("tab.line_list.hierarchy.as_child_of_current_line"))
                                 .clicked()
                             {
-                                self.params.do_command_event.write(DoCommandEvent(
+                                self.params.do_command_event.write(DoCommand(
                                     EditorCommand::MoveLineAsChild(MoveLineAsChild::new(
                                         entity,
                                         Some(self.params.selected_line.0),
                                     )),
                                 ));
-                                ui.close_menu();
+                                ui.close();
                             }
                         });
                         #[allow(clippy::collapsible_if)]
@@ -219,12 +219,12 @@ impl<'w, 's> LineList<'w, 's> {
                                 .button(t!("tab.line_list.hierarchy.move_to_root"))
                                 .clicked()
                             {
-                                self.params.do_command_event.write(DoCommandEvent(
+                                self.params.do_command_event.write(DoCommand(
                                     EditorCommand::MoveLineAsChild(MoveLineAsChild::new(
                                         entity, None,
                                     )),
                                 ));
-                                ui.close_menu();
+                                ui.close();
                             }
                         }
                         ui.separator();
@@ -233,19 +233,19 @@ impl<'w, 's> LineList<'w, 's> {
                             .clicked()
                         {
                             add_parent.replace(parent.map(|x| x.parent()));
-                            ui.close_menu();
+                            ui.close();
                         }
                         if ui.button(t!("tab.line_list.hierarchy.add_child")).clicked() {
                             add_child = true;
-                            ui.close_menu();
+                            ui.close();
                         }
                         ui.separator();
                         ui.add_enabled_ui(!under_selected_node && !selected, |ui| {
                             if ui.button(t!("tab.line_list.remove")).clicked() {
-                                self.params.do_command_event.write(DoCommandEvent(
+                                self.params.do_command_event.write(DoCommand(
                                     EditorCommand::RemoveLine(RemoveLine::new(entity)),
                                 ));
-                                ui.close_menu();
+                                ui.close();
                             }
                         });
                     });
@@ -411,30 +411,30 @@ impl<'w, 's> LineList<'w, 's> {
 
             self.params
                 .commands
-                .send_event(DoCommandEvent(EditorCommand::CommandSequence(
-                    CommandSequence(vec![
+                .write_message(DoCommand(EditorCommand::CommandSequence(CommandSequence(
+                    vec![
                         EditorCommand::CreateLine(CreateLine::with_target(new_line_entity)),
                         EditorCommand::MoveLineAsChild(MoveLineAsChild::new(
                             entity,
                             Some(new_line_entity),
                         )),
-                    ]),
-                )));
+                    ],
+                ))));
         }
 
         if add_child {
             let new_line_entity = self.params.commands.spawn_empty().id();
             self.params
                 .commands
-                .send_event(DoCommandEvent(EditorCommand::CommandSequence(
-                    CommandSequence(vec![
+                .write_message(DoCommand(EditorCommand::CommandSequence(CommandSequence(
+                    vec![
                         EditorCommand::CreateLine(CreateLine::with_target(new_line_entity)),
                         EditorCommand::MoveLineAsChild(MoveLineAsChild::new(
                             new_line_entity,
                             Some(entity),
                         )),
-                    ]),
-                )));
+                    ],
+                ))));
         }
     }
 }

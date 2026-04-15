@@ -2,7 +2,7 @@ use crate::events::{EditorEvent, EditorEventAppExt};
 use crate::utils::entity::replace_with_empty;
 use bevy::app::{App, Plugin};
 use bevy::log::debug;
-use bevy::prelude::{ChildOf, Entity, Event, World};
+use bevy::prelude::{ChildOf, Entity, Message, World};
 use bon::Builder;
 use phichain_chart::note::Note;
 
@@ -15,7 +15,7 @@ impl Plugin for NoteEventPlugin {
     }
 }
 
-#[derive(Debug, Clone, Event, Builder)]
+#[derive(Debug, Clone, Message, Builder)]
 pub struct SpawnNoteEvent {
     note: Note,
     line_entity: Entity,
@@ -46,7 +46,7 @@ impl EditorEvent for SpawnNoteEvent {
     }
 }
 
-#[derive(Debug, Clone, Event, Builder)]
+#[derive(Debug, Clone, Message, Builder)]
 pub struct DespawnNoteEvent {
     target: Entity,
     #[builder(default = false)]

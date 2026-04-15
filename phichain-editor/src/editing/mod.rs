@@ -29,7 +29,7 @@ pub struct EditingPlugin;
 
 impl Plugin for EditingPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<DoCommandEvent>()
+        app.add_message::<DoCommand>()
             .init_resource::<EditorHistory>()
             .add_plugins(DeleteSelectedPlugin)
             .add_plugins(CreateNotePlugin)
@@ -71,12 +71,12 @@ fn redo_system(world: &mut World) -> Result {
     Ok(())
 }
 
-#[derive(Event, Clone)]
-pub struct DoCommandEvent(pub EditorCommand);
+#[derive(Message, Clone)]
+pub struct DoCommand(pub EditorCommand);
 
 fn handle_edit_command_system(
     world: &mut World,
-    state: &mut SystemState<EventReader<DoCommandEvent>>,
+    state: &mut SystemState<MessageReader<DoCommand>>,
 ) {
     let events: Vec<_> = {
         let mut event_reader = state.get_mut(world);

@@ -2,8 +2,8 @@ use crate::editing::command::curve_note_track::CreateCurveNoteTrack;
 use crate::editing::command::note::EditNote;
 use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
-use crate::editing::DoCommandEvent;
-use crate::selection::{SelectEvent, Selected, SelectedLine};
+use crate::editing::DoCommand;
+use crate::selection::{Select, Selected, SelectedLine};
 use crate::tab::timeline::TimelineFilter;
 use crate::timeline::{Timeline, TimelineContext};
 use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
@@ -12,7 +12,6 @@ use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use bevy_egui::EguiUserTextures;
 use egui::{Color32, Pos2, Rect, Sense, Ui};
-use phichain_assets::ImageAssets;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::CANVAS_WIDTH;
 use phichain_chart::line::Line;
@@ -60,11 +59,11 @@ impl Timeline for NoteTimeline {
             Query<&Selected>,
             Query<(&mut CurveNoteTrack, &ChildOf, Entity)>,
             Res<BpmList>,
-            Res<ImageAssets>,
+            Res<phichain_assets::EguiImageAssets>,
             Res<Assets<Image>>,
             Res<EguiUserTextures>,
-            EventWriter<SelectEvent>,
-            EventWriter<DoCommandEvent>,
+            MessageWriter<Select>,
+            MessageWriter<DoCommand>,
         )> = SystemState::new(world);
 
         let (
@@ -195,7 +194,7 @@ impl Timeline for NoteTimeline {
                         .clicked()
                     {
                         start_track_note.replace(entity);
-                        ui.close_menu();
+                        ui.close();
                     }
                 });
             }
@@ -204,7 +203,7 @@ impl Timeline for NoteTimeline {
                 if let Some(drag) =
                     BeatRangeDragZone::new(rect, "hold-drag", &ctx, &mut *note).show(ui)
                 {
-                    event_writer.write(DoCommandEvent(EditorCommand::EditNote(EditNote::new(
+                    event_writer.write(DoCommand(EditorCommand::EditNote(EditNote::new(
                         entity, drag.from, drag.to,
                     ))));
                 }
@@ -223,12 +222,9 @@ impl Timeline for NoteTimeline {
                             let mut completed_track = track.clone();
                             completed_track.to(entity);
 
-                            event_writer.write(DoCommandEvent(
-                                EditorCommand::CreateCurveNoteTrack(CreateCurveNoteTrack::new(
-                                    child_of.parent(),
-                                    completed_track,
-                                )),
-                            ));
+                            event_writer.write(DoCommand(EditorCommand::CreateCurveNoteTrack(
+                                CreateCurveNoteTrack::new(child_of.parent(), completed_track),
+                            )));
 
                             handled = true;
                         }
@@ -236,7 +232,7 @@ impl Timeline for NoteTimeline {
                 }
 
                 if !handled {
-                    select_events.write(SelectEvent(vec![entity]));
+                    select_events.write(Select(vec![entity]));
                 }
             }
         }

@@ -8,7 +8,7 @@ use crate::hotkey::Hotkey;
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::recent_projects::{PersistentRecentProjectsExt, RecentProject, RecentProjects};
 use crate::spectrogram::{self, Spectrogram};
-use crate::telemetry::PushTelemetryEvent;
+use crate::telemetry::PushTelemetry;
 use bevy::ecs::system::SystemState;
 use bevy_kira_audio::{Audio, AudioControl, AudioSource};
 use bevy_persistent::Persistent;
@@ -22,13 +22,13 @@ use phichain_game::serialization::{serialize_chart, SerializeChartParam, Seriali
 use serde_json::json;
 use std::path::PathBuf;
 
-/// A [Condition] represents the project is loaded
-pub fn project_loaded() -> impl Condition<()> {
+/// A [SystemCondition] represents the project is loaded
+pub fn project_loaded() -> impl SystemCondition<()> {
     resource_exists::<Project>.and(|| true)
 }
 
-/// A [Condition] represents the project is not loaded
-pub fn project_not_loaded() -> impl Condition<()> {
+/// A [SystemCondition] represents the project is not loaded
+pub fn project_not_loaded() -> impl SystemCondition<()> {
     IntoSystem::into_system(resource_exists::<Project>.map(|x| !x))
 }
 
@@ -36,9 +36,9 @@ pub struct ProjectPlugin;
 
 impl Plugin for ProjectPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<LoadProjectEvent>()
+        app.add_message::<LoadProject>()
             .add_systems(Update, load_project_system.run_if(project_not_loaded()))
-            .add_event::<UnloadProjectEvent>()
+            .add_message::<UnloadProject>()
             .add_systems(PreUpdate, unload_project_system.run_if(project_loaded()))
             .add_observer(project_loading_result_observer)
             .add_action(
@@ -48,8 +48,8 @@ impl Plugin for ProjectPlugin {
             )
             .add_action(
                 "phichain.close_project",
-                |mut events: EventWriter<UnloadProjectEvent>| {
-                    events.write(UnloadProjectEvent);
+                |mut events: MessageWriter<UnloadProject>| {
+                    events.write(UnloadProject);
 
                     Ok(())
                 },
@@ -100,8 +100,8 @@ fn save_project_system(
     Ok(())
 }
 
-#[derive(Event, Debug)]
-pub struct LoadProjectEvent(pub PathBuf);
+#[derive(Message, Debug)]
+pub struct LoadProject(pub PathBuf);
 
 /// Load a project into the editor
 ///
@@ -115,7 +115,7 @@ pub struct LoadProjectEvent(pub PathBuf);
 ///   indicating the editor is now in editing mode: all systems with run condition [`project_loaded`] will start working
 fn load_project_system(
     mut commands: Commands,
-    mut events: EventReader<LoadProjectEvent>,
+    mut events: MessageReader<LoadProject>,
     mut toasts: ResMut<ToastsStorage>,
 ) {
     if events.len() > 1 {
@@ -149,18 +149,18 @@ fn load_project_system(
 }
 
 fn project_loading_result_observer(
-    trigger: Trigger<ProjectLoadingResult>,
+    event: On<ProjectLoadingResult>,
 
     mut commands: Commands,
     mut recent_projects: ResMut<Persistent<RecentProjects>>,
-    mut telemetry: EventWriter<PushTelemetryEvent>,
+    mut telemetry: MessageWriter<PushTelemetry>,
     mut toasts: ResMut<ToastsStorage>,
 ) {
-    let data = trigger.event();
+    let data = event.event();
 
     match &data.0 {
         Ok(data) => {
-            telemetry.write(PushTelemetryEvent::new(
+            telemetry.write(PushTelemetry::new(
                 "phichain.editor.project.loaded",
                 json!({ "duration": data.duration.as_millis() }),
             ));
@@ -216,7 +216,7 @@ fn project_loading_result_observer(
             };
 
             toasts.error(message);
-            telemetry.write(PushTelemetryEvent::new(
+            telemetry.write(PushTelemetry::new(
                 "phichain.editor.project.load.failed",
                 json!({}),
             ));
@@ -224,13 +224,13 @@ fn project_loading_result_observer(
     }
 }
 
-#[derive(Event, Debug)]
-pub struct UnloadProjectEvent;
+#[derive(Message, Debug)]
+pub struct UnloadProject;
 
 /// Unload a project from the editor
 fn unload_project_system(
     world: &mut World,
-    params: &mut SystemState<EventReader<UnloadProjectEvent>>,
+    params: &mut SystemState<MessageReader<UnloadProject>>,
 ) {
     let mut events = params.get_mut(world);
     if !events.is_empty() {

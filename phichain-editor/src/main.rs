@@ -60,7 +60,7 @@ use crate::metronome::MetronomePlugin;
 use crate::misc::MiscPlugin;
 use crate::notification::NotificationPlugin;
 use crate::project::project_loaded;
-use crate::project::LoadProjectEvent;
+use crate::project::LoadProject;
 use crate::project::ProjectPlugin;
 use crate::recent_projects::RecentProjectsPlugin;
 use crate::schedule::EditorSet;
@@ -78,10 +78,10 @@ use crate::timing::TimingPlugin;
 use crate::translation::TranslationPlugin;
 use crate::ui::UiPlugin;
 use crate::zoom::ZoomPlugin;
+use bevy::camera::visibility::RenderLayers;
 use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::log::LogPlugin;
 use bevy::prelude::*;
-use bevy::render::view::RenderLayers;
 use bevy::render::RenderPlugin;
 use bevy_egui::egui::{Color32, Frame};
 use bevy_egui::{
@@ -198,10 +198,10 @@ fn apply_editor_settings_system(settings: Res<Persistent<EditorSettings>>) {
 }
 
 /// Apply configurations from the command line args
-fn apply_args_config_system(args: Res<Args>, mut events: EventWriter<LoadProjectEvent>) {
+fn apply_args_config_system(args: Res<Args>, mut events: MessageWriter<LoadProject>) {
     // load chart if specified
     if let Some(path) = &args.project {
-        events.write(LoadProjectEvent(path.into()));
+        events.write(LoadProject(path.into()));
     }
 }
 
@@ -256,19 +256,19 @@ fn ui_system(world: &mut World) {
     let fps = fps_display.displayed_fps;
 
     egui::TopBottomPanel::top("phichain.MenuBar").show(ctx, |ui| {
-        egui::menu::bar(ui, |ui| {
+        egui::MenuBar::new().ui(ui, |ui| {
             ui.menu_button(t!("menu_bar.file.title"), |ui| {
                 if ui.button(t!("menu_bar.file.save")).clicked() {
                     world.resource_scope(|world, mut registry: Mut<ActionRegistry>| {
                         registry.run_action(world, "phichain.save_project");
                     });
-                    ui.close_menu();
+                    ui.close();
                 }
                 if ui.button(t!("menu_bar.file.close")).clicked() {
                     world.resource_scope(|world, mut registry: Mut<ActionRegistry>| {
                         registry.run_action(world, "phichain.close_project");
                     });
-                    ui.close_menu();
+                    ui.close();
                 }
                 ui.separator();
                 if ui.button(t!("menu_bar.file.quit")).clicked() {
@@ -293,10 +293,10 @@ fn ui_system(world: &mut World) {
                                     if let Some(node) = ui_state.state.find_tab(tab) {
                                         ui_state.state.remove_tab(node);
                                     }
-                                    ui.close_menu();
+                                    ui.close();
                                 } else {
                                     ui_state.state.add_window(vec![tab.clone()]);
-                                    ui.close_menu();
+                                    ui.close();
                                 }
                             }
                         }
@@ -310,7 +310,7 @@ fn ui_system(world: &mut World) {
                     world.resource_scope(|world, mut actions: Mut<ActionRegistry>| {
                         actions.run_action(world, "phichain.export_as_official");
                     });
-                    ui.close_menu();
+                    ui.close();
                 }
             });
 

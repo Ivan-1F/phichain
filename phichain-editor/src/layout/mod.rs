@@ -155,7 +155,7 @@ pub fn layout_menu(ui: &mut egui::Ui, world: &mut World) {
     ui.menu_button(t!("menu_bar.layout.title"), |ui| {
         if ui.button(t!("menu_bar.layout.default")).clicked() {
             world.trigger(ApplyLayout(UiState::default().state));
-            ui.close_menu();
+            ui.close();
         }
 
         ui.separator();
@@ -164,25 +164,25 @@ pub fn layout_menu(ui: &mut egui::Ui, world: &mut World) {
             ui.menu_button(&preset.name, |ui| {
                 if ui.button(t!("menu_bar.layout.item.apply")).clicked() {
                     world.trigger(ApplyLayout(preset.layout.clone()));
-                    ui.close_menu();
+                    ui.close();
                 }
                 if ui.button(t!("menu_bar.layout.item.rename")).clicked() {
                     world.spawn(RenameLayoutDialog {
                         index,
                         name: preset.name.clone(),
                     });
-                    ui.close_menu();
+                    ui.close();
                 }
                 if ui.button(t!("menu_bar.layout.item.update")).clicked() {
                     world.trigger(UpdateLayout(index));
-                    ui.close_menu();
+                    ui.close();
                 }
 
                 ui.separator();
 
                 if ui.button(t!("menu_bar.layout.item.delete")).clicked() {
                     world.trigger(DeleteLayout(index));
-                    ui.close_menu();
+                    ui.close();
                 }
             });
         }
@@ -198,7 +198,7 @@ pub fn layout_menu(ui: &mut egui::Ui, world: &mut World) {
             world.resource_scope(|world, mut actions: Mut<ActionRegistry>| {
                 actions.run_action(world, "phichain.save_layout_preset");
             });
-            ui.close_menu();
+            ui.close();
         }
     });
 }

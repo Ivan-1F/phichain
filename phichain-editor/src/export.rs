@@ -1,5 +1,5 @@
 use crate::action::ActionRegistrationExt;
-use crate::file::{pick_folder, picking_event, FilePickingAppExt};
+use crate::file::{pick_folder, FilePickingAppExt, PickedFile};
 use crate::hotkey::modifier::Modifier;
 use crate::hotkey::Hotkey;
 use crate::notification::{ToastsExt, ToastsStorage};
@@ -18,15 +18,15 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use zip::write::SimpleFileOptions;
 
-picking_event!(PickedExportOfficial);
-picking_event!(PickedExportRpe);
+struct ExportOfficialPick;
+struct ExportRpePick;
 
 pub struct ExportPlugin;
 
 impl Plugin for ExportPlugin {
     fn build(&self, app: &mut App) {
-        app.register_picking_event::<PickedExportOfficial>()
-            .register_picking_event::<PickedExportRpe>()
+        app.register_picking_event::<ExportOfficialPick>()
+            .register_picking_event::<ExportRpePick>()
             .add_observer(export_official_observer)
             .add_observer(export_rpe_observer)
             .add_heavy_action(
@@ -42,13 +42,13 @@ impl Plugin for ExportPlugin {
 }
 
 fn export_as_official_system(world: &mut World) -> Result {
-    pick_folder::<PickedExportOfficial>(world, FileDialog::new());
+    pick_folder::<ExportOfficialPick>(world, FileDialog::new());
 
     Ok(())
 }
 
 fn export_as_rpe_system(world: &mut World) -> Result {
-    pick_folder::<PickedExportRpe>(world, FileDialog::new());
+    pick_folder::<ExportRpePick>(world, FileDialog::new());
 
     Ok(())
 }
@@ -145,11 +145,11 @@ fn export_official(path: &Path, project: &Project) -> anyhow::Result<PathBuf> {
 }
 
 fn export_official_observer(
-    trigger: Trigger<PickedExportOfficial>,
+    event: On<PickedFile<ExportOfficialPick>>,
     project: Res<Project>,
     mut toasts: ResMut<ToastsStorage>,
 ) {
-    let Some(ref path) = trigger.event().0 else {
+    let Some(ref path) = event.event().path else {
         return;
     };
 
@@ -172,11 +172,11 @@ fn export_rpe(path: &Path, project: &Project) -> anyhow::Result<PathBuf> {
 }
 
 fn export_rpe_observer(
-    trigger: Trigger<PickedExportRpe>,
+    event: On<PickedFile<ExportRpePick>>,
     project: Res<Project>,
     mut toasts: ResMut<ToastsStorage>,
 ) {
-    let Some(ref path) = trigger.event().0 else {
+    let Some(ref path) = event.event().path else {
         return;
     };
 

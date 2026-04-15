@@ -1,6 +1,6 @@
 use crate::layout::LayoutPresetManager;
 use crate::notification::{ToastsExt, ToastsStorage};
-use bevy::prelude::{Event, ResMut, Trigger};
+use bevy::prelude::{Event, On, ResMut};
 use bevy_persistent::Persistent;
 use std::ops::IndexMut;
 
@@ -11,11 +11,11 @@ pub struct RenameLayout {
 }
 
 pub fn rename_layout_observer(
-    trigger: Trigger<RenameLayout>,
+    event: On<RenameLayout>,
     mut manager: ResMut<Persistent<LayoutPresetManager>>,
     mut toasts: ResMut<ToastsStorage>,
 ) -> bevy::prelude::Result<()> {
-    manager.presets.index_mut(trigger.index).name = trigger.name.clone();
+    manager.presets.index_mut(event.index).name = event.name.clone();
 
     manager.persist()?;
 

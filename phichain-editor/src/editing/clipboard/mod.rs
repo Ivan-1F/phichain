@@ -2,7 +2,7 @@ use crate::action::ActionRegistrationExt;
 use crate::editing::command::event::{CreateEvent, RemoveEvent};
 use crate::editing::command::note::{CreateNote, RemoveNote};
 use crate::editing::command::{CommandSequence, EditorCommand};
-use crate::editing::DoCommandEvent;
+use crate::editing::DoCommand;
 use crate::hotkey::modifier::Modifier;
 use crate::hotkey::Hotkey;
 use crate::selection::{Selected, SelectedLine};
@@ -78,7 +78,7 @@ fn cut_system(
 
     selected_query: Query<Entity, With<Selected>>,
 
-    mut event_writer: EventWriter<DoCommandEvent>,
+    mut event_writer: MessageWriter<DoCommand>,
 ) -> Result {
     clipboard.clear();
 
@@ -94,9 +94,9 @@ fn cut_system(
         }
     }
 
-    event_writer.write(DoCommandEvent(EditorCommand::CommandSequence(
-        CommandSequence(commands),
-    )));
+    event_writer.write(DoCommand(EditorCommand::CommandSequence(CommandSequence(
+        commands,
+    ))));
 
     Ok(())
 }
@@ -111,7 +111,7 @@ fn paste_system(
     ctx: TimelineContext,
     bpm_list: Res<BpmList>,
 
-    mut event_writer: EventWriter<DoCommandEvent>,
+    mut event_writer: MessageWriter<DoCommand>,
 ) -> Result {
     let window = window_query.single()?;
     let Some(cursor_position) = window.cursor_position() else {
@@ -171,7 +171,7 @@ fn paste_system(
         }
 
         if !sequence.0.is_empty() {
-            event_writer.write(DoCommandEvent(EditorCommand::CommandSequence(sequence)));
+            event_writer.write(DoCommand(EditorCommand::CommandSequence(sequence)));
         }
     }
 

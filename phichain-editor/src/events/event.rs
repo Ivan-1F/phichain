@@ -14,7 +14,7 @@ impl Plugin for LineEventEventPlugin {
     }
 }
 
-#[derive(Debug, Clone, Event, Builder)]
+#[derive(Debug, Clone, Message, Builder)]
 pub struct SpawnLineEventEvent {
     event: LineEvent,
     line_entity: Entity,
@@ -45,7 +45,7 @@ impl EditorEvent for SpawnLineEventEvent {
     }
 }
 
-#[derive(Debug, Clone, Event, Builder)]
+#[derive(Debug, Clone, Message, Builder)]
 pub struct DespawnLineEventEvent {
     target: Entity,
     #[builder(default = false)]

@@ -5,7 +5,7 @@ use phichain_chart::easing::Easing;
 use crate::editing::command::event::CreateEvent;
 use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
-use crate::editing::DoCommandEvent;
+use crate::editing::DoCommand;
 use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
 use crate::identifier::{Identifier, IntoIdentifier};
 use crate::schedule::EditorSet;
@@ -58,7 +58,7 @@ fn create_event_system(
     window_query: Query<&Window>,
     bpm_list: Res<BpmList>,
 
-    mut event: EventWriter<DoCommandEvent>,
+    mut event: MessageWriter<DoCommand>,
 
     mut pending_event_query: Query<(&mut LineEvent, Entity), With<Pending>>,
 
@@ -144,9 +144,10 @@ fn create_event_system(
                         }
                     }
                     commands.entity(entity).despawn();
-                    event.write(DoCommandEvent(EditorCommand::CreateEvent(
-                        CreateEvent::new(line_entity, new_event),
-                    )));
+                    event.write(DoCommand(EditorCommand::CreateEvent(CreateEvent::new(
+                        line_entity,
+                        new_event,
+                    ))));
                 } else {
                     let (track, beat) = calc_event_attrs();
                     let kind = LineEventKind::try_from(track).expect("Unknown event track");

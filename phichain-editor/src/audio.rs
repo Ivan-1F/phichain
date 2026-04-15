@@ -1,8 +1,8 @@
 use crate::settings::EditorSettings;
-use crate::timing::{SeekToEvent, Timing};
+use crate::timing::{SeekTo, Timing};
 use crate::{
     project::project_loaded,
-    timing::{Pause, Paused, Resume, SeekEvent},
+    timing::{Pause, Paused, Resume, Seek},
 };
 use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
@@ -45,7 +45,7 @@ impl Plugin for AudioPlugin {
 
 // TODO: move this to separate plugin
 fn pause_observer(
-    _: Trigger<Pause>,
+    _: On<Pause>,
 
     handle: Res<InstanceHandle>,
     mut paused: ResMut<Paused>,
@@ -64,7 +64,7 @@ fn pause_observer(
 }
 
 fn resume_observer(
-    _: Trigger<Resume>,
+    _: On<Resume>,
 
     handle: Res<InstanceHandle>,
     mut paused: ResMut<Paused>,
@@ -116,7 +116,7 @@ fn update_seek_system(
 ///
 /// No immediate seeking occurs here - all timing changes are processed by [`update_seek_system`]
 fn handle_seek_system(
-    mut events: EventReader<SeekEvent>,
+    mut events: MessageReader<Seek>,
     mut seek_target_time: ResMut<SeekDeltaTime>,
 ) {
     for event in events.read() {
@@ -128,7 +128,7 @@ fn handle_seek_system(
 fn handle_seek_to_system(
     handle: Res<InstanceHandle>,
     mut audio_instances: ResMut<Assets<AudioInstance>>,
-    mut events: EventReader<SeekToEvent>,
+    mut events: MessageReader<SeekTo>,
     mut seek_delta_time: ResMut<SeekDeltaTime>,
     audio_duration: Res<AudioDuration>,
 
@@ -154,8 +154,8 @@ fn update_volume_system(
     settings: Res<Persistent<EditorSettings>>,
 ) {
     if let Some(instance) = audio_instances.get_mut(&handle.0) {
-        instance.set_volume(
-            Volume::Amplitude(settings.audio.music_volume as f64),
+        instance.set_decibels(
+            crate::utils::audio::amplitude_to_db(settings.audio.music_volume),
             AudioTween::default(),
         );
     }

@@ -85,18 +85,84 @@ impl Plugin for AssetsPlugin {
             .init_collection::<AudioAssets>();
 
         #[cfg(feature = "egui")]
-        app.add_systems(bevy_egui::EguiPrimaryContextPass, load_assets_system);
+        app.add_systems(bevy_egui::EguiPrimaryContextPass, setup_egui_images_system);
     }
 }
 
+/// Premultiplied-alpha copies of image assets for correct egui rendering.
+///
+/// Since bevy_egui 0.39.1, the fragment shader no longer premultiplies alpha for
+/// user textures, but the blend mode is still `PREMULTIPLIED_ALPHA_BLENDING`.
+/// User textures (loaded by Bevy as straight alpha) must be premultiplied before
+/// registration. Bevy's sprite renderer uses straight-alpha blending, so we keep
+/// separate premultiplied copies here for egui use only.
+///
+/// See: https://github.com/vladbat00/bevy_egui/pull/465
+/// See: https://github.com/vladbat00/bevy_egui/releases/tag/v0.39.1
 #[cfg(feature = "egui")]
-fn load_assets_system(mut egui_context: bevy_egui::EguiContexts, image_assets: Res<ImageAssets>) {
-    egui_context.add_image(image_assets.tap.clone());
-    egui_context.add_image(image_assets.drag.clone());
-    egui_context.add_image(image_assets.hold.clone());
-    egui_context.add_image(image_assets.flick.clone());
-    egui_context.add_image(image_assets.tap_highlight.clone());
-    egui_context.add_image(image_assets.drag_highlight.clone());
-    egui_context.add_image(image_assets.hold_highlight.clone());
-    egui_context.add_image(image_assets.flick_highlight.clone());
+#[derive(Resource, Default)]
+pub struct EguiImageAssets {
+    pub tap: Handle<Image>,
+    pub drag: Handle<Image>,
+    pub hold: Handle<Image>,
+    pub flick: Handle<Image>,
+    pub tap_highlight: Handle<Image>,
+    pub drag_highlight: Handle<Image>,
+    pub hold_highlight: Handle<Image>,
+    pub flick_highlight: Handle<Image>,
+}
+
+#[cfg(feature = "egui")]
+fn setup_egui_images_system(
+    mut commands: Commands,
+    mut egui_context: bevy_egui::EguiContexts,
+    image_assets: Res<ImageAssets>,
+    mut images: ResMut<Assets<Image>>,
+    egui_images: Option<Res<EguiImageAssets>>,
+) {
+    if egui_images.is_some() {
+        return;
+    }
+
+    let mut make_premultiplied = |handle: &Handle<Image>| -> Handle<Image> {
+        let src = images.get(handle).expect("image should be loaded");
+        let mut copy = src.clone();
+        premultiply_alpha(&mut copy);
+        let copy_handle = images.add(copy);
+        egui_context.add_image(bevy_egui::EguiTextureHandle::Strong(copy_handle.clone()));
+        copy_handle
+    };
+
+    let egui_assets = EguiImageAssets {
+        tap: make_premultiplied(&image_assets.tap),
+        drag: make_premultiplied(&image_assets.drag),
+        hold: make_premultiplied(&image_assets.hold),
+        flick: make_premultiplied(&image_assets.flick),
+        tap_highlight: make_premultiplied(&image_assets.tap_highlight),
+        drag_highlight: make_premultiplied(&image_assets.drag_highlight),
+        hold_highlight: make_premultiplied(&image_assets.hold_highlight),
+        flick_highlight: make_premultiplied(&image_assets.flick_highlight),
+    };
+
+    commands.insert_resource(egui_assets);
+}
+
+/// Premultiply alpha in-place in linear space for correct GPU blending.
+/// See [`EguiImageAssets`] for context.
+#[cfg(feature = "egui")]
+fn premultiply_alpha(image: &mut Image) {
+    let data = image.data.as_mut().expect("image should have data");
+    for chunk in data.chunks_exact_mut(4) {
+        let r = chunk[0] as f32 / 255.0;
+        let g = chunk[1] as f32 / 255.0;
+        let b = chunk[2] as f32 / 255.0;
+        let a = chunk[3] as f32 / 255.0;
+        // Premultiply in linear space for correct blending
+        let r_lin = r.powf(2.2) * a;
+        let g_lin = g.powf(2.2) * a;
+        let b_lin = b.powf(2.2) * a;
+        chunk[0] = (r_lin.powf(1.0 / 2.2) * 255.0) as u8;
+        chunk[1] = (g_lin.powf(1.0 / 2.2) * 255.0) as u8;
+        chunk[2] = (b_lin.powf(1.0 / 2.2) * 255.0) as u8;
+    }
 }

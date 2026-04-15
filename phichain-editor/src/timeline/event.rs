@@ -2,13 +2,13 @@ use crate::constants::INDICATOR_POSITION;
 use crate::editing::command::event::EditEvent;
 use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
-use crate::editing::DoCommandEvent;
-use crate::selection::{SelectEvent, Selected, SelectedLine};
+use crate::editing::DoCommand;
+use crate::selection::{Select, Selected, SelectedLine};
 use crate::timeline::{Timeline, TimelineContext};
-use crate::timing::SeekToEvent;
+use crate::timing::SeekTo;
 use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
 use bevy::ecs::system::SystemState;
-use bevy::prelude::{Entity, EventWriter, Query, Res, World};
+use bevy::prelude::{Entity, MessageWriter, Query, Res, World};
 use egui::{Align2, Color32, FontId, Rect, Sense, Stroke, StrokeKind, Ui};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
@@ -130,9 +130,9 @@ impl Timeline for EventTimeline {
             Query<(&mut LineEvent, Entity, Option<&Selected>, Option<&Pending>)>,
             Query<&Events>,
             Res<BpmList>,
-            EventWriter<SelectEvent>,
-            EventWriter<DoCommandEvent>,
-            EventWriter<SeekToEvent>,
+            MessageWriter<Select>,
+            MessageWriter<DoCommand>,
+            MessageWriter<SeekTo>,
         )> = SystemState::new(world);
 
         let (
@@ -256,7 +256,7 @@ impl Timeline for EventTimeline {
                 if let Some(drag) =
                     BeatRangeDragZone::new(rect, "event-drag", &ctx, &mut *event).show(ui)
                 {
-                    event_writer.write(DoCommandEvent(EditorCommand::EditEvent(EditEvent::new(
+                    event_writer.write(DoCommand(EditorCommand::EditEvent(EditEvent::new(
                         entity, drag.from, drag.to,
                     ))));
                 }
@@ -292,7 +292,7 @@ impl Timeline for EventTimeline {
             }
 
             if response.clicked() {
-                select_events.write(SelectEvent(vec![entity]));
+                select_events.write(Select(vec![entity]));
             }
         }
 
@@ -316,7 +316,7 @@ impl Timeline for EventTimeline {
             {
                 if let Ok(event) = event_query.get(event) {
                     // TODO: refactor logic for navigation
-                    seek_to.write(SeekToEvent(bpm_list.time_at(event.0.start_beat)));
+                    seek_to.write(SeekTo(bpm_list.time_at(event.0.start_beat)));
                 }
             }
         };

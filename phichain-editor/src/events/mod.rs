@@ -5,7 +5,7 @@ use crate::events::note::NoteEventPlugin;
 use bevy::app::{App, Plugin};
 use bevy::ecs::system::SystemState;
 use bevy::log::debug;
-use bevy::prelude::{Event, EventReader, IntoScheduleConfigs, Update, World};
+use bevy::prelude::{IntoScheduleConfigs, Message, MessageReader, Update, World};
 use phichain_game::GameSet;
 use std::fmt::Debug;
 
@@ -26,14 +26,14 @@ impl Plugin for EventPlugin {
 }
 
 /// A event that can be run directly on a world
-pub trait EditorEvent: Event + Clone + Debug {
+pub trait EditorEvent: Message + Clone + Debug {
     /// The output of the event, only available when directly running
     type Output;
 
     fn run(self, world: &mut World) -> Self::Output;
 }
 
-fn handle_editor_event_system<T>(world: &mut World, state: &mut SystemState<EventReader<T>>)
+fn handle_editor_event_system<T>(world: &mut World, state: &mut SystemState<MessageReader<T>>)
 where
     T: EditorEvent,
 {
@@ -61,7 +61,7 @@ impl EditorEventAppExt for App {
     where
         T: EditorEvent,
     {
-        self.add_event::<T>()
+        self.add_message::<T>()
             .add_systems(Update, handle_editor_event_system::<T>.in_set(GameSet));
 
         self

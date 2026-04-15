@@ -1,6 +1,6 @@
 use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
 use crate::identifier::Identifier;
-use crate::telemetry::PushTelemetryEvent;
+use crate::telemetry::PushTelemetry;
 use bevy::ecs::system::{BoxedSystem, SystemState};
 use bevy::log;
 use bevy::prelude::*;
@@ -37,7 +37,7 @@ impl ActionRegistry {
         let id = id.into();
         if let Some(action) = self.0.get_mut(&id) {
             if action.is_heavy {
-                world.send_event(PushTelemetryEvent::new(
+                world.write_message(PushTelemetry::new(
                     "phichain.editor.action.invoked",
                     json!({ "action": id }),
                 ));
@@ -56,7 +56,6 @@ impl Plugin for ActionPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ActionRegistry>()
             .add_systems(Update, handle_action_hotkey_system.in_set(GameSet))
-            .add_event::<RunAction>()
             .add_observer(run_action_observer);
     }
 }
@@ -151,8 +150,11 @@ fn handle_action_hotkey_system(world: &mut World) {
 #[derive(Debug, Clone, Event)]
 pub struct RunAction(pub Identifier);
 
-fn run_action_observer(trigger: Trigger<RunAction>, world: &mut World) {
-    world.resource_scope(|world, mut registry: Mut<ActionRegistry>| {
-        registry.run_action(world, trigger.event().0.clone());
+fn run_action_observer(event: On<RunAction>, mut commands: Commands) {
+    let id = event.event().0.clone();
+    commands.queue(move |world: &mut World| {
+        world.resource_scope(|world, mut registry: Mut<ActionRegistry>| {
+            registry.run_action(world, id);
+        });
     });
 }
