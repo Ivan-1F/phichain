@@ -1,6 +1,6 @@
 use crate::selection::{Select, SelectedLine};
 use bevy::prelude::*;
-use phichain_chart::line::Line;
+use phichain_chart::line::{Line, LineOpacity};
 use phichain_chart::note::Note;
 
 pub struct PickingPlugin;
@@ -28,15 +28,17 @@ fn on_click_note(
 
 fn on_click_line(
     click: On<Pointer<Click>>,
-    line_query: Query<(), With<Line>>,
+    line_query: Query<&LineOpacity, With<Line>>,
     selected_line: Option<ResMut<SelectedLine>>,
 ) {
     if click.button != PointerButton::Primary {
         return;
     }
     if let Some(mut selected_line) = selected_line {
-        if line_query.contains(click.entity) {
-            selected_line.0 = click.entity;
+        if let Ok(opacity) = line_query.get(click.entity) {
+            if opacity.0 > 0.0 {
+                selected_line.0 = click.entity;
+            }
         }
     }
 }
