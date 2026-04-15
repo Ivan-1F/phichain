@@ -23,6 +23,7 @@ mod logging;
 mod metronome;
 mod misc;
 mod notification;
+mod picking;
 mod project;
 mod recent_projects;
 mod schedule;
@@ -171,6 +172,7 @@ fn main() {
         .add_plugins(ZoomPlugin)
         .add_plugins(FpsPlugin)
         .add_plugins(LayoutPlugin)
+        .add_plugins(picking::PickingPlugin)
         .add_systems(Startup, setup_system)
         .add_systems(Startup, setup_egui_system)
         .add_systems(
@@ -384,7 +386,7 @@ fn ui_system(world: &mut World) {
 }
 
 fn setup_system(mut commands: Commands) {
-    // this is the camera which renders the game content, including the game ui. its viewport will be limited to game_tab's clip_rect
+    // Game camera renders directly to screen, viewport constrained to game_tab's clip_rect
     commands.spawn((Camera2d, GameCamera, IsDefaultUiCamera));
 }
 
@@ -400,6 +402,11 @@ fn setup_egui_system(mut commands: Commands, mut egui_global_settings: ResMut<Eg
         RenderLayers::none(),
         Camera {
             order: 1,
+            ..default()
+        },
+        // Disable egui pointer capture so Bevy picking can reach game sprites underneath
+        bevy_egui::EguiContextSettings {
+            capture_pointer_input: false,
             ..default()
         },
     ));
