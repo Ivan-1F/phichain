@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
     feature = "bevy",
     require(
         bevy::prelude::Sprite,
+        bevy::prelude::Pickable,
         LinePosition,
         LineRotation,
         LineOpacity,
