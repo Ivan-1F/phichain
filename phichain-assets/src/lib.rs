@@ -1,4 +1,6 @@
 use bevy::prelude::*;
+use bevy::asset::RenderAssetUsages;
+use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
 use bevy_asset_loader::prelude::*;
 use bevy_kira_audio::AudioSource;
 use std::env;
@@ -10,6 +12,8 @@ pub struct ImageAssets {
     pub tap: Handle<Image>,
     #[asset(path = "image/drag.png")]
     pub drag: Handle<Image>,
+    /// Combined hold texture (top to bottom: tail | body | head).
+    /// Split into separate parts by [`HoldAtlas`] after loading.
     #[asset(path = "image/hold.png")]
     pub hold: Handle<Image>,
     #[asset(path = "image/flick.png")]
@@ -18,20 +22,42 @@ pub struct ImageAssets {
     pub tap_highlight: Handle<Image>,
     #[asset(path = "image/drag.highlight.png")]
     pub drag_highlight: Handle<Image>,
+    /// Combined hold highlight texture (top to bottom: tail | body | head).
+    /// Split into separate parts by [`HoldAtlas`] after loading.
     #[asset(path = "image/hold.highlight.png")]
     pub hold_highlight: Handle<Image>,
-    #[asset(path = "image/hold_head.png")]
-    pub hold_head: Handle<Image>,
-    #[asset(path = "image/hold_head.highlight.png")]
-    pub hold_head_highlight: Handle<Image>,
-    #[asset(path = "image/hold_tail.png")]
-    pub hold_tail: Handle<Image>,
     #[asset(path = "image/flick.highlight.png")]
     pub flick_highlight: Handle<Image>,
     #[asset(path = "image/line.png")]
     pub line: Handle<Image>,
     #[asset(path = "image/hit.png")]
     pub hit: Handle<Image>,
+}
+
+/// Pixel heights `[tail, head]` used to split the combined hold texture.
+pub struct HoldAtlas {
+    pub hold: [u32; 2],
+    pub hold_highlight: [u32; 2],
+}
+
+impl Default for HoldAtlas {
+    fn default() -> Self {
+        Self {
+            hold: [50, 50],
+            hold_highlight: [0, 110],
+        }
+    }
+}
+
+/// Hold texture parts split from the combined hold image.
+#[derive(Resource)]
+pub struct HoldParts {
+    pub body: Handle<Image>,
+    pub head: Handle<Image>,
+    pub tail: Handle<Image>,
+    pub body_highlight: Handle<Image>,
+    pub head_highlight: Handle<Image>,
+    pub tail_highlight: Handle<Image>,
 }
 
 #[derive(AssetCollection, Resource)]
@@ -82,7 +108,11 @@ pub struct AssetsPlugin;
 impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
         app.init_collection::<ImageAssets>()
-            .init_collection::<AudioAssets>();
+            .init_collection::<AudioAssets>()
+            .add_systems(
+                Update,
+                split_hold_textures_system.run_if(not(resource_exists::<HoldParts>)),
+            );
 
         #[cfg(feature = "egui")]
         app.add_systems(bevy_egui::EguiPrimaryContextPass, setup_egui_images_system);
@@ -117,12 +147,17 @@ fn setup_egui_images_system(
     mut commands: Commands,
     mut egui_context: bevy_egui::EguiContexts,
     image_assets: Res<ImageAssets>,
+    hold_parts: Option<Res<HoldParts>>,
     mut images: ResMut<Assets<Image>>,
     egui_images: Option<Res<EguiImageAssets>>,
 ) {
     if egui_images.is_some() {
         return;
     }
+
+    let Some(hold_parts) = hold_parts else {
+        return;
+    };
 
     let mut make_premultiplied = |handle: &Handle<Image>| -> Handle<Image> {
         let src = images.get(handle).expect("image should be loaded");
@@ -136,11 +171,11 @@ fn setup_egui_images_system(
     let egui_assets = EguiImageAssets {
         tap: make_premultiplied(&image_assets.tap),
         drag: make_premultiplied(&image_assets.drag),
-        hold: make_premultiplied(&image_assets.hold),
+        hold: make_premultiplied(&hold_parts.body),
         flick: make_premultiplied(&image_assets.flick),
         tap_highlight: make_premultiplied(&image_assets.tap_highlight),
         drag_highlight: make_premultiplied(&image_assets.drag_highlight),
-        hold_highlight: make_premultiplied(&image_assets.hold_highlight),
+        hold_highlight: make_premultiplied(&hold_parts.body_highlight),
         flick_highlight: make_premultiplied(&image_assets.flick_highlight),
     };
 
@@ -165,4 +200,81 @@ fn premultiply_alpha(image: &mut Image) {
         chunk[1] = (g_lin.powf(1.0 / 2.2) * 255.0) as u8;
         chunk[2] = (b_lin.powf(1.0 / 2.2) * 255.0) as u8;
     }
+}
+
+/// Split a combined hold texture into tail, body, and head parts.
+///
+/// The layout is top-to-bottom: tail (atlas[0] pixels) | body | head (atlas[1] pixels).
+fn split_hold_image(image: &Image, atlas: [u32; 2]) -> (Image, Image, Image) {
+    let w = image.width();
+    let h = image.height();
+    let [tail_h, head_h] = atlas;
+    let body_h = h - tail_h - head_h;
+    let bpp = 4u32; // RGBA8
+    let row = w * bpp;
+
+    let data = image.data.as_ref().expect("image should have data");
+
+    let crop = |y_start: u32, height: u32| -> Image {
+        if height == 0 {
+            // 1x1 transparent pixel placeholder
+            return Image::new(
+                Extent3d {
+                    width: 1,
+                    height: 1,
+                    depth_or_array_layers: 1,
+                },
+                TextureDimension::D2,
+                vec![0, 0, 0, 0],
+                TextureFormat::Rgba8UnormSrgb,
+                RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
+            );
+        }
+        let start = (y_start * row) as usize;
+        let end = start + (height * row) as usize;
+        Image::new(
+            Extent3d {
+                width: w,
+                height,
+                depth_or_array_layers: 1,
+            },
+            TextureDimension::D2,
+            data[start..end].to_vec(),
+            TextureFormat::Rgba8UnormSrgb,
+            RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
+        )
+    };
+
+    let tail = crop(0, tail_h);
+    let body = crop(tail_h, body_h);
+    let head = crop(tail_h + body_h, head_h);
+
+    (tail, body, head)
+}
+
+fn split_hold_textures_system(
+    mut commands: Commands,
+    image_assets: Res<ImageAssets>,
+    mut images: ResMut<Assets<Image>>,
+) {
+    let atlas = HoldAtlas::default();
+
+    let Some(hold_image) = images.get(&image_assets.hold) else {
+        return;
+    };
+    let (tail, body, head) = split_hold_image(hold_image, atlas.hold);
+
+    let Some(hold_hl_image) = images.get(&image_assets.hold_highlight) else {
+        return;
+    };
+    let (tail_hl, body_hl, head_hl) = split_hold_image(hold_hl_image, atlas.hold_highlight);
+
+    commands.insert_resource(HoldParts {
+        body: images.add(body),
+        head: images.add(head),
+        tail: images.add(tail),
+        body_highlight: images.add(body_hl),
+        head_highlight: images.add(head_hl),
+        tail_highlight: images.add(tail_hl),
+    });
 }

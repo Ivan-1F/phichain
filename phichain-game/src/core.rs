@@ -1,6 +1,6 @@
 use bevy::{prelude::*, sprite::Anchor};
 use num::{FromPrimitive, Rational32};
-use phichain_assets::ImageAssets;
+use phichain_assets::{HoldParts, ImageAssets};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::event::{EventEvaluationResult, LineEvent, LineEventKind};
@@ -264,16 +264,17 @@ pub fn update_note_y_system(
 pub fn update_note_texture_system(
     mut query: Query<(&mut Sprite, &Note, Option<&Highlighted>)>,
     assets: Res<ImageAssets>,
+    hold_parts: Res<HoldParts>,
 ) {
     for (mut sprite, note, highlighted) in &mut query {
         match (note.kind, highlighted.is_some()) {
             (NoteKind::Tap, true) => sprite.image = assets.tap_highlight.clone(),
             (NoteKind::Drag, true) => sprite.image = assets.drag_highlight.clone(),
-            (NoteKind::Hold { .. }, true) => sprite.image = assets.hold_highlight.clone(),
+            (NoteKind::Hold { .. }, true) => sprite.image = hold_parts.body_highlight.clone(),
             (NoteKind::Flick, true) => sprite.image = assets.flick_highlight.clone(),
             (NoteKind::Tap, false) => sprite.image = assets.tap.clone(),
             (NoteKind::Drag, false) => sprite.image = assets.drag.clone(),
-            (NoteKind::Hold { .. }, false) => sprite.image = assets.hold.clone(),
+            (NoteKind::Hold { .. }, false) => sprite.image = hold_parts.body.clone(),
             (NoteKind::Flick, false) => sprite.image = assets.flick.clone(),
         }
     }
@@ -342,21 +343,27 @@ pub fn update_hold_components_scale_system(
 
 pub fn update_hold_component_texture_system(
     mut head_query: Query<(&mut Sprite, &ChildOf), (With<HoldHead>, Without<HoldTail>)>,
-    mut tail_query: Query<&mut Sprite, (With<HoldTail>, Without<HoldHead>)>,
+    mut tail_query: Query<(&mut Sprite, &ChildOf), (With<HoldTail>, Without<HoldHead>)>,
     parent_query: Query<Option<&Highlighted>>,
-    assets: Res<ImageAssets>,
+    hold_parts: Res<HoldParts>,
 ) {
     for (mut sprite, child_of) in &mut head_query {
         if let Ok(highlight) = parent_query.get(child_of.parent()).map(|x| x.is_some()) {
             sprite.image = if highlight {
-                assets.hold_head_highlight.clone()
+                hold_parts.head_highlight.clone()
             } else {
-                assets.hold_head.clone()
+                hold_parts.head.clone()
             };
         }
     }
-    for mut sprite in &mut tail_query {
-        sprite.image = assets.hold_tail.clone();
+    for (mut sprite, child_of) in &mut tail_query {
+        if let Ok(highlight) = parent_query.get(child_of.parent()).map(|x| x.is_some()) {
+            sprite.image = if highlight {
+                hold_parts.tail_highlight.clone()
+            } else {
+                hold_parts.tail.clone()
+            };
+        }
     }
 }
 
