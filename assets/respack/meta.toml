@@ -1,0 +1,5 @@
+name = "Phichain Default"
+author = "Phichain"
+hold_atlas = [50, 50]
+hold_highlight_atlas = [0, 110]
+hit_grid = [1, 30]
