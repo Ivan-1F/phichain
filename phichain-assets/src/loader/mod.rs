@@ -7,13 +7,13 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use image::DynamicImage;
 
-use crate::meta::ResPackMeta;
+use crate::meta::RespackMeta;
 
 use source::PackSource;
 
 /// A resource pack fully decoded in memory, ready to be applied to Bevy.
-pub struct LoadedResPack {
-    pub meta: ResPackMeta,
+pub struct LoadedRespack {
+    pub meta: RespackMeta,
     pub images: LoadedImages,
     pub audio: LoadedAudio,
 }
@@ -38,16 +38,25 @@ pub struct LoadedAudio {
 }
 
 /// Load a resource pack from a filesystem directory.
-pub fn load_respack_from_dir(dir: &Path) -> Result<LoadedResPack> {
+pub fn load_respack_from_dir(dir: &Path) -> Result<LoadedRespack> {
     load(PackSource::open_dir(dir)?)
 }
 
 /// Load a resource pack from a ZIP archive on disk.
-pub fn load_respack_from_zip(path: &Path) -> Result<LoadedResPack> {
+pub fn load_respack_from_zip(path: &Path) -> Result<LoadedRespack> {
     load(PackSource::open_zip(path)?)
 }
 
-fn load(mut source: PackSource) -> Result<LoadedResPack> {
+/// Load a resource pack from any path
+pub fn load_respack(path: &Path) -> Result<LoadedRespack> {
+    if path.is_dir() {
+        load_respack_from_dir(path)
+    } else {
+        load_respack_from_zip(path)
+    }
+}
+
+fn load(mut source: PackSource) -> Result<LoadedRespack> {
     if source.exists("info.yml") {
         phira::load(&mut source)
     } else {

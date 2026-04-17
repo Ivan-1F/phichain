@@ -119,6 +119,10 @@ pub struct GameSettings {
     pub aspect_ratio: AspectRatio,
 
     pub hit_effect_follow_game_time: bool,
+
+    /// File name (relative to `<working_dir>/respacks/`) of the active respack.
+    /// `None` uses the built-in default.
+    pub respack: Option<String>,
 }
 
 impl Default for GameSettings {
@@ -131,6 +135,8 @@ impl Default for GameSettings {
             aspect_ratio: AspectRatio::default(),
 
             hit_effect_follow_game_time: false,
+
+            respack: None,
         }
     }
 }

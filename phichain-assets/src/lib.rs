@@ -12,9 +12,10 @@ use bevy_kira_audio::AudioSource;
 use image::DynamicImage;
 
 pub use crate::loader::{
-    load_respack_from_dir, load_respack_from_zip, LoadedAudio, LoadedImages, LoadedResPack,
+    load_respack, load_respack_from_dir, load_respack_from_zip, LoadedAudio, LoadedImages,
+    LoadedRespack,
 };
-pub use crate::meta::ResPackMeta;
+pub use crate::meta::RespackMeta;
 
 /// Game-side image handles sourced from the active resource pack.
 #[derive(Resource)]
@@ -43,7 +44,7 @@ pub struct EditorAudioAssets {
     pub metronome: Handle<AudioSource>,
 }
 
-/// Hold texture parts split from the combined hold image, using [`ResPackMeta`]'s atlas config.
+/// Hold texture parts split from the combined hold image, using [`RespackMeta`]'s atlas config.
 #[derive(Resource)]
 pub struct HoldParts {
     pub body: Handle<Image>,
@@ -93,7 +94,7 @@ pub fn setup_assets() {
 }
 
 /// Return the path to the built-in resource pack directory.
-fn builtin_respack_dir() -> PathBuf {
+pub fn builtin_respack_dir() -> PathBuf {
     let root =
         env::var("BEVY_ASSET_ROOT").expect("BEVY_ASSET_ROOT should be set by setup_assets()");
     PathBuf::from(root).join("assets/respack")
@@ -144,8 +145,8 @@ fn abort_broken_install(what: &str, err: anyhow::Error) -> ! {
 
 /// Apply a loaded resource pack to the Bevy world, replacing any previously active pack's
 /// resources. Consumer systems automatically pick up new handles on the next frame.
-pub fn apply_respack(loaded: LoadedResPack, world: &mut World) -> anyhow::Result<()> {
-    let LoadedResPack {
+pub fn apply_respack(loaded: LoadedRespack, world: &mut World) -> anyhow::Result<()> {
+    let LoadedRespack {
         meta,
         images,
         audio,
@@ -182,7 +183,7 @@ pub fn apply_respack(loaded: LoadedResPack, world: &mut World) -> anyhow::Result
 
 fn build_image_resources(
     images: LoadedImages,
-    meta: &ResPackMeta,
+    meta: &RespackMeta,
     bevy_images: &mut Assets<Image>,
     atlas_layouts: &mut Assets<TextureAtlasLayout>,
 ) -> (ImageAssets, HoldParts, HitEffectAtlas) {
