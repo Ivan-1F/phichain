@@ -108,19 +108,41 @@ pub struct AssetsPlugin;
 
 impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
-        let builtin = load_respack_from_dir(&builtin_respack_dir())
-            .expect("failed to load built-in resource pack");
-        apply_respack(builtin, app.world_mut());
-        load_editor_audio(app.world_mut());
+        load_builtin(app.world_mut())
+            .unwrap_or_else(|err| abort_broken_install("built-in resource pack", err));
 
         #[cfg(feature = "egui")]
         app.add_systems(bevy_egui::EguiPrimaryContextPass, setup_egui_images_system);
     }
 }
 
+fn load_builtin(world: &mut World) -> anyhow::Result<()> {
+    let pack = load_respack_from_dir(&builtin_respack_dir())?;
+    apply_respack(pack, world)?;
+    load_editor_audio(world)?;
+    Ok(())
+}
+
+/// Print a user-facing broken-install error and terminate the process.
+///
+/// Built-in assets ship with the binary, so a missing or corrupted file here
+/// indicates a broken installation rather than a runtime bug. We surface this
+/// distinction clearly instead of dumping a panic stack trace.
+fn abort_broken_install(what: &str, err: anyhow::Error) -> ! {
+    eprintln!();
+    eprintln!("error: failed to load {what}");
+    eprintln!();
+    eprintln!("  {err:#}");
+    eprintln!();
+    eprintln!("This usually means the phichain installation is incomplete or corrupted.");
+    eprintln!("Please reinstall or restore the missing files.");
+    eprintln!();
+    std::process::exit(1);
+}
+
 /// Apply a loaded resource pack to the Bevy world, replacing any previously active pack's
 /// resources. Consumer systems automatically pick up new handles on the next frame.
-pub fn apply_respack(loaded: LoadedResPack, world: &mut World) {
+pub fn apply_respack(loaded: LoadedResPack, world: &mut World) -> anyhow::Result<()> {
     let LoadedResPack {
         meta,
         images,
@@ -141,7 +163,7 @@ pub fn apply_respack(loaded: LoadedResPack, world: &mut World) {
     // Audio
     let hit_sound = world.resource_scope(|_, mut sources: Mut<Assets<AudioSource>>| {
         build_hit_sound_assets(audio, &mut sources)
-    });
+    })?;
 
     world.insert_resource(meta);
     world.insert_resource(image_assets);
@@ -152,6 +174,8 @@ pub fn apply_respack(loaded: LoadedResPack, world: &mut World) {
     // Invalidate egui premultiplied copies so they get rebuilt from the new handles.
     #[cfg(feature = "egui")]
     world.remove_resource::<EguiImageAssets>();
+
+    Ok(())
 }
 
 fn build_image_resources(
@@ -214,27 +238,30 @@ fn build_image_resources(
 fn build_hit_sound_assets(
     audio: LoadedAudio,
     sources: &mut Assets<AudioSource>,
-) -> HitSoundAssets {
-    HitSoundAssets {
-        tap: sources.add(decode_audio(audio.tap)),
-        drag: sources.add(decode_audio(audio.drag)),
-        flick: sources.add(decode_audio(audio.flick)),
-    }
+) -> anyhow::Result<HitSoundAssets> {
+    Ok(HitSoundAssets {
+        tap: sources.add(decode_audio(audio.tap)?),
+        drag: sources.add(decode_audio(audio.drag)?),
+        flick: sources.add(decode_audio(audio.flick)?),
+    })
 }
 
-fn decode_audio(data: Vec<u8>) -> AudioSource {
-    AudioSource {
-        sound: StaticSoundData::from_cursor(std::io::Cursor::new(data))
-            .expect("failed to decode audio"),
-    }
+fn decode_audio(data: Vec<u8>) -> anyhow::Result<AudioSource> {
+    use anyhow::Context;
+    let sound = StaticSoundData::from_cursor(std::io::Cursor::new(data))
+        .context("failed to decode audio")?;
+    Ok(AudioSource { sound })
 }
 
-fn load_editor_audio(world: &mut World) {
+fn load_editor_audio(world: &mut World) -> anyhow::Result<()> {
+    use anyhow::Context;
     let path = editor_audio_dir().join("metronome.wav");
-    let bytes = std::fs::read(&path).expect("failed to read metronome.wav");
-    let source = decode_audio(bytes);
+    let bytes =
+        std::fs::read(&path).with_context(|| format!("failed to read {}", path.display()))?;
+    let source = decode_audio(bytes)?;
     let handle = world.resource_mut::<Assets<AudioSource>>().add(source);
     world.insert_resource(EditorAudioAssets { metronome: handle });
+    Ok(())
 }
 
 fn dynamic_to_bevy(img: DynamicImage) -> Image {
