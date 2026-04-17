@@ -49,6 +49,9 @@ pub struct ResPackInfo {
     pub hold_atlas: [u32; 2],
     #[serde(rename = "holdAtlasMH")]
     pub hold_atlas_mh: [u32; 2],
+    /// `[cols, rows]` for splitting `hit_fx.png` into animation frames.
+    #[serde(rename = "hitFx")]
+    pub hit_fx: [u32; 2],
     #[serde(rename = "hideParticles")]
     pub hide_particles: bool,
     #[serde(rename = "holdRepeat")]
@@ -63,6 +66,7 @@ impl Default for ResPackInfo {
             description: String::new(),
             hold_atlas: [50, 50],
             hold_atlas_mh: [0, 110],
+            hit_fx: [1, 30],
             hide_particles: false,
             hold_repeat: false,
         }

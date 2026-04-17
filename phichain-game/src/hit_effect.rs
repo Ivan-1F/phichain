@@ -6,7 +6,7 @@ use crate::{ChartTime, GameConfig, GameSet, GameViewport, Paused};
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 use bevy_prototype_lyon::shapes;
-use phichain_assets::ImageAssets;
+use phichain_assets::{ImageAssets, ResPackInfo};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::easing::Easing;
@@ -17,7 +17,6 @@ use std::time::Duration;
 
 const HOLD_PARTICLE_INTERVAL: f32 = 0.15;
 const HIT_EFFECT_DURATION: Duration = Duration::from_millis(500);
-const HIT_EFFECT_FRAMES: u32 = 30;
 
 pub struct HitEffectPlugin;
 
@@ -57,7 +56,10 @@ fn update_hit_effect_time_system(
 impl Plugin for HitEffectPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<HitEffectTime>()
-            .add_systems(Startup, setup_system)
+            .add_systems(
+                Update,
+                prepare_atlas_system.run_if(not(resource_exists::<HitEffectAtlas>)),
+            )
             .add_systems(
                 Update,
                 (
@@ -67,7 +69,8 @@ impl Plugin for HitEffectPlugin {
                     animate_hit_effect_system,
                 )
                     .chain()
-                    .in_set(GameSet),
+                    .in_set(GameSet)
+                    .run_if(resource_exists::<HitEffectAtlas>),
             )
             .add_systems(PreUpdate, update_hit_effect_time_system)
             .add_systems(
@@ -89,15 +92,28 @@ impl Plugin for HitEffectPlugin {
 struct HitEffect(Vec2);
 
 #[derive(Resource, Debug)]
-struct TextureAtlasLayoutHandle(Handle<TextureAtlasLayout>);
+struct HitEffectAtlas {
+    layout: Handle<TextureAtlasLayout>,
+    frame_count: u32,
+}
 
-fn setup_system(
+fn prepare_atlas_system(
     mut commands: Commands,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+    images: Res<Assets<Image>>,
+    image_assets: Res<ImageAssets>,
+    info: Res<ResPackInfo>,
 ) {
-    let layout = TextureAtlasLayout::from_grid(UVec2::splat(256), 1, HIT_EFFECT_FRAMES, None, None);
-    let texture_atlas_layout = texture_atlas_layouts.add(layout);
-    commands.insert_resource(TextureAtlasLayoutHandle(texture_atlas_layout.clone()));
+    let Some(image) = images.get(&image_assets.hit) else {
+        return;
+    };
+    let [cols, rows] = info.hit_fx;
+    let frame_size = UVec2::new(image.width() / cols, image.height() / rows);
+    let layout = TextureAtlasLayout::from_grid(frame_size, cols, rows, None, None);
+    commands.insert_resource(HitEffectAtlas {
+        layout: texture_atlas_layouts.add(layout),
+        frame_count: cols * rows,
+    });
 }
 
 #[derive(Component, Deref, DerefMut)]
@@ -106,13 +122,15 @@ struct AnimationTimer(Timer);
 fn animate_hit_effect_system(
     mut commands: Commands,
     time: Res<HitEffectTime>,
+    atlas_res: Res<HitEffectAtlas>,
     mut query: Query<(Entity, &mut AnimationTimer, &mut Sprite), With<HitEffect>>,
 ) {
+    let last_frame = atlas_res.frame_count - 1;
     for (entity, mut timer, mut sprite) in &mut query {
         timer.tick(time.delta());
         if timer.just_finished() {
             if let Some(atlas) = &mut sprite.texture_atlas {
-                if atlas.index == 29 {
+                if atlas.index == last_frame as usize {
                     commands.entity(entity).despawn();
                 } else {
                     atlas.index += 1;
@@ -208,7 +226,7 @@ fn spawn_hit_effect_system(
     assets: Res<ImageAssets>,
     paused: Res<Paused>,
 
-    texture_atlas_layout_handle: Res<TextureAtlasLayoutHandle>,
+    atlas_res: Res<HitEffectAtlas>,
 
     game_viewport: Res<GameViewport>,
 
@@ -241,7 +259,7 @@ fn spawn_hit_effect_system(
             let mut sprite = Sprite::from_atlas_image(
                 assets.hit.clone(),
                 TextureAtlas {
-                    layout: texture_atlas_layout_handle.0.clone(),
+                    layout: atlas_res.layout.clone(),
                     index: 0,
                 },
             );
@@ -252,7 +270,7 @@ fn spawn_hit_effect_system(
                 sprite,
                 HitEffect(position),
                 AnimationTimer(Timer::new(
-                    HIT_EFFECT_DURATION / HIT_EFFECT_FRAMES,
+                    HIT_EFFECT_DURATION / atlas_res.frame_count,
                     TimerMode::Repeating,
                 )),
             ));
