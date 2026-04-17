@@ -12,6 +12,7 @@ serde = { version = "1", features = ["derive"] }
 toml = "0.8"
 # Used only by the Phira compat adapter for reading info.yml.
 serde_yaml = "0.9.34"
+zip = "4.0.0"
 anyhow = "1.0.86"
 
 [features]

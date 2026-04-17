@@ -1,11 +1,10 @@
-use std::path::Path;
-
 use anyhow::{Context, Result};
 use serde::Deserialize;
 
 use crate::meta::ResPackMeta;
 
-use super::{load_audio, load_image, LoadedAudio, LoadedImages, LoadedResPack};
+use super::source::PackSource;
+use super::{load_image, LoadedAudio, LoadedImages, LoadedResPack};
 
 /// Phira's `info.yml` schema. Unsupported fields (`hitFxDuration`,
 /// `colorPerfect`, etc.) are silently ignored.
@@ -58,36 +57,32 @@ impl From<PhiraInfo> for ResPackMeta {
     }
 }
 
-/// Load a Phira-format resource pack from a filesystem directory.
-pub fn load(dir: &Path) -> Result<LoadedResPack> {
-    let image = |name| load_image(dir, name);
-    let audio = |name| load_audio(dir, name);
-
+/// Load a Phira-format resource pack.
+pub fn load(source: &mut PackSource) -> Result<LoadedResPack> {
     Ok(LoadedResPack {
-        meta: load_info(dir)?.into(),
+        meta: load_info(source)?.into(),
         images: LoadedImages {
-            tap: image("click.png")?,
-            tap_highlight: image("click_mh.png")?,
-            drag: image("drag.png")?,
-            drag_highlight: image("drag_mh.png")?,
-            flick: image("flick.png")?,
-            flick_highlight: image("flick_mh.png")?,
-            hold: image("hold.png")?,
-            hold_highlight: image("hold_mh.png")?,
-            hit: image("hit_fx.png")?,
-            line: image("line.png")?,
+            tap: load_image(source, "click.png")?,
+            tap_highlight: load_image(source, "click_mh.png")?,
+            drag: load_image(source, "drag.png")?,
+            drag_highlight: load_image(source, "drag_mh.png")?,
+            flick: load_image(source, "flick.png")?,
+            flick_highlight: load_image(source, "flick_mh.png")?,
+            hold: load_image(source, "hold.png")?,
+            hold_highlight: load_image(source, "hold_mh.png")?,
+            hit: load_image(source, "hit_fx.png")?,
+            line: load_image(source, "line.png")?,
         },
         audio: LoadedAudio {
-            tap: audio("click.ogg")?,
-            drag: audio("drag.ogg")?,
-            flick: audio("flick.ogg")?,
+            tap: source.read("click.ogg")?,
+            drag: source.read("drag.ogg")?,
+            flick: source.read("flick.ogg")?,
         },
     })
 }
 
-fn load_info(dir: &Path) -> Result<PhiraInfo> {
-    let path = dir.join("info.yml");
-    let data = std::fs::read_to_string(&path)
-        .with_context(|| format!("failed to read {}", path.display()))?;
-    serde_yaml::from_str(&data).with_context(|| format!("failed to parse {}", path.display()))
+fn load_info(source: &mut PackSource) -> Result<PhiraInfo> {
+    let bytes = source.read("info.yml")?;
+    let text = std::str::from_utf8(&bytes).context("info.yml is not valid UTF-8")?;
+    serde_yaml::from_str(text).context("failed to parse info.yml")
 }

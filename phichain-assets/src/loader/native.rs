@@ -1,46 +1,41 @@
-use std::path::Path;
-
 use anyhow::{Context, Result};
 
 use crate::meta::ResPackMeta;
 
-use super::{load_audio, load_image, LoadedAudio, LoadedImages, LoadedResPack};
+use super::source::PackSource;
+use super::{load_image, LoadedAudio, LoadedImages, LoadedResPack};
 
-/// Load a phichain-native resource pack from a filesystem directory.
+/// Load a phichain-native resource pack.
 ///
 /// `meta.toml` is optional; default metadata is used when it is missing.
-pub fn load(dir: &Path) -> Result<LoadedResPack> {
-    let image = |name| load_image(dir, name);
-    let audio = |name| load_audio(dir, name);
-
+pub fn load(source: &mut PackSource) -> Result<LoadedResPack> {
     Ok(LoadedResPack {
-        meta: load_meta(dir)?,
+        meta: load_meta(source)?,
         images: LoadedImages {
-            tap: image("tap.png")?,
-            tap_highlight: image("tap.highlight.png")?,
-            drag: image("drag.png")?,
-            drag_highlight: image("drag.highlight.png")?,
-            flick: image("flick.png")?,
-            flick_highlight: image("flick.highlight.png")?,
-            hold: image("hold.png")?,
-            hold_highlight: image("hold.highlight.png")?,
-            hit: image("hit.png")?,
-            line: image("line.png")?,
+            tap: load_image(source, "tap.png")?,
+            tap_highlight: load_image(source, "tap.highlight.png")?,
+            drag: load_image(source, "drag.png")?,
+            drag_highlight: load_image(source, "drag.highlight.png")?,
+            flick: load_image(source, "flick.png")?,
+            flick_highlight: load_image(source, "flick.highlight.png")?,
+            hold: load_image(source, "hold.png")?,
+            hold_highlight: load_image(source, "hold.highlight.png")?,
+            hit: load_image(source, "hit.png")?,
+            line: load_image(source, "line.png")?,
         },
         audio: LoadedAudio {
-            tap: audio("tap.ogg")?,
-            drag: audio("drag.ogg")?,
-            flick: audio("flick.ogg")?,
+            tap: source.read("tap.ogg")?,
+            drag: source.read("drag.ogg")?,
+            flick: source.read("flick.ogg")?,
         },
     })
 }
 
-fn load_meta(dir: &Path) -> Result<ResPackMeta> {
-    let path = dir.join("meta.toml");
-    match std::fs::read_to_string(&path) {
-        Ok(data) => toml::from_str(&data)
-            .with_context(|| format!("failed to parse {}", path.display())),
-        // Missing meta.toml is acceptable — fall back to defaults.
-        Err(_) => Ok(ResPackMeta::default()),
+fn load_meta(source: &mut PackSource) -> Result<ResPackMeta> {
+    if !source.exists("meta.toml") {
+        return Ok(ResPackMeta::default());
     }
+    let bytes = source.read("meta.toml")?;
+    let text = std::str::from_utf8(&bytes).context("meta.toml is not valid UTF-8")?;
+    toml::from_str(text).context("failed to parse meta.toml")
 }

@@ -11,7 +11,9 @@ use bevy_kira_audio::prelude::StaticSoundData;
 use bevy_kira_audio::AudioSource;
 use image::DynamicImage;
 
-pub use crate::loader::{load_respack_from_dir, LoadedAudio, LoadedImages, LoadedResPack};
+pub use crate::loader::{
+    load_respack_from_dir, load_respack_from_zip, LoadedAudio, LoadedImages, LoadedResPack,
+};
 pub use crate::meta::ResPackMeta;
 
 /// Game-side image handles sourced from the active resource pack.

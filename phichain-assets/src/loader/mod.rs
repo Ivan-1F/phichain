@@ -1,12 +1,15 @@
 mod native;
 mod phira;
+mod source;
 
 use std::path::Path;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result};
 use image::DynamicImage;
 
 use crate::meta::ResPackMeta;
+
+use source::PackSource;
 
 /// A resource pack fully decoded in memory, ready to be applied to Bevy.
 pub struct LoadedResPack {
@@ -35,28 +38,24 @@ pub struct LoadedAudio {
 }
 
 /// Load a resource pack from a filesystem directory.
-///
-/// The format is auto-detected:
-/// - If `info.yml` exists, the directory is treated as a Phira resource pack.
-/// - Otherwise, the directory is treated as a phichain-native resource pack
-///   (`meta.toml` is optional; defaults are used when absent).
 pub fn load_respack_from_dir(dir: &Path) -> Result<LoadedResPack> {
-    if !dir.is_dir() {
-        bail!("resource pack directory does not exist: {}", dir.display());
-    }
-    if dir.join("info.yml").exists() {
-        phira::load(dir)
+    load(PackSource::open_dir(dir)?)
+}
+
+/// Load a resource pack from a ZIP archive on disk.
+pub fn load_respack_from_zip(path: &Path) -> Result<LoadedResPack> {
+    load(PackSource::open_zip(path)?)
+}
+
+fn load(mut source: PackSource) -> Result<LoadedResPack> {
+    if source.exists("info.yml") {
+        phira::load(&mut source)
     } else {
-        native::load(dir)
+        native::load(&mut source)
     }
 }
 
-fn load_image(dir: &Path, name: &str) -> Result<DynamicImage> {
-    let path = dir.join(name);
-    image::open(&path).with_context(|| format!("failed to load image: {}", path.display()))
-}
-
-fn load_audio(dir: &Path, name: &str) -> Result<Vec<u8>> {
-    let path = dir.join(name);
-    std::fs::read(&path).with_context(|| format!("failed to load audio: {}", path.display()))
+fn load_image(source: &mut PackSource, name: &str) -> Result<DynamicImage> {
+    let bytes = source.read(name)?;
+    image::load_from_memory(&bytes).with_context(|| format!("failed to decode image: {name}"))
 }
