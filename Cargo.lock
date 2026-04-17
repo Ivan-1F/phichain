@@ -6028,6 +6028,7 @@ dependencies = [
  "bevy_kira_audio",
  "image",
  "serde",
+ "serde_yaml 0.9.34+deprecated",
  "toml 0.8.9",
 ]
 
