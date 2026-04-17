@@ -7,7 +7,7 @@ use serde::Deserialize;
 /// adapter that converts Phira's `info.yml` into this representation.
 #[derive(Debug, Clone, Resource, Deserialize)]
 #[serde(default)]
-pub struct ResPackMeta {
+pub struct RespackMeta {
     pub name: String,
     pub author: String,
     pub description: String,
@@ -21,7 +21,7 @@ pub struct ResPackMeta {
     pub hold_repeat: bool,
 }
 
-impl Default for ResPackMeta {
+impl Default for RespackMeta {
     fn default() -> Self {
         Self {
             name: "Phichain Default".to_owned(),

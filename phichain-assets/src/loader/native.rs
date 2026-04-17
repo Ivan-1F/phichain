@@ -1,15 +1,15 @@
 use anyhow::{Context, Result};
 
-use crate::meta::ResPackMeta;
+use crate::meta::RespackMeta;
 
 use super::source::PackSource;
-use super::{load_image, LoadedAudio, LoadedImages, LoadedResPack};
+use super::{load_image, LoadedAudio, LoadedImages, LoadedRespack};
 
 /// Load a phichain-native resource pack.
 ///
 /// `meta.toml` is optional; default metadata is used when it is missing.
-pub fn load(source: &mut PackSource) -> Result<LoadedResPack> {
-    Ok(LoadedResPack {
+pub fn load(source: &mut PackSource) -> Result<LoadedRespack> {
+    Ok(LoadedRespack {
         meta: load_meta(source)?,
         images: LoadedImages {
             tap: load_image(source, "tap.png")?,
@@ -31,9 +31,9 @@ pub fn load(source: &mut PackSource) -> Result<LoadedResPack> {
     })
 }
 
-fn load_meta(source: &mut PackSource) -> Result<ResPackMeta> {
+fn load_meta(source: &mut PackSource) -> Result<RespackMeta> {
     if !source.exists("meta.toml") {
-        return Ok(ResPackMeta::default());
+        return Ok(RespackMeta::default());
     }
     let bytes = source.read("meta.toml")?;
     let text = std::str::from_utf8(&bytes).context("meta.toml is not valid UTF-8")?;

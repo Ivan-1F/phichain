@@ -1,10 +1,10 @@
 use anyhow::{Context, Result};
 use serde::Deserialize;
 
-use crate::meta::ResPackMeta;
+use crate::meta::RespackMeta;
 
 use super::source::PackSource;
-use super::{load_image, LoadedAudio, LoadedImages, LoadedResPack};
+use super::{load_image, LoadedAudio, LoadedImages, LoadedRespack};
 
 /// Phira's `info.yml` schema. Unsupported fields (`hitFxDuration`,
 /// `colorPerfect`, etc.) are silently ignored.
@@ -28,7 +28,7 @@ struct PhiraInfo {
 
 impl Default for PhiraInfo {
     fn default() -> Self {
-        let fallback = ResPackMeta::default();
+        let fallback = RespackMeta::default();
         Self {
             name: fallback.name,
             author: fallback.author,
@@ -42,7 +42,7 @@ impl Default for PhiraInfo {
     }
 }
 
-impl From<PhiraInfo> for ResPackMeta {
+impl From<PhiraInfo> for RespackMeta {
     fn from(info: PhiraInfo) -> Self {
         Self {
             name: info.name,
@@ -58,8 +58,8 @@ impl From<PhiraInfo> for ResPackMeta {
 }
 
 /// Load a Phira-format resource pack.
-pub fn load(source: &mut PackSource) -> Result<LoadedResPack> {
-    Ok(LoadedResPack {
+pub fn load(source: &mut PackSource) -> Result<LoadedRespack> {
+    Ok(LoadedRespack {
         meta: load_info(source)?.into(),
         images: LoadedImages {
             tap: load_image(source, "click.png")?,
