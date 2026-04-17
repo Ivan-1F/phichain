@@ -233,6 +233,17 @@ tab:
         hit_effect_follow_game_time:
           label: 打击特效使用游戏时间 (调试)
           description: 打击特效是否跟随游戏时间。启用后，打击特效的渲染将不再基于游戏全局时间，而是基于谱面时间。仅在调试环境中存在
+      respack:
+        title: 资源包
+        description: 切换当前使用的资源包，或重新加载当前资源包。外部资源包从 respacks 目录中读取。
+        builtin: 内置
+        pack:
+          label: 当前资源包
+          description: 内置资源包始终可用作为回退。外部资源包来自 respacks/ 目录（ZIP 文件或子目录）。
+        reload:
+          label: 重新加载
+          description: 从磁盘重新读取当前资源包。在编辑资源包时无需重启编辑器即可预览改动。
+          button: 重新加载
       autosave:
         title: 自动保存
         description: 定期自动备份谱面文件以防止修改丢失。自动保存会在 .autosave 文件夹中创建备份文件，不会覆盖项目文件 (chart.json)

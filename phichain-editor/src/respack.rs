@@ -89,6 +89,28 @@ fn resolve_respack_path(name: &str, world: &mut World) -> Result<PathBuf> {
     Ok(dir.join(name))
 }
 
+/// Scan the user's respacks directory for available external packs.
+/// Entries are any ZIP file or subdirectory. Returns just the file/dir names,
+/// sorted alphabetically. An unreachable directory returns an empty list.
+pub fn scan_respacks(working_dir: &WorkingDirectory) -> Vec<String> {
+    let Ok(dir) = working_dir.respacks() else {
+        return Vec::new();
+    };
+    let Ok(entries) = std::fs::read_dir(&dir) else {
+        return Vec::new();
+    };
+    let mut names: Vec<String> = entries
+        .filter_map(Result::ok)
+        .filter(|entry| {
+            let path = entry.path();
+            path.is_dir() || path.extension().is_some_and(|ext| ext == "zip")
+        })
+        .filter_map(|entry| entry.file_name().into_string().ok())
+        .collect();
+    names.sort();
+    names
+}
+
 fn toast(world: &mut World, f: impl FnOnce(&mut ToastsStorage)) {
     if let Some(mut toasts) = world.get_resource_mut::<ToastsStorage>() {
         f(&mut toasts);
