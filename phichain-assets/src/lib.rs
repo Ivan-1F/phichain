@@ -1,79 +1,47 @@
-use bevy::asset::RenderAssetUsages;
-use bevy::prelude::*;
-use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
-use bevy_asset_loader::prelude::*;
-use bevy_kira_audio::AudioSource;
-use serde::Deserialize;
+pub mod loader;
+pub mod meta;
+
 use std::env;
 use std::path::PathBuf;
 
-#[derive(AssetCollection, Resource)]
+use bevy::asset::RenderAssetUsages;
+use bevy::prelude::*;
+use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
+use bevy_kira_audio::prelude::StaticSoundData;
+use bevy_kira_audio::AudioSource;
+use image::DynamicImage;
+
+pub use crate::loader::{load_respack_from_dir, LoadedAudio, LoadedImages, LoadedResPack};
+pub use crate::meta::ResPackMeta;
+
+/// Game-side image handles sourced from the active resource pack.
+#[derive(Resource)]
 pub struct ImageAssets {
-    #[asset(path = "image/tap.png")]
     pub tap: Handle<Image>,
-    #[asset(path = "image/drag.png")]
-    pub drag: Handle<Image>,
-    /// Combined hold texture (top to bottom: tail | body | head).
-    /// Split into separate parts by [`HoldAtlas`] after loading.
-    #[asset(path = "image/hold.png")]
-    pub hold: Handle<Image>,
-    #[asset(path = "image/flick.png")]
-    pub flick: Handle<Image>,
-    #[asset(path = "image/tap.highlight.png")]
     pub tap_highlight: Handle<Image>,
-    #[asset(path = "image/drag.highlight.png")]
+    pub drag: Handle<Image>,
     pub drag_highlight: Handle<Image>,
-    /// Combined hold highlight texture (top to bottom: tail | body | head).
-    /// Split into separate parts by [`HoldAtlas`] after loading.
-    #[asset(path = "image/hold.highlight.png")]
-    pub hold_highlight: Handle<Image>,
-    #[asset(path = "image/flick.highlight.png")]
+    pub flick: Handle<Image>,
     pub flick_highlight: Handle<Image>,
-    #[asset(path = "image/line.png")]
-    pub line: Handle<Image>,
-    #[asset(path = "image/hit.png")]
     pub hit: Handle<Image>,
+    pub line: Handle<Image>,
 }
 
-/// Resource pack configuration parsed from `info.yml`.
-///
-/// Compatible with Phi Recorder and Phira resource pack formats.
-/// Unknown fields are silently ignored via `#[serde(deny_unknown_fields)]` being absent.
-#[derive(Debug, Clone, Resource, Deserialize)]
-#[serde(default)]
-pub struct ResPackInfo {
-    pub name: String,
-    pub author: String,
-    pub description: String,
-    #[serde(rename = "holdAtlas")]
-    pub hold_atlas: [u32; 2],
-    #[serde(rename = "holdAtlasMH")]
-    pub hold_atlas_mh: [u32; 2],
-    /// `[cols, rows]` for splitting `hit_fx.png` into animation frames.
-    #[serde(rename = "hitFx")]
-    pub hit_fx: [u32; 2],
-    #[serde(rename = "hideParticles")]
-    pub hide_particles: bool,
-    #[serde(rename = "holdRepeat")]
-    pub hold_repeat: bool,
+/// Hit sound handles sourced from the active resource pack.
+#[derive(Resource)]
+pub struct HitSoundAssets {
+    pub tap: Handle<AudioSource>,
+    pub drag: Handle<AudioSource>,
+    pub flick: Handle<AudioSource>,
 }
 
-impl Default for ResPackInfo {
-    fn default() -> Self {
-        Self {
-            name: "Phichain Default".to_owned(),
-            author: "Phichain".to_owned(),
-            description: String::new(),
-            hold_atlas: [50, 50],
-            hold_atlas_mh: [0, 110],
-            hit_fx: [1, 30],
-            hide_particles: false,
-            hold_repeat: false,
-        }
-    }
+/// Editor-only audio assets that are not part of the resource pack.
+#[derive(Resource)]
+pub struct EditorAudioAssets {
+    pub metronome: Handle<AudioSource>,
 }
 
-/// Hold texture parts split from the combined hold image.
+/// Hold texture parts split from the combined hold image, using [`ResPackMeta`]'s atlas config.
 #[derive(Resource)]
 pub struct HoldParts {
     pub body: Handle<Image>,
@@ -84,23 +52,18 @@ pub struct HoldParts {
     pub tail_highlight: Handle<Image>,
 }
 
-#[derive(AssetCollection, Resource)]
-pub struct AudioAssets {
-    #[asset(path = "audio/click.ogg")]
-    pub click: Handle<AudioSource>,
-    #[asset(path = "audio/drag.ogg")]
-    pub drag: Handle<AudioSource>,
-    #[asset(path = "audio/flick.ogg")]
-    pub flick: Handle<AudioSource>,
-    #[asset(path = "audio/metronome.wav")]
-    pub metronome: Handle<AudioSource>,
+/// Hit effect sprite atlas derived from the resource pack's `hit.png` and `hit_grid` config.
+#[derive(Resource)]
+pub struct HitEffectAtlas {
+    pub layout: Handle<TextureAtlasLayout>,
+    pub frame_count: u32,
 }
 
 /// Setup bevy asset root environment variable
 ///
 /// In debug environment, it will be the parent of `CARGO_MANIFEST_DIR`, aka phichain project root
 ///
-/// In production environment, it will be `CARGO_MANIFEST_DIR`
+/// In production environment, it will be the parent of the current executable
 ///
 /// This value can be overwritten using the `PHICHAIN_ASSET_ROOT` environment variable
 pub fn setup_assets() {
@@ -127,118 +90,173 @@ pub fn setup_assets() {
     env::set_var("BEVY_ASSET_ROOT", asset_root);
 }
 
+/// Return the path to the built-in resource pack directory.
+fn builtin_respack_dir() -> PathBuf {
+    let root =
+        env::var("BEVY_ASSET_ROOT").expect("BEVY_ASSET_ROOT should be set by setup_assets()");
+    PathBuf::from(root).join("assets/respack")
+}
+
+/// Return the path to the editor-only audio directory (metronome, etc.).
+fn editor_audio_dir() -> PathBuf {
+    let root =
+        env::var("BEVY_ASSET_ROOT").expect("BEVY_ASSET_ROOT should be set by setup_assets()");
+    PathBuf::from(root).join("assets/audio")
+}
+
 pub struct AssetsPlugin;
 
 impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
-        let asset_root = env::var("BEVY_ASSET_ROOT")
-            .map(PathBuf::from)
-            .expect("BEVY_ASSET_ROOT should be set by setup_assets()");
-        let info_path = asset_root.join("assets/image/info.yml");
-        let info: ResPackInfo = std::fs::read_to_string(&info_path)
-            .ok()
-            .and_then(|data| serde_yaml::from_str(&data).ok())
-            .unwrap_or_default();
-
-        app.insert_resource(info)
-            .init_collection::<ImageAssets>()
-            .init_collection::<AudioAssets>()
-            .add_systems(
-                Update,
-                split_hold_textures_system.run_if(not(resource_exists::<HoldParts>)),
-            );
+        let builtin = load_respack_from_dir(&builtin_respack_dir())
+            .expect("failed to load built-in resource pack");
+        apply_respack(builtin, app.world_mut());
+        load_editor_audio(app.world_mut());
 
         #[cfg(feature = "egui")]
         app.add_systems(bevy_egui::EguiPrimaryContextPass, setup_egui_images_system);
     }
 }
 
-/// Premultiplied-alpha copies of image assets for correct egui rendering.
-///
-/// Since bevy_egui 0.39.1, the fragment shader no longer premultiplies alpha for
-/// user textures, but the blend mode is still `PREMULTIPLIED_ALPHA_BLENDING`.
-/// User textures (loaded by Bevy as straight alpha) must be premultiplied before
-/// registration. Bevy's sprite renderer uses straight-alpha blending, so we keep
-/// separate premultiplied copies here for egui use only.
-///
-/// See: https://github.com/vladbat00/bevy_egui/pull/465
-/// See: https://github.com/vladbat00/bevy_egui/releases/tag/v0.39.1
-#[cfg(feature = "egui")]
-#[derive(Resource, Default)]
-pub struct EguiImageAssets {
-    pub tap: Handle<Image>,
-    pub drag: Handle<Image>,
-    pub hold: Handle<Image>,
-    pub flick: Handle<Image>,
-    pub tap_highlight: Handle<Image>,
-    pub drag_highlight: Handle<Image>,
-    pub hold_highlight: Handle<Image>,
-    pub flick_highlight: Handle<Image>,
+/// Apply a loaded resource pack to the Bevy world, replacing any previously active pack's
+/// resources. Consumer systems automatically pick up new handles on the next frame.
+pub fn apply_respack(loaded: LoadedResPack, world: &mut World) {
+    let LoadedResPack {
+        meta,
+        images,
+        audio,
+    } = loaded;
+
+    // Images
+    let (image_assets, hold_parts, hit_atlas) = world.resource_scope(
+        |world, mut bevy_images: Mut<Assets<Image>>| {
+            world.resource_scope(
+                |_, mut atlas_layouts: Mut<Assets<TextureAtlasLayout>>| {
+                    build_image_resources(images, &meta, &mut bevy_images, &mut atlas_layouts)
+                },
+            )
+        },
+    );
+
+    // Audio
+    let hit_sound = world.resource_scope(|_, mut sources: Mut<Assets<AudioSource>>| {
+        build_hit_sound_assets(audio, &mut sources)
+    });
+
+    world.insert_resource(meta);
+    world.insert_resource(image_assets);
+    world.insert_resource(hold_parts);
+    world.insert_resource(hit_atlas);
+    world.insert_resource(hit_sound);
+
+    // Invalidate egui premultiplied copies so they get rebuilt from the new handles.
+    #[cfg(feature = "egui")]
+    world.remove_resource::<EguiImageAssets>();
 }
 
-#[cfg(feature = "egui")]
-fn setup_egui_images_system(
-    mut commands: Commands,
-    mut egui_context: bevy_egui::EguiContexts,
-    image_assets: Res<ImageAssets>,
-    hold_parts: Option<Res<HoldParts>>,
-    mut images: ResMut<Assets<Image>>,
-    egui_images: Option<Res<EguiImageAssets>>,
-) {
-    if egui_images.is_some() {
-        return;
-    }
+fn build_image_resources(
+    images: LoadedImages,
+    meta: &ResPackMeta,
+    bevy_images: &mut Assets<Image>,
+    atlas_layouts: &mut Assets<TextureAtlasLayout>,
+) -> (ImageAssets, HoldParts, HitEffectAtlas) {
+    let tap = bevy_images.add(dynamic_to_bevy(images.tap));
+    let tap_highlight = bevy_images.add(dynamic_to_bevy(images.tap_highlight));
+    let drag = bevy_images.add(dynamic_to_bevy(images.drag));
+    let drag_highlight = bevy_images.add(dynamic_to_bevy(images.drag_highlight));
+    let flick = bevy_images.add(dynamic_to_bevy(images.flick));
+    let flick_highlight = bevy_images.add(dynamic_to_bevy(images.flick_highlight));
+    let line = bevy_images.add(dynamic_to_bevy(images.line));
 
-    let Some(hold_parts) = hold_parts else {
-        return;
+    // Split hold into head/body/tail parts based on hold_atlas / hold_highlight_atlas.
+    let hold_bevy = dynamic_to_bevy(images.hold);
+    let (tail, body, head) = split_hold_image(&hold_bevy, meta.hold_atlas);
+    let hold_hl_bevy = dynamic_to_bevy(images.hold_highlight);
+    let (tail_hl, body_hl, head_hl) = split_hold_image(&hold_hl_bevy, meta.hold_highlight_atlas);
+
+    let hold_parts = HoldParts {
+        body: bevy_images.add(body),
+        head: bevy_images.add(head),
+        tail: bevy_images.add(tail),
+        body_highlight: bevy_images.add(body_hl),
+        head_highlight: bevy_images.add(head_hl),
+        tail_highlight: bevy_images.add(tail_hl),
     };
 
-    let mut make_premultiplied = |handle: &Handle<Image>| -> Handle<Image> {
-        let src = images.get(handle).expect("image should be loaded");
-        let mut copy = src.clone();
-        premultiply_alpha(&mut copy);
-        let copy_handle = images.add(copy);
-        egui_context.add_image(bevy_egui::EguiTextureHandle::Strong(copy_handle.clone()));
-        copy_handle
+    // Build hit effect atlas based on hit_grid.
+    let hit_image = dynamic_to_bevy(images.hit);
+    let [cols, rows] = meta.hit_grid;
+    let frame_size = UVec2::new(hit_image.width() / cols, hit_image.height() / rows);
+    let hit = bevy_images.add(hit_image);
+    let hit_atlas = HitEffectAtlas {
+        layout: atlas_layouts.add(TextureAtlasLayout::from_grid(
+            frame_size, cols, rows, None, None,
+        )),
+        frame_count: cols * rows,
     };
 
-    let egui_assets = EguiImageAssets {
-        tap: make_premultiplied(&image_assets.tap),
-        drag: make_premultiplied(&image_assets.drag),
-        hold: make_premultiplied(&hold_parts.body),
-        flick: make_premultiplied(&image_assets.flick),
-        tap_highlight: make_premultiplied(&image_assets.tap_highlight),
-        drag_highlight: make_premultiplied(&image_assets.drag_highlight),
-        hold_highlight: make_premultiplied(&hold_parts.body_highlight),
-        flick_highlight: make_premultiplied(&image_assets.flick_highlight),
-    };
-
-    commands.insert_resource(egui_assets);
+    (
+        ImageAssets {
+            tap,
+            tap_highlight,
+            drag,
+            drag_highlight,
+            flick,
+            flick_highlight,
+            hit,
+            line,
+        },
+        hold_parts,
+        hit_atlas,
+    )
 }
 
-/// Premultiply alpha in-place in linear space for correct GPU blending.
-/// See [`EguiImageAssets`] for context.
-#[cfg(feature = "egui")]
-fn premultiply_alpha(image: &mut Image) {
-    let data = image.data.as_mut().expect("image should have data");
-    for chunk in data.chunks_exact_mut(4) {
-        let r = chunk[0] as f32 / 255.0;
-        let g = chunk[1] as f32 / 255.0;
-        let b = chunk[2] as f32 / 255.0;
-        let a = chunk[3] as f32 / 255.0;
-        // Premultiply in linear space for correct blending
-        let r_lin = r.powf(2.2) * a;
-        let g_lin = g.powf(2.2) * a;
-        let b_lin = b.powf(2.2) * a;
-        chunk[0] = (r_lin.powf(1.0 / 2.2) * 255.0) as u8;
-        chunk[1] = (g_lin.powf(1.0 / 2.2) * 255.0) as u8;
-        chunk[2] = (b_lin.powf(1.0 / 2.2) * 255.0) as u8;
+fn build_hit_sound_assets(
+    audio: LoadedAudio,
+    sources: &mut Assets<AudioSource>,
+) -> HitSoundAssets {
+    HitSoundAssets {
+        tap: sources.add(decode_audio(audio.tap)),
+        drag: sources.add(decode_audio(audio.drag)),
+        flick: sources.add(decode_audio(audio.flick)),
     }
+}
+
+fn decode_audio(data: Vec<u8>) -> AudioSource {
+    AudioSource {
+        sound: StaticSoundData::from_cursor(std::io::Cursor::new(data))
+            .expect("failed to decode audio"),
+    }
+}
+
+fn load_editor_audio(world: &mut World) {
+    let path = editor_audio_dir().join("metronome.wav");
+    let bytes = std::fs::read(&path).expect("failed to read metronome.wav");
+    let source = decode_audio(bytes);
+    let handle = world.resource_mut::<Assets<AudioSource>>().add(source);
+    world.insert_resource(EditorAudioAssets { metronome: handle });
+}
+
+fn dynamic_to_bevy(img: DynamicImage) -> Image {
+    let rgba = img.into_rgba8();
+    let (w, h) = rgba.dimensions();
+    Image::new(
+        Extent3d {
+            width: w,
+            height: h,
+            depth_or_array_layers: 1,
+        },
+        TextureDimension::D2,
+        rgba.into_raw(),
+        TextureFormat::Rgba8UnormSrgb,
+        RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
+    )
 }
 
 /// Split a combined hold texture into tail, body, and head parts.
 ///
 /// The layout is top-to-bottom: tail (atlas[0] pixels) | body | head (atlas[1] pixels).
+/// A zero-height part becomes a 1×1 transparent placeholder (wgpu requires non-zero dims).
 fn split_hold_image(image: &Image, atlas: [u32; 2]) -> (Image, Image, Image) {
     let w = image.width();
     let h = image.height();
@@ -246,12 +264,10 @@ fn split_hold_image(image: &Image, atlas: [u32; 2]) -> (Image, Image, Image) {
     let body_h = h - tail_h - head_h;
     let bpp = 4u32; // RGBA8
     let row = w * bpp;
-
     let data = image.data.as_ref().expect("image should have data");
 
     let crop = |y_start: u32, height: u32| -> Image {
         if height == 0 {
-            // 1x1 transparent pixel placeholder
             return Image::new(
                 Extent3d {
                     width: 1,
@@ -286,28 +302,81 @@ fn split_hold_image(image: &Image, atlas: [u32; 2]) -> (Image, Image, Image) {
     (tail, body, head)
 }
 
-fn split_hold_textures_system(
-    mut commands: Commands,
-    image_assets: Res<ImageAssets>,
-    mut images: ResMut<Assets<Image>>,
-    info: Res<ResPackInfo>,
-) {
-    let Some(hold_image) = images.get(&image_assets.hold) else {
-        return;
-    };
-    let (tail, body, head) = split_hold_image(hold_image, info.hold_atlas);
-
-    let Some(hold_hl_image) = images.get(&image_assets.hold_highlight) else {
-        return;
-    };
-    let (tail_hl, body_hl, head_hl) = split_hold_image(hold_hl_image, info.hold_atlas_mh);
-
-    commands.insert_resource(HoldParts {
-        body: images.add(body),
-        head: images.add(head),
-        tail: images.add(tail),
-        body_highlight: images.add(body_hl),
-        head_highlight: images.add(head_hl),
-        tail_highlight: images.add(tail_hl),
-    });
+/// Premultiplied-alpha copies of image assets for correct egui rendering.
+///
+/// Since bevy_egui 0.39.1, the fragment shader no longer premultiplies alpha for
+/// user textures, but the blend mode is still `PREMULTIPLIED_ALPHA_BLENDING`.
+/// User textures (loaded by Bevy as straight alpha) must be premultiplied before
+/// registration. Bevy's sprite renderer uses straight-alpha blending, so we keep
+/// separate premultiplied copies here for egui use only.
+///
+/// See: https://github.com/vladbat00/bevy_egui/pull/465
+/// See: https://github.com/vladbat00/bevy_egui/releases/tag/v0.39.1
+#[cfg(feature = "egui")]
+#[derive(Resource, Default)]
+pub struct EguiImageAssets {
+    pub tap: Handle<Image>,
+    pub drag: Handle<Image>,
+    pub hold: Handle<Image>,
+    pub flick: Handle<Image>,
+    pub tap_highlight: Handle<Image>,
+    pub drag_highlight: Handle<Image>,
+    pub hold_highlight: Handle<Image>,
+    pub flick_highlight: Handle<Image>,
 }
+
+#[cfg(feature = "egui")]
+fn setup_egui_images_system(
+    mut commands: Commands,
+    mut egui_context: bevy_egui::EguiContexts,
+    image_assets: Res<ImageAssets>,
+    hold_parts: Res<HoldParts>,
+    mut images: ResMut<Assets<Image>>,
+    egui_images: Option<Res<EguiImageAssets>>,
+) {
+    if egui_images.is_some() {
+        return;
+    }
+
+    let mut make_premultiplied = |handle: &Handle<Image>| -> Handle<Image> {
+        let src = images.get(handle).expect("image should be loaded");
+        let mut copy = src.clone();
+        premultiply_alpha(&mut copy);
+        let copy_handle = images.add(copy);
+        egui_context.add_image(bevy_egui::EguiTextureHandle::Strong(copy_handle.clone()));
+        copy_handle
+    };
+
+    let egui_assets = EguiImageAssets {
+        tap: make_premultiplied(&image_assets.tap),
+        drag: make_premultiplied(&image_assets.drag),
+        hold: make_premultiplied(&hold_parts.body),
+        flick: make_premultiplied(&image_assets.flick),
+        tap_highlight: make_premultiplied(&image_assets.tap_highlight),
+        drag_highlight: make_premultiplied(&image_assets.drag_highlight),
+        hold_highlight: make_premultiplied(&hold_parts.body_highlight),
+        flick_highlight: make_premultiplied(&image_assets.flick_highlight),
+    };
+
+    commands.insert_resource(egui_assets);
+}
+
+/// Premultiply alpha in-place in linear space for correct GPU blending.
+/// See [`EguiImageAssets`] for context.
+#[cfg(feature = "egui")]
+fn premultiply_alpha(image: &mut Image) {
+    let data = image.data.as_mut().expect("image should have data");
+    for chunk in data.chunks_exact_mut(4) {
+        let r = chunk[0] as f32 / 255.0;
+        let g = chunk[1] as f32 / 255.0;
+        let b = chunk[2] as f32 / 255.0;
+        let a = chunk[3] as f32 / 255.0;
+        let r_lin = r.powf(2.2) * a;
+        let g_lin = g.powf(2.2) * a;
+        let b_lin = b.powf(2.2) * a;
+        chunk[0] = (r_lin.powf(1.0 / 2.2) * 255.0) as u8;
+        chunk[1] = (g_lin.powf(1.0 / 2.2) * 255.0) as u8;
+        chunk[2] = (b_lin.powf(1.0 / 2.2) * 255.0) as u8;
+    }
+}
+

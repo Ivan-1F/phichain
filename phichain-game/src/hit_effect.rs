@@ -6,7 +6,7 @@ use crate::{ChartTime, GameConfig, GameSet, GameViewport, Paused};
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 use bevy_prototype_lyon::shapes;
-use phichain_assets::{ImageAssets, ResPackInfo};
+use phichain_assets::{HitEffectAtlas, ImageAssets};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::easing::Easing;
@@ -58,10 +58,6 @@ impl Plugin for HitEffectPlugin {
         app.init_resource::<HitEffectTime>()
             .add_systems(
                 Update,
-                prepare_atlas_system.run_if(not(resource_exists::<HitEffectAtlas>)),
-            )
-            .add_systems(
-                Update,
                 (
                     spawn_hit_effect_system,
                     update_hit_effect_system,
@@ -69,8 +65,7 @@ impl Plugin for HitEffectPlugin {
                     animate_hit_effect_system,
                 )
                     .chain()
-                    .in_set(GameSet)
-                    .run_if(resource_exists::<HitEffectAtlas>),
+                    .in_set(GameSet),
             )
             .add_systems(PreUpdate, update_hit_effect_time_system)
             .add_systems(
@@ -90,31 +85,6 @@ impl Plugin for HitEffectPlugin {
 
 #[derive(Component, Debug)]
 struct HitEffect(Vec2);
-
-#[derive(Resource, Debug)]
-struct HitEffectAtlas {
-    layout: Handle<TextureAtlasLayout>,
-    frame_count: u32,
-}
-
-fn prepare_atlas_system(
-    mut commands: Commands,
-    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
-    images: Res<Assets<Image>>,
-    image_assets: Res<ImageAssets>,
-    info: Res<ResPackInfo>,
-) {
-    let Some(image) = images.get(&image_assets.hit) else {
-        return;
-    };
-    let [cols, rows] = info.hit_fx;
-    let frame_size = UVec2::new(image.width() / cols, image.height() / rows);
-    let layout = TextureAtlasLayout::from_grid(frame_size, cols, rows, None, None);
-    commands.insert_resource(HitEffectAtlas {
-        layout: texture_atlas_layouts.add(layout),
-        frame_count: cols * rows,
-    });
-}
 
 #[derive(Component, Deref, DerefMut)]
 struct AnimationTimer(Timer);

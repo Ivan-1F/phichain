@@ -5,7 +5,7 @@ use crate::timing::{ChartTime, Paused};
 use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
 use bevy_persistent::Persistent;
-use phichain_assets::AudioAssets;
+use phichain_assets::EditorAudioAssets;
 use phichain_chart::beat;
 use phichain_chart::bpm_list::BpmList;
 use phichain_game::GameSet;
@@ -32,7 +32,7 @@ impl Plugin for MetronomePlugin {
 fn play_metronome_system(
     time: Res<ChartTime>,
     bmp_list: Res<BpmList>,
-    assets: Res<AudioAssets>,
+    assets: Res<EditorAudioAssets>,
     audio: Res<Audio>,
     settings: Res<Persistent<EditorSettings>>,
     paused: Res<Paused>,
