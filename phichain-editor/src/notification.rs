@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_egui::EguiContext;
+use bevy_egui::{EguiContext, EguiPrimaryContextPass};
 use egui::{Align2, WidgetText};
 use egui_toast::{Toast, ToastKind, ToastOptions, ToastStyle, Toasts};
 
@@ -11,7 +11,7 @@ pub struct NotificationPlugin;
 impl Plugin for NotificationPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ToastsStorage>()
-            .add_systems(Update, show_egui_notifies_system);
+            .add_systems(EguiPrimaryContextPass, show_egui_notifies_system);
     }
 }
 
