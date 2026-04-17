@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
 use bevy_asset_loader::prelude::*;
 use bevy_kira_audio::AudioSource;
+use serde::Deserialize;
 use std::env;
 use std::path::PathBuf;
 
@@ -34,17 +35,36 @@ pub struct ImageAssets {
     pub hit: Handle<Image>,
 }
 
-/// Pixel heights `[tail, head]` used to split the combined hold texture.
-pub struct HoldAtlas {
-    pub hold: [u32; 2],
-    pub hold_highlight: [u32; 2],
+/// Resource pack configuration parsed from `info.yml`.
+///
+/// Compatible with Phi Recorder and Phira resource pack formats.
+/// Unknown fields are silently ignored via `#[serde(deny_unknown_fields)]` being absent.
+#[derive(Debug, Clone, Resource, Deserialize)]
+#[serde(default)]
+pub struct ResPackInfo {
+    pub name: String,
+    pub author: String,
+    pub description: String,
+    #[serde(rename = "holdAtlas")]
+    pub hold_atlas: [u32; 2],
+    #[serde(rename = "holdAtlasMH")]
+    pub hold_atlas_mh: [u32; 2],
+    #[serde(rename = "hideParticles")]
+    pub hide_particles: bool,
+    #[serde(rename = "holdRepeat")]
+    pub hold_repeat: bool,
 }
 
-impl Default for HoldAtlas {
+impl Default for ResPackInfo {
     fn default() -> Self {
         Self {
-            hold: [50, 50],
-            hold_highlight: [0, 110],
+            name: "Phichain Default".to_owned(),
+            author: "Phichain".to_owned(),
+            description: String::new(),
+            hold_atlas: [50, 50],
+            hold_atlas_mh: [0, 110],
+            hide_particles: false,
+            hold_repeat: false,
         }
     }
 }
@@ -107,7 +127,17 @@ pub struct AssetsPlugin;
 
 impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
-        app.init_collection::<ImageAssets>()
+        let asset_root = env::var("BEVY_ASSET_ROOT")
+            .map(PathBuf::from)
+            .expect("BEVY_ASSET_ROOT should be set by setup_assets()");
+        let info_path = asset_root.join("assets/image/info.yml");
+        let info: ResPackInfo = std::fs::read_to_string(&info_path)
+            .ok()
+            .and_then(|data| serde_yaml::from_str(&data).ok())
+            .unwrap_or_default();
+
+        app.insert_resource(info)
+            .init_collection::<ImageAssets>()
             .init_collection::<AudioAssets>()
             .add_systems(
                 Update,
@@ -256,18 +286,17 @@ fn split_hold_textures_system(
     mut commands: Commands,
     image_assets: Res<ImageAssets>,
     mut images: ResMut<Assets<Image>>,
+    info: Res<ResPackInfo>,
 ) {
-    let atlas = HoldAtlas::default();
-
     let Some(hold_image) = images.get(&image_assets.hold) else {
         return;
     };
-    let (tail, body, head) = split_hold_image(hold_image, atlas.hold);
+    let (tail, body, head) = split_hold_image(hold_image, info.hold_atlas);
 
     let Some(hold_hl_image) = images.get(&image_assets.hold_highlight) else {
         return;
     };
-    let (tail_hl, body_hl, head_hl) = split_hold_image(hold_hl_image, atlas.hold_highlight);
+    let (tail_hl, body_hl, head_hl) = split_hold_image(hold_hl_image, info.hold_atlas_mh);
 
     commands.insert_resource(HoldParts {
         body: images.add(body),

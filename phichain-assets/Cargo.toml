@@ -8,6 +8,8 @@ bevy = { workspace = true }
 bevy_kira_audio = { workspace = true }
 bevy_asset_loader = "0.25.0"
 bevy_egui = { version = "0.39.1", optional = true }
+serde = { version = "1", features = ["derive"] }
+serde_yaml = "0.9.34"
 
 [features]
 egui = ["dep:bevy_egui"]
