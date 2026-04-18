@@ -5,7 +5,7 @@ use crate::{ChartTime, GameConfig, GameSet, GameViewport, Paused};
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 use bevy_prototype_lyon::shapes;
-use phichain_assets::{HitEffectAtlas, ImageAssets};
+use phichain_assets::{HitEffectAtlas, ImageAssets, RespackMeta};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::easing::Easing;
@@ -124,9 +124,11 @@ fn update_hit_effect_scale_system(
     viewport: Res<GameViewport>,
     config: Res<GameConfig>,
     atlas: Res<HitEffectAtlas>,
+    meta: Res<RespackMeta>,
 ) {
     let target_width = crate::scale::reference_note_width(viewport.0.width(), config.note_scale)
-        * HIT_FX_NOTE_WIDTH_RATIO;
+        * HIT_FX_NOTE_WIDTH_RATIO
+        * meta.hit_fx_scale;
     let scale = target_width / atlas.frame_size.x as f32;
     for mut transform in &mut query {
         transform.scale = Vec3::splat(scale);

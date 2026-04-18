@@ -14,6 +14,7 @@ pub struct RespackMeta {
     pub hold_highlight_atlas: [u32; 2],
     /// `[cols, rows]` grid dimensions for `hit.png` animation frames.
     pub hit_grid: [u32; 2],
+    pub hit_fx_scale: f32,
     pub hide_particles: bool,
     pub hold_repeat: bool,
 }
@@ -27,6 +28,7 @@ impl Default for RespackMeta {
             hold_atlas: [50, 50],
             hold_highlight_atlas: [0, 110],
             hit_grid: [1, 30],
+            hit_fx_scale: 1.0,
             hide_particles: false,
             hold_repeat: false,
         }
