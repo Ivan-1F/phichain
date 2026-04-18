@@ -64,7 +64,7 @@ impl SettingCategory for Respack {
             );
 
         // A selection change needs to both persist and trigger a reload.
-        // A plain reload click doesn't modify settings — we trigger directly
+        // A plain reload click doesn't modify settings: we trigger directly
         // and return `false` so the outer code skips the persist step.
         if changed || reload_clicked {
             world.trigger(ReloadRespack);
