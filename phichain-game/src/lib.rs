@@ -22,7 +22,6 @@ use crate::hit_effect::HitEffectPlugin;
 use crate::illustration::IllustrationPlugin;
 use crate::line::LinePlugin;
 use crate::loader::nonblocking::NonblockingLoaderPlugin;
-use crate::scale::ScalePlugin;
 use crate::score::ScorePlugin;
 use crate::ui::GameUiPlugin;
 use bevy::prelude::*;
@@ -101,7 +100,6 @@ impl Plugin for GamePlugin {
             .add_plugins(NonblockingLoaderPlugin)
             .add_plugins(LinePlugin)
             .add_plugins(HighlightPlugin)
-            .add_plugins(ScalePlugin)
             .add_plugins(CoreGamePlugin)
             .add_plugins(CurveNoteTrackPlugin)
             .add_plugins(ShapePlugin)

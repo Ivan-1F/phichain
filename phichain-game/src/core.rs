@@ -1,6 +1,6 @@
 use bevy::{prelude::*, sprite::Anchor};
 use num::{FromPrimitive, Rational32};
-use phichain_assets::{HoldParts, ImageAssets};
+use phichain_assets::{HoldParts, ImageAssets, RespackDimensions};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::event::{EventEvaluationResult, LineEvent, LineEventKind};
@@ -10,7 +10,7 @@ use crate::constants::PERFECT_COLOR;
 use crate::event::Events;
 use crate::highlight::Highlighted;
 use crate::layer::{HOLD_LAYER, NOTE_LAYER};
-use crate::scale::NoteScale;
+use crate::scale;
 use crate::{ChartTime, GameConfig, GameSet, GameViewport};
 use phichain_chart::line::LineSpeed;
 use phichain_chart::note::{Note, NoteKind};
@@ -61,10 +61,16 @@ impl Plugin for CoreGamePlugin {
 pub fn update_note_scale_system(
     mut query: Query<&mut Transform, With<Note>>,
     game_viewport: Res<GameViewport>,
-    note_scale: Res<NoteScale>,
+    config: Res<GameConfig>,
+    dimensions: Res<RespackDimensions>,
 ) {
+    let scale = scale::note_sprite_local_scale(
+        game_viewport.0.width(),
+        dimensions.note_width,
+        config.note_scale,
+    );
     for mut transform in &mut query {
-        transform.scale = Vec3::splat(note_scale.0 / (game_viewport.0.width() * 3.0 / 1920.0))
+        transform.scale = Vec3::splat(scale);
     }
 }
 
@@ -77,7 +83,7 @@ pub fn update_note_system(
     let beat = bpm_list.beat_at(time.0);
     for (mut transform, mut visibility, note) in &mut query {
         transform.translation.x = (note.x / CANVAS_WIDTH) * game_viewport.0.width()
-            / (game_viewport.0.width() * 3.0 / 1920.0);
+            / scale::line_world_scale(game_viewport.0.width());
 
         transform.translation.z = match note.kind {
             NoteKind::Hold { .. } => HOLD_LAYER,
@@ -170,7 +176,7 @@ pub fn update_line_system(
     config: Res<GameConfig>,
 ) {
     for (position, rotation, opacity, mut transform, mut sprite, parent) in &mut line_query {
-        let scale = game_viewport.0.width() * 3.0 / 1920.0;
+        let scale = scale::line_world_scale(game_viewport.0.width());
         transform.scale = Vec3::splat(if parent.is_some() { 1.0 } else { scale });
         transform.translation.x = position.0.x / CANVAS_WIDTH * game_viewport.0.width()
             / if parent.is_some() { scale } else { 1.0 };
@@ -194,6 +200,7 @@ pub fn update_note_y_system(
     mut note_query: Query<(&mut Transform, &mut Anchor, &mut Visibility, &Note)>,
     time: Res<ChartTime>,
     bpm_list: Res<BpmList>,
+    dimensions: Res<RespackDimensions>,
 ) {
     for (children, events) in &query {
         let mut speed_events: Vec<SpeedSegment> = Vec::new();
@@ -218,7 +225,7 @@ pub fn update_note_y_system(
 
         let distance = |time| {
             distance_at(&speed_events, time) * (game_viewport.0.height() * (120.0 / 900.0))
-                / (game_viewport.0.width() * 3.0 / 1920.0)
+                / scale::line_world_scale(game_viewport.0.width())
         };
         let current_distance = distance(time.0);
         for child in children {
@@ -237,7 +244,7 @@ pub fn update_note_y_system(
                         transform.rotation = Quat::from_rotation_z(
                             if note.above { 0.0_f32 } else { 180.0_f32 }.to_radians(),
                         );
-                        transform.scale.y = height / 1900.0;
+                        transform.scale.y = height / dimensions.hold_body_height;
 
                         // hide notes behind line (cover)
                         if height < 0.0 {
@@ -327,6 +334,7 @@ pub fn update_hold_components_scale_system(
     mut head_query: Query<&mut Transform, (With<HoldHead>, Without<HoldTail>)>,
     mut tail_query: Query<&mut Transform, (With<HoldTail>, Without<HoldHead>)>,
     parent_query: Query<(&Transform, &Children), (Without<HoldHead>, Without<HoldTail>)>,
+    dimensions: Res<RespackDimensions>,
 ) {
     for (transform, children) in &parent_query {
         for child in children {
@@ -335,7 +343,7 @@ pub fn update_hold_components_scale_system(
             }
             if let Ok(mut tail) = tail_query.get_mut(*child) {
                 tail.scale.y = 1.0 / transform.scale.y * transform.scale.x;
-                tail.translation.y = 1900.0;
+                tail.translation.y = dimensions.hold_body_height;
             }
         }
     }

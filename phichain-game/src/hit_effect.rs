@@ -1,7 +1,6 @@
 use crate::constants::PERFECT_COLOR;
 use crate::event::Events;
 use crate::layer::HIT_EFFECT_LAYER;
-use crate::scale::NoteScale;
 use crate::{ChartTime, GameConfig, GameSet, GameViewport, Paused};
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
@@ -17,6 +16,13 @@ use std::time::Duration;
 
 const HOLD_PARTICLE_INTERVAL: f32 = 0.15;
 const HIT_EFFECT_DURATION: Duration = Duration::from_millis(500);
+
+/// Legacy sprite scale multiplier: hit effect is rendered this many times
+/// larger than the viewport-proportional unit used by the note scale formula.
+const HIT_EFFECT_SCALE_MULTIPLIER: f32 = 6.0;
+/// Legacy reference divisor for the viewport-proportional scale. Matches the
+/// divisor used in the old `NoteScale` computation.
+const VIEWPORT_SCALE_REFERENCE: f32 = 8000.0;
 
 pub struct HitEffectPlugin;
 
@@ -118,10 +124,14 @@ fn update_hit_effect_system(mut query: Query<(&mut Transform, &HitEffect)>) {
 
 fn update_hit_effect_scale_system(
     mut query: Query<&mut Transform, With<HitEffect>>,
-    note_scale: Res<NoteScale>,
+    viewport: Res<GameViewport>,
+    config: Res<GameConfig>,
 ) {
+    let scale = viewport.0.width() / VIEWPORT_SCALE_REFERENCE
+        * config.note_scale
+        * HIT_EFFECT_SCALE_MULTIPLIER;
     for mut transform in &mut query {
-        transform.scale = Vec3::splat(note_scale.0 * 6.0)
+        transform.scale = Vec3::splat(scale);
     }
 }
 
@@ -165,15 +175,15 @@ fn compute_hit_effect_position(
 ) -> Vec2 {
     let vw = game_viewport.0.width();
     let vh = game_viewport.0.height();
-    let scale = vw * 3.0 / 1920.0;
+    let line_scale = crate::scale::line_world_scale(vw);
 
     // line world position
     let world_line_x = line_x / CANVAS_WIDTH * vw;
     let world_line_y = line_y / CANVAS_HEIGHT * vh;
 
     // note x offset in world space (same formula as update_note_system, then multiplied by line scale)
-    let local_note_x = (note_x / CANVAS_WIDTH) * vw / (vw * 3.0 / 1920.0);
-    let scaled_note_x = local_note_x * scale;
+    let local_note_x = (note_x / CANVAS_WIDTH) * vw / line_scale;
+    let scaled_note_x = local_note_x * line_scale;
 
     // rotate note offset by line rotation
     let rotation_rad = line_rotation_deg.to_radians();
