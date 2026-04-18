@@ -17,12 +17,8 @@ use std::time::Duration;
 const HOLD_PARTICLE_INTERVAL: f32 = 0.15;
 const HIT_EFFECT_DURATION: Duration = Duration::from_millis(500);
 
-/// Legacy sprite scale multiplier: hit effect is rendered this many times
-/// larger than the viewport-proportional unit used by the note scale formula.
-const HIT_EFFECT_SCALE_MULTIPLIER: f32 = 6.0;
-/// Legacy reference divisor for the viewport-proportional scale. Matches the
-/// divisor used in the old `NoteScale` computation.
-const VIEWPORT_SCALE_REFERENCE: f32 = 8000.0;
+/// Hit effect sprite width as a fraction of the viewport at `note_scale = 1.0`.
+const HIT_EFFECT_WIDTH_RATIO: f32 = 256.0 * 6.0 / 8000.0;
 
 pub struct HitEffectPlugin;
 
@@ -126,10 +122,10 @@ fn update_hit_effect_scale_system(
     mut query: Query<&mut Transform, With<HitEffect>>,
     viewport: Res<GameViewport>,
     config: Res<GameConfig>,
+    atlas: Res<HitEffectAtlas>,
 ) {
-    let scale = viewport.0.width() / VIEWPORT_SCALE_REFERENCE
-        * config.note_scale
-        * HIT_EFFECT_SCALE_MULTIPLIER;
+    let target_width = HIT_EFFECT_WIDTH_RATIO * viewport.0.width() * config.note_scale;
+    let scale = target_width / atlas.frame_size.x as f32;
     for mut transform in &mut query {
         transform.scale = Vec3::splat(scale);
     }
