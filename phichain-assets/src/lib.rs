@@ -62,6 +62,14 @@ pub struct HitEffectAtlas {
     pub frame_count: u32,
 }
 
+#[derive(Resource)]
+pub struct RespackDimensions {
+    /// Width of a non-hold note texture (tap/drag/flick share the same width).
+    pub note_width: f32,
+    /// Height of the hold body slice (the middle stretched part between tail and head).
+    pub hold_body_height: f32,
+}
+
 /// Setup bevy asset root environment variable
 ///
 /// In debug environment, it will be the parent of `CARGO_MANIFEST_DIR`, aka phichain project root
@@ -153,7 +161,7 @@ pub fn apply_respack(loaded: LoadedRespack, world: &mut World) -> anyhow::Result
     } = loaded;
 
     // Images
-    let (image_assets, hold_parts, hit_atlas) = world.resource_scope(
+    let (image_assets, hold_parts, hit_atlas, dimensions) = world.resource_scope(
         |world, mut bevy_images: Mut<Assets<Image>>| {
             world.resource_scope(
                 |_, mut atlas_layouts: Mut<Assets<TextureAtlasLayout>>| {
@@ -173,6 +181,7 @@ pub fn apply_respack(loaded: LoadedRespack, world: &mut World) -> anyhow::Result
     world.insert_resource(hold_parts);
     world.insert_resource(hit_atlas);
     world.insert_resource(hit_sound);
+    world.insert_resource(dimensions);
 
     // Invalidate egui premultiplied copies so they get rebuilt from the new handles.
     #[cfg(feature = "egui")]
@@ -186,7 +195,9 @@ fn build_image_resources(
     meta: &RespackMeta,
     bevy_images: &mut Assets<Image>,
     atlas_layouts: &mut Assets<TextureAtlasLayout>,
-) -> (ImageAssets, HoldParts, HitEffectAtlas) {
+) -> (ImageAssets, HoldParts, HitEffectAtlas, RespackDimensions) {
+    let note_width = images.tap.width() as f32;
+
     let tap = bevy_images.add(dynamic_to_bevy(images.tap));
     let tap_highlight = bevy_images.add(dynamic_to_bevy(images.tap_highlight));
     let drag = bevy_images.add(dynamic_to_bevy(images.drag));
@@ -198,6 +209,7 @@ fn build_image_resources(
     // Split hold into head/body/tail parts based on hold_atlas / hold_highlight_atlas.
     let hold_bevy = dynamic_to_bevy(images.hold);
     let (tail, body, head) = split_hold_image(&hold_bevy, meta.hold_atlas);
+    let hold_body_height = body.height() as f32;
     let hold_hl_bevy = dynamic_to_bevy(images.hold_highlight);
     let (tail_hl, body_hl, head_hl) = split_hold_image(&hold_hl_bevy, meta.hold_highlight_atlas);
 
@@ -235,6 +247,10 @@ fn build_image_resources(
         },
         hold_parts,
         hit_atlas,
+        RespackDimensions {
+            note_width,
+            hold_body_height,
+        },
     )
 }
 
