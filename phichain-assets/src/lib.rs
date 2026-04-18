@@ -60,6 +60,8 @@ pub struct HoldParts {
 pub struct HitEffectAtlas {
     pub layout: Handle<TextureAtlasLayout>,
     pub frame_count: u32,
+    /// Size of a single animation frame in texture pixels.
+    pub frame_size: UVec2,
 }
 
 #[derive(Resource)]
@@ -232,6 +234,7 @@ fn build_image_resources(
             frame_size, cols, rows, None, None,
         )),
         frame_count: cols * rows,
+        frame_size,
     };
 
     (
