@@ -13,13 +13,19 @@
 /// Fraction of the viewport occupied by a reference note at `note_scale = 1.0`.
 const NOTE_WIDTH_RATIO: f32 = 989.0 / 8000.0;
 
+/// Rendered width of a reference note. Used as the base for any sprite whose
+/// size is defined relative to a note (e.g. the hit effect).
+pub fn reference_note_width(viewport_width: f32, user_scale: f32) -> f32 {
+    NOTE_WIDTH_RATIO * viewport_width * user_scale
+}
+
 /// Rendered units per texture pixel.
 ///
 /// Multiply by a texture's pixel size to get its rendered size in the same
 /// units as `viewport_width`. `pack_note_width` is the active pack's reference
 /// non-highlighted tap pixel width.
 pub fn texel_unit(viewport_width: f32, pack_note_width: f32, user_scale: f32) -> f32 {
-    NOTE_WIDTH_RATIO * viewport_width * user_scale / pack_note_width
+    reference_note_width(viewport_width, user_scale) / pack_note_width
 }
 
 /// World scale of the line entity. Children (note sprites) inherit this.

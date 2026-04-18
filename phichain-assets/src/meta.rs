@@ -2,9 +2,6 @@ use bevy::prelude::Resource;
 use serde::Deserialize;
 
 /// Resource pack metadata parsed from `meta.toml`.
-///
-/// This is phichain's native format. Phira compatibility is handled by a separate
-/// adapter that converts Phira's `info.yml` into this representation.
 #[derive(Debug, Clone, Resource, Deserialize)]
 #[serde(default)]
 pub struct RespackMeta {
