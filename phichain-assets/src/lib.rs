@@ -163,15 +163,12 @@ pub fn apply_respack(loaded: LoadedRespack, world: &mut World) -> anyhow::Result
     } = loaded;
 
     // Images
-    let (image_assets, hold_parts, hit_atlas, dimensions) = world.resource_scope(
-        |world, mut bevy_images: Mut<Assets<Image>>| {
-            world.resource_scope(
-                |_, mut atlas_layouts: Mut<Assets<TextureAtlasLayout>>| {
-                    build_image_resources(images, &meta, &mut bevy_images, &mut atlas_layouts)
-                },
-            )
-        },
-    );
+    let (image_assets, hold_parts, hit_atlas, dimensions) =
+        world.resource_scope(|world, mut bevy_images: Mut<Assets<Image>>| {
+            world.resource_scope(|_, mut atlas_layouts: Mut<Assets<TextureAtlasLayout>>| {
+                build_image_resources(images, &meta, &mut bevy_images, &mut atlas_layouts)
+            })
+        });
 
     // Audio
     let hit_sound = world.resource_scope(|_, mut sources: Mut<Assets<AudioSource>>| {
@@ -428,4 +425,3 @@ fn premultiply_alpha(image: &mut Image) {
         chunk[2] = (b_lin.powf(1.0 / 2.2) * 255.0) as u8;
     }
 }
-

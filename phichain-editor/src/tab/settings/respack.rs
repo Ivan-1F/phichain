@@ -53,15 +53,14 @@ impl SettingCategory for Respack {
 
         ui.separator();
 
-        let reload_clicked = ui
-            .item(
-                t!("tab.settings.category.respack.reload.label"),
-                Some(t!("tab.settings.category.respack.reload.description")),
-                |ui| {
-                    ui.button(t!("tab.settings.category.respack.reload.button"))
-                        .clicked()
-                },
-            );
+        let reload_clicked = ui.item(
+            t!("tab.settings.category.respack.reload.label"),
+            Some(t!("tab.settings.category.respack.reload.description")),
+            |ui| {
+                ui.button(t!("tab.settings.category.respack.reload.button"))
+                    .clicked()
+            },
+        );
 
         // A selection change needs to both persist and trigger a reload.
         // A plain reload click doesn't modify settings: we trigger directly

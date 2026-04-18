@@ -34,8 +34,7 @@ impl PackSource {
         match self {
             Self::Dir(dir) => {
                 let path = dir.join(name);
-                std::fs::read(&path)
-                    .with_context(|| format!("failed to read {}", path.display()))
+                std::fs::read(&path).with_context(|| format!("failed to read {}", path.display()))
             }
             Self::Zip(archive) => {
                 let mut entry = archive

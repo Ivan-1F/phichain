@@ -28,10 +28,7 @@ impl Plugin for RespackPlugin {
 #[derive(Event, Debug)]
 pub struct ReloadRespack;
 
-fn trigger_reload_on_startup(
-    settings: Res<Persistent<EditorSettings>>,
-    mut commands: Commands,
-) {
+fn trigger_reload_on_startup(settings: Res<Persistent<EditorSettings>>, mut commands: Commands) {
     // The built-in pack is already active (loaded by `AssetsPlugin::build`);
     // only trigger a reload when the user has selected a custom pack.
     if settings.game.respack.is_some() {
@@ -48,11 +45,15 @@ fn handle_reload_respack(_: On<ReloadRespack>, mut commands: Commands) {
 fn apply(world: &mut World) {
     match load_and_apply(world) {
         Ok(label) => {
-            toast(world, |t| t.success(format!("Loaded resource pack: {label}")));
+            toast(world, |t| {
+                t.success(format!("Loaded resource pack: {label}"))
+            });
         }
         Err(err) => {
             error!("Resource pack load failed: {err:#}");
-            toast(world, |t| t.error(format!("Failed to load resource pack: {err:#}")));
+            toast(world, |t| {
+                t.error(format!("Failed to load resource pack: {err:#}"))
+            });
         }
     }
 }
@@ -67,8 +68,8 @@ fn load_and_apply(world: &mut World) -> Result<String> {
     match selection {
         Some(name) => {
             let path = resolve_respack_path(&name, world)?;
-            let pack = load_respack(&path)
-                .with_context(|| format!("loading {}", path.display()))?;
+            let pack =
+                load_respack(&path).with_context(|| format!("loading {}", path.display()))?;
             apply_respack(pack, world)?;
             Ok(name)
         }
