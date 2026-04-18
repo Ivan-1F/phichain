@@ -145,16 +145,18 @@ impl Timeline for EventTimeline {
             mut seek_to,
         ) = state.get_mut(world);
 
-        let compute_x = |track: u8| -> f32 {
-            viewport.width() / 5.0 * track as f32 - viewport.width() / 5.0 / 2.0 + viewport.min.x
-        };
+        let track_width = viewport.width() / 5.0;
+        let event_width = track_width / 2.0;
+
+        let compute_x =
+            |track: u8| -> f32 { track_width * track as f32 - track_width / 2.0 + viewport.min.x };
 
         let get_event_rect = |event: &LineEvent| {
             let x = compute_x(event.kind.into());
             let y = ctx.time_to_y(bpm_list.time_at(event.start_beat));
 
             let size = egui::Vec2::new(
-                viewport.width() / 8000.0 * 989.0,
+                event_width,
                 y - ctx.time_to_y(bpm_list.time_at(event.end_beat)),
             );
 
@@ -298,7 +300,7 @@ impl Timeline for EventTimeline {
 
         let mut make_anchor = |kind: LineEventKind, event: Entity, top: bool| {
             let x = compute_x(kind.into());
-            let size = egui::Vec2::new(viewport.width() / 8000.0 * 989.0, 10.0);
+            let size = egui::Vec2::new(event_width, 10.0);
             let center = egui::Pos2::new(
                 x,
                 if top {
