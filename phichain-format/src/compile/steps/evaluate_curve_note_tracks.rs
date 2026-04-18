@@ -57,8 +57,8 @@ mod tests {
             Note::new(NoteKind::Tap, true, beat!(4), 100.0, 1.0),
         ];
 
-        // Track A: from=0, to=1 — valid, will generate notes and append them
-        // Track B: from=2, to=3 — out of bounds in original notes, should be skipped
+        // Track A: from=0, to=1, valid, will generate notes and append them
+        // Track B: from=2, to=3, out of bounds in original notes, should be skipped
         let tracks = vec![
             CurveNoteTrack {
                 from: 0,
