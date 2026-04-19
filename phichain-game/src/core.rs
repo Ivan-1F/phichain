@@ -197,7 +197,13 @@ pub fn update_note_y_system(
     query: Query<(&Children, Option<&Events>), With<Line>>,
     game_viewport: Res<GameViewport>,
     line_event_query: Query<&LineEvent>,
-    mut note_query: Query<(&mut Transform, &mut Anchor, &mut Visibility, &Note)>,
+    mut note_query: Query<(
+        &mut Transform,
+        &mut Anchor,
+        &mut Visibility,
+        &Note,
+        Option<&Highlighted>,
+    )>,
     time: Res<ChartTime>,
     bpm_list: Res<BpmList>,
     dimensions: Res<RespackDimensions>,
@@ -229,7 +235,7 @@ pub fn update_note_y_system(
         };
         let current_distance = distance(time.0);
         for child in children {
-            if let Ok((mut transform, mut anchor, mut visibility, note)) =
+            if let Ok((mut transform, mut anchor, mut visibility, note, highlighted)) =
                 note_query.get_mut(*child)
             {
                 let mut y = (distance(bpm_list.time_at(note.beat)) - current_distance) * note.speed;
@@ -244,7 +250,12 @@ pub fn update_note_y_system(
                         transform.rotation = Quat::from_rotation_z(
                             if note.above { 0.0_f32 } else { 180.0_f32 }.to_radians(),
                         );
-                        transform.scale.y = height / dimensions.hold_body_height;
+                        let body_height = if highlighted.is_some() {
+                            dimensions.hold_highlight_body_height
+                        } else {
+                            dimensions.hold_body_height
+                        };
+                        transform.scale.y = height / body_height;
 
                         // hide notes behind line (cover)
                         if height < 0.0 {
@@ -333,17 +344,25 @@ pub fn spawn_hold_component_system(
 pub fn update_hold_components_scale_system(
     mut head_query: Query<&mut Transform, (With<HoldHead>, Without<HoldTail>)>,
     mut tail_query: Query<&mut Transform, (With<HoldTail>, Without<HoldHead>)>,
-    parent_query: Query<(&Transform, &Children), (Without<HoldHead>, Without<HoldTail>)>,
+    parent_query: Query<
+        (&Transform, &Children, Option<&Highlighted>),
+        (Without<HoldHead>, Without<HoldTail>),
+    >,
     dimensions: Res<RespackDimensions>,
 ) {
-    for (transform, children) in &parent_query {
+    for (transform, children, highlighted) in &parent_query {
+        let body_height = if highlighted.is_some() {
+            dimensions.hold_highlight_body_height
+        } else {
+            dimensions.hold_body_height
+        };
         for child in children {
             if let Ok(mut head) = head_query.get_mut(*child) {
                 head.scale.y = 1.0 / transform.scale.y * transform.scale.x;
             }
             if let Ok(mut tail) = tail_query.get_mut(*child) {
                 tail.scale.y = 1.0 / transform.scale.y * transform.scale.x;
-                tail.translation.y = dimensions.hold_body_height;
+                tail.translation.y = body_height;
             }
         }
     }

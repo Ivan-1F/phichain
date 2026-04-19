@@ -68,8 +68,10 @@ pub struct HitEffectAtlas {
 pub struct RespackDimensions {
     /// Width of a non-hold note texture (tap/drag/flick share the same width).
     pub note_width: f32,
-    /// Height of the hold body slice (the middle stretched part between tail and head).
+    /// Height of the non-highlighted hold body slice.
     pub hold_body_height: f32,
+    /// Height of the highlighted hold body slice.
+    pub hold_highlight_body_height: f32,
 }
 
 /// Setup bevy asset root environment variable
@@ -206,6 +208,7 @@ fn build_image_resources(
     let hold_body_height = body.height() as f32;
     let hold_hl_bevy = dynamic_to_bevy(images.hold_highlight);
     let (tail_hl, body_hl, head_hl) = split_hold_image(&hold_hl_bevy, meta.hold_highlight_atlas);
+    let hold_highlight_body_height = body_hl.height() as f32;
 
     let hold_parts = HoldParts {
         body: bevy_images.add(body),
@@ -245,6 +248,7 @@ fn build_image_resources(
         RespackDimensions {
             note_width,
             hold_body_height,
+            hold_highlight_body_height,
         },
     )
 }
