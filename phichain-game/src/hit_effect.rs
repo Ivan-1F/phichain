@@ -15,7 +15,6 @@ use rand::Rng;
 use std::time::Duration;
 
 const HOLD_PARTICLE_INTERVAL: f32 = 0.15;
-const HIT_EFFECT_DURATION: Duration = Duration::from_millis(500);
 
 /// Hit effect sprite width as a multiple of the reference note width.
 /// Equivalent to the legacy formula `(256 * 6 / 8000) * viewport`
@@ -207,6 +206,7 @@ fn spawn_hit_effect_system(
     paused: Res<Paused>,
 
     atlas_res: Res<HitEffectAtlas>,
+    meta: Res<RespackMeta>,
 
     game_viewport: Res<GameViewport>,
 
@@ -250,7 +250,7 @@ fn spawn_hit_effect_system(
                 sprite,
                 HitEffect(position),
                 AnimationTimer(Timer::new(
-                    HIT_EFFECT_DURATION / atlas_res.frame_count,
+                    Duration::from_secs_f32(meta.hit_fx_duration) / atlas_res.frame_count,
                     TimerMode::Repeating,
                 )),
             ));

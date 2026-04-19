@@ -15,6 +15,8 @@ pub struct RespackMeta {
     /// `[cols, rows]` grid dimensions for `hit.png` animation frames.
     pub hit_grid: [u32; 2],
     pub hit_fx_scale: f32,
+    /// Total hit effect animation duration in seconds.
+    pub hit_fx_duration: f32,
     pub hide_particles: bool,
     pub hold_repeat: bool,
 }
@@ -29,6 +31,7 @@ impl Default for RespackMeta {
             hold_highlight_atlas: [0, 110],
             hit_grid: [1, 30],
             hit_fx_scale: 1.0,
+            hit_fx_duration: 0.5,
             hide_particles: false,
             hold_repeat: false,
         }

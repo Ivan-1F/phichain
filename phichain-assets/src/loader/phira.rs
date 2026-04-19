@@ -22,6 +22,8 @@ struct PhiraInfo {
     hit_fx: [u32; 2],
     #[serde(rename = "hitFxScale")]
     hit_fx_scale: f32,
+    #[serde(rename = "hitFxDuration")]
+    hit_fx_duration: f32,
     #[serde(rename = "hideParticles")]
     hide_particles: bool,
     #[serde(rename = "holdRepeat")]
@@ -39,6 +41,7 @@ impl Default for PhiraInfo {
             hold_atlas_mh: fallback.hold_highlight_atlas,
             hit_fx: fallback.hit_grid,
             hit_fx_scale: fallback.hit_fx_scale,
+            hit_fx_duration: fallback.hit_fx_duration,
             hide_particles: fallback.hide_particles,
             hold_repeat: fallback.hold_repeat,
         }
@@ -55,6 +58,7 @@ impl From<PhiraInfo> for RespackMeta {
             hold_highlight_atlas: info.hold_atlas_mh,
             hit_grid: info.hit_fx,
             hit_fx_scale: info.hit_fx_scale,
+            hit_fx_duration: info.hit_fx_duration,
             hide_particles: info.hide_particles,
             hold_repeat: info.hold_repeat,
         }
