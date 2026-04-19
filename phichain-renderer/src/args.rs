@@ -1,6 +1,7 @@
 use bevy::prelude::Resource;
 use clap::Parser;
 use phichain_game::GameConfig;
+use std::path::PathBuf;
 
 /// Render Phigros charts into videos
 #[derive(Debug, Clone, Parser, Resource)]
@@ -19,6 +20,10 @@ pub struct Args {
     /// The end time of the chart to render in seconds. the duration of the music if not given
     #[arg(long)]
     pub to: Option<f32>,
+
+    /// Path to a custom resource pack (directory or .zip). The built-in pack is used if not given
+    #[arg(long)]
+    pub respack: Option<PathBuf>,
 
     #[command(flatten)]
     pub video: VideoArgs,
