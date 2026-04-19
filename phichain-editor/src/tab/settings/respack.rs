@@ -112,30 +112,22 @@ fn upload_previews(ctx: &Context, entry: &RespackEntry) -> [TextureHandle; 4] {
 
 fn pack_row(ui: &mut Ui, cached: &Cached, selected: bool) -> bool {
     let (entry, previews) = cached;
-    let (title, description) = if entry.is_builtin() {
-        let description = if entry.meta.description.is_empty() {
-            t!("tab.settings.category.respack.builtin.fallback").into_owned()
-        } else {
-            entry.meta.description.clone()
-        };
-        (
-            t!("tab.settings.category.respack.builtin.name").into_owned(),
-            description,
-        )
+
+    let filename = entry.filename();
+
+    let title = if entry.meta.name.is_empty() {
+        filename.to_owned()
     } else {
-        let filename = entry.filename();
-        let title = if entry.meta.name.is_empty() {
-            filename.to_owned()
-        } else {
-            entry.meta.name.clone()
-        };
-        let description = if entry.meta.description.is_empty() {
-            t!("tab.settings.category.respack.no_description").into_owned()
-        } else {
-            entry.meta.description.clone()
-        };
-        (title, description)
+        entry.meta.name.clone()
     };
+
+    let description = if entry.meta.description.is_empty() {
+        RichText::new(t!("tab.settings.category.respack.no_description")).italics()
+    } else {
+        RichText::new(entry.meta.description.clone())
+    }
+    .weak()
+    .size(11.0);
 
     ui.scope_builder(UiBuilder::new().sense(Sense::click()), |ui| {
         let fill = if selected {
@@ -152,7 +144,7 @@ fn pack_row(ui: &mut Ui, cached: &Cached, selected: bool) -> bool {
                 ui.horizontal(|ui| {
                     ui.vertical(|ui| {
                         ui.label(RichText::new(&title).strong());
-                        ui.label(RichText::new(&description).weak().size(11.0));
+                        ui.label(description);
                     });
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         // Iterate in reverse so tap/drag/flick/hold appear left→right.
@@ -169,6 +161,5 @@ fn pack_row(ui: &mut Ui, cached: &Cached, selected: bool) -> bool {
             });
     })
     .response
-    .on_hover_cursor(egui::CursorIcon::PointingHand)
     .clicked()
 }

@@ -240,7 +240,7 @@ tab:
           name: 内置
           fallback: 始终可用的内置资源包
         empty: 未在 respacks 目录中发现外部资源包
-        no_description: （无简介）
+        no_description: 无简介
         load_error: 加载失败：%{error}
         reload:
           label: 重新加载
