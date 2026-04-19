@@ -1,12 +1,23 @@
+use std::sync::Arc;
+
 use crate::misc::WorkingDirectory;
-use crate::respack::{scan_respacks, ReloadRespack};
+use crate::respack::{scan_respacks, ReloadRespack, RespackEntry};
 use crate::settings::EditorSettings;
-use crate::tab::settings::{SettingCategory, SettingUi};
+use crate::tab::settings::SettingCategory;
 use bevy::prelude::World;
-use egui::Ui;
+use egui::{
+    Color32, Context, Image, Rect, RichText, Sense, TextureHandle, TextureOptions, Ui, UiBuilder,
+    Vec2,
+};
+use phichain_assets::builtin_respack_dir;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
 pub struct Respack;
+
+const PREVIEW_SIZE: f32 = 32.0;
+
+/// An entry paired with its four preview textures already uploaded to egui.
+type Cached = (RespackEntry, [TextureHandle; 4]);
 
 impl SettingCategory for Respack {
     fn name(&self) -> &str {
@@ -18,57 +29,146 @@ impl SettingCategory for Respack {
     }
 
     fn ui(&self, ui: &mut Ui, settings: &mut EditorSettings, world: &mut World) -> bool {
-        let packs = scan_respacks(world.resource::<WorkingDirectory>());
-        let current = settings.game.respack.clone();
-        let builtin_label = t!("tab.settings.category.respack.builtin");
+        let cache_id = egui::Id::new("respack-cache");
 
-        let changed = ui.item(
-            t!("tab.settings.category.respack.pack.label"),
-            Some(t!("tab.settings.category.respack.pack.description")),
-            |ui| {
-                let mut changed = false;
-                let selected_text: &str = current.as_deref().unwrap_or(&builtin_label);
-                egui::ComboBox::from_id_salt("respack-picker")
-                    .selected_text(selected_text)
-                    .show_ui(ui, |ui| {
-                        if ui
-                            .selectable_label(current.is_none(), builtin_label.as_ref())
-                            .clicked()
-                            && current.is_some()
-                        {
-                            settings.game.respack = None;
-                            changed = true;
-                        }
-                        for name in &packs {
-                            let selected = current.as_deref() == Some(name.as_str());
-                            if ui.selectable_label(selected, name).clicked() && !selected {
-                                settings.game.respack = Some(name.clone());
-                                changed = true;
-                            }
-                        }
-                    });
-                changed
-            },
-        );
+        let packs: Arc<Vec<Cached>> = ui
+            .ctx()
+            .data_mut(|d| d.get_temp::<Arc<Vec<Cached>>>(cache_id))
+            .unwrap_or_else(|| {
+                let builtin = RespackEntry::load(builtin_respack_dir())
+                    .expect("built-in resource pack must load");
+                let v: Vec<Cached> = std::iter::once(builtin)
+                    .chain(scan_respacks(world.resource::<WorkingDirectory>()))
+                    .map(|e| {
+                        let p = upload_previews(ui.ctx(), &e);
+                        (e, p)
+                    })
+                    .collect();
+                let v = Arc::new(v);
+                ui.ctx().data_mut(|d| d.insert_temp(cache_id, v.clone()));
+                v
+            });
 
-        ui.separator();
-
-        let reload_clicked = ui.item(
-            t!("tab.settings.category.respack.reload.label"),
-            Some(t!("tab.settings.category.respack.reload.description")),
-            |ui| {
-                ui.button(t!("tab.settings.category.respack.reload.button"))
-                    .clicked()
-            },
-        );
-
-        // A selection change needs to both persist and trigger a reload.
-        // A plain reload click doesn't modify settings: we trigger directly
-        // and return `false` so the outer code skips the persist step.
-        if changed || reload_clicked {
-            world.trigger(ReloadRespack);
+        let mut changed = false;
+        for cached in packs.iter() {
+            let (entry, _) = cached;
+            let key = entry.setting_key();
+            let selected = settings.game.respack.as_deref() == key;
+            if pack_row(ui, cached, selected) && !selected {
+                settings.game.respack = key.map(str::to_owned);
+                changed = true;
+            }
         }
 
+        ui.add_space(8.0);
+        ui.separator();
+        ui.add_space(4.0);
+
+        ui.horizontal(|ui| {
+            ui.label(t!("tab.settings.category.respack.reload.label"));
+            if ui
+                .button(t!("tab.settings.category.respack.reload.button"))
+                .clicked()
+            {
+                ui.ctx()
+                    .data_mut(|d| d.remove::<Arc<Vec<Cached>>>(cache_id));
+                world.trigger(ReloadRespack);
+            }
+        });
+        ui.label(
+            RichText::new(t!("tab.settings.category.respack.reload.description"))
+                .weak()
+                .size(11.0),
+        );
+
+        if changed {
+            world.trigger(ReloadRespack);
+        }
         changed
     }
+}
+
+fn upload_previews(ctx: &Context, entry: &RespackEntry) -> [TextureHandle; 4] {
+    let key = entry.path.display().to_string();
+    let p = &entry.preview;
+    let upload = |suffix: &str, img: &image::DynamicImage| {
+        let rgba = img.to_rgba8();
+        let (w, h) = rgba.dimensions();
+        let color =
+            egui::ColorImage::from_rgba_unmultiplied([w as usize, h as usize], rgba.as_raw());
+        ctx.load_texture(
+            format!("respack/{key}/{suffix}"),
+            color,
+            TextureOptions::LINEAR,
+        )
+    };
+    [
+        upload("tap", &p.tap),
+        upload("drag", &p.drag),
+        upload("flick", &p.flick),
+        upload("hold", &p.hold),
+    ]
+}
+
+fn pack_row(ui: &mut Ui, cached: &Cached, selected: bool) -> bool {
+    let (entry, previews) = cached;
+    let (title, description) = if entry.is_builtin() {
+        let description = if entry.meta.description.is_empty() {
+            t!("tab.settings.category.respack.builtin.fallback").into_owned()
+        } else {
+            entry.meta.description.clone()
+        };
+        (
+            t!("tab.settings.category.respack.builtin.name").into_owned(),
+            description,
+        )
+    } else {
+        let filename = entry.filename();
+        let title = if entry.meta.name.is_empty() {
+            filename.to_owned()
+        } else {
+            entry.meta.name.clone()
+        };
+        let description = if entry.meta.description.is_empty() {
+            t!("tab.settings.category.respack.no_description").into_owned()
+        } else {
+            entry.meta.description.clone()
+        };
+        (title, description)
+    };
+
+    ui.scope_builder(UiBuilder::new().sense(Sense::click()), |ui| {
+        let fill = if selected {
+            ui.visuals().selection.bg_fill.linear_multiply(0.35)
+        } else {
+            Color32::TRANSPARENT
+        };
+        egui::Frame::new()
+            .fill(fill)
+            .corner_radius(4)
+            .inner_margin(egui::Margin::symmetric(8, 6))
+            .show(ui, |ui| {
+                ui.set_width(ui.available_width());
+                ui.horizontal(|ui| {
+                    ui.vertical(|ui| {
+                        ui.label(RichText::new(&title).strong());
+                        ui.label(RichText::new(&description).weak().size(11.0));
+                    });
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        // Iterate in reverse so tap/drag/flick/hold appear left→right.
+                        for tex in previews.iter().rev() {
+                            let (rect, _) =
+                                ui.allocate_exact_size(Vec2::splat(PREVIEW_SIZE), Sense::hover());
+                            let size = tex.size_vec2();
+                            let scale = (PREVIEW_SIZE / size.x).min(PREVIEW_SIZE / size.y).min(1.0);
+                            let draw = Rect::from_center_size(rect.center(), size * scale);
+                            Image::new(tex).paint_at(ui, draw);
+                        }
+                    });
+                });
+            });
+    })
+    .response
+    .on_hover_cursor(egui::CursorIcon::PointingHand)
+    .clicked()
 }

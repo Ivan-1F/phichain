@@ -3,7 +3,10 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
-use phichain_assets::{apply_respack, builtin_respack_dir, load_respack, load_respack_from_dir};
+use phichain_assets::{
+    apply_respack, builtin_respack_dir, load_respack, load_respack_from_dir, load_respack_meta,
+    load_respack_preview, LoadedRespackPreview, RespackMeta,
+};
 
 use crate::misc::WorkingDirectory;
 use crate::notification::{ToastsExt, ToastsStorage};
@@ -90,30 +93,75 @@ fn resolve_respack_path(name: &str, world: &mut World) -> Result<PathBuf> {
     Ok(dir.join(name))
 }
 
-/// Scan the user's respacks directory for available external packs.
-/// Entries are any ZIP file or subdirectory. Returns just the file/dir names,
-/// sorted alphabetically. An unreachable directory returns an empty list.
-pub fn scan_respacks(working_dir: &WorkingDirectory) -> Vec<String> {
+fn toast(world: &mut World, f: impl FnOnce(&mut ToastsStorage)) {
+    if let Some(mut toasts) = world.get_resource_mut::<ToastsStorage>() {
+        f(&mut toasts);
+    }
+}
+
+pub struct RespackEntry {
+    pub path: PathBuf,
+    pub meta: RespackMeta,
+    pub preview: LoadedRespackPreview,
+}
+
+impl RespackEntry {
+    /// Load a single pack's meta and preview images from disk.
+    pub fn load(path: PathBuf) -> Result<Self> {
+        let meta = load_respack_meta(&path)
+            .with_context(|| format!("loading meta for {}", path.display()))?;
+        let preview = load_respack_preview(&path)
+            .with_context(|| format!("loading preview for {}", path.display()))?;
+        Ok(Self {
+            path,
+            meta,
+            preview,
+        })
+    }
+
+    /// Filename of the pack.
+    pub fn filename(&self) -> &str {
+        self.path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("")
+    }
+
+    /// Whether this is the built-in pack (path matches `builtin_respack_dir()`).
+    pub fn is_builtin(&self) -> bool {
+        self.path == builtin_respack_dir()
+    }
+
+    /// Value that `EditorSettings.game.respack` should take to select this pack.
+    /// Built-in → `None`; external → `Some(filename)`.
+    pub fn setting_key(&self) -> Option<&str> {
+        (!self.is_builtin()).then(|| self.filename())
+    }
+}
+
+/// Scan the respacks directory for packs that decode successfully.
+/// Failed packs are skipped with a warning. Results are sorted by path.
+pub fn scan_respacks(working_dir: &WorkingDirectory) -> Vec<RespackEntry> {
     let Ok(dir) = working_dir.respacks() else {
         return Vec::new();
     };
     let Ok(entries) = std::fs::read_dir(&dir) else {
         return Vec::new();
     };
-    let mut names: Vec<String> = entries
-        .filter_map(Result::ok)
-        .filter(|entry| {
-            let path = entry.path();
-            path.is_dir() || path.extension().is_some_and(|ext| ext == "zip")
+    let mut packs: Vec<RespackEntry> = entries
+        .flatten()
+        .map(|e| e.path())
+        .filter(|path| {
+            path.file_name().and_then(|n| n.to_str()).is_some()
+                && (path.is_dir() || path.extension().is_some_and(|ext| ext == "zip"))
         })
-        .filter_map(|entry| entry.file_name().into_string().ok())
+        .filter_map(|path| {
+            let shown = path.display().to_string();
+            RespackEntry::load(path)
+                .inspect_err(|err| warn!("skipping respack {shown}: {err:#}"))
+                .ok()
+        })
         .collect();
-    names.sort();
-    names
-}
-
-fn toast(world: &mut World, f: impl FnOnce(&mut ToastsStorage)) {
-    if let Some(mut toasts) = world.get_resource_mut::<ToastsStorage>() {
-        f(&mut toasts);
-    }
+    packs.sort_by(|a, b| a.path.cmp(&b.path));
+    packs
 }
