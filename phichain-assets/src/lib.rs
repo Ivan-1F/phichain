@@ -77,26 +77,21 @@ pub struct RespackDimensions {
 /// In debug environment, it will be the parent of `CARGO_MANIFEST_DIR`, aka phichain project root
 ///
 /// In production environment, it will be the parent of the current executable
-///
-/// This value can be overwritten using the `PHICHAIN_ASSET_ROOT` environment variable
 pub fn setup_assets() {
-    let asset_root = match env::var("PHICHAIN_ASSET_ROOT") {
-        Ok(phichain_asset_root) => PathBuf::from(phichain_asset_root),
-        Err(_) => {
-            #[cfg(debug_assertions)]
-            {
-                let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-                manifest.parent().expect("Failed to get root path").into()
-            }
+    let asset_root: PathBuf = {
+        #[cfg(debug_assertions)]
+        {
+            let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+            manifest.parent().expect("Failed to get root path").into()
+        }
 
-            #[cfg(not(debug_assertions))]
-            {
-                env::current_exe()
-                    .expect("Failed to get path to the current exe")
-                    .parent()
-                    .map(ToOwned::to_owned)
-                    .expect("Failed to get parent path of the current exe")
-            }
+        #[cfg(not(debug_assertions))]
+        {
+            env::current_exe()
+                .expect("Failed to get path to the current exe")
+                .parent()
+                .map(ToOwned::to_owned)
+                .expect("Failed to get parent path of the current exe")
         }
     };
 
