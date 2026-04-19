@@ -127,7 +127,7 @@ fn update_hit_effect_scale_system(
 ) {
     let target_width = crate::scale::reference_note_width(viewport.0.width(), config.note_scale)
         * HIT_FX_NOTE_WIDTH_RATIO
-        * meta.hit_fx_scale;
+        * meta.hit_fx.scale;
     let scale = target_width / atlas.frame_size.x as f32;
     for mut transform in &mut query {
         transform.scale = Vec3::splat(scale);
@@ -250,7 +250,7 @@ fn spawn_hit_effect_system(
                 sprite,
                 HitEffect(position),
                 AnimationTimer(Timer::new(
-                    Duration::from_secs_f32(meta.hit_fx_duration) / atlas_res.frame_count,
+                    Duration::from_secs_f32(meta.hit_fx.duration) / atlas_res.frame_count,
                     TimerMode::Repeating,
                 )),
             ));

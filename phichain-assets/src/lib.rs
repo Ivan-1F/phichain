@@ -204,10 +204,10 @@ fn build_image_resources(
 
     // Split hold into head/body/tail parts based on hold_atlas / hold_highlight_atlas.
     let hold_bevy = dynamic_to_bevy(images.hold);
-    let (tail, body, head) = split_hold_image(&hold_bevy, meta.hold_atlas);
+    let (tail, body, head) = split_hold_image(&hold_bevy, meta.hold.atlas);
     let hold_body_height = body.height() as f32;
     let hold_hl_bevy = dynamic_to_bevy(images.hold_highlight);
-    let (tail_hl, body_hl, head_hl) = split_hold_image(&hold_hl_bevy, meta.hold_highlight_atlas);
+    let (tail_hl, body_hl, head_hl) = split_hold_image(&hold_hl_bevy, meta.hold.highlight_atlas);
     let hold_highlight_body_height = body_hl.height() as f32;
 
     let hold_parts = HoldParts {
@@ -221,7 +221,7 @@ fn build_image_resources(
 
     // Build hit effect atlas based on hit_grid.
     let hit_image = dynamic_to_bevy(images.hit);
-    let [cols, rows] = meta.hit_grid;
+    let [cols, rows] = meta.hit_fx.grid;
     let frame_size = UVec2::new(hit_image.width() / cols, hit_image.height() / rows);
     let hit = bevy_images.add(hit_image);
     let hit_atlas = HitEffectAtlas {

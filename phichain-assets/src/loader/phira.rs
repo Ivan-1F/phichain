@@ -1,13 +1,11 @@
 use anyhow::{Context, Result};
 use serde::Deserialize;
 
-use crate::meta::RespackMeta;
+use crate::meta::{HitFxMeta, HoldMeta, RespackMeta};
 
 use super::source::PackSource;
 use super::{load_image, LoadedAudio, LoadedImages, LoadedRespack};
 
-/// Phira's `info.yml` schema. Unsupported fields (`hitFxDuration`,
-/// `colorPerfect`, etc.) are silently ignored.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(default)]
 struct PhiraInfo {
@@ -24,10 +22,6 @@ struct PhiraInfo {
     hit_fx_scale: f32,
     #[serde(rename = "hitFxDuration")]
     hit_fx_duration: f32,
-    #[serde(rename = "hideParticles")]
-    hide_particles: bool,
-    #[serde(rename = "holdRepeat")]
-    hold_repeat: bool,
 }
 
 impl Default for PhiraInfo {
@@ -37,13 +31,11 @@ impl Default for PhiraInfo {
             name: fallback.name,
             author: fallback.author,
             description: fallback.description,
-            hold_atlas: fallback.hold_atlas,
-            hold_atlas_mh: fallback.hold_highlight_atlas,
-            hit_fx: fallback.hit_grid,
-            hit_fx_scale: fallback.hit_fx_scale,
-            hit_fx_duration: fallback.hit_fx_duration,
-            hide_particles: fallback.hide_particles,
-            hold_repeat: fallback.hold_repeat,
+            hold_atlas: fallback.hold.atlas,
+            hold_atlas_mh: fallback.hold.highlight_atlas,
+            hit_fx: fallback.hit_fx.grid,
+            hit_fx_scale: fallback.hit_fx.scale,
+            hit_fx_duration: fallback.hit_fx.duration,
         }
     }
 }
@@ -54,13 +46,15 @@ impl From<PhiraInfo> for RespackMeta {
             name: info.name,
             author: info.author,
             description: info.description,
-            hold_atlas: info.hold_atlas,
-            hold_highlight_atlas: info.hold_atlas_mh,
-            hit_grid: info.hit_fx,
-            hit_fx_scale: info.hit_fx_scale,
-            hit_fx_duration: info.hit_fx_duration,
-            hide_particles: info.hide_particles,
-            hold_repeat: info.hold_repeat,
+            hold: HoldMeta {
+                atlas: info.hold_atlas,
+                highlight_atlas: info.hold_atlas_mh,
+            },
+            hit_fx: HitFxMeta {
+                grid: info.hit_fx,
+                scale: info.hit_fx_scale,
+                duration: info.hit_fx_duration,
+            },
         }
     }
 }
