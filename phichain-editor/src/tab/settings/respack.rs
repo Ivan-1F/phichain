@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::misc::WorkingDirectory;
 use crate::respack::{scan_respacks, ReloadRespack, RespackEntry};
 use crate::settings::EditorSettings;
-use crate::tab::settings::SettingCategory;
+use crate::tab::settings::{SettingCategory, SettingUi};
 use crate::ui::widgets::button_frame::button_frame;
 use bevy::prelude::World;
 use egui::{Context, Image, Rect, RichText, Sense, TextureHandle, TextureOptions, Ui, Vec2};
@@ -62,22 +62,40 @@ impl SettingCategory for Respack {
         ui.separator();
         ui.add_space(4.0);
 
-        ui.horizontal(|ui| {
-            ui.label(t!("tab.settings.category.respack.reload.label"));
-            if ui
-                .button(t!("tab.settings.category.respack.reload.button"))
-                .clicked()
-            {
-                ui.ctx()
-                    .data_mut(|d| d.remove::<Arc<Vec<Cached>>>(cache_id));
-                world.trigger(ReloadRespack);
-            }
-        });
-        ui.label(
-            RichText::new(t!("tab.settings.category.respack.reload.description"))
-                .weak()
-                .size(11.0),
+        let reload_clicked = ui.item(
+            t!("tab.settings.category.respack.reload.label"),
+            Some(t!("tab.settings.category.respack.reload.description")),
+            |ui| {
+                ui.button(t!("tab.settings.category.respack.reload.button"))
+                    .clicked()
+            },
         );
+        if reload_clicked {
+            ui.ctx()
+                .data_mut(|d| d.remove::<Arc<Vec<Cached>>>(cache_id));
+            world.trigger(ReloadRespack);
+        }
+
+        ui.separator();
+
+        let respack_dir = world.resource::<WorkingDirectory>().respacks();
+        let path_text = match &respack_dir {
+            Ok(p) => p.display().to_string(),
+            Err(e) => e.to_string(),
+        };
+        let open_clicked = ui.item(
+            t!("tab.settings.category.respack.open_folder.label"),
+            Some(RichText::new(path_text)),
+            |ui| {
+                ui.button(t!("tab.settings.category.respack.open_folder.button"))
+                    .clicked()
+            },
+        );
+        if open_clicked {
+            if let Ok(path) = respack_dir {
+                let _ = open::that(path);
+            }
+        }
 
         if changed {
             world.trigger(ReloadRespack);

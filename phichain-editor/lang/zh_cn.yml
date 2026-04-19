@@ -237,6 +237,9 @@ tab:
         title: 资源包
         description: 切换当前使用的资源包，或重新加载当前资源包。外部资源包从 respacks 目录中读取。
         no_description: 无简介
+        open_folder:
+          label: 资源包文件夹
+          button: 打开
         reload:
           label: 重新加载
           description: 从磁盘重新读取当前资源包。在编辑资源包时无需重启编辑器即可预览改动。

@@ -237,6 +237,9 @@ tab:
         title: リソースパック
         description: 使用中のリソースパックを切り替えるか、現在のパックを再読み込みします。外部パックは respacks ディレクトリから読み込まれます。
         no_description: 説明なし
+        open_folder:
+          label: リソースパックフォルダ
+          button: 開く
         reload:
           label: 再読み込み
           description: 現在のパックをディスクから再読み込みします。パックを編集する際、エディタを再起動せずに変更を確認できます。

@@ -237,6 +237,9 @@ tab:
         title: Resource Pack
         description: Select the active resource pack or reload the current one. External packs are read from the "respacks" directory.
         no_description: no description
+        open_folder:
+          label: Resource Packs Folder
+          button: Open
         reload:
           label: Reload
           description: Re-read the active pack from disk. Useful when iterating on a pack without restarting the editor.
