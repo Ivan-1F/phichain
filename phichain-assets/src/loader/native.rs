@@ -31,7 +31,7 @@ pub fn load(source: &mut PackSource) -> Result<LoadedRespack> {
     })
 }
 
-fn load_meta(source: &mut PackSource) -> Result<RespackMeta> {
+pub(super) fn load_meta(source: &mut PackSource) -> Result<RespackMeta> {
     if !source.exists("meta.toml") {
         return Ok(RespackMeta::default());
     }

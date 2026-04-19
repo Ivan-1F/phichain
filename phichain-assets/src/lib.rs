@@ -12,8 +12,8 @@ use bevy_kira_audio::AudioSource;
 use image::DynamicImage;
 
 pub use crate::loader::{
-    load_respack, load_respack_from_dir, load_respack_from_zip, LoadedAudio, LoadedImages,
-    LoadedRespack,
+    load_respack, load_respack_from_dir, load_respack_from_zip, load_respack_meta,
+    load_respack_preview, LoadedAudio, LoadedImages, LoadedRespack, LoadedRespackPreview,
 };
 pub use crate::meta::RespackMeta;
 

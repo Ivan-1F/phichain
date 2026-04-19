@@ -83,6 +83,10 @@ pub fn load(source: &mut PackSource) -> Result<LoadedRespack> {
     })
 }
 
+pub(super) fn load_meta(source: &mut PackSource) -> Result<RespackMeta> {
+    Ok(load_info(source)?.into())
+}
+
 fn load_info(source: &mut PackSource) -> Result<PhiraInfo> {
     let bytes = source.read("info.yml")?;
     let text = std::str::from_utf8(&bytes).context("info.yml is not valid UTF-8")?;
