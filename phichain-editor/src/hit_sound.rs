@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
 use bevy_persistent::Persistent;
-use phichain_assets::AudioAssets;
+use phichain_assets::HitSoundAssets;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::note::{Note, NoteKind};
 
@@ -26,7 +26,7 @@ fn play_hit_sound_system(
     query: Query<(&Note, Entity, Option<&PlayedHitSound>)>,
     time: Res<ChartTime>,
     bpm_list: Res<BpmList>,
-    assets: Res<AudioAssets>,
+    assets: Res<HitSoundAssets>,
     audio: Res<Audio>,
     settings: Res<Persistent<EditorSettings>>,
     paused: Res<Paused>,
@@ -35,9 +35,9 @@ fn play_hit_sound_system(
         let note_time = bpm_list.time_at(note.beat);
         if note_time <= time.0 && time.0 - note_time < 0.05 && played.is_none() && !paused.0 {
             let handle = match note.kind {
-                NoteKind::Tap => assets.click.clone(),
+                NoteKind::Tap => assets.tap.clone(),
                 NoteKind::Drag => assets.drag.clone(),
-                NoteKind::Hold { .. } => assets.click.clone(),
+                NoteKind::Hold { .. } => assets.tap.clone(),
                 NoteKind::Flick => assets.flick.clone(),
             };
             audio

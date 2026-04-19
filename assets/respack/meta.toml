@@ -1,0 +1,18 @@
+author = "Phichain"
+
+[name]
+en_us = "Phichain Default"
+zh_cn = "Phichain 默认"
+ja_jp = "Phichain 既定"
+
+[description]
+en_us = "Always-available built-in resource pack"
+zh_cn = "始终可用的内置资源包"
+ja_jp = "常に利用可能な内蔵リソースパック"
+
+[hold]
+atlas = [50, 50]
+highlight_atlas = [0, 110]
+
+[hit_fx]
+grid = [1, 30]

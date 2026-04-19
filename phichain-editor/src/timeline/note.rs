@@ -60,6 +60,7 @@ impl Timeline for NoteTimeline {
             Query<(&mut CurveNoteTrack, &ChildOf, Entity)>,
             Res<BpmList>,
             Res<phichain_assets::EguiImageAssets>,
+            Res<phichain_assets::RespackDimensions>,
             Res<Assets<Image>>,
             Res<EguiUserTextures>,
             MessageWriter<Select>,
@@ -73,6 +74,7 @@ impl Timeline for NoteTimeline {
             mut track_query,
             bpm_list,
             assets,
+            dimensions,
             images,
             textures,
             mut select_events,
@@ -121,15 +123,14 @@ impl Timeline for NoteTimeline {
 
                 let (size, image) = get_asset(handle);
 
+                let unit =
+                    phichain_game::scale::texel_unit(viewport.width(), dimensions.note_width, 1.0);
                 let size = match note.kind {
                     NoteKind::Hold { hold_beat } => egui::Vec2::new(
-                        viewport.width() / 8000.0 * size.x as f32,
+                        size.x as f32 * unit,
                         y - ctx.time_to_y(bpm_list.time_at(note.beat + hold_beat)),
                     ),
-                    _ => egui::Vec2::new(
-                        viewport.width() / 8000.0 * size.x as f32,
-                        viewport.width() / 8000.0 * size.y as f32,
-                    ),
+                    _ => egui::Vec2::new(size.x as f32 * unit, size.y as f32 * unit),
                 };
 
                 let center = match note.kind {

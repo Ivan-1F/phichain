@@ -233,6 +233,17 @@ tab:
         hit_effect_follow_game_time:
           label: ヒットエフェクトをゲーム内時間で再生 (デバッグ用)
           description: ヒットエフェクトをゲーム内時間に追従させるか。有効にすると、ヒットエフェクトの描画はゲームのグローバル時間ではなく、譜面時間に基づきます。デバッグ環境でのみ利用可能です。
+      respack:
+        title: リソースパック
+        description: 使用中のリソースパックを切り替えるか、現在のパックを再読み込みします。外部パックは respacks ディレクトリから読み込まれます。
+        no_description: 説明なし
+        open_folder:
+          label: リソースパックフォルダ
+          button: 開く
+        reload:
+          label: 再読み込み
+          description: 現在のパックをディスクから再読み込みします。パックを編集する際、エディタを再起動せずに変更を確認できます。
+          button: 再読み込み
       autosave:
         title: オートセーブ
         description: 修正の紛失を防ぐため定期的に譜面ファイルを自動バックアップします。オートセーブはプロジェクトファイル (chart.json) を上書きせずに .autosave フォルダにバックアップファイルを作成します
@@ -274,6 +285,11 @@ screenshot:
 illustration:
   load:
     failed: 'イラストの読み込み中にエラーが発生しました: %{error}'
+
+respack:
+  load:
+    succeed: 'リソースパックを読み込みました: %{name}'
+    failed: 'リソースパックの読み込みに失敗しました: %{error}'
 
 error:
   open_project:

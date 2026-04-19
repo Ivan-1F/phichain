@@ -6,8 +6,14 @@ edition = "2021"
 [dependencies]
 bevy = { workspace = true }
 bevy_kira_audio = { workspace = true }
-bevy_asset_loader = "0.25.0"
 bevy_egui = { version = "0.39.1", optional = true }
+image = { version = "0.25.2", features = ["png"] }
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+# Used only by the Phira compat adapter for reading info.yml.
+serde_yaml = "0.9.34"
+zip = "4.0.0"
+anyhow = "1.0.86"
 
 [features]
 egui = ["dep:bevy_egui"]

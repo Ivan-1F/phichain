@@ -1,12 +1,11 @@
 use crate::constants::PERFECT_COLOR;
 use crate::event::Events;
 use crate::layer::HIT_EFFECT_LAYER;
-use crate::scale::NoteScale;
 use crate::{ChartTime, GameConfig, GameSet, GameViewport, Paused};
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 use bevy_prototype_lyon::shapes;
-use phichain_assets::ImageAssets;
+use phichain_assets::{HitEffectAtlas, ImageAssets, RespackMeta};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::easing::Easing;
@@ -16,8 +15,10 @@ use rand::Rng;
 use std::time::Duration;
 
 const HOLD_PARTICLE_INTERVAL: f32 = 0.15;
-const HIT_EFFECT_DURATION: Duration = Duration::from_millis(500);
-const HIT_EFFECT_FRAMES: u32 = 30;
+
+/// Hit effect sprite width as a multiple of the reference note width.
+/// Equivalent to the legacy formula `(256 * 6 / 8000) * viewport`
+const HIT_FX_NOTE_WIDTH_RATIO: f32 = 256.0 * 6.0 / 989.0;
 
 pub struct HitEffectPlugin;
 
@@ -57,7 +58,6 @@ fn update_hit_effect_time_system(
 impl Plugin for HitEffectPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<HitEffectTime>()
-            .add_systems(Startup, setup_system)
             .add_systems(
                 Update,
                 (
@@ -88,31 +88,21 @@ impl Plugin for HitEffectPlugin {
 #[derive(Component, Debug)]
 struct HitEffect(Vec2);
 
-#[derive(Resource, Debug)]
-struct TextureAtlasLayoutHandle(Handle<TextureAtlasLayout>);
-
-fn setup_system(
-    mut commands: Commands,
-    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
-) {
-    let layout = TextureAtlasLayout::from_grid(UVec2::splat(256), 1, HIT_EFFECT_FRAMES, None, None);
-    let texture_atlas_layout = texture_atlas_layouts.add(layout);
-    commands.insert_resource(TextureAtlasLayoutHandle(texture_atlas_layout.clone()));
-}
-
 #[derive(Component, Deref, DerefMut)]
 struct AnimationTimer(Timer);
 
 fn animate_hit_effect_system(
     mut commands: Commands,
     time: Res<HitEffectTime>,
+    atlas_res: Res<HitEffectAtlas>,
     mut query: Query<(Entity, &mut AnimationTimer, &mut Sprite), With<HitEffect>>,
 ) {
+    let last_frame = atlas_res.frame_count - 1;
     for (entity, mut timer, mut sprite) in &mut query {
         timer.tick(time.delta());
         if timer.just_finished() {
             if let Some(atlas) = &mut sprite.texture_atlas {
-                if atlas.index == 29 {
+                if atlas.index == last_frame as usize {
                     commands.entity(entity).despawn();
                 } else {
                     atlas.index += 1;
@@ -130,10 +120,17 @@ fn update_hit_effect_system(mut query: Query<(&mut Transform, &HitEffect)>) {
 
 fn update_hit_effect_scale_system(
     mut query: Query<&mut Transform, With<HitEffect>>,
-    note_scale: Res<NoteScale>,
+    viewport: Res<GameViewport>,
+    config: Res<GameConfig>,
+    atlas: Res<HitEffectAtlas>,
+    meta: Res<RespackMeta>,
 ) {
+    let target_width = crate::scale::reference_note_width(viewport.0.width(), config.note_scale)
+        * HIT_FX_NOTE_WIDTH_RATIO
+        * meta.hit_fx.scale;
+    let scale = target_width / atlas.frame_size.x as f32;
     for mut transform in &mut query {
-        transform.scale = Vec3::splat(note_scale.0 * 6.0)
+        transform.scale = Vec3::splat(scale);
     }
 }
 
@@ -177,15 +174,15 @@ fn compute_hit_effect_position(
 ) -> Vec2 {
     let vw = game_viewport.0.width();
     let vh = game_viewport.0.height();
-    let scale = vw * 3.0 / 1920.0;
+    let line_scale = crate::scale::line_world_scale(vw);
 
     // line world position
     let world_line_x = line_x / CANVAS_WIDTH * vw;
     let world_line_y = line_y / CANVAS_HEIGHT * vh;
 
     // note x offset in world space (same formula as update_note_system, then multiplied by line scale)
-    let local_note_x = (note_x / CANVAS_WIDTH) * vw / (vw * 3.0 / 1920.0);
-    let scaled_note_x = local_note_x * scale;
+    let local_note_x = (note_x / CANVAS_WIDTH) * vw / line_scale;
+    let scaled_note_x = local_note_x * line_scale;
 
     // rotate note offset by line rotation
     let rotation_rad = line_rotation_deg.to_radians();
@@ -208,7 +205,8 @@ fn spawn_hit_effect_system(
     assets: Res<ImageAssets>,
     paused: Res<Paused>,
 
-    texture_atlas_layout_handle: Res<TextureAtlasLayoutHandle>,
+    atlas_res: Res<HitEffectAtlas>,
+    meta: Res<RespackMeta>,
 
     game_viewport: Res<GameViewport>,
 
@@ -241,7 +239,7 @@ fn spawn_hit_effect_system(
             let mut sprite = Sprite::from_atlas_image(
                 assets.hit.clone(),
                 TextureAtlas {
-                    layout: texture_atlas_layout_handle.0.clone(),
+                    layout: atlas_res.layout.clone(),
                     index: 0,
                 },
             );
@@ -252,7 +250,7 @@ fn spawn_hit_effect_system(
                 sprite,
                 HitEffect(position),
                 AnimationTimer(Timer::new(
-                    HIT_EFFECT_DURATION / HIT_EFFECT_FRAMES,
+                    Duration::from_secs_f32(meta.hit_fx.duration) / atlas_res.frame_count,
                     TimerMode::Repeating,
                 )),
             ));

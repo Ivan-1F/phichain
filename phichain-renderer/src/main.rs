@@ -25,7 +25,7 @@ use bevy::winit::WinitPlugin;
 use bevy_kira_audio::AudioPlugin;
 use clap::Parser;
 use crossbeam_channel::{Receiver, Sender};
-use phichain_assets::AssetsPlugin;
+use phichain_assets::{apply_respack, load_respack, AssetsPlugin};
 use phichain_chart::project::Project;
 use phichain_game::{ChartTime, GameConfig, GamePlugin, GameSet, GameViewport, Paused};
 use std::collections::VecDeque;
@@ -79,6 +79,7 @@ fn main() {
         .init_resource::<SceneController>()
         .add_plugins(AudioPlugin)
         .add_plugins(AssetsPlugin)
+        .add_plugins(CustomRespackPlugin)
         .add_plugins(GamePlugin)
         .add_systems(Startup, setup_system)
         .run();
@@ -211,6 +212,27 @@ fn setup_system(
 
     phichain_game::loader::load_project(&project, &mut commands)
         .expect("Failed to load project into the world");
+}
+
+pub struct CustomRespackPlugin;
+impl Plugin for CustomRespackPlugin {
+    fn build(&self, app: &mut App) {
+        let Some(path) = app.world().resource::<Args>().respack.clone() else {
+            return;
+        };
+        let pack = match load_respack(&path) {
+            Ok(pack) => pack,
+            Err(err) => {
+                eprintln!("error: failed to load respack {}: {err:#}", path.display());
+                std::process::exit(1);
+            }
+        };
+        if let Err(err) = apply_respack(pack, app.world_mut()) {
+            eprintln!("error: failed to apply respack {}: {err:#}", path.display());
+            std::process::exit(1);
+        }
+        info!("loaded custom respack: {}", path.display());
+    }
 }
 
 /// Plugin for Render world part of work

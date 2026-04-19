@@ -3,6 +3,7 @@ use crate::settings::EditorSettings;
 use crate::tab::settings::settings_ui;
 use crate::translation::Languages;
 use crate::ui::sides::SidesExt;
+use crate::ui::widgets::button_frame::button_frame;
 use crate::ui::widgets::language_combobox::language_combobox;
 use crate::{
     file::{pick_file, pick_folder, FilePickingAppExt, PickedFile},
@@ -268,16 +269,17 @@ fn ui_system(world: &mut World) {
             ui.label(t!("home.recent_projects.empty"));
         }
         ScrollArea::vertical().show(ui, |ui| {
+            let len = recent_projects.0.len();
+
             for (index, recent_project) in recent_projects.0.iter().rev().enumerate() {
-                ui.group(|ui| {
+                let response = button_frame(ui, false, |ui, text_color| {
+                    ui.set_width(ui.available_width());
+                    let muted = text_color.linear_multiply(0.7);
                     ui.horizontal(|ui| {
-                        if ui
-                            .add(egui::Label::new(&recent_project.name).sense(Sense::click()))
-                            .clicked()
-                        {
-                            open.replace(recent_project.path.clone());
-                        }
+                        ui.label(RichText::new(&recent_project.name).color(text_color));
                         ui.add_space(ui.available_width() - 10.0);
+                        // Interactive child; its click is consumed here and won't
+                        // bubble up to trigger the row's open action.
                         if ui
                             .add(egui::Label::new("×").sense(Sense::click()))
                             .clicked()
@@ -285,18 +287,21 @@ fn ui_system(world: &mut World) {
                             remove.replace(index);
                         }
                     });
-                    ui.label(RichText::new(recent_project.path.to_string_lossy()).weak());
+                    ui.label(RichText::new(recent_project.path.to_string_lossy()).color(muted));
                     ui.label(
                         RichText::new(t!(
                             "home.recent_projects.last_opened",
                             time = recent_project.last_opened.format("%Y/%m/%d %H:%M")
                         ))
-                        .weak(),
+                        .color(muted),
                     );
-                })
-                .response
-                .on_hover_cursor(CursorIcon::PointingHand)
-                .on_hover_and_drag_cursor(CursorIcon::PointingHand);
+                });
+                if response.clicked() {
+                    open.replace(recent_project.path.clone());
+                }
+                if index + 1 < len {
+                    ui.separator();
+                }
             }
         });
         ui.style_mut().interaction.selectable_labels = true;

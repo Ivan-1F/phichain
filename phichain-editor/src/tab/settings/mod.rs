@@ -4,6 +4,7 @@ mod game;
 mod general;
 mod graphics;
 mod hotkey;
+mod respack;
 
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::settings::EditorSettings;
@@ -13,6 +14,7 @@ use crate::tab::settings::game::Game;
 use crate::tab::settings::general::General;
 use crate::tab::settings::graphics::Graphics;
 use crate::tab::settings::hotkey::Hotkey;
+use crate::tab::settings::respack::Respack;
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
 use egui::{Layout, RichText, Ui, WidgetText};
@@ -66,6 +68,7 @@ enum SettingCategories {
     Graphics,
     Audio,
     Game,
+    Respack,
     AutoSave,
     Hotkey,
 }

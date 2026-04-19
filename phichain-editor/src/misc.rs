@@ -60,4 +60,7 @@ impl WorkingDirectory {
     pub fn log(&self) -> io::Result<PathBuf> {
         self.directory("logs")
     }
+    pub fn respacks(&self) -> io::Result<PathBuf> {
+        self.directory("respacks")
+    }
 }

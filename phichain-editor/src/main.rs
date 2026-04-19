@@ -26,6 +26,7 @@ mod notification;
 mod picking;
 mod project;
 mod recent_projects;
+mod respack;
 mod schedule;
 mod screenshot;
 mod selection;
@@ -64,6 +65,7 @@ use crate::project::project_loaded;
 use crate::project::LoadProject;
 use crate::project::ProjectPlugin;
 use crate::recent_projects::RecentProjectsPlugin;
+use crate::respack::RespackPlugin;
 use crate::schedule::EditorSet;
 use crate::screenshot::ScreenshotPlugin;
 use crate::selection::Selected;
@@ -168,6 +170,7 @@ fn main() {
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(AssetsPlugin)
         .add_plugins(NotificationPlugin)
+        .add_plugins(RespackPlugin)
         .add_plugins(EventPlugin)
         .add_plugins(ZoomPlugin)
         .add_plugins(FpsPlugin)
