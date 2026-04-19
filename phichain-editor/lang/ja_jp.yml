@@ -286,6 +286,11 @@ illustration:
   load:
     failed: 'イラストの読み込み中にエラーが発生しました: %{error}'
 
+respack:
+  load:
+    succeed: 'リソースパックを読み込みました: %{name}'
+    failed: 'リソースパックの読み込みに失敗しました: %{error}'
+
 error:
   open_project:
     label: プロジェクトの読み込み中にエラーが発生しました

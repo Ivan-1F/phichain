@@ -286,6 +286,11 @@ illustration:
   load:
     failed: 'Failed to load illustration: %{error}'
 
+respack:
+  load:
+    succeed: 'Loaded resource pack: %{name}'
+    failed: 'Failed to load resource pack: %{error}'
+
 error:
   open_project:
     label: Failed to load project

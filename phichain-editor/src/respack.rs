@@ -4,8 +4,8 @@ use anyhow::{Context, Result};
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
 use phichain_assets::{
-    apply_respack, builtin_respack_dir, load_respack, load_respack_from_dir, load_respack_meta,
-    load_respack_preview, LoadedRespackPreview, RespackMeta,
+    apply_respack, builtin_respack_dir, load_respack, load_respack_meta, load_respack_preview,
+    LoadedRespackPreview, RespackMeta,
 };
 
 use crate::misc::WorkingDirectory;
@@ -47,42 +47,33 @@ fn handle_reload_respack(_: On<ReloadRespack>, mut commands: Commands) {
 
 fn apply(world: &mut World) {
     match load_and_apply(world) {
-        Ok(label) => {
-            toast(world, |t| {
-                t.success(format!("Loaded resource pack: {label}"))
-            });
+        Ok(name) => {
+            toast(world, |t| t.success(t!("respack.load.succeed", name = name)));
         }
         Err(err) => {
             error!("Resource pack load failed: {err:#}");
             toast(world, |t| {
-                t.error(format!("Failed to load resource pack: {err:#}"))
+                t.error(t!("respack.load.failed", error = format!("{err:#}")))
             });
         }
     }
 }
 
+/// Load and apply the selected pack, returning its localized display name.
 fn load_and_apply(world: &mut World) -> Result<String> {
     let selection = world
         .resource::<Persistent<EditorSettings>>()
         .game
         .respack
         .clone();
-
-    match selection {
-        Some(name) => {
-            let path = resolve_respack_path(&name, world)?;
-            let pack =
-                load_respack(&path).with_context(|| format!("loading {}", path.display()))?;
-            apply_respack(pack, world)?;
-            Ok(name)
-        }
-        None => {
-            let pack = load_respack_from_dir(&builtin_respack_dir())
-                .context("loading built-in resource pack")?;
-            apply_respack(pack, world)?;
-            Ok("built-in".to_owned())
-        }
-    }
+    let path = match selection {
+        Some(name) => resolve_respack_path(&name, world)?,
+        None => builtin_respack_dir(),
+    };
+    let pack = load_respack(&path).with_context(|| format!("loading {}", path.display()))?;
+    let name = pack.meta.name.get(&rust_i18n::locale()).to_owned();
+    apply_respack(pack, world)?;
+    Ok(name)
 }
 
 fn resolve_respack_path(name: &str, world: &mut World) -> Result<PathBuf> {

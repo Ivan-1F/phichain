@@ -286,6 +286,11 @@ illustration:
   load:
     failed: '加载曲绘时发生错误: %{error}'
 
+respack:
+  load:
+    succeed: '已加载资源包：%{name}'
+    failed: '加载资源包失败：%{error}'
+
 error:
   open_project:
     label: 加载项目时发生错误
