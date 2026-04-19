@@ -28,27 +28,36 @@ impl Plugin for RespackPlugin {
 /// - `Some(name)` → external pack under `<working_dir>/respacks/<name>`
 ///
 /// Callers that want to switch packs update the setting first, then trigger this event.
-#[derive(Event, Debug)]
-pub struct ReloadRespack;
+///
+/// Set `silent = true` to skip the success toast.
+#[derive(Event, Debug, Default)]
+pub struct ReloadRespack {
+    pub silent: bool,
+}
 
 fn trigger_reload_on_startup(settings: Res<Persistent<EditorSettings>>, mut commands: Commands) {
     // The built-in pack is already active (loaded by `AssetsPlugin::build`);
     // only trigger a reload when the user has selected a custom pack.
     if settings.game.respack.is_some() {
-        commands.trigger(ReloadRespack);
+        commands.trigger(ReloadRespack { silent: true });
     }
 }
 
 /// Apply the active pack. Defers to a queued closure because applying needs
 /// exclusive `&mut World` access, which observers can't hold directly.
-fn handle_reload_respack(_: On<ReloadRespack>, mut commands: Commands) {
-    commands.queue(|world: &mut World| apply(world));
+fn handle_reload_respack(event: On<ReloadRespack>, mut commands: Commands) {
+    let silent = event.silent;
+    commands.queue(move |world: &mut World| apply(world, silent));
 }
 
-fn apply(world: &mut World) {
+fn apply(world: &mut World, silent: bool) {
     match load_and_apply(world) {
         Ok(name) => {
-            toast(world, |t| t.success(t!("respack.load.succeed", name = name)));
+            if !silent {
+                toast(world, |t| {
+                    t.success(t!("respack.load.succeed", name = name))
+                });
+            }
         }
         Err(err) => {
             error!("Resource pack load failed: {err:#}");
