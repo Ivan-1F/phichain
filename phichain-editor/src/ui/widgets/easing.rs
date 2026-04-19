@@ -1,8 +1,8 @@
 use egui::epaint::PathShape;
 use egui::response::Flags;
 use egui::{
-    emath, Color32, Frame, Grid, Label, Layout, Pos2, Rect, Response, RichText, Sense, Stroke, Ui,
-    UiBuilder, Vec2, Widget,
+    emath, Color32, Grid, Label, Layout, Pos2, Rect, Response, RichText, Sense, Stroke, Ui, Vec2,
+    Widget,
 };
 use phichain_chart::easing::Easing;
 use strum::IntoEnumIterator;
@@ -208,40 +208,18 @@ pub fn draw_easing(
 }
 
 fn draw_easing_options(ui: &mut Ui, easing: Easing, selected: bool, name: &str) -> Response {
-    ui.scope_builder(
-        UiBuilder::new()
-            .id_salt("easing-value")
-            .sense(Sense::click()),
-        |ui| {
-            let response = ui.response();
-            let visuals = ui.style().interact_selectable(&response, selected);
-            let text_color = visuals.text_color();
-
-            let mut frame = Frame::canvas(ui.style())
-                .fill(Color32::default())
-                .stroke(Stroke::default())
-                .inner_margin(ui.spacing().menu_margin);
-
-            if selected || response.hovered() || response.highlighted() || response.has_focus() {
-                frame = frame.fill(visuals.bg_fill).stroke(visuals.bg_stroke);
-            }
-
-            frame.show(ui, |ui| {
-                ui.vertical(|ui| {
-                    let response = ui.add_sized(
-                        Vec2::new(80.0, 40.0),
-                        EasingGraph::new(&mut easing.clone()).color(Color32::DARK_GRAY),
-                    );
-
-                    ui.put(
-                        response.rect,
-                        Label::new(RichText::new(name).color(text_color)).selectable(false),
-                    );
-                })
-            });
-        },
-    )
-    .response
+    crate::ui::widgets::button_frame::button_frame(ui, selected, |ui, text_color| {
+        ui.vertical(|ui| {
+            let response = ui.add_sized(
+                Vec2::new(80.0, 40.0),
+                EasingGraph::new(&mut easing.clone()).color(Color32::DARK_GRAY),
+            );
+            ui.put(
+                response.rect,
+                Label::new(RichText::new(name).color(text_color)).selectable(false),
+            );
+        });
+    })
 }
 
 impl Widget for EasingValue<'_> {
