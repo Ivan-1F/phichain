@@ -4,11 +4,9 @@ use crate::misc::WorkingDirectory;
 use crate::respack::{scan_respacks, ReloadRespack, RespackEntry};
 use crate::settings::EditorSettings;
 use crate::tab::settings::SettingCategory;
+use crate::ui::widgets::button_frame::button_frame;
 use bevy::prelude::World;
-use egui::{
-    Color32, Context, Image, Rect, RichText, Sense, TextureHandle, TextureOptions, Ui, UiBuilder,
-    Vec2,
-};
+use egui::{Context, Image, Rect, RichText, Sense, TextureHandle, TextureOptions, Ui, Vec2};
 use phichain_assets::builtin_respack_dir;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
@@ -120,45 +118,36 @@ fn pack_row(ui: &mut Ui, cached: &Cached, selected: bool) -> bool {
         entry.meta.name.get(&locale).to_owned()
     };
 
-    let description = if entry.meta.description.is_empty() {
-        RichText::new(t!("tab.settings.category.respack.no_description")).italics()
-    } else {
-        RichText::new(entry.meta.description.get(&locale).to_owned())
-    }
-    .weak()
-    .size(11.0);
+    button_frame(ui, selected, |ui, text_color| {
+        ui.set_width(ui.available_width());
 
-    ui.scope_builder(UiBuilder::new().sense(Sense::click()), |ui| {
-        let fill = if selected {
-            ui.visuals().selection.bg_fill.linear_multiply(0.35)
+        let description_color = text_color.linear_multiply(0.7);
+        let description = if entry.meta.description.is_empty() {
+            RichText::new(t!("tab.settings.category.respack.no_description"))
+                .italics()
+                .color(description_color)
         } else {
-            Color32::TRANSPARENT
-        };
-        egui::Frame::new()
-            .fill(fill)
-            .corner_radius(4)
-            .inner_margin(egui::Margin::symmetric(8, 6))
-            .show(ui, |ui| {
-                ui.set_width(ui.available_width());
-                ui.horizontal(|ui| {
-                    ui.vertical(|ui| {
-                        ui.label(RichText::new(&title).strong());
-                        ui.label(description);
-                    });
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        // Iterate in reverse so tap/drag/flick/hold appear left→right.
-                        for tex in previews.iter().rev() {
-                            let (rect, _) =
-                                ui.allocate_exact_size(Vec2::splat(PREVIEW_SIZE), Sense::hover());
-                            let size = tex.size_vec2();
-                            let scale = (PREVIEW_SIZE / size.x).min(PREVIEW_SIZE / size.y).min(1.0);
-                            let draw = Rect::from_center_size(rect.center(), size * scale);
-                            Image::new(tex).paint_at(ui, draw);
-                        }
-                    });
-                });
+            RichText::new(entry.meta.description.get(&locale).to_owned()).color(description_color)
+        }
+        .size(11.0);
+
+        ui.horizontal(|ui| {
+            ui.vertical(|ui| {
+                ui.label(RichText::new(&title).color(text_color).strong());
+                ui.label(description);
             });
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                // Iterate in reverse so tap/drag/flick/hold appear left→right.
+                for tex in previews.iter().rev() {
+                    let (rect, _) =
+                        ui.allocate_exact_size(Vec2::splat(PREVIEW_SIZE), Sense::hover());
+                    let size = tex.size_vec2();
+                    let scale = (PREVIEW_SIZE / size.x).min(PREVIEW_SIZE / size.y).min(1.0);
+                    let draw = Rect::from_center_size(rect.center(), size * scale);
+                    Image::new(tex).paint_at(ui, draw);
+                }
+            });
+        });
     })
-    .response
     .clicked()
 }
