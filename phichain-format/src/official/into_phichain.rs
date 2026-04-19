@@ -159,8 +159,8 @@ pub fn official_to_phichain(
         // Remove redundant constant suffix events
         let events: Vec<_> = events
             .group_by_kind()
-            .into_iter()
-            .flat_map(|(_, events)| {
+            .into_values()
+            .flat_map(|events| {
                 let sorted_events = events.sorted();
 
                 let mut prev_end_value = None;
