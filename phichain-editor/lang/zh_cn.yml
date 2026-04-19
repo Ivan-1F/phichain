@@ -236,12 +236,7 @@ tab:
       respack:
         title: 资源包
         description: 切换当前使用的资源包，或重新加载当前资源包。外部资源包从 respacks 目录中读取。
-        builtin:
-          name: 内置
-          fallback: 始终可用的内置资源包
-        empty: 未在 respacks 目录中发现外部资源包
         no_description: 无简介
-        load_error: 加载失败：%{error}
         reload:
           label: 重新加载
           description: 从磁盘重新读取当前资源包。在编辑资源包时无需重启编辑器即可预览改动。

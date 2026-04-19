@@ -112,19 +112,18 @@ fn upload_previews(ctx: &Context, entry: &RespackEntry) -> [TextureHandle; 4] {
 
 fn pack_row(ui: &mut Ui, cached: &Cached, selected: bool) -> bool {
     let (entry, previews) = cached;
-
-    let filename = entry.filename();
+    let locale = rust_i18n::locale();
 
     let title = if entry.meta.name.is_empty() {
-        filename.to_owned()
+        entry.filename().to_owned()
     } else {
-        entry.meta.name.clone()
+        entry.meta.name.get(&locale).to_owned()
     };
 
     let description = if entry.meta.description.is_empty() {
         RichText::new(t!("tab.settings.category.respack.no_description")).italics()
     } else {
-        RichText::new(entry.meta.description.clone())
+        RichText::new(entry.meta.description.get(&locale).to_owned())
     }
     .weak()
     .size(11.0);

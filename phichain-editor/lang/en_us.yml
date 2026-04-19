@@ -236,12 +236,7 @@ tab:
       respack:
         title: Resource Pack
         description: Select the active resource pack or reload the current one. External packs are read from the "respacks" directory.
-        builtin:
-          name: Built-in
-          fallback: Always-available built-in resource pack
-        empty: No external resource packs found in the respacks directory
         no_description: no description
-        load_error: "Failed to load: %{error}"
         reload:
           label: Reload
           description: Re-read the active pack from disk. Useful when iterating on a pack without restarting the editor.

@@ -121,10 +121,7 @@ impl RespackEntry {
 
     /// Filename of the pack.
     pub fn filename(&self) -> &str {
-        self.path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("")
+        self.path.file_name().and_then(|n| n.to_str()).unwrap_or("")
     }
 
     /// Whether this is the built-in pack (path matches `builtin_respack_dir()`).

@@ -236,12 +236,7 @@ tab:
       respack:
         title: リソースパック
         description: 使用中のリソースパックを切り替えるか、現在のパックを再読み込みします。外部パックは respacks ディレクトリから読み込まれます。
-        builtin:
-          name: 内蔵
-          fallback: 常に利用可能な内蔵リソースパック
-        empty: respacks ディレクトリに外部リソースパックが見つかりません
         no_description: 説明なし
-        load_error: "読み込みに失敗しました: %{error}"
         reload:
           label: 再読み込み
           description: 現在のパックをディスクから再読み込みします。パックを編集する際、エディタを再起動せずに変更を確認できます。

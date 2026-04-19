@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use serde::Deserialize;
 
-use crate::meta::{HitFxMeta, HoldMeta, RespackMeta};
+use crate::meta::{HitFxMeta, HoldMeta, Localized, RespackMeta};
 
 use super::source::PackSource;
 use super::{load_image, LoadedAudio, LoadedImages, LoadedRespack};
@@ -26,16 +26,17 @@ struct PhiraInfo {
 
 impl Default for PhiraInfo {
     fn default() -> Self {
-        let fallback = RespackMeta::default();
+        let hold = HoldMeta::default();
+        let hit_fx = HitFxMeta::default();
         Self {
-            name: fallback.name,
-            author: fallback.author,
-            description: fallback.description,
-            hold_atlas: fallback.hold.atlas,
-            hold_atlas_mh: fallback.hold.highlight_atlas,
-            hit_fx: fallback.hit_fx.grid,
-            hit_fx_scale: fallback.hit_fx.scale,
-            hit_fx_duration: fallback.hit_fx.duration,
+            name: "Phichain Default".to_owned(),
+            author: "Phichain".to_owned(),
+            description: String::new(),
+            hold_atlas: hold.atlas,
+            hold_atlas_mh: hold.highlight_atlas,
+            hit_fx: hit_fx.grid,
+            hit_fx_scale: hit_fx.scale,
+            hit_fx_duration: hit_fx.duration,
         }
     }
 }
@@ -43,9 +44,9 @@ impl Default for PhiraInfo {
 impl From<PhiraInfo> for RespackMeta {
     fn from(info: PhiraInfo) -> Self {
         Self {
-            name: info.name,
+            name: Localized::Single(info.name),
             author: info.author,
-            description: info.description,
+            description: Localized::Single(info.description),
             hold: HoldMeta {
                 atlas: info.hold_atlas,
                 highlight_atlas: info.hold_atlas_mh,

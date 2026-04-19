@@ -15,7 +15,7 @@ pub use crate::loader::{
     load_respack, load_respack_from_dir, load_respack_from_zip, load_respack_meta,
     load_respack_preview, LoadedAudio, LoadedImages, LoadedRespack, LoadedRespackPreview,
 };
-pub use crate::meta::RespackMeta;
+pub use crate::meta::{Localized, RespackMeta};
 
 /// Game-side image handles sourced from the active resource pack.
 #[derive(Resource)]
