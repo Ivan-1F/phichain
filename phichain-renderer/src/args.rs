@@ -1,5 +1,6 @@
 use bevy::prelude::Resource;
-use clap::Parser;
+use bevy::render::view::Msaa;
+use clap::{Parser, ValueEnum};
 use phichain_game::GameConfig;
 use std::path::PathBuf;
 
@@ -36,15 +37,70 @@ pub struct Args {
 #[command(next_help_heading = "Video Options")]
 pub struct VideoArgs {
     /// The width of the video
-    #[arg(long, default_value_t = 1920)]
+    #[arg(long, default_value_t = 1920, value_parser = clap::value_parser!(u32).range(1..=16384))]
     pub width: u32,
     /// The height of the video
-    #[arg(long, default_value_t = 1080)]
+    #[arg(long, default_value_t = 1080, value_parser = clap::value_parser!(u32).range(1..=16384))]
     pub height: u32,
 
     /// The fps of the video
-    #[arg(long, default_value_t = 60)]
+    #[arg(long, default_value_t = 60, value_parser = clap::value_parser!(u32).range(1..=240))]
     pub fps: u32,
+
+    /// Multi-sample anti-aliasing level
+    #[arg(long, value_enum, default_value_t = MsaaLevel::Four)]
+    pub msaa: MsaaLevel,
+
+    /// Use a platform-appropriate hardware video encoder (videotoolbox / nvenc / qsv).
+    /// Faster than software encoding but quality at a given CRF/bitrate is slightly lower
+    #[arg(long)]
+    pub hwaccel: bool,
+
+    /// Video codec
+    #[arg(long, value_enum, default_value_t = Codec::H264)]
+    pub codec: Codec,
+
+    /// Constant Rate Factor: 0 (lossless) to 51 (worst). 18 is "visually lossless".
+    /// For hardware encoders this is mapped to the encoder's native quality knob.
+    /// Mutually exclusive with --bitrate.
+    #[arg(
+        long,
+        default_value_t = 18,
+        value_parser = clap::value_parser!(u32).range(0..=51),
+        conflicts_with = "bitrate",
+    )]
+    pub crf: u32,
+
+    /// Target bitrate (e.g. "8M", "6000k"). Mutually exclusive with --crf.
+    #[arg(long)]
+    pub bitrate: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum MsaaLevel {
+    Off,
+    #[value(name = "2")]
+    Two,
+    #[value(name = "4")]
+    Four,
+}
+
+impl MsaaLevel {
+    pub fn into_msaa(self) -> Msaa {
+        match self {
+            MsaaLevel::Off => Msaa::Off,
+            MsaaLevel::Two => Msaa::Sample2,
+            MsaaLevel::Four => Msaa::Sample4,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum Codec {
+    #[value(name = "h264")]
+    H264,
+    #[value(name = "h265")]
+    H265,
 }
 
 #[derive(Debug, Clone, Parser)]

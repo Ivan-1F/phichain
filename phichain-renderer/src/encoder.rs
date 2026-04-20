@@ -16,7 +16,7 @@ use std::io::Write;
 use std::process::{Child, Command, Stdio};
 use std::time::Instant;
 
-use crate::args::Args;
+use crate::args::{Args, Codec};
 
 /// Frames rendered before we start writing, giving the GPU time to warm up
 /// (shader compilation, first-frame cache misses). The earliest frames are
@@ -47,15 +47,22 @@ impl Encoder {
         let (width, height, fps) = (args.video.width, args.video.height, args.video.fps);
         let total_frames = (fps as f32 * (to - from)) as u32;
 
-        let ffmpeg = Command::new("ffmpeg")
-            .args(["-y", "-f", "rawvideo", "-pix_fmt", "rgba"])
+        let mut cmd = Command::new("ffmpeg");
+        cmd.args(["-y", "-f", "rawvideo", "-pix_fmt", "rgba"])
             .args(["-s", &format!("{width}x{height}")])
             .args(["-framerate", &fps.to_string()])
-            .args(["-an", "-i", "-"])
-            .args(["-c:v", "libx264"])
-            .arg(&args.output)
+            .args(["-an", "-i", "-"]);
+
+        let encoder = pick_encoder(args.video.codec, args.video.hwaccel);
+        cmd.args(["-c:v", encoder]);
+        for arg in build_quality_args(args, encoder) {
+            cmd.arg(arg);
+        }
+
+        cmd.arg(&args.output)
             .stdin(Stdio::piped())
-            .stderr(Stdio::null())
+            .stderr(Stdio::null());
+        let ffmpeg = cmd
             .spawn()
             .expect("failed to spawn ffmpeg (is it on PATH?)");
 
@@ -122,6 +129,60 @@ pub fn on_frame_ready(
             .expect("ffmpeg exited with a non-zero status");
         exit.write(AppExit::Success);
     }
+}
+
+/// Pick the ffmpeg encoder name for a `(codec, hardware-accel)` combination.
+/// Hardware encoder selection is best-effort per-platform.
+fn pick_encoder(codec: Codec, hwaccel: bool) -> &'static str {
+    match (codec, hwaccel) {
+        (Codec::H264, false) => "libx264",
+        (Codec::H265, false) => "libx265",
+        (Codec::H264, true) => {
+            if cfg!(target_os = "macos") {
+                "h264_videotoolbox"
+            } else if cfg!(target_os = "windows") {
+                "h264_qsv"
+            } else {
+                "h264_nvenc"
+            }
+        }
+        (Codec::H265, true) => {
+            if cfg!(target_os = "macos") {
+                "hevc_videotoolbox"
+            } else if cfg!(target_os = "windows") {
+                "hevc_qsv"
+            } else {
+                "hevc_nvenc"
+            }
+        }
+    }
+}
+
+/// Translate our `--bitrate` / `--crf` flags into ffmpeg args for the chosen encoder.
+/// Each encoder family uses a different quality knob.
+fn build_quality_args(args: &Args, encoder: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    if let Some(rate) = &args.video.bitrate {
+        out.push("-b:v".into());
+        out.push(rate.clone());
+    } else {
+        let crf = args.video.crf;
+        let (flag, value) = if encoder.ends_with("videotoolbox") {
+            // videotoolbox uses -q:v 1..100 (higher = better). Approximate map.
+            let q = (100i32 - crf as i32 * 2).clamp(1, 100);
+            ("-q:v", q.to_string())
+        } else if encoder.ends_with("nvenc") {
+            ("-cq", crf.to_string())
+        } else if encoder.ends_with("qsv") {
+            ("-global_quality", crf.to_string())
+        } else {
+            // libx264 / libx265
+            ("-crf", crf.to_string())
+        };
+        out.push(flag.into());
+        out.push(value);
+    }
+    out
 }
 
 /// Strip the per-row padding wgpu adds when copying a texture into a buffer

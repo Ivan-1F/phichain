@@ -109,6 +109,7 @@ fn setup(
         // The target is already sRGB; tonemapping would double-encode.
         Tonemapping::None,
         IsDefaultUiCamera,
+        args.video.msaa.into_msaa(),
     ));
 
     commands
