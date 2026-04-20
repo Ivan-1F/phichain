@@ -10,6 +10,7 @@
 //!      which encodes the mp4 on the side.
 
 mod args;
+mod audio;
 mod encoder;
 mod respack;
 mod utils;
@@ -129,7 +130,12 @@ fn setup(
 
     let from = args.from.unwrap_or(0.0);
     let to = args.to.unwrap_or(music_duration);
-    commands.insert_resource(Encoder::spawn(&args, from, to));
+
+    // Prepare audio before spawning the encoder.
+    // the encoder consumes the WAV as its second input, so it must exist on disk at spawn time.
+    let audio = audio::render_audio_track(&project, args.respack.as_deref(), from, to)
+        .expect("failed to render audio track");
+    commands.insert_resource(Encoder::spawn(&args, from, to, audio));
 
     phichain_game::loader::load_project(&project, &mut commands).expect("failed to load project");
 }

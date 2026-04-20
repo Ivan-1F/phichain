@@ -6128,9 +6128,12 @@ dependencies = [
  "bevy",
  "bevy_kira_audio",
  "clap",
+ "hound",
  "phichain-assets",
  "phichain-chart",
  "phichain-game",
+ "serde_json",
+ "tempfile",
 ]
 
 [[package]]

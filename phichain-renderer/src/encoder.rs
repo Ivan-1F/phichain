@@ -15,6 +15,7 @@ use std::collections::VecDeque;
 use std::io::Write;
 use std::process::{Child, Command, Stdio};
 use std::time::Instant;
+use tempfile::NamedTempFile;
 
 use crate::args::{Args, Codec};
 
@@ -40,24 +41,36 @@ pub struct Encoder {
     frame_times: VecDeque<f32>,
     last_log_second: u32,
     last_fps: usize,
+
+    // Keep the WAV alive until ffmpeg exits.
+    _audio: NamedTempFile,
 }
 
 impl Encoder {
-    pub fn spawn(args: &Args, from: f32, to: f32) -> Self {
+    pub fn spawn(args: &Args, from: f32, to: f32, audio: NamedTempFile) -> Self {
         let (width, height, fps) = (args.video.width, args.video.height, args.video.fps);
         let total_frames = (fps as f32 * (to - from)) as u32;
 
         let mut cmd = Command::new("ffmpeg");
-        cmd.args(["-y", "-f", "rawvideo", "-pix_fmt", "rgba"])
+        cmd.args(["-y"])
+            .args(["-f", "rawvideo", "-pix_fmt", "rgba"])
             .args(["-s", &format!("{width}x{height}")])
             .args(["-framerate", &fps.to_string()])
-            .args(["-an", "-i", "-"]);
+            .args(["-i", "-"])
+            .arg("-i")
+            .arg(audio.path());
 
         let encoder = pick_encoder(args.video.codec, args.video.hwaccel);
         cmd.args(["-c:v", encoder]);
         for arg in build_quality_args(args, encoder) {
             cmd.arg(arg);
         }
+
+        // alimiter catches additive overshoots from overlapping hit sounds.
+        cmd.args(["-c:a", "aac", "-b:a", "192k"])
+            .args(["-af", "alimiter=limit=0.95:level=disabled"])
+            .args(["-map", "0:v:0", "-map", "1:a:0"])
+            .arg("-shortest");
 
         cmd.arg(&args.output)
             .stdin(Stdio::piped())
@@ -80,6 +93,7 @@ impl Encoder {
             frame_times: VecDeque::new(),
             last_log_second: 0,
             last_fps: 0,
+            _audio: audio,
         }
     }
 
