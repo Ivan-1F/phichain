@@ -120,13 +120,16 @@ fn decode_pcm(bytes: &[u8]) -> Result<Vec<f32>> {
         .spawn()
         .context("spawn ffmpeg")?;
 
-    // Close stdin before waiting; otherwise ffmpeg blocks on EOF.
-    {
-        let mut stdin = child.stdin.take().expect("piped stdin");
-        stdin.write_all(bytes)?;
-    }
+    // Feed stdin on a thread so ffmpeg can drain stdout in parallel.
+    // If we wrote stdin inline, a large input (a whole song) would fill the OS
+    // pipe buffers on both sides and deadlock.
+    let mut stdin = child.stdin.take().expect("piped stdin");
+    let bytes = bytes.to_vec();
+    let writer = std::thread::spawn(move || stdin.write_all(&bytes));
 
     let output = child.wait_with_output()?;
+    writer.join().expect("stdin writer panicked")?;
+
     if !output.status.success() {
         bail!(
             "ffmpeg failed decoding audio: {}",
