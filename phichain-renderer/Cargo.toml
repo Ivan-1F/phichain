@@ -16,5 +16,4 @@ bevy = { workspace = true }
 bevy_kira_audio = { workspace = true }
 clap = { version = "4.5.15", features = ["derive"] }
 crossbeam-channel = "0.5.15"
-image = "0.25.2"
 anyhow = "1.0.86"

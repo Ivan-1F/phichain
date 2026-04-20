@@ -1,0 +1,170 @@
+//! ffmpeg subprocess management and per-frame writing.
+//!
+//! A child `ffmpeg` reads raw RGBA bytes from stdin at a fixed size/framerate
+//! and produces an h264 mp4. We drive `ChartTime` one video-frame at a time;
+//! the game code renders a matching frame; we pipe the captured bytes to ffmpeg.
+
+use bevy::app::AppExit;
+use bevy::prelude::*;
+use phichain_game::ChartTime;
+use std::collections::VecDeque;
+use std::io::Write;
+use std::process::{Child, Command, Stdio};
+use std::time::Instant;
+
+use crate::args::Args;
+use crate::capture::{unpad_rows, FrameReceiver};
+
+/// Frames rendered before we start writing, giving the GPU time to warm up
+/// (shader compilation, first-frame cache misses). The earliest frames are
+/// often transparent or blocky and would show up as garbage.
+const WARMUP_FRAMES: u32 = 40;
+
+pub struct EncoderPlugin;
+
+impl Plugin for EncoderPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(PostUpdate, write_frame);
+    }
+}
+
+#[derive(Resource)]
+pub struct Encoder {
+    ffmpeg: Child,
+    width: u32,
+    height: u32,
+    fps: u32,
+    from: f32,
+    to: f32,
+
+    warmup_remaining: u32,
+    frames_written: u32,
+    total_frames: u32,
+
+    start: Instant,
+    frame_times: VecDeque<f32>,
+    last_log_second: u32,
+    last_fps: usize,
+}
+
+impl Encoder {
+    /// Spawn ffmpeg and return the encoder state. `from`/`to` bound the chart
+    /// time window to render (seconds).
+    pub fn spawn(args: &Args, from: f32, to: f32) -> Self {
+        let (width, height, fps) = (args.video.width, args.video.height, args.video.fps);
+        let total_frames = (fps as f32 * (to - from)) as u32;
+
+        let ffmpeg = Command::new("ffmpeg")
+            .args(["-y", "-f", "rawvideo", "-pix_fmt", "rgba"])
+            .args(["-s", &format!("{width}x{height}")])
+            .args(["-framerate", &fps.to_string()])
+            .args(["-an", "-i", "-"])
+            .args(["-c:v", "libx264"])
+            .arg(&args.output)
+            .stdin(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn()
+            .expect("failed to spawn ffmpeg (is it on PATH?)");
+
+        Self {
+            ffmpeg,
+            width,
+            height,
+            fps,
+            from,
+            to,
+            warmup_remaining: WARMUP_FRAMES,
+            frames_written: 0,
+            total_frames,
+            start: Instant::now(),
+            frame_times: VecDeque::new(),
+            last_log_second: 0,
+            last_fps: 0,
+        }
+    }
+
+    fn next_chart_time(&self) -> f32 {
+        self.from + self.frames_written as f32 / self.fps as f32
+    }
+
+    fn done(&self) -> bool {
+        self.next_chart_time() >= self.to
+    }
+}
+
+fn write_frame(
+    mut enc: ResMut<Encoder>,
+    mut chart_time: ResMut<ChartTime>,
+    receiver: Res<FrameReceiver>,
+    mut exit: MessageWriter<AppExit>,
+) {
+    // Advance the chart one video-frame at a time.
+    chart_time.0 = enc.next_chart_time();
+
+    // Render world may enqueue multiple frames per tick if the GPU is fast;
+    // only the most recent one matches current state.
+    let Some(bytes) = receiver.try_iter().last() else {
+        return;
+    };
+
+    if enc.warmup_remaining > 0 {
+        enc.warmup_remaining -= 1;
+        return;
+    }
+
+    let (width, height) = (enc.width, enc.height);
+    let pixels = unpad_rows(&bytes, width, height);
+    let stdin = enc
+        .ffmpeg
+        .stdin
+        .as_mut()
+        .expect("ffmpeg stdin was closed early");
+    stdin
+        .write_all(&pixels)
+        .expect("failed to write frame to ffmpeg");
+
+    enc.frames_written += 1;
+    log_progress(&mut enc);
+
+    if enc.done() {
+        // Closing stdin signals EOF; ffmpeg finalizes the file on its own.
+        drop(enc.ffmpeg.stdin.take());
+        enc.ffmpeg
+            .wait()
+            .expect("ffmpeg exited with a non-zero status");
+        exit.write(AppExit::Success);
+    }
+}
+
+fn log_progress(enc: &mut Encoder) {
+    let elapsed = enc.start.elapsed().as_secs_f32();
+    let second = elapsed as u32;
+
+    // Sliding 1-second window of frame timestamps.
+    enc.frame_times.push_back(elapsed);
+    while enc.frame_times.front().is_some_and(|t| elapsed - *t > 1.0) {
+        enc.frame_times.pop_front();
+    }
+    if enc.last_log_second != second {
+        enc.last_fps = enc.frame_times.len();
+        enc.last_log_second = second;
+    }
+
+    if !enc.frames_written.is_multiple_of(100) {
+        return;
+    }
+    let eta = if enc.last_fps == 0 {
+        f32::INFINITY
+    } else {
+        enc.total_frames.saturating_sub(enc.frames_written) as f32 / enc.last_fps as f32
+    };
+    info!(
+        "{} / {} ({:.1}%), {} fps ({:.2}x), eta {:.1}s",
+        enc.frames_written,
+        enc.total_frames,
+        enc.frames_written as f32 / enc.total_frames.max(1) as f32 * 100.0,
+        enc.last_fps,
+        enc.last_fps as f32 / enc.fps as f32,
+        eta,
+    );
+}
