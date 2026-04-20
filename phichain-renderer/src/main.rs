@@ -45,7 +45,6 @@ fn main() {
         .insert_resource(args)
         .add_plugins(
             DefaultPlugins
-                .set(ImagePlugin::default_nearest())
                 .set(WindowPlugin {
                     primary_window: None,
                     exit_condition: ExitCondition::DontExit,
