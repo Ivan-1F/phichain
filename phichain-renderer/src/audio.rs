@@ -33,7 +33,8 @@ pub fn render_audio_track(
 
     let chart = read_chart(project).context("read chart")?;
     let offset_secs = chart.offset.0 / 1000.0;
-    let notes = collect_notes(&chart, from, to);
+    let mut notes = NoteTimes::default();
+    collect_notes(&chart.lines, &chart.bpm_list, from, to, &mut notes);
 
     let music_path = project
         .path
@@ -42,16 +43,27 @@ pub fn render_audio_track(
     let music_bytes = std::fs::read(&music_path)
         .with_context(|| format!("read music file {}", music_path.display()))?;
     let music = decode_pcm(&music_bytes).context("decode music")?;
-    let sfx = load_hit_sounds(respack).context("load hit sounds")?;
+
+    let pack = match respack {
+        Some(path) => {
+            load_respack(path).with_context(|| format!("load respack at {}", path.display()))?
+        }
+        None => load_respack(&builtin_respack_dir()).context("load built-in respack")?,
+    };
+
+    let LoadedAudio { tap, drag, flick } = pack.audio;
+    let tap = decode_pcm(&tap).context("decode tap sfx")?;
+    let drag = decode_pcm(&drag).context("decode drag sfx")?;
+    let flick = decode_pcm(&flick).context("decode flick sfx")?;
 
     let out_samples =
         ((to - from) as f64 * SAMPLE_RATE as f64).round() as usize * CHANNELS as usize;
     let mut buf = vec![0.0f32; out_samples];
 
     overlay_music(&mut buf, &music, from + offset_secs);
-    accumulate(&mut buf, &sfx.tap, &notes.taps, from);
-    accumulate(&mut buf, &sfx.drag, &notes.drags, from);
-    accumulate(&mut buf, &sfx.flick, &notes.flicks, from);
+    accumulate(&mut buf, &tap, &notes.taps, from);
+    accumulate(&mut buf, &drag, &notes.drags, from);
+    accumulate(&mut buf, &flick, &notes.flicks, from);
 
     let total_notes = notes.taps.len() + notes.drags.len() + notes.flicks.len();
     let temp = write_wav(&buf)?;
@@ -81,50 +93,21 @@ struct NoteTimes {
     flicks: Vec<f32>,
 }
 
-fn collect_notes(chart: &PhichainChart, from: f32, to: f32) -> NoteTimes {
-    let mut out = NoteTimes::default();
-    for line in &chart.lines {
-        walk_line(line, &chart.bpm_list, from, to, &mut out);
-    }
-    out
-}
-
-fn walk_line(line: &SerializedLine, bpm: &BpmList, from: f32, to: f32, out: &mut NoteTimes) {
-    for note in &line.notes {
-        let t = bpm.time_at(note.beat);
-        if t < from || t >= to {
-            continue;
+fn collect_notes(lines: &[SerializedLine], bpm: &BpmList, from: f32, to: f32, out: &mut NoteTimes) {
+    for line in lines {
+        for note in &line.notes {
+            let t = bpm.time_at(note.beat);
+            if t < from || t >= to {
+                continue;
+            }
+            match note.kind {
+                NoteKind::Tap | NoteKind::Hold { .. } => out.taps.push(t),
+                NoteKind::Drag => out.drags.push(t),
+                NoteKind::Flick => out.flicks.push(t),
+            }
         }
-        match note.kind {
-            NoteKind::Tap | NoteKind::Hold { .. } => out.taps.push(t),
-            NoteKind::Drag => out.drags.push(t),
-            NoteKind::Flick => out.flicks.push(t),
-        }
+        collect_notes(&line.children, bpm, from, to, out);
     }
-    for child in &line.children {
-        walk_line(child, bpm, from, to, out);
-    }
-}
-
-struct HitSounds {
-    tap: Vec<f32>,
-    drag: Vec<f32>,
-    flick: Vec<f32>,
-}
-
-fn load_hit_sounds(respack: Option<&Path>) -> Result<HitSounds> {
-    let pack = match respack {
-        Some(path) => {
-            load_respack(path).with_context(|| format!("load respack at {}", path.display()))?
-        }
-        None => load_respack(&builtin_respack_dir()).context("load built-in respack")?,
-    };
-    let LoadedAudio { tap, drag, flick } = pack.audio;
-    Ok(HitSounds {
-        tap: decode_pcm(&tap)?,
-        drag: decode_pcm(&drag)?,
-        flick: decode_pcm(&flick)?,
-    })
 }
 
 fn decode_pcm(bytes: &[u8]) -> Result<Vec<f32>> {
@@ -150,13 +133,11 @@ fn decode_pcm(bytes: &[u8]) -> Result<Vec<f32>> {
             String::from_utf8_lossy(&output.stderr).trim()
         );
     }
-    Ok(pcm_bytes_to_f32(&output.stdout))
-}
-
-fn pcm_bytes_to_f32(raw: &[u8]) -> Vec<f32> {
-    raw.chunks_exact(4)
+    Ok(output
+        .stdout
+        .chunks_exact(4)
         .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]))
-        .collect()
+        .collect())
 }
 
 fn overlay_music(out: &mut [f32], music: &[f32], music_start_secs: f32) {
