@@ -6128,7 +6128,6 @@ dependencies = [
  "bevy",
  "bevy_kira_audio",
  "clap",
- "crossbeam-channel",
  "phichain-assets",
  "phichain-chart",
  "phichain-game",

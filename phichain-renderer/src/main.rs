@@ -1,29 +1,29 @@
 //! Phichain offscreen video renderer.
 //!
 //! Pipeline:
-//!   1. Run the game logic headlessly (no window) with `ChartTime` stepped
-//!      one video-frame at a time.
+//!   1. Game logic runs headlessly with `ChartTime` stepped one video-frame
+//!      at a time.
 //!   2. A 2D camera renders each frame into an offscreen GPU texture.
-//!   3. `CapturePlugin` copies that texture back to the CPU and pushes raw
-//!      RGBA bytes through a channel.
-//!   4. `EncoderPlugin` feeds those bytes into an ffmpeg subprocess, which
-//!      encodes the mp4 on the side.
+//!   3. Bevy's built-in `Readback` component copies that texture back to the
+//!      CPU each frame, firing `ReadbackComplete`.
+//!   4. The observer in `encoder` feeds the bytes into an ffmpeg subprocess
+//!      which encodes the mp4 on the side.
 
 mod args;
-mod capture;
 mod encoder;
 mod respack;
 mod utils;
 
 use crate::args::Args;
-use crate::capture::{setup_offscreen_target, CapturePlugin};
-use crate::encoder::{Encoder, EncoderPlugin};
+use crate::encoder::{on_frame_ready, Encoder};
 use crate::respack::RespackPlugin;
 use bevy::app::ScheduleRunnerPlugin;
+use bevy::camera::RenderTarget;
 use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::log::LogPlugin;
 use bevy::prelude::*;
-use bevy::render::renderer::RenderDevice;
+use bevy::render::gpu_readback::Readback;
+use bevy::render::render_resource::{TextureFormat, TextureUsages};
 use bevy::window::ExitCondition;
 use bevy::winit::WinitPlugin;
 use bevy_kira_audio::AudioPlugin;
@@ -52,7 +52,10 @@ fn main() {
                     ..default()
                 })
                 .set(LogPlugin {
-                    filter: "warn,phichain_renderer=info".to_string(),
+                    // Silence the shutdown-time readback-channel warning; we
+                    // intentionally exit with a few readbacks still in flight.
+                    filter: "warn,phichain_renderer=info,bevy_render::gpu_readback=error"
+                        .to_string(),
                     level: bevy::log::Level::DEBUG,
                     ..default()
                 })
@@ -65,8 +68,6 @@ fn main() {
         .add_plugins(AssetsPlugin)
         .add_plugins(RespackPlugin)
         .add_plugins(GamePlugin)
-        .add_plugins(CapturePlugin)
-        .add_plugins(EncoderPlugin)
         .add_systems(Startup, setup)
         .run();
 
@@ -82,7 +83,6 @@ fn setup(
     mut viewport: ResMut<GameViewport>,
     mut paused: ResMut<Paused>,
     mut game_config: ResMut<GameConfig>,
-    render_device: Res<RenderDevice>,
     args: Res<Args>,
 ) {
     let project = Project::open(args.path.clone().into()).expect("failed to open project");
@@ -94,22 +94,27 @@ fn setup(
     )
     .expect("failed to read audio duration");
 
-    let target = setup_offscreen_target(
-        &mut commands,
-        &mut images,
-        &render_device,
+    // Offscreen GPU texture the camera renders into; Readback copies it out each frame.
+    let mut target = Image::new_target_texture(
         args.video.width,
         args.video.height,
+        TextureFormat::Rgba8UnormSrgb,
+        None,
     );
+    target.texture_descriptor.usage |= TextureUsages::COPY_SRC;
+    let target_handle = images.add(target);
 
     commands.spawn((
         Camera2d,
-        target,
-        // The render target is already sRGB; writing values as-is matches the
-        // in-editor preview.
+        RenderTarget::Image(target_handle.clone().into()),
+        // The target is already sRGB; tonemapping would double-encode.
         Tonemapping::None,
         IsDefaultUiCamera,
     ));
+
+    commands
+        .spawn(Readback::texture(target_handle))
+        .observe(on_frame_ready);
 
     // Stand in for the main-window surrogate values the game code reads.
     viewport.0 = Rect::from_corners(

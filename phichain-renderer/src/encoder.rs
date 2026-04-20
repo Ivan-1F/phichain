@@ -2,10 +2,14 @@
 //!
 //! A child `ffmpeg` reads raw RGBA bytes from stdin at a fixed size/framerate
 //! and produces an h264 mp4. We drive `ChartTime` one video-frame at a time;
-//! the game code renders a matching frame; we pipe the captured bytes to ffmpeg.
+//! the game code renders a matching frame; Bevy's built-in `Readback` copies
+//! that frame out of the GPU and fires `ReadbackComplete`, which we observe
+//! here to pipe the bytes into ffmpeg.
 
 use bevy::app::AppExit;
 use bevy::prelude::*;
+use bevy::render::gpu_readback::ReadbackComplete;
+use bevy::render::renderer::RenderDevice;
 use phichain_game::ChartTime;
 use std::collections::VecDeque;
 use std::io::Write;
@@ -13,20 +17,11 @@ use std::process::{Child, Command, Stdio};
 use std::time::Instant;
 
 use crate::args::Args;
-use crate::capture::{unpad_rows, FrameReceiver};
 
 /// Frames rendered before we start writing, giving the GPU time to warm up
 /// (shader compilation, first-frame cache misses). The earliest frames are
 /// often transparent or blocky and would show up as garbage.
 const WARMUP_FRAMES: u32 = 40;
-
-pub struct EncoderPlugin;
-
-impl Plugin for EncoderPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(PostUpdate, write_frame);
-    }
-}
 
 #[derive(Resource)]
 pub struct Encoder {
@@ -48,8 +43,6 @@ pub struct Encoder {
 }
 
 impl Encoder {
-    /// Spawn ffmpeg and return the encoder state. `from`/`to` bound the chart
-    /// time window to render (seconds).
     pub fn spawn(args: &Args, from: f32, to: f32) -> Self {
         let (width, height, fps) = (args.video.width, args.video.height, args.video.fps);
         let total_frames = (fps as f32 * (to - from)) as u32;
@@ -92,20 +85,15 @@ impl Encoder {
     }
 }
 
-fn write_frame(
+/// Observer fired by Bevy's `GpuReadbackPlugin` each time a frame has been
+/// copied back from the GPU.
+pub fn on_frame_ready(
+    event: On<ReadbackComplete>,
     mut enc: ResMut<Encoder>,
     mut chart_time: ResMut<ChartTime>,
-    receiver: Res<FrameReceiver>,
     mut exit: MessageWriter<AppExit>,
 ) {
-    // Advance the chart one video-frame at a time.
     chart_time.0 = enc.next_chart_time();
-
-    // Render world may enqueue multiple frames per tick if the GPU is fast;
-    // only the most recent one matches current state.
-    let Some(bytes) = receiver.try_iter().last() else {
-        return;
-    };
 
     if enc.warmup_remaining > 0 {
         enc.warmup_remaining -= 1;
@@ -113,7 +101,7 @@ fn write_frame(
     }
 
     let (width, height) = (enc.width, enc.height);
-    let pixels = unpad_rows(&bytes, width, height);
+    let pixels = unpad_rows(&event.data, width, height);
     let stdin = enc
         .ffmpeg
         .stdin
@@ -136,11 +124,25 @@ fn write_frame(
     }
 }
 
+/// Strip the per-row padding wgpu adds when copying a texture into a buffer
+/// (rows are aligned to 256 bytes).
+fn unpad_rows(bytes: &[u8], width: u32, height: u32) -> Vec<u8> {
+    let row = width as usize * 4;
+    let padded = RenderDevice::align_copy_bytes_per_row(row);
+    if row == padded {
+        return bytes.to_vec();
+    }
+    let mut out = Vec::with_capacity(row * height as usize);
+    for chunk in bytes.chunks_exact(padded).take(height as usize) {
+        out.extend_from_slice(&chunk[..row]);
+    }
+    out
+}
+
 fn log_progress(enc: &mut Encoder) {
     let elapsed = enc.start.elapsed().as_secs_f32();
     let second = elapsed as u32;
 
-    // Sliding 1-second window of frame timestamps.
     enc.frame_times.push_back(elapsed);
     while enc.frame_times.front().is_some_and(|t| elapsed - *t > 1.0) {
         enc.frame_times.pop_front();
