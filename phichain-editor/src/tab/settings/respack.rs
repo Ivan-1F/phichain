@@ -50,7 +50,7 @@ impl SettingCategory for Respack {
         for cached in packs.iter() {
             let (entry, _) = cached;
             let selected = settings.game.respack == entry.source;
-            if pack_row(ui, cached, selected) && !selected {
+            if respack_row_ui(ui, cached, selected) && !selected {
                 world.trigger(SelectRespack(entry.source.clone()));
             }
         }
@@ -121,7 +121,7 @@ fn upload_previews(ctx: &Context, entry: &RespackEntry) -> [TextureHandle; 4] {
     ]
 }
 
-fn pack_row(ui: &mut Ui, cached: &Cached, selected: bool) -> bool {
+fn respack_row_ui(ui: &mut Ui, cached: &Cached, selected: bool) -> bool {
     let (entry, previews) = cached;
     let locale = rust_i18n::locale();
 
