@@ -1,6 +1,8 @@
 use super::{GameConfig, GameSet, GameViewport};
+use crate::audio::AudioDuration;
 use crate::score::GameScore;
 use crate::utils::text_utils::{split_by_script, Script};
+use crate::ChartTime;
 use bevy::prelude::*;
 
 const CJK_FONT: &str = "font/MiSans-Regular.ttf";
@@ -42,6 +44,14 @@ impl Plugin for GameUiPlugin {
                     .in_set(GameSet)
                     .run_if(resource_exists_and_changed::<GameConfig>)
                     .before(update_text_scale_system), // make sure update_level_system will not override font_size
+            )
+            // progress bar
+            .add_systems(Startup, spawn_progress_bar_system)
+            .add_systems(
+                Update,
+                update_progress_bar_system
+                    .in_set(GameSet)
+                    .run_if(resource_exists::<AudioDuration>),
             );
     }
 }
@@ -324,6 +334,78 @@ fn update_name_system(
             ));
         }
     });
+
+    Ok(())
+}
+
+/// Marker component for the progress bar filled region
+#[derive(Component)]
+struct ProgressBarFill;
+
+/// Marker component for the progress bar leading edge indicator
+#[derive(Component)]
+struct ProgressBarMarker;
+
+const PROGRESS_BAR_HEIGHT_PERCENT: f32 = 1.0;
+
+const PROGRESS_BAR_MARKER_WIDTH_PERCENT: f32 = 0.3;
+
+fn spawn_progress_bar_system(mut commands: Commands) {
+    commands
+        .spawn((Node {
+            position_type: PositionType::Absolute,
+            top: Val::Px(0.0),
+            left: Val::Px(0.0),
+            width: Val::Percent(100.0),
+            height: Val::Percent(PROGRESS_BAR_HEIGHT_PERCENT),
+            ..default()
+        },))
+        .with_children(|parent| {
+            parent.spawn((
+                Node {
+                    position_type: PositionType::Absolute,
+                    top: Val::Px(0.0),
+                    left: Val::Px(0.0),
+                    width: Val::Percent(0.0),
+                    height: Val::Percent(100.0),
+                    ..default()
+                },
+                BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.6)),
+                ProgressBarFill,
+            ));
+            parent.spawn((
+                Node {
+                    position_type: PositionType::Absolute,
+                    top: Val::Px(0.0),
+                    left: Val::Percent(-PROGRESS_BAR_MARKER_WIDTH_PERCENT / 2.0),
+                    width: Val::Percent(PROGRESS_BAR_MARKER_WIDTH_PERCENT),
+                    height: Val::Percent(100.0),
+                    ..default()
+                },
+                BackgroundColor(Color::WHITE),
+                ProgressBarMarker,
+            ));
+        });
+}
+
+fn update_progress_bar_system(
+    time: Res<ChartTime>,
+    audio_duration: Res<AudioDuration>,
+    mut fill_query: Query<&mut Node, (With<ProgressBarFill>, Without<ProgressBarMarker>)>,
+    mut marker_query: Query<&mut Node, (With<ProgressBarMarker>, Without<ProgressBarFill>)>,
+) -> Result {
+    let total = audio_duration.0.as_secs_f32();
+    let progress = if total > 0.0 {
+        (time.0 / total).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
+
+    let mut fill = fill_query.single_mut()?;
+    fill.width = Val::Percent(progress * 100.0);
+
+    let mut marker = marker_query.single_mut()?;
+    marker.left = Val::Percent(progress * 100.0 - PROGRESS_BAR_MARKER_WIDTH_PERCENT / 2.0);
 
     Ok(())
 }
