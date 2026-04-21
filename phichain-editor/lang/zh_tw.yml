@@ -162,7 +162,7 @@ tab:
           description: 使用滑鼠滾輪或觸控板滾動時間線時的靈敏度。數值越大滾動越快
         timeline_smooth_seeking:
           label: 時間線平滑尋位
-          description: 啟用後，時間線的位置變化（滾動、前進/後退快捷鍵等）會平滑過渡
+          description: 啟用後，時間線的位置變化（滾動、前進/後退快捷鍵等）會平滑轉場
         highlight_selected_line:
           label: 高亮選擇判定線
           description: 是否高亮選擇的判定線
@@ -196,7 +196,7 @@ tab:
           xs: 超小
         vsync:
           label: 垂直同步
-          description: 啟用垂直同步以符合顯示器刷新率
+          description: 啟用垂直同步以符合顯示器更新律
       audio:
         title: 音樂
         description: 編輯器的音樂設定
@@ -214,7 +214,7 @@ tab:
           description: 播放時啟用節拍器
         playback_rate:
           label: 播放速率
-          description: 控制音樂的播放速率，這將影響編輯器的全局速度
+          description: 控制音樂的播放速率，這將影響編輯器的全域速度
       game:
         title: 遊戲
         description: 遊戲預覽設定，自訂預覽畫面的視覺效果
@@ -229,10 +229,10 @@ tab:
           description: 音符的縮放比例
         multi_highlight:
           label: 多押高亮
-          description: 是否開啟多押高亮，即高亮所有等時音符
+          description: 是否開啟多押高亮，即高亮所有同時音符
         hit_effect_follow_game_time:
           label: 打擊特效使用遊戲時間（除錯）
-          description: 打擊特效是否跟隨遊戲時間。啟用後，打擊特效的渲染將不再基於遊戲全局時間，而是基於譜面時間。僅在除錯環境中存在
+          description: 打擊特效是否跟隨遊戲時間。啟用後，打擊特效的渲染將不再基於遊戲全域時間，而是基於譜面時間。僅在除錯環境中存在
       respack:
         title: 資源包
         description: 切換目前使用的資源包，或重新載入目前資源包。外部資源包從 respacks 目錄中讀取。
@@ -303,10 +303,10 @@ error:
     migration_failed: 遷移失敗：%{error}
     cannot_load_audio: 無法載入音樂：%{error}
   load_audio:
-    unknown_format: 未知的音樂格式
-    unsupported_format: '不支援的音樂格式 "%{format}"。支援的格式為 WAV、MP3、OGG 和 FLAC'
-    io: "無法開啟音樂檔案：%{error}"
-    load: "無法載入音樂源：%{error}"
+    unknown_format: 未知的音效格式
+    unsupported_format: 不支援的音效格式「%{format}」。支援的格式為 WAV、MP3、OGG 和 FLAC
+    io: 無法開啟音效檔案：%{error}
+    load: 無法載入音效源：%{error}
 
 home:
   recent_projects:
@@ -329,7 +329,7 @@ home:
 
     create: 新增專案
 
-    music_unselected: 未選擇音樂
+    music_unselected: 尚未選擇音樂
   loading_project: 正在載入專案...
   settings: 編輯器設定
   telemetry: 遙測
@@ -362,7 +362,7 @@ hotkey:
   phichain.place_drag: 放置 Drag
   phichain.place_flick: 放置 Flick
   phichain.place_hold: 放置 Hold
-  phichain.place_transition_event: 放置漸變事件
+  phichain.place_transition_event: 放置轉場事件
   phichain.place_constant_event: 放置常數事件
   phichain.forward: 前進
   phichain.backward: 後退
@@ -381,9 +381,9 @@ action:
   phichain.delete_selected: 刪除選擇
   phichain.open_action_panel: 開啟命令面板
 
-  phichain.zoom_in: 縮小 25%
-  phichain.zoom_out: 放大 25%
-  phichain.reset_zoom: 重設縮放至 100%
+  phichain.zoom_in: 縮小 25％
+  phichain.zoom_out: 放大 25％
+  phichain.reset_zoom: 重設縮放至 100％
 
   phichain.export_as_official: 導出為官譜
   phichain.export_as_rpe: 導出為 RPE 譜面
