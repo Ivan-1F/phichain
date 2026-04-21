@@ -362,7 +362,7 @@ hotkey:
   phichain.place_drag: 放置 Drag
   phichain.place_flick: 放置 Flick
   phichain.place_hold: 放置 Hold
-  phichain.place_transition_event: 放置过度事件
+  phichain.place_transition_event: 放置过渡事件
   phichain.place_constant_event: 放置常量事件
   phichain.forward: 前进
   phichain.backward: 后退
