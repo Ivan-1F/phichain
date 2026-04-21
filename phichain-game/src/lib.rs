@@ -46,6 +46,13 @@ pub struct ChartTime(pub f32);
 #[derive(Message, Debug, Clone, Copy)]
 pub struct SeekRequest(pub f32);
 
+/// Request to toggle the chart playback pause state.
+///
+/// Emitted by interactive in-game UI (e.g. the pause button). Embedders should
+/// consume this and flip the playback state accordingly.
+#[derive(Message, Debug, Default, Clone, Copy)]
+pub struct PauseToggleRequest;
+
 #[derive(Debug, Clone, Resource)]
 pub struct GameConfig {
     pub note_scale: f32,
@@ -105,6 +112,7 @@ impl Plugin for GamePlugin {
             .insert_resource(GameConfig::default())
             .insert_resource(Paused(true))
             .add_message::<SeekRequest>()
+            .add_message::<PauseToggleRequest>()
             .add_plugins(NonblockingLoaderPlugin)
             .add_plugins(LinePlugin)
             .add_plugins(HighlightPlugin)

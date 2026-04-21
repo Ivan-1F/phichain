@@ -2,7 +2,7 @@ use super::{GameConfig, GameSet, GameViewport};
 use crate::audio::AudioDuration;
 use crate::score::GameScore;
 use crate::utils::text_utils::{split_by_script, Script};
-use crate::{ChartTime, SeekRequest};
+use crate::{ChartTime, PauseToggleRequest, SeekRequest};
 use bevy::picking::Pickable;
 use bevy::prelude::*;
 use bevy::ui::RelativeCursorPosition;
@@ -54,6 +54,14 @@ impl Plugin for GameUiPlugin {
                 update_progress_bar_system
                     .in_set(GameSet)
                     .run_if(resource_exists::<AudioDuration>),
+            )
+            // pause button
+            .add_systems(Startup, spawn_pause_button_system)
+            .add_systems(
+                Update,
+                update_pause_button_size_system
+                    .after(update_base_text_scale_system)
+                    .in_set(GameSet),
             );
     }
 }
@@ -452,6 +460,73 @@ fn on_progress_bar_drag(
         audio_duration.as_deref(),
         &mut seek,
     );
+}
+
+/// Marker component for the pause button root.
+#[derive(Component)]
+struct PauseButton;
+
+// Button geometry is driven by `BaseTextScale` (viewport's short side), so the button
+// scales with the same metric as the text HUD and stays visually consistent across
+// game viewport sizes.
+const PAUSE_HIT_AREA_TOP_FACTOR: f32 = 0.66;
+const PAUSE_HIT_AREA_LEFT_FACTOR: f32 = 0.5;
+
+const PAUSE_BAR_WIDTH_PERCENT: f32 = 25.0;
+const PAUSE_BAR_HEIGHT_PERCENT: f32 = 80.0;
+const PAUSE_BAR_TOP_PERCENT: f32 = 0.0;
+const PAUSE_BAR_LEFT_PERCENTS: [f32; 2] = [12.5, 62.5];
+
+fn spawn_pause_button_system(mut commands: Commands) {
+    commands
+        .spawn((
+            Node {
+                position_type: PositionType::Absolute,
+                ..default()
+            },
+            BackgroundColor(Color::NONE),
+            // Lift above other in-game UI roots so picking can reach the button; otherwise
+            // the combo/score root nodes (stack_index > 0) sit on top and block clicks.
+            GlobalZIndex(10),
+            PauseButton,
+        ))
+        .observe(on_pause_button_press)
+        .with_children(|parent| {
+            for left in PAUSE_BAR_LEFT_PERCENTS {
+                parent.spawn((
+                    Node {
+                        position_type: PositionType::Absolute,
+                        top: Val::Percent(PAUSE_BAR_TOP_PERCENT),
+                        left: Val::Percent(left),
+                        width: Val::Percent(PAUSE_BAR_WIDTH_PERCENT),
+                        height: Val::Percent(PAUSE_BAR_HEIGHT_PERCENT),
+                        ..default()
+                    },
+                    BackgroundColor(Color::WHITE),
+                    Pickable::IGNORE,
+                ));
+            }
+        });
+}
+
+fn update_pause_button_size_system(
+    scale: Res<BaseTextScale>,
+    mut query: Query<&mut Node, With<PauseButton>>,
+) -> Result {
+    let s = scale.0;
+    let mut node = query.single_mut()?;
+    node.width = Val::Px(s);
+    node.height = Val::Px(s);
+    node.top = Val::Px(s * PAUSE_HIT_AREA_TOP_FACTOR);
+    node.left = Val::Px(s * PAUSE_HIT_AREA_LEFT_FACTOR);
+    Ok(())
+}
+
+fn on_pause_button_press(event: On<Pointer<Press>>, mut toggle: MessageWriter<PauseToggleRequest>) {
+    if event.button != PointerButton::Primary {
+        return;
+    }
+    toggle.write(PauseToggleRequest);
 }
 
 fn emit_progress_bar_seek(

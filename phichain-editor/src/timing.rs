@@ -69,6 +69,10 @@ impl Plugin for TimingPlugin {
             .add_systems(Update, forward_seek_request_system.run_if(project_loaded()))
             .add_systems(
                 Update,
+                forward_pause_toggle_request_system.run_if(project_loaded()),
+            )
+            .add_systems(
+                Update,
                 compute_bpm_list_system.run_if(project_loaded().and(resource_changed::<BpmList>)),
             )
             .insert_resource(Timing::new())
@@ -94,18 +98,13 @@ fn toggle_system(mut commands: Commands, paused: Res<Paused>) -> Result {
     Ok(())
 }
 
-/// Bridge in-game UI seek requests (e.g. from the progress bar) to the editor's [`SeekTo`].
+/// Returns true when a floating egui window (rather than a background panel) is under
+/// the cursor, so in-game UI interactions can be ignored.
 ///
-/// Drop requests when a floating egui window (rather than a background panel) sits under
-/// the cursor, so dragging such a window on top of the progress bar doesn't also seek.
 /// We can't use [`bevy_egui::input::EguiWantsInput::wants_pointer_input`] here because
-/// panels like the game tab are also egui areas; hovering them would wrongly block clicks.
-fn forward_seek_request_system(
-    mut incoming: MessageReader<phichain_game::SeekRequest>,
-    mut seek_to: MessageWriter<SeekTo>,
-    mut contexts: EguiContexts,
-) {
-    let blocked_by_egui_window = contexts
+/// panels like the game tab are also egui areas; hovering them would wrongly return true.
+fn pointer_over_floating_egui(contexts: &mut EguiContexts) -> bool {
+    contexts
         .ctx_mut()
         .ok()
         .and_then(|ctx| {
@@ -113,14 +112,44 @@ fn forward_seek_request_system(
             ctx.layer_id_at(pos)
                 .map(|layer| layer.order >= egui::Order::Middle)
         })
-        .unwrap_or(false);
+        .unwrap_or(false)
+}
 
-    if blocked_by_egui_window {
+/// Bridge in-game UI seek requests (e.g. from the progress bar) to the editor's [`SeekTo`].
+fn forward_seek_request_system(
+    mut incoming: MessageReader<phichain_game::SeekRequest>,
+    mut seek_to: MessageWriter<SeekTo>,
+    mut contexts: EguiContexts,
+) {
+    if pointer_over_floating_egui(&mut contexts) {
         incoming.clear();
         return;
     }
     for event in incoming.read() {
         seek_to.write(SeekTo(event.0));
+    }
+}
+
+/// Bridge in-game UI pause toggle requests (e.g. from the pause button) to [`Pause`]/[`Resume`].
+fn forward_pause_toggle_request_system(
+    mut incoming: MessageReader<phichain_game::PauseToggleRequest>,
+    paused: Res<Paused>,
+    mut commands: Commands,
+    mut contexts: EguiContexts,
+) {
+    if pointer_over_floating_egui(&mut contexts) {
+        incoming.clear();
+        return;
+    }
+    let has_request = incoming.read().next().is_some();
+    incoming.clear();
+    if !has_request {
+        return;
+    }
+    if paused.0 {
+        commands.trigger(Resume);
+    } else {
+        commands.trigger(Pause);
     }
 }
 
