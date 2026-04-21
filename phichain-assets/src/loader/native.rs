@@ -3,7 +3,7 @@ use anyhow::{Context, Result};
 use crate::meta::RespackMeta;
 
 use super::source::PackSource;
-use super::{load_image, LoadedAudio, LoadedImages, LoadedRespack};
+use super::{builtin_line, load_image, load_image_opt, LoadedAudio, LoadedImages, LoadedRespack};
 
 /// Load a phichain-native resource pack.
 ///
@@ -21,7 +21,7 @@ pub fn load(source: &mut PackSource) -> Result<LoadedRespack> {
             hold: load_image(source, "hold.png")?,
             hold_highlight: load_image(source, "hold.highlight.png")?,
             hit: load_image(source, "hit.png")?,
-            line: load_image(source, "line.png")?,
+            line: load_image_opt(source, "line.png")?.unwrap_or_else(builtin_line),
         },
         audio: LoadedAudio {
             tap: source.read("tap.ogg")?,

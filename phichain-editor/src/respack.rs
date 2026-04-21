@@ -1,4 +1,5 @@
-use std::path::PathBuf;
+use std::borrow::Cow;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use bevy::prelude::*;
@@ -7,6 +8,7 @@ use phichain_assets::{
     apply_respack, builtin_respack_dir, load_respack, load_respack_meta, load_respack_preview,
     LoadedRespackPreview, RespackMeta,
 };
+use serde::{Deserialize, Serialize};
 
 use crate::misc::WorkingDirectory;
 use crate::notification::{ToastsExt, ToastsStorage};
@@ -17,47 +19,71 @@ pub struct RespackPlugin;
 impl Plugin for RespackPlugin {
     fn build(&self, app: &mut App) {
         app.add_observer(handle_reload_respack)
-            .add_systems(Startup, trigger_reload_on_startup);
+            .add_observer(handle_select_respack)
+            .add_systems(Startup, reload_saved_pack_on_startup);
     }
 }
 
 /// Re-read the active resource pack from editor settings and apply it to the world.
 ///
-/// `EditorSettings.game.respack` is the single source of truth:
-/// - `None` → built-in pack
-/// - `Some(name)` → external pack under `<working_dir>/respacks/<name>`
-///
-/// Callers that want to switch packs update the setting first, then trigger this event.
-///
-/// Set `silent = true` to skip the success toast.
+/// Leaves `EditorSettings.game.respack` untouched; use [`SelectRespack`] to switch packs.
 #[derive(Event, Debug, Default)]
-pub struct ReloadRespack {
-    pub silent: bool,
+pub struct ReloadRespack;
+
+/// Request switching to a different resource pack.
+///
+/// The setting is only persisted after the new pack loads successfully; on failure
+/// the setting reverts to its previous value so the UI never drifts from the
+/// actually-loaded pack.
+#[derive(Event, Debug)]
+pub struct SelectRespack(pub RespackSource);
+
+/// Identifies a resource pack.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum RespackSource {
+    #[default]
+    Builtin,
+    Custom(PathBuf),
 }
 
-fn trigger_reload_on_startup(settings: Res<Persistent<EditorSettings>>, mut commands: Commands) {
-    // The built-in pack is already active (loaded by `AssetsPlugin::build`);
-    // only trigger a reload when the user has selected a custom pack.
-    if settings.game.respack.is_some() {
-        commands.trigger(ReloadRespack { silent: true });
+impl RespackSource {
+    pub fn is_custom(&self) -> bool {
+        matches!(self, Self::Custom(_))
+    }
+
+    /// Filesystem path to the pack.
+    pub fn path(&self) -> Cow<'_, Path> {
+        match self {
+            Self::Builtin => Cow::Owned(builtin_respack_dir()),
+            Self::Custom(path) => Cow::Borrowed(path),
+        }
     }
 }
 
-/// Apply the active pack. Defers to a queued closure because applying needs
-/// exclusive `&mut World` access, which observers can't hold directly.
-fn handle_reload_respack(event: On<ReloadRespack>, mut commands: Commands) {
-    let silent = event.silent;
-    commands.queue(move |world: &mut World| apply(world, silent));
+fn reload_saved_pack_on_startup(world: &mut World) {
+    let is_custom = world
+        .resource::<Persistent<EditorSettings>>()
+        .game
+        .respack
+        .is_custom();
+    if !is_custom {
+        return;
+    }
+    if let Err(err) = load_and_apply(world) {
+        error!("Resource pack load failed: {err:#}");
+        let mut settings = world.resource_mut::<Persistent<EditorSettings>>();
+        settings.game.respack = RespackSource::Builtin;
+        let _ = settings.persist();
+    }
 }
 
-fn apply(world: &mut World, silent: bool) {
-    match load_and_apply(world) {
+fn handle_reload_respack(_event: On<ReloadRespack>, mut commands: Commands) {
+    commands.queue(move |world: &mut World| match load_and_apply(world) {
         Ok(name) => {
-            if !silent {
-                toast(world, |t| {
-                    t.success(t!("respack.load.succeed", name = name))
-                });
-            }
+            toast(world, |t| {
+                t.success(t!("respack.load.succeed", name = name))
+            });
         }
         Err(err) => {
             error!("Resource pack load failed: {err:#}");
@@ -65,32 +91,61 @@ fn apply(world: &mut World, silent: bool) {
                 t.error(t!("respack.load.failed", error = format!("{err:#}")))
             });
         }
-    }
+    });
+}
+
+fn handle_select_respack(event: On<SelectRespack>, mut commands: Commands) {
+    let target = event.0.clone();
+    commands.queue(move |world: &mut World| {
+        let previous = world
+            .resource::<Persistent<EditorSettings>>()
+            .game
+            .respack
+            .clone();
+        if previous == target {
+            return;
+        }
+
+        // temporally apply the new selection, then try to load it.
+        world
+            .resource_mut::<Persistent<EditorSettings>>()
+            .game
+            .respack = target;
+
+        match load_and_apply(world) {
+            Ok(name) => {
+                let _ = world.resource_mut::<Persistent<EditorSettings>>().persist();
+                toast(world, |t| {
+                    t.success(t!("respack.load.succeed", name = name))
+                });
+            }
+            Err(err) => {
+                error!("Resource pack load failed: {err:#}");
+                {
+                    let mut settings = world.resource_mut::<Persistent<EditorSettings>>();
+                    settings.game.respack = previous;
+                    let _ = settings.persist();
+                }
+                toast(world, |t| {
+                    t.error(t!("respack.load.failed", error = format!("{err:#}")))
+                });
+            }
+        }
+    });
 }
 
 /// Load and apply the selected pack, returning its localized display name.
 fn load_and_apply(world: &mut World) -> Result<String> {
-    let selection = world
+    let source = world
         .resource::<Persistent<EditorSettings>>()
         .game
         .respack
         .clone();
-    let path = match selection {
-        Some(name) => resolve_respack_path(&name, world)?,
-        None => builtin_respack_dir(),
-    };
+    let path = source.path();
     let pack = load_respack(&path).with_context(|| format!("loading {}", path.display()))?;
     let name = pack.meta.name.get(&rust_i18n::locale()).to_owned();
     apply_respack(pack, world)?;
     Ok(name)
-}
-
-fn resolve_respack_path(name: &str, world: &mut World) -> Result<PathBuf> {
-    let dir = world
-        .resource::<WorkingDirectory>()
-        .respacks()
-        .context("accessing respacks directory")?;
-    Ok(dir.join(name))
 }
 
 fn toast(world: &mut World, f: impl FnOnce(&mut ToastsStorage)) {
@@ -100,39 +155,24 @@ fn toast(world: &mut World, f: impl FnOnce(&mut ToastsStorage)) {
 }
 
 pub struct RespackEntry {
-    pub path: PathBuf,
+    pub source: RespackSource,
     pub meta: RespackMeta,
     pub preview: LoadedRespackPreview,
 }
 
 impl RespackEntry {
     /// Load a single pack's meta and preview images from disk.
-    pub fn load(path: PathBuf) -> Result<Self> {
+    pub fn load(source: RespackSource) -> Result<Self> {
+        let path = source.path();
         let meta = load_respack_meta(&path)
             .with_context(|| format!("loading meta for {}", path.display()))?;
         let preview = load_respack_preview(&path)
             .with_context(|| format!("loading preview for {}", path.display()))?;
         Ok(Self {
-            path,
+            source,
             meta,
             preview,
         })
-    }
-
-    /// Filename of the pack.
-    pub fn filename(&self) -> &str {
-        self.path.file_name().and_then(|n| n.to_str()).unwrap_or("")
-    }
-
-    /// Whether this is the built-in pack (path matches `builtin_respack_dir()`).
-    pub fn is_builtin(&self) -> bool {
-        self.path == builtin_respack_dir()
-    }
-
-    /// Value that `EditorSettings.game.respack` should take to select this pack.
-    /// Built-in → `None`; external → `Some(filename)`.
-    pub fn setting_key(&self) -> Option<&str> {
-        (!self.is_builtin()).then(|| self.filename())
     }
 }
 
@@ -148,17 +188,15 @@ pub fn scan_respacks(working_dir: &WorkingDirectory) -> Vec<RespackEntry> {
     let mut packs: Vec<RespackEntry> = entries
         .flatten()
         .map(|e| e.path())
-        .filter(|path| {
-            path.file_name().and_then(|n| n.to_str()).is_some()
-                && (path.is_dir() || path.extension().is_some_and(|ext| ext == "zip"))
+        .filter(|pack_path| {
+            pack_path.is_dir() || pack_path.extension().is_some_and(|ext| ext == "zip")
         })
-        .filter_map(|path| {
-            let shown = path.display().to_string();
-            RespackEntry::load(path)
-                .inspect_err(|err| warn!("skipping respack {shown}: {err:#}"))
+        .filter_map(|pack_path| {
+            RespackEntry::load(RespackSource::Custom(pack_path.clone()))
+                .inspect_err(|err| warn!("skipping respack {}: {err:#}", pack_path.display()))
                 .ok()
         })
         .collect();
-    packs.sort_by(|a, b| a.path.cmp(&b.path));
+    packs.sort_by(|a, b| a.source.path().cmp(&b.source.path()));
     packs
 }

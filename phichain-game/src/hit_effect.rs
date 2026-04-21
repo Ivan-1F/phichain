@@ -14,8 +14,6 @@ use phichain_chart::note::{Note, NoteKind};
 use rand::Rng;
 use std::time::Duration;
 
-const HOLD_PARTICLE_INTERVAL: f32 = 0.15;
-
 /// Hit effect sprite width as a multiple of the reference note width.
 /// Equivalent to the legacy formula `(256 * 6 / 8000) * viewport`
 const HIT_FX_NOTE_WIDTH_RATIO: f32 = 256.0 * 6.0 / 989.0;
@@ -267,11 +265,14 @@ fn spawn_hit_effect_system(
         match note.kind {
             NoteKind::Hold { .. } => {
                 let end_time = bpm_list.time_at(note.end_beat());
+
+                // half-beat interval at the current BPM
+                let interval = 30.0 / bpm_list.bpm_at(time.0);
+
                 if note_time <= time.0
                     && time.0 <= end_time
                     && !paused.0
-                    && (played.is_none()
-                        || played.is_some_and(|last| (time.0 - last.0) > HOLD_PARTICLE_INTERVAL))
+                    && (played.is_none() || played.is_some_and(|last| (time.0 - last.0) > interval))
                 {
                     spawn();
                 }

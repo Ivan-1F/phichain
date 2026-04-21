@@ -44,7 +44,7 @@ fn update_score_system(
     let notes: Vec<_> = note_query.iter().collect();
     score.combo = notes
         .iter()
-        .filter(|note| bpm_list.time_at(note.beat) <= time.0)
+        .filter(|note| bpm_list.time_at(note.end_beat()) <= time.0)
         .collect::<Vec<_>>()
         .len() as u32;
 

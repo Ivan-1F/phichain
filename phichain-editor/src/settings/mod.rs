@@ -1,4 +1,5 @@
 use crate::misc::WorkingDirectory;
+use crate::respack::RespackSource;
 use bevy::prelude::*;
 use bevy_persistent::{Persistent, StorageFormat};
 use serde::{Deserialize, Serialize};
@@ -120,9 +121,7 @@ pub struct GameSettings {
 
     pub hit_effect_follow_game_time: bool,
 
-    /// File name (relative to `<working_dir>/respacks/`) of the active respack.
-    /// `None` uses the built-in default.
-    pub respack: Option<String>,
+    pub respack: RespackSource,
 }
 
 impl Default for GameSettings {
@@ -136,7 +135,7 @@ impl Default for GameSettings {
 
             hit_effect_follow_game_time: false,
 
-            respack: None,
+            respack: RespackSource::default(),
         }
     }
 }

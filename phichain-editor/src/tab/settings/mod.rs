@@ -77,6 +77,8 @@ pub fn settings_tab(In(mut ui): In<Ui>, world: &mut World) {
     settings_ui(&mut ui, world);
 }
 
+const SIDEBAR_WIDTH: f32 = 140.0;
+
 pub fn settings_ui(ui: &mut Ui, world: &mut World) {
     world.resource_scope(
         |world, mut editor_settings: Mut<Persistent<EditorSettings>>| {
@@ -98,7 +100,7 @@ pub fn settings_ui(ui: &mut Ui, world: &mut World) {
                     ui.vertical(|ui| {
                         ui.set_height(available_height);
                         ui.with_layout(Layout::top_down_justified(egui::Align::LEFT), |ui| {
-                            ui.set_max_width(80.0);
+                            ui.set_max_width(SIDEBAR_WIDTH);
 
                             for c in SettingCategories::iter() {
                                 if ui.selectable_label(category == c, t!(c.name())).clicked() {

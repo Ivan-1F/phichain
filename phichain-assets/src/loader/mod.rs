@@ -117,3 +117,21 @@ fn load_image(source: &mut PackSource, name: &str) -> Result<DynamicImage> {
     let bytes = source.read(name)?;
     image::load_from_memory(&bytes).with_context(|| format!("failed to decode image: {name}"))
 }
+
+/// Like [`load_image`], but returns `None` if the file does not exist in the pack.
+/// A decoding failure on an existing file is still surfaced as an error.
+fn load_image_opt(source: &mut PackSource, name: &str) -> Result<Option<DynamicImage>> {
+    if !source.exists(name) {
+        return Ok(None);
+    }
+    load_image(source, name).map(Some)
+}
+
+/// Decode the built-in `line.png` embedded at compile time.
+///
+/// Used as a fallback when a resource pack does not ship its own `line.png`
+/// (e.g. phira-format packs, which don't support a custom judge line texture).
+pub(super) fn builtin_line() -> DynamicImage {
+    const BYTES: &[u8] = include_bytes!("../../../assets/respack/line.png");
+    image::load_from_memory(BYTES).expect("built-in line.png should decode")
+}

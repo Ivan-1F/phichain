@@ -12,9 +12,7 @@ use rust_i18n::locale;
 /// - `en_us`: Uses the original string
 /// - `ja_jp`: Converts Japanese characters to Romaji
 ///
-/// # Panics
-///
-/// Panics if the current locale is not one of the supported locales.
+/// Locales without specific support use the original string
 pub fn match_pronunciation(query: &str, target: &str) -> bool {
     // keep this updated with lang/meta.json
     let target = match &*locale() {
@@ -22,11 +20,9 @@ pub fn match_pronunciation(query: &str, target: &str) -> bool {
             .to_pinyin()
             .filter_map(|maybe_pinyin| maybe_pinyin.map(|pinyin| pinyin.plain()))
             .collect::<String>(),
-        "en_us" => target.to_string(),
         "ja_jp" => kakasi::convert(target).romaji,
-        _ => {
-            unreachable!("unexpected locale: {}", &*locale());
-        }
+        // english and locales without specific support use the original string
+        _ => target.to_string(),
     }
     .replace(" ", "")
     .to_ascii_lowercase();
