@@ -1,4 +1,5 @@
-use std::path::PathBuf;
+use std::borrow::Cow;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use bevy::prelude::*;
@@ -46,8 +47,7 @@ pub struct SelectRespack(pub RespackSource);
 pub enum RespackSource {
     #[default]
     Builtin,
-    /// An external pack identified by its filename under `<working_dir>/respacks/`.
-    Custom(String),
+    Custom(PathBuf),
 }
 
 impl RespackSource {
@@ -55,16 +55,11 @@ impl RespackSource {
         matches!(self, Self::Custom(_))
     }
 
-    /// Resolve to an absolute path on disk.
-    pub fn path(&self, working_dir: &WorkingDirectory) -> Result<PathBuf> {
+    /// Filesystem path to the pack.
+    pub fn path(&self) -> Cow<'_, Path> {
         match self {
-            Self::Builtin => Ok(builtin_respack_dir()),
-            Self::Custom(name) => {
-                let dir = working_dir
-                    .respacks()
-                    .context("accessing respacks directory")?;
-                Ok(dir.join(name))
-            }
+            Self::Builtin => Cow::Owned(builtin_respack_dir()),
+            Self::Custom(path) => Cow::Borrowed(path),
         }
     }
 }
@@ -143,7 +138,7 @@ fn load_and_apply(world: &mut World) -> Result<String> {
         .game
         .respack
         .clone();
-    let path = source.path(world.resource::<WorkingDirectory>())?;
+    let path = source.path();
     let pack = load_respack(&path).with_context(|| format!("loading {}", path.display()))?;
     let name = pack.meta.name.get(&rust_i18n::locale()).to_owned();
     apply_respack(pack, world)?;
@@ -157,42 +152,24 @@ fn toast(world: &mut World, f: impl FnOnce(&mut ToastsStorage)) {
 }
 
 pub struct RespackEntry {
-    pub path: PathBuf,
+    pub source: RespackSource,
     pub meta: RespackMeta,
     pub preview: LoadedRespackPreview,
 }
 
 impl RespackEntry {
     /// Load a single pack's meta and preview images from disk.
-    pub fn load(path: PathBuf) -> Result<Self> {
+    pub fn load(source: RespackSource) -> Result<Self> {
+        let path = source.path();
         let meta = load_respack_meta(&path)
             .with_context(|| format!("loading meta for {}", path.display()))?;
         let preview = load_respack_preview(&path)
             .with_context(|| format!("loading preview for {}", path.display()))?;
         Ok(Self {
-            path,
+            source,
             meta,
             preview,
         })
-    }
-
-    /// Filename of the pack.
-    pub fn filename(&self) -> &str {
-        self.path.file_name().and_then(|n| n.to_str()).unwrap_or("")
-    }
-
-    /// Whether this is the built-in pack (path matches `builtin_respack_dir()`).
-    pub fn is_builtin(&self) -> bool {
-        self.path == builtin_respack_dir()
-    }
-
-    /// How this entry identifies itself to the settings/selection layer.
-    pub fn source(&self) -> RespackSource {
-        if self.is_builtin() {
-            RespackSource::Builtin
-        } else {
-            RespackSource::Custom(self.filename().to_owned())
-        }
     }
 }
 
@@ -208,17 +185,15 @@ pub fn scan_respacks(working_dir: &WorkingDirectory) -> Vec<RespackEntry> {
     let mut packs: Vec<RespackEntry> = entries
         .flatten()
         .map(|e| e.path())
-        .filter(|path| {
-            path.file_name().and_then(|n| n.to_str()).is_some()
-                && (path.is_dir() || path.extension().is_some_and(|ext| ext == "zip"))
+        .filter(|pack_path| {
+            pack_path.is_dir() || pack_path.extension().is_some_and(|ext| ext == "zip")
         })
-        .filter_map(|path| {
-            let shown = path.display().to_string();
-            RespackEntry::load(path)
-                .inspect_err(|err| warn!("skipping respack {shown}: {err:#}"))
+        .filter_map(|pack_path| {
+            RespackEntry::load(RespackSource::Custom(pack_path.clone()))
+                .inspect_err(|err| warn!("skipping respack {}: {err:#}", pack_path.display()))
                 .ok()
         })
         .collect();
-    packs.sort_by(|a, b| a.path.cmp(&b.path));
+    packs.sort_by(|a, b| a.source.path().cmp(&b.source.path()));
     packs
 }

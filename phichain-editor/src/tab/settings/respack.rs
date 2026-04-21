@@ -1,13 +1,12 @@
 use std::sync::Arc;
 
 use crate::misc::WorkingDirectory;
-use crate::respack::{scan_respacks, ReloadRespack, RespackEntry, SelectRespack};
+use crate::respack::{scan_respacks, ReloadRespack, RespackEntry, RespackSource, SelectRespack};
 use crate::settings::EditorSettings;
 use crate::tab::settings::{SettingCategory, SettingUi};
 use crate::ui::widgets::button_frame::button_frame;
 use bevy::prelude::World;
 use egui::{Context, Image, Rect, RichText, Sense, TextureHandle, TextureOptions, Ui, Vec2};
-use phichain_assets::builtin_respack_dir;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
 pub struct Respack;
@@ -33,7 +32,7 @@ impl SettingCategory for Respack {
             .ctx()
             .data_mut(|d| d.get_temp::<Arc<Vec<Cached>>>(cache_id))
             .unwrap_or_else(|| {
-                let builtin = RespackEntry::load(builtin_respack_dir())
+                let builtin = RespackEntry::load(RespackSource::Builtin)
                     .expect("built-in resource pack must load");
                 let v: Vec<Cached> = std::iter::once(builtin)
                     .chain(scan_respacks(world.resource::<WorkingDirectory>()))
@@ -49,10 +48,9 @@ impl SettingCategory for Respack {
 
         for cached in packs.iter() {
             let (entry, _) = cached;
-            let source = entry.source();
-            let selected = settings.game.respack == source;
+            let selected = settings.game.respack == entry.source;
             if pack_row(ui, cached, selected) && !selected {
-                world.trigger(SelectRespack(source));
+                world.trigger(SelectRespack(entry.source.clone()));
             }
         }
 
@@ -101,7 +99,7 @@ impl SettingCategory for Respack {
 }
 
 fn upload_previews(ctx: &Context, entry: &RespackEntry) -> [TextureHandle; 4] {
-    let key = entry.path.display().to_string();
+    let key = entry.source.path().display().to_string();
     let p = &entry.preview;
     let upload = |suffix: &str, img: &image::DynamicImage| {
         let rgba = img.to_rgba8();
@@ -126,10 +124,15 @@ fn pack_row(ui: &mut Ui, cached: &Cached, selected: bool) -> bool {
     let (entry, previews) = cached;
     let locale = rust_i18n::locale();
 
-    let title = if entry.meta.name.is_empty() {
-        entry.filename().to_owned()
-    } else {
+    let title = if !entry.meta.name.is_empty() {
         entry.meta.name.get(&locale).to_owned()
+    } else if let RespackSource::Custom(path) = &entry.source {
+        path.file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or_default()
+            .to_owned()
+    } else {
+        String::new()
     };
 
     button_frame(ui, selected, |ui, text_color| {
