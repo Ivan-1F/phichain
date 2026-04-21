@@ -117,6 +117,17 @@ impl BpmList {
         point.beat.value() + (time - point.time) * point.bpm / 60.0
     }
 
+    /// Get the effective BPM at the given time
+    pub fn bpm_at(&self, time: f32) -> f32 {
+        self.0
+            .iter()
+            .take_while(|p| p.time <= time)
+            .last()
+            .or_else(|| self.0.first())
+            .expect("No bpm points available")
+            .bpm
+    }
+
     /// Normalize a [`Beat`] on this [`BpmList`] to a [`Beat`] on a fixed BPM
     ///
     /// ```rust
