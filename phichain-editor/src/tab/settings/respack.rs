@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::misc::WorkingDirectory;
-use crate::respack::{scan_respacks, ReloadRespack, RespackEntry};
+use crate::respack::{scan_respacks, ReloadRespack, RespackEntry, SelectRespack};
 use crate::settings::EditorSettings;
 use crate::tab::settings::{SettingCategory, SettingUi};
 use crate::ui::widgets::button_frame::button_frame;
@@ -47,14 +47,12 @@ impl SettingCategory for Respack {
                 v
             });
 
-        let mut changed = false;
         for cached in packs.iter() {
             let (entry, _) = cached;
             let key = entry.setting_key();
             let selected = settings.game.respack.as_deref() == key;
             if pack_row(ui, cached, selected) && !selected {
-                settings.game.respack = key.map(str::to_owned);
-                changed = true;
+                world.trigger(SelectRespack(key.map(str::to_owned)));
             }
         }
 
@@ -97,10 +95,8 @@ impl SettingCategory for Respack {
             }
         }
 
-        if changed {
-            world.trigger(ReloadRespack::default());
-        }
-        changed
+        // selection changes are persisted by the `SelectRespack` handler, not here.
+        false
     }
 }
 

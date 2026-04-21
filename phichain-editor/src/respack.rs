@@ -17,23 +17,27 @@ pub struct RespackPlugin;
 impl Plugin for RespackPlugin {
     fn build(&self, app: &mut App) {
         app.add_observer(handle_reload_respack)
+            .add_observer(handle_select_respack)
             .add_systems(Startup, trigger_reload_on_startup);
     }
 }
 
 /// Re-read the active resource pack from editor settings and apply it to the world.
 ///
-/// `EditorSettings.game.respack` is the single source of truth:
-/// - `None` → built-in pack
-/// - `Some(name)` → external pack under `<working_dir>/respacks/<name>`
-///
-/// Callers that want to switch packs update the setting first, then trigger this event.
-///
-/// Set `silent = true` to skip the success toast.
+/// Leaves `EditorSettings.game.respack` untouched; use [`SelectRespack`] to switch packs.
+/// Set `silent = true` to skip the success toast (used on startup).
 #[derive(Event, Debug, Default)]
 pub struct ReloadRespack {
     pub silent: bool,
 }
+
+/// Request switching to a different resource pack.
+///
+/// The setting is only persisted after the new pack loads successfully; on failure
+/// the setting reverts to its previous value so the UI never drifts from the
+/// actually-loaded pack.
+#[derive(Event, Debug)]
+pub struct SelectRespack(pub Option<String>);
 
 fn trigger_reload_on_startup(settings: Res<Persistent<EditorSettings>>, mut commands: Commands) {
     // The built-in pack is already active (loaded by `AssetsPlugin::build`);
@@ -43,15 +47,9 @@ fn trigger_reload_on_startup(settings: Res<Persistent<EditorSettings>>, mut comm
     }
 }
 
-/// Apply the active pack. Defers to a queued closure because applying needs
-/// exclusive `&mut World` access, which observers can't hold directly.
 fn handle_reload_respack(event: On<ReloadRespack>, mut commands: Commands) {
     let silent = event.silent;
-    commands.queue(move |world: &mut World| apply(world, silent));
-}
-
-fn apply(world: &mut World, silent: bool) {
-    match load_and_apply(world) {
+    commands.queue(move |world: &mut World| match load_and_apply(world) {
         Ok(name) => {
             if !silent {
                 toast(world, |t| {
@@ -65,7 +63,47 @@ fn apply(world: &mut World, silent: bool) {
                 t.error(t!("respack.load.failed", error = format!("{err:#}")))
             });
         }
-    }
+    });
+}
+
+fn handle_select_respack(event: On<SelectRespack>, mut commands: Commands) {
+    let target = event.0.clone();
+    commands.queue(move |world: &mut World| {
+        let previous = world
+            .resource::<Persistent<EditorSettings>>()
+            .game
+            .respack
+            .clone();
+        if previous == target {
+            return;
+        }
+
+        // temporally apply the new selection, then try to load it.
+        world
+            .resource_mut::<Persistent<EditorSettings>>()
+            .game
+            .respack = target;
+
+        match load_and_apply(world) {
+            Ok(name) => {
+                let _ = world.resource_mut::<Persistent<EditorSettings>>().persist();
+                toast(world, |t| {
+                    t.success(t!("respack.load.succeed", name = name))
+                });
+            }
+            Err(err) => {
+                error!("Resource pack load failed: {err:#}");
+                {
+                    let mut settings = world.resource_mut::<Persistent<EditorSettings>>();
+                    settings.game.respack = previous;
+                    let _ = settings.persist();
+                }
+                toast(world, |t| {
+                    t.error(t!("respack.load.failed", error = format!("{err:#}")))
+                });
+            }
+        }
+    });
 }
 
 /// Load and apply the selected pack, returning its localized display name.
