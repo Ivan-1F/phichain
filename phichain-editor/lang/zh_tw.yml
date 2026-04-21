@@ -196,7 +196,7 @@ tab:
           xs: 超小
         vsync:
           label: 垂直同步
-          description: 啟用垂直同步以符合顯示器更新律
+          description: 啟用垂直同步以符合顯示器更新率
       audio:
         title: 音樂
         description: 編輯器的音樂設定
