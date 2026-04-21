@@ -69,7 +69,7 @@ impl SettingCategory for Respack {
         if reload_clicked {
             ui.ctx()
                 .data_mut(|d| d.remove::<Arc<Vec<Cached>>>(cache_id));
-            world.trigger(ReloadRespack::default());
+            world.trigger(ReloadRespack);
         }
 
         ui.separator();

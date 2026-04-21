@@ -20,18 +20,15 @@ impl Plugin for RespackPlugin {
     fn build(&self, app: &mut App) {
         app.add_observer(handle_reload_respack)
             .add_observer(handle_select_respack)
-            .add_systems(Startup, trigger_reload_on_startup);
+            .add_systems(Startup, reload_saved_pack_on_startup);
     }
 }
 
 /// Re-read the active resource pack from editor settings and apply it to the world.
 ///
 /// Leaves `EditorSettings.game.respack` untouched; use [`SelectRespack`] to switch packs.
-/// Set `silent = true` to skip the success toast (used on startup).
 #[derive(Event, Debug, Default)]
-pub struct ReloadRespack {
-    pub silent: bool,
-}
+pub struct ReloadRespack;
 
 /// Request switching to a different resource pack.
 ///
@@ -64,23 +61,29 @@ impl RespackSource {
     }
 }
 
-fn trigger_reload_on_startup(settings: Res<Persistent<EditorSettings>>, mut commands: Commands) {
-    // The built-in pack is already active (loaded by `AssetsPlugin::build`);
-    // only trigger a reload when the user has selected a custom pack.
-    if settings.game.respack.is_custom() {
-        commands.trigger(ReloadRespack { silent: true });
+fn reload_saved_pack_on_startup(world: &mut World) {
+    let is_custom = world
+        .resource::<Persistent<EditorSettings>>()
+        .game
+        .respack
+        .is_custom();
+    if !is_custom {
+        return;
+    }
+    if let Err(err) = load_and_apply(world) {
+        error!("Resource pack load failed: {err:#}");
+        let mut settings = world.resource_mut::<Persistent<EditorSettings>>();
+        settings.game.respack = RespackSource::Builtin;
+        let _ = settings.persist();
     }
 }
 
-fn handle_reload_respack(event: On<ReloadRespack>, mut commands: Commands) {
-    let silent = event.silent;
+fn handle_reload_respack(_event: On<ReloadRespack>, mut commands: Commands) {
     commands.queue(move |world: &mut World| match load_and_apply(world) {
         Ok(name) => {
-            if !silent {
-                toast(world, |t| {
-                    t.success(t!("respack.load.succeed", name = name))
-                });
-            }
+            toast(world, |t| {
+                t.success(t!("respack.load.succeed", name = name))
+            });
         }
         Err(err) => {
             error!("Resource pack load failed: {err:#}");
