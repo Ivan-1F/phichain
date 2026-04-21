@@ -10,7 +10,7 @@ type_complexity = "allow"
 too_many_arguments = "allow"
 
 [package.metadata.i18n]
-available-locales = ["en_us", "zh_cn"]
+available-locales = ["en_us", "zh_cn", "zh_tw", "ja_jp"]
 default-locale = "en_us"
 load-path = "lang"
 
