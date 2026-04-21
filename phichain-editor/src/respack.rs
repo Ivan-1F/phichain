@@ -7,6 +7,7 @@ use phichain_assets::{
     apply_respack, builtin_respack_dir, load_respack, load_respack_meta, load_respack_preview,
     LoadedRespackPreview, RespackMeta,
 };
+use serde::{Deserialize, Serialize};
 
 use crate::misc::WorkingDirectory;
 use crate::notification::{ToastsExt, ToastsStorage};
@@ -37,12 +38,41 @@ pub struct ReloadRespack {
 /// the setting reverts to its previous value so the UI never drifts from the
 /// actually-loaded pack.
 #[derive(Event, Debug)]
-pub struct SelectRespack(pub Option<String>);
+pub struct SelectRespack(pub RespackSource);
+
+/// Identifies a resource pack.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum RespackSource {
+    #[default]
+    Builtin,
+    /// An external pack identified by its filename under `<working_dir>/respacks/`.
+    Custom(String),
+}
+
+impl RespackSource {
+    pub fn is_custom(&self) -> bool {
+        matches!(self, Self::Custom(_))
+    }
+
+    /// Resolve to an absolute path on disk.
+    pub fn path(&self, working_dir: &WorkingDirectory) -> Result<PathBuf> {
+        match self {
+            Self::Builtin => Ok(builtin_respack_dir()),
+            Self::Custom(name) => {
+                let dir = working_dir
+                    .respacks()
+                    .context("accessing respacks directory")?;
+                Ok(dir.join(name))
+            }
+        }
+    }
+}
 
 fn trigger_reload_on_startup(settings: Res<Persistent<EditorSettings>>, mut commands: Commands) {
     // The built-in pack is already active (loaded by `AssetsPlugin::build`);
     // only trigger a reload when the user has selected a custom pack.
-    if settings.game.respack.is_some() {
+    if settings.game.respack.is_custom() {
         commands.trigger(ReloadRespack { silent: true });
     }
 }
@@ -108,27 +138,16 @@ fn handle_select_respack(event: On<SelectRespack>, mut commands: Commands) {
 
 /// Load and apply the selected pack, returning its localized display name.
 fn load_and_apply(world: &mut World) -> Result<String> {
-    let selection = world
+    let source = world
         .resource::<Persistent<EditorSettings>>()
         .game
         .respack
         .clone();
-    let path = match selection {
-        Some(name) => resolve_respack_path(&name, world)?,
-        None => builtin_respack_dir(),
-    };
+    let path = source.path(world.resource::<WorkingDirectory>())?;
     let pack = load_respack(&path).with_context(|| format!("loading {}", path.display()))?;
     let name = pack.meta.name.get(&rust_i18n::locale()).to_owned();
     apply_respack(pack, world)?;
     Ok(name)
-}
-
-fn resolve_respack_path(name: &str, world: &mut World) -> Result<PathBuf> {
-    let dir = world
-        .resource::<WorkingDirectory>()
-        .respacks()
-        .context("accessing respacks directory")?;
-    Ok(dir.join(name))
 }
 
 fn toast(world: &mut World, f: impl FnOnce(&mut ToastsStorage)) {
@@ -167,10 +186,13 @@ impl RespackEntry {
         self.path == builtin_respack_dir()
     }
 
-    /// Value that `EditorSettings.game.respack` should take to select this pack.
-    /// Built-in → `None`; external → `Some(filename)`.
-    pub fn setting_key(&self) -> Option<&str> {
-        (!self.is_builtin()).then(|| self.filename())
+    /// How this entry identifies itself to the settings/selection layer.
+    pub fn source(&self) -> RespackSource {
+        if self.is_builtin() {
+            RespackSource::Builtin
+        } else {
+            RespackSource::Custom(self.filename().to_owned())
+        }
     }
 }
 

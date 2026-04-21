@@ -49,10 +49,10 @@ impl SettingCategory for Respack {
 
         for cached in packs.iter() {
             let (entry, _) = cached;
-            let key = entry.setting_key();
-            let selected = settings.game.respack.as_deref() == key;
+            let source = entry.source();
+            let selected = settings.game.respack == source;
             if pack_row(ui, cached, selected) && !selected {
-                world.trigger(SelectRespack(key.map(str::to_owned)));
+                world.trigger(SelectRespack(source));
             }
         }
 
