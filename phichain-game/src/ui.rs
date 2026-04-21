@@ -2,8 +2,10 @@ use super::{GameConfig, GameSet, GameViewport};
 use crate::audio::AudioDuration;
 use crate::score::GameScore;
 use crate::utils::text_utils::{split_by_script, Script};
-use crate::ChartTime;
+use crate::{ChartTime, SeekRequest};
+use bevy::picking::Pickable;
 use bevy::prelude::*;
+use bevy::ui::RelativeCursorPosition;
 
 const CJK_FONT: &str = "font/MiSans-Regular.ttf";
 const ASCII_FONT: &str = "font/phigros.ttf";
@@ -338,6 +340,10 @@ fn update_name_system(
     Ok(())
 }
 
+/// Marker component for the progress bar root (also acts as the hit area).
+#[derive(Component)]
+struct ProgressBar;
+
 /// Marker component for the progress bar filled region
 #[derive(Component)]
 struct ProgressBarFill;
@@ -346,20 +352,26 @@ struct ProgressBarFill;
 #[derive(Component)]
 struct ProgressBarMarker;
 
-const PROGRESS_BAR_HEIGHT_PERCENT: f32 = 1.0;
-
+const PROGRESS_BAR_HIT_AREA_PERCENT: f32 = 2.0;
+const PROGRESS_BAR_VISUAL_HEIGHT_PERCENT: f32 = 50.0;
 const PROGRESS_BAR_MARKER_WIDTH_PERCENT: f32 = 0.3;
 
 fn spawn_progress_bar_system(mut commands: Commands) {
     commands
-        .spawn((Node {
-            position_type: PositionType::Absolute,
-            top: Val::Px(0.0),
-            left: Val::Px(0.0),
-            width: Val::Percent(100.0),
-            height: Val::Percent(PROGRESS_BAR_HEIGHT_PERCENT),
-            ..default()
-        },))
+        .spawn((
+            Node {
+                position_type: PositionType::Absolute,
+                top: Val::Px(0.0),
+                left: Val::Px(0.0),
+                width: Val::Percent(100.0),
+                height: Val::Percent(PROGRESS_BAR_HIT_AREA_PERCENT),
+                ..default()
+            },
+            RelativeCursorPosition::default(),
+            ProgressBar,
+        ))
+        .observe(on_progress_bar_press)
+        .observe(on_progress_bar_drag)
         .with_children(|parent| {
             parent.spawn((
                 Node {
@@ -367,11 +379,12 @@ fn spawn_progress_bar_system(mut commands: Commands) {
                     top: Val::Px(0.0),
                     left: Val::Px(0.0),
                     width: Val::Percent(0.0),
-                    height: Val::Percent(100.0),
+                    height: Val::Percent(PROGRESS_BAR_VISUAL_HEIGHT_PERCENT),
                     ..default()
                 },
                 BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.6)),
                 ProgressBarFill,
+                Pickable::IGNORE,
             ));
             parent.spawn((
                 Node {
@@ -379,11 +392,12 @@ fn spawn_progress_bar_system(mut commands: Commands) {
                     top: Val::Px(0.0),
                     left: Val::Percent(-PROGRESS_BAR_MARKER_WIDTH_PERCENT / 2.0),
                     width: Val::Percent(PROGRESS_BAR_MARKER_WIDTH_PERCENT),
-                    height: Val::Percent(100.0),
+                    height: Val::Percent(PROGRESS_BAR_VISUAL_HEIGHT_PERCENT),
                     ..default()
                 },
                 BackgroundColor(Color::WHITE),
                 ProgressBarMarker,
+                Pickable::IGNORE,
             ));
         });
 }
@@ -408,6 +422,60 @@ fn update_progress_bar_system(
     marker.left = Val::Percent(progress * 100.0 - PROGRESS_BAR_MARKER_WIDTH_PERCENT / 2.0);
 
     Ok(())
+}
+
+fn on_progress_bar_press(
+    event: On<Pointer<Press>>,
+    query: Query<&RelativeCursorPosition, With<ProgressBar>>,
+    audio_duration: Option<Res<AudioDuration>>,
+    mut seek: MessageWriter<SeekRequest>,
+) {
+    emit_progress_bar_seek(
+        event.entity,
+        event.button,
+        &query,
+        audio_duration.as_deref(),
+        &mut seek,
+    );
+}
+
+fn on_progress_bar_drag(
+    event: On<Pointer<Drag>>,
+    query: Query<&RelativeCursorPosition, With<ProgressBar>>,
+    audio_duration: Option<Res<AudioDuration>>,
+    mut seek: MessageWriter<SeekRequest>,
+) {
+    emit_progress_bar_seek(
+        event.entity,
+        event.button,
+        &query,
+        audio_duration.as_deref(),
+        &mut seek,
+    );
+}
+
+fn emit_progress_bar_seek(
+    entity: Entity,
+    button: PointerButton,
+    query: &Query<&RelativeCursorPosition, With<ProgressBar>>,
+    audio_duration: Option<&AudioDuration>,
+    seek: &mut MessageWriter<SeekRequest>,
+) {
+    if button != PointerButton::Primary {
+        return;
+    }
+    let Some(audio_duration) = audio_duration else {
+        return;
+    };
+    let Ok(rcp) = query.get(entity) else {
+        return;
+    };
+    let Some(normalized) = rcp.normalized else {
+        return;
+    };
+    // RelativeCursorPosition's normalized is in [-0.5, 0.5]; shift to [0, 1] along the bar.
+    let progress = (normalized.x + 0.5).clamp(0.0, 1.0);
+    seek.write(SeekRequest(progress * audio_duration.0.as_secs_f32()));
 }
 
 fn update_level_system(
