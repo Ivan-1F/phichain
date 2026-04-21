@@ -18,7 +18,7 @@ menu_bar:
       update: 用目前佈局更新
       delete: 刪除
     messages:
-      applied: 已套用佈局預設
+      applied: 已套用預設佈局
       rename: 已重新命名預設佈局
       update: 已更新預設佈局
       delete: 已刪除預設佈局
@@ -111,7 +111,7 @@ tab:
       above: 上方
       below: 下方
   audio_setting:
-    title: 音樂設定
+    title: 音效設定
     music_volume: 音樂音量
     hit_sound_volume: 打擊音效音量
   chart_basic_setting:
@@ -162,7 +162,7 @@ tab:
           description: 使用滑鼠滾輪或觸控板滾動時間線時的靈敏度。數值越大滾動越快
         timeline_smooth_seeking:
           label: 時間線平滑尋位
-          description: 啟用後，時間線的位置變化（滾動、前進/後退快捷鍵等）會平滑轉場
+          description: 啟用後，使用滾動、前進/後退快捷鍵等，使時間線平滑捲動
         highlight_selected_line:
           label: 高亮選擇判定線
           description: 是否高亮選擇的判定線
@@ -179,7 +179,7 @@ tab:
           label: 發送遙測
           description: 是否發送遙測資料。了解更多關於遙測的資訊，請查看 https://phicha.in/telemetry
           disabled_by_env_var: 遙測被環境變數禁用
-          debug_enabled: 已遙測除錯啟用
+          debug_enabled: 已啟用遙測除錯
         language:
           label: 語言
           description: 編輯器使用的語言
@@ -336,7 +336,7 @@ home:
 
 audio_setting:
   save:
-    failed: 儲存音樂檔案時發生錯誤：%{error}
+    failed: 儲存音效設定時發生錯誤：%{error}
 
 export:
   official:
@@ -362,7 +362,7 @@ hotkey:
   phichain.place_drag: 放置 Drag
   phichain.place_flick: 放置 Flick
   phichain.place_hold: 放置 Hold
-  phichain.place_transition_event: 放置轉場事件
+  phichain.place_transition_event: 放置漸變事件
   phichain.place_constant_event: 放置常數事件
   phichain.forward: 前進
   phichain.backward: 後退
@@ -381,8 +381,8 @@ action:
   phichain.delete_selected: 刪除選擇
   phichain.open_action_panel: 開啟命令面板
 
-  phichain.zoom_in: 縮小 25％
-  phichain.zoom_out: 放大 25％
+  phichain.zoom_in: 放大 25％
+  phichain.zoom_out: 縮小 25％
   phichain.reset_zoom: 重設縮放至 100％
 
   phichain.export_as_official: 導出為官譜
