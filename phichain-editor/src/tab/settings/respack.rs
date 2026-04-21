@@ -4,6 +4,7 @@ use crate::misc::WorkingDirectory;
 use crate::respack::{scan_respacks, ReloadRespack, RespackEntry, RespackSource, SelectRespack};
 use crate::settings::EditorSettings;
 use crate::tab::settings::{SettingCategory, SettingUi};
+use crate::ui::sides::SidesExt;
 use crate::ui::widgets::button_frame::button_frame;
 use bevy::prelude::World;
 use egui::{Context, Image, Rect, RichText, Sense, TextureHandle, TextureOptions, Ui, Vec2};
@@ -148,23 +149,27 @@ fn pack_row(ui: &mut Ui, cached: &Cached, selected: bool) -> bool {
         }
         .size(11.0);
 
-        ui.horizontal(|ui| {
-            ui.vertical(|ui| {
-                ui.label(RichText::new(&title).color(text_color).strong());
-                ui.label(description);
-            });
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                // Iterate in reverse so tap/drag/flick/hold appear left→right.
-                for tex in previews.iter().rev() {
-                    let (rect, _) =
-                        ui.allocate_exact_size(Vec2::splat(PREVIEW_SIZE), Sense::hover());
-                    let size = tex.size_vec2();
-                    let scale = (PREVIEW_SIZE / size.x).min(PREVIEW_SIZE / size.y).min(1.0);
-                    let draw = Rect::from_center_size(rect.center(), size * scale);
-                    Image::new(tex).paint_at(ui, draw);
-                }
-            });
-        });
+        ui.sides(
+            |ui| {
+                ui.vertical(|ui| {
+                    ui.label(RichText::new(&title).color(text_color).strong());
+                    ui.label(description);
+                });
+            },
+            |ui| {
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    // iterate in reverse so tap/drag/flick/hold appear left→right.
+                    for tex in previews.iter().rev() {
+                        let (rect, _) =
+                            ui.allocate_exact_size(Vec2::splat(PREVIEW_SIZE), Sense::hover());
+                        let size = tex.size_vec2();
+                        let scale = (PREVIEW_SIZE / size.x).min(PREVIEW_SIZE / size.y).min(1.0);
+                        let draw = Rect::from_center_size(rect.center(), size * scale);
+                        Image::new(tex).paint_at(ui, draw);
+                    }
+                });
+            },
+        );
     })
     .clicked()
 }
