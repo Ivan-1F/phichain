@@ -25,6 +25,23 @@ use crate::args::{Args, Codec};
 /// often transparent or blocky and would show up as garbage.
 const WARMUP_FRAMES: u32 = 40;
 
+pub fn ensure_ffmpeg_available() -> Result<(), std::io::Error> {
+    let status = Command::new("ffmpeg")
+        .arg("-version")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()?;
+
+    if !status.success() {
+        return Err(std::io::Error::other(format!(
+            "ffmpeg -version exited with {status}"
+        )));
+    }
+
+    Ok(())
+}
+
 #[derive(Resource)]
 pub struct Encoder {
     ffmpeg: Child,

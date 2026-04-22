@@ -16,7 +16,7 @@ mod respack;
 mod utils;
 
 use crate::args::Args;
-use crate::encoder::{on_frame_ready, Encoder};
+use crate::encoder::{ensure_ffmpeg_available, on_frame_ready, Encoder};
 use crate::respack::RespackPlugin;
 use bevy::app::ScheduleRunnerPlugin;
 use bevy::camera::RenderTarget;
@@ -44,6 +44,12 @@ fn main() {
     rust_i18n::set_locale(&locale());
 
     let args = Args::parse();
+
+    if let Err(err) = ensure_ffmpeg_available() {
+        eprintln!("{}", t!("cli.error.ffmpeg_missing", error = err));
+        std::process::exit(1);
+    }
+
     let started = Instant::now();
 
     App::new()

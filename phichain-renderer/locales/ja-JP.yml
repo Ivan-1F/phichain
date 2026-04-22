@@ -37,3 +37,4 @@ cli:
   error:
     load_respack_failed: 'リソースパックの読み込みに失敗 %{path}: %{error}'
     apply_respack_failed: 'リソースパックの適用に失敗 %{path}: %{error}'
+    ffmpeg_missing: 'ffmpeg を起動できません。インストールされ PATH に含まれていることを確認してください: %{error}'
