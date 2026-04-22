@@ -31,6 +31,7 @@ use bevy_kira_audio::AudioPlugin;
 use clap::Parser;
 use phichain_assets::AssetsPlugin;
 use phichain_chart::project::Project;
+use phichain_game::audio::AudioDuration;
 use phichain_game::{GameConfig, GamePlugin, GameSet, GameViewport, Paused};
 use std::time::{Duration, Instant};
 
@@ -127,6 +128,10 @@ fn setup(
         .game
         .clone()
         .into_game_config(project.meta.name.clone(), project.meta.level.clone());
+
+    // Game UI reads [`AudioDuration`] to render the progress bar;
+    // the renderer does not go through phichain_game::audio::load_audio, so insert it here manually.
+    commands.insert_resource(AudioDuration(Duration::from_secs_f32(music_duration)));
 
     let from = args.from.unwrap_or(0.0);
     let to = args.to.unwrap_or(music_duration);
