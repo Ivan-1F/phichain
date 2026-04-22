@@ -11,27 +11,27 @@ menu_bar:
     as_official: 導出為官譜
   layout:
     title: 佈局
-    default: 套用預設佈局
+    default: 套用佈局預設
     item:
       apply: 套用
       rename: 重新命名
       update: 用目前佈局更新
       delete: 刪除
     messages:
-      applied: 已套用預設佈局
-      rename: 已重新命名預設佈局
-      update: 已更新預設佈局
-      delete: 已刪除預設佈局
-      created: 已新增預設佈局
-      empty_name: 預設佈局名稱不能為空
+      applied: 已套用佈局預設
+      rename: 已重新命名佈局預設
+      update: 已更新佈局預設
+      delete: 已刪除佈局預設
+      created: 已新增佈局預設
+      empty_name: 佈局預設名稱不能為空
     dialog:
       new:
-        title: 新增預設佈局
-        name_label: 預設佈局名稱：
+        title: 新增佈局預設
+        name_label: 佈局預設名稱：
         save: 儲存
         cancel: 取消
       rename:
-        title: 重新命名預設佈局
+        title: 重新命名佈局預設
         name_label: 新名稱：
         save: 儲存
         cancel: 取消
@@ -73,7 +73,7 @@ tab:
       start_beat: 開始時間
       end_beat: 結束時間
       value_type: 值類型
-      transition: 過渡
+      transition: 漸變
       constant: 常數
       start_value: 開始值
       end_value: 結束值
@@ -303,10 +303,10 @@ error:
     migration_failed: 遷移失敗：%{error}
     cannot_load_audio: 無法載入音樂：%{error}
   load_audio:
-    unknown_format: 未知的音效格式
-    unsupported_format: 不支援的音效格式「%{format}」。支援的格式為 WAV、MP3、OGG 和 FLAC
-    io: 無法開啟音效檔案：%{error}
-    load: 無法載入音效源：%{error}
+    unknown_format: 未知的音效檔案格式
+    unsupported_format: 不支援的音效檔案格式「%{format}」。支援的格式為 WAV、MP3、OGG 和 FLAC
+    io: 無法開啟音樂檔案：%{error}
+    load: 無法載入音樂：%{error}
 
 home:
   recent_projects:
@@ -388,7 +388,7 @@ action:
   phichain.export_as_official: 導出為官譜
   phichain.export_as_rpe: 導出為 RPE 譜面
 
-  phichain.save_layout_preset: 儲存目前佈局為預設佈局
+  phichain.save_layout_preset: 儲存目前佈局為佈局預設
 
   phichain.create_line: 新增判定線
   phichain.create_line_from_selected: 以選擇的判定線狀態新增判定線
