@@ -6121,7 +6121,6 @@ dependencies = [
  "strum",
  "thiserror 2.0.17",
  "tracing-subscriber",
- "ureq 3.3.0",
 ]
 
 [[package]]
@@ -6185,7 +6184,6 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
- "ureq 3.3.0",
 ]
 
 [[package]]
@@ -6199,6 +6197,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "ureq 3.3.0",
  "uuid",
 ]
 

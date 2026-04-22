@@ -24,4 +24,3 @@ rust-i18n = "=3.0.1"
 phichain-i18n = { path = "../phichain-i18n" }
 phichain-telemetry = { path = "../phichain-telemetry" }
 serde = { version = "1.0.228", features = ["derive"] }
-ureq = "3.3.0"

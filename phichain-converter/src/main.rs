@@ -1,6 +1,5 @@
 mod error;
 mod options;
-mod telemetry;
 
 use crate::error::{unwrap_infallible, ConvertError};
 use crate::options::{
@@ -290,7 +289,7 @@ fn main() {
         let cli = TelemetryCli::parse_from(std::env::args().skip(1));
         match cli.command {
             TelemetryCommand::Flush { path } => {
-                let _ = telemetry::flush(path);
+                let _ = phichain_telemetry::flush(path);
             }
         }
         return;
@@ -329,7 +328,12 @@ fn main() {
     }
 
     if !no_telemetry && !phichain_telemetry::env::telemetry_disabled() {
-        let _ = telemetry::track(
+        let reporter = phichain_telemetry::Reporter::new(
+            "phichain-converter",
+            env!("CARGO_PKG_VERSION"),
+            cfg!(debug_assertions),
+        );
+        let _ = reporter.track(
             "phichain.converter.convert",
             serde_json::to_value(&meta).unwrap(),
         );
