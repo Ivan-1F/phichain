@@ -1,0 +1,39 @@
+cli:
+  about: Phichain プロジェクトをビデオにレンダリングします
+
+  args:
+    path: Phichain プロジェクトのパス
+    output: 出力ビデオのパス
+    from: レンダリング開始時間 (秒)。指定しない場合は 0.0 から
+    to: レンダリング終了時間 (秒)。指定しない場合は音声の長さを使用
+    respack: カスタムリソースパックのパス (ディレクトリまたは .zip)。指定しない場合は内蔵パックを使用
+
+  video:
+    heading: 'ビデオオプション'
+    width: ビデオの幅
+    height: ビデオの高さ
+    fps: ビデオのフレームレート
+    msaa: マルチサンプルアンチエイリアスのレベル
+    hwaccel: プラットフォームに応じたハードウェアビデオエンコーダー (videotoolbox / nvenc / qsv) を使用します。ソフトウェアエンコードより高速ですが、同じ CRF/ビットレートでは品質がやや低くなります
+    codec: ビデオコーデック
+    crf: '固定品質係数：0 (ロスレス) から 51 (最低)、18 は視覚的にロスレス。ハードウェアエンコーダーの場合は対応するネイティブ品質パラメータにマッピングされます。--bitrate と排他'
+    bitrate: 'ターゲットビットレート (例: "8M"、"6000k")。--crf と排他'
+
+  game:
+    heading: 'ゲームオプション'
+    note_scale: ノートのスケール係数
+    fc_ap_indicator: FC/AP インジケータを有効にします。phichain-renderer は常にオートプレイを使用するため、有効にすると判定ラインが常に黄色になります
+    no_multi_highlight: ノートのマルチハイライトを無効にする
+    hide_hit_effect: 打撃エフェクトを非表示にする
+    name: 譜面名を上書き
+    level: 譜面難易度を上書き
+
+  status:
+    loaded_respack: 'カスタムリソースパックを読み込みました: %{path}'
+    audio_ready: '音声トラック準備完了: %{notes} ノート、長さ %{duration}s、ミキシング時間 %{elapsed}s'
+    encoded: '%{frames} フレームをエンコード、所要時間 %{elapsed}s (平均 %{fps} fps、%{realtime}x リアルタイム)'
+    completed: 'レンダリング完了、所要時間 %{elapsed}s'
+
+  error:
+    load_respack_failed: 'リソースパックの読み込みに失敗 %{path}: %{error}'
+    apply_respack_failed: 'リソースパックの適用に失敗 %{path}: %{error}'

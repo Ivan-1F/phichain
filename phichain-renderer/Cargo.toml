@@ -15,6 +15,10 @@ phichain-assets = { path = "../phichain-assets" }
 bevy = { workspace = true }
 bevy_kira_audio = { workspace = true }
 clap = { version = "4.5.15", features = ["derive"] }
-crossbeam-channel = "0.5.15"
-image = "0.25.2"
 anyhow = "1.0.86"
+serde_json = "1.0.117"
+hound = "3.5.1"
+tempfile = "3.10"
+indicatif = "0.17"
+rust-i18n = "=3.0.1"
+phichain-i18n = { path = "../phichain-i18n" }

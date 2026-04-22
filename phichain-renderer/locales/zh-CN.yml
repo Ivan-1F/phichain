@@ -1,0 +1,39 @@
+cli:
+  about: 将 Phichain 项目渲染为视频
+
+  args:
+    path: Phichain 项目的路径
+    output: 输出视频的路径
+    from: 渲染起始时间 (秒)。不指定时从 0.0 开始
+    to: 渲染结束时间 (秒)。不指定时使用音乐时长
+    respack: 自定义资源包路径 (目录或 .zip)。不指定时使用内置资源包
+
+  video:
+    heading: '视频选项'
+    width: 视频宽度
+    height: 视频高度
+    fps: 视频帧率
+    msaa: 多重采样抗锯齿级别
+    hwaccel: 使用平台对应的硬件视频编码器 (videotoolbox / nvenc / qsv)。比软件编码快，但在同等 CRF/码率下质量略低
+    codec: 视频编码器
+    crf: '固定质量因子：0 (无损) 到 51 (最差)，18 为视觉无损。对于硬件编码器，会映射到对应的原生质量参数。与 --bitrate 互斥'
+    bitrate: '目标码率 (例如 "8M"、"6000k")。与 --crf 互斥'
+
+  game:
+    heading: '游戏选项'
+    note_scale: 音符的缩放系数
+    fc_ap_indicator: 启用 FC/AP 指示器。由于 phichain-renderer 始终使用自动演奏，启用后判定线会一直保持黄色
+    no_multi_highlight: 禁用音符的多重高亮
+    hide_hit_effect: 隐藏打击特效
+    name: 覆盖谱面名称
+    level: 覆盖谱面难度
+
+  status:
+    loaded_respack: '已加载自定义资源包: %{path}'
+    audio_ready: '音轨已就绪: %{notes} 个音符，总长 %{duration}s，混音耗时 %{elapsed}s'
+    encoded: '已编码 %{frames} 帧，耗时 %{elapsed}s (平均 %{fps} fps，%{realtime}x 实时速度)'
+    completed: '渲染完成，耗时 %{elapsed}s'
+
+  error:
+    load_respack_failed: '加载资源包失败 %{path}: %{error}'
+    apply_respack_failed: '应用资源包失败 %{path}: %{error}'

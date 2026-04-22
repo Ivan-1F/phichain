@@ -1,0 +1,39 @@
+cli:
+  about: Renders Phichain projects to videos
+
+  args:
+    path: The path to the Phichain project
+    output: The path of the output video
+    from: The start time of the chart to render in seconds. 0.0 if not given
+    to: The end time of the chart to render in seconds. The duration of the music if not given
+    respack: Path to a custom resource pack (directory or .zip). The built-in pack is used if not given
+
+  video:
+    heading: Video Options
+    width: The width of the video
+    height: The height of the video
+    fps: The fps of the video
+    msaa: Multi-sample anti-aliasing level
+    hwaccel: "Use a platform-appropriate hardware video encoder (videotoolbox / nvenc / qsv). Faster than software encoding but quality at a given CRF/bitrate is slightly lower"
+    codec: Video codec
+    crf: "Constant Rate Factor: 0 (lossless) to 51 (worst). 18 is \"visually lossless\". For hardware encoders this is mapped to the encoder's native quality knob. Mutually exclusive with --bitrate."
+    bitrate: "Target bitrate (e.g. \"8M\", \"6000k\"). Mutually exclusive with --crf."
+
+  game:
+    heading: Game Options
+    note_scale: The scale factor for notes
+    fc_ap_indicator: Enable the FC/AP indicator. Since phichain-renderer always use autoplay, enabling this will result in a constant yellow line
+    no_multi_highlight: Disable multi highlight for notes
+    hide_hit_effect: Hide hit effects
+    name: Overwrite the name of the chart
+    level: Overwrite the level of the chart
+
+  status:
+    loaded_respack: "loaded custom respack: %{path}"
+    audio_ready: "audio track ready: %{notes} notes over %{duration}s mixed in %{elapsed}s"
+    encoded: "encoded %{frames} frames in %{elapsed}s (avg %{fps} fps, %{realtime}x realtime)"
+    completed: "render completed in %{elapsed}s"
+
+  error:
+    load_respack_failed: "failed to load respack %{path}: %{error}"
+    apply_respack_failed: "failed to apply respack %{path}: %{error}"

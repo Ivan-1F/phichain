@@ -1,0 +1,8 @@
+[package]
+name = "phichain-i18n"
+version = "1.0.0-beta.6"
+edition = "2021"
+
+[dependencies]
+rust-i18n = "=3.0.1"
+sys-locale = "0.3.2"
