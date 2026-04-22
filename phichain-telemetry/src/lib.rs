@@ -14,7 +14,7 @@ pub mod env;
 pub mod payload;
 pub mod report;
 
-pub use report::{flush, Reporter};
+pub use report::{flush, handle_subcommand, Reporter};
 
 /// The telemetry reporting endpoint.
 pub const TELEMETRY_URL: &str = "https://telemetry.phichain.rs/report";

@@ -6,12 +6,41 @@
 //! route `argv[1] == "telemetry"` to [`flush`] before its normal startup.
 
 use crate::payload::{PhichainMeta, TelemetryPayload};
+use clap::{Parser, Subcommand};
 use serde_json::Value;
 use std::fs::File;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 const TELEMETRY_FILE_PREFIX: &str = "phichain-telemetry-";
+
+#[derive(Parser, Debug, Clone)]
+#[command(name = "telemetry", hide = true)]
+struct Cli {
+    #[command(subcommand)]
+    command: Cmd,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+enum Cmd {
+    Flush { path: PathBuf },
+}
+
+/// Early-dispatch the hidden `<app> telemetry <...>` subcommand.
+///
+/// Returns `true` when the current invocation is a telemetry subcommand。
+pub fn handle_subcommand() -> bool {
+    if std::env::args().nth(1).as_deref() != Some("telemetry") {
+        return false;
+    }
+    let cli = Cli::parse_from(std::env::args().skip(1));
+    match cli.command {
+        Cmd::Flush { path } => {
+            let _ = flush(path);
+        }
+    }
+    true
+}
 
 /// Identifies the reporting application and is baked into every payload.
 pub struct Reporter {

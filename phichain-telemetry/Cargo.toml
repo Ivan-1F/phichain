@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 bon = "3.9.1"
 chrono = "0.4.44"
+clap = { version = "4.5.15", features = ["derive"] }
 machine-uid = "0.5.4"
 os_info = "3.14.0"
 serde = { version = "1.0.228", features = ["derive"] }

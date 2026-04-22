@@ -5,7 +5,7 @@ use crate::error::{unwrap_infallible, ConvertError};
 use crate::options::{
     CliCommonOutputOptions, CliOfficialInputOptions, CliOfficialOutputOptions, CliRpeInputOptions,
 };
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{Parser, ValueEnum};
 use owo_colors::OwoColorize;
 use phichain_chart::metrics::ChartMetrics;
 use phichain_chart::serialization::PhichainChart;
@@ -51,19 +51,6 @@ enum Format {
     Official,
     Phichain,
     Rpe,
-}
-
-#[derive(Parser, Debug, Clone)]
-#[command(name = "phichain-converter telemetry")]
-#[command(hide = true)]
-struct TelemetryCli {
-    #[command(subcommand)]
-    command: TelemetryCommand,
-}
-
-#[derive(Subcommand, Debug, Clone)]
-enum TelemetryCommand {
-    Flush { path: PathBuf },
 }
 
 #[derive(Parser, Debug, Clone)]
@@ -284,14 +271,7 @@ fn convert(args: Args, meta: &mut ConvertTelemetry) -> Result<(), ConvertError> 
 }
 
 fn main() {
-    // Route `phichain-converter telemetry <subcommand>` before normal arg parsing
-    if std::env::args().nth(1).as_deref() == Some("telemetry") {
-        let cli = TelemetryCli::parse_from(std::env::args().skip(1));
-        match cli.command {
-            TelemetryCommand::Flush { path } => {
-                let _ = phichain_telemetry::flush(path);
-            }
-        }
+    if phichain_telemetry::handle_subcommand() {
         return;
     }
 

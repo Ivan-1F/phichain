@@ -6192,6 +6192,7 @@ version = "1.0.0-beta.6"
 dependencies = [
  "bon",
  "chrono",
+ "clap",
  "machine-uid",
  "os_info",
  "serde",
