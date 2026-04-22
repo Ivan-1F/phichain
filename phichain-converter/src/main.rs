@@ -8,6 +8,7 @@ use crate::options::{
 };
 use clap::{Parser, Subcommand, ValueEnum};
 use owo_colors::OwoColorize;
+use phichain_chart::metrics::ChartMetrics;
 use phichain_chart::serialization::PhichainChart;
 use phichain_format::official::OfficialChart;
 use phichain_format::rpe::RpeChart;
@@ -149,31 +150,6 @@ fn read_input(path: &std::path::Path) -> Result<String, ConvertError> {
 }
 
 #[derive(Serialize)]
-struct ChartMetrics {
-    lines: usize,
-    notes: usize,
-    events: usize,
-}
-
-fn collect_chart_metrics(lines: &[phichain_chart::serialization::SerializedLine]) -> ChartMetrics {
-    let mut metrics = ChartMetrics {
-        lines: 0,
-        notes: 0,
-        events: 0,
-    };
-    for line in lines {
-        metrics.lines += 1;
-        metrics.notes += line.notes.len();
-        metrics.events += line.events.len();
-        let child = collect_chart_metrics(&line.children);
-        metrics.lines += child.lines;
-        metrics.notes += child.notes;
-        metrics.events += child.events;
-    }
-    metrics
-}
-
-#[derive(Serialize)]
 struct ConvertTelemetry {
     locale: String,
     from: Option<Format>,
@@ -190,7 +166,7 @@ struct ConvertTelemetry {
 impl Chart {
     fn metrics(&self) -> ChartMetrics {
         match self {
-            Chart::Phichain(c) => collect_chart_metrics(&c.lines),
+            Chart::Phichain(c) => ChartMetrics::collect(&c.lines),
             Chart::Official(c) => ChartMetrics {
                 lines: c.lines.len(),
                 notes: c
