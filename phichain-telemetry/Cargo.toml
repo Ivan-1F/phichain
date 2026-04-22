@@ -12,5 +12,12 @@ os_info = "3.14.0"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 sha2 = "0.11.0"
+sysinfo = "0.35.1"
 ureq = "3.3.0"
 uuid = { version = "1.23.0", features = ["v4"] }
+wgpu-types = { version = "27", optional = true }
+
+[features]
+default = []
+# Enables `From<&wgpu_types::AdapterInfo>` for `adapter::Adapter`.
+wgpu = ["dep:wgpu-types"]
