@@ -2,6 +2,7 @@
 
 use bevy::prelude::*;
 use phichain_assets::{apply_respack, load_respack};
+use rust_i18n::t;
 
 use crate::args::Args;
 
@@ -13,13 +14,30 @@ impl Plugin for RespackPlugin {
             return;
         };
         let pack = load_respack(&path).unwrap_or_else(|err| {
-            eprintln!("error: failed to load respack {}: {err:#}", path.display());
+            eprintln!(
+                "error: {}",
+                t!(
+                    "cli.error.load_respack_failed",
+                    path = path.display(),
+                    error = format!("{err:#}")
+                )
+            );
             std::process::exit(1);
         });
         if let Err(err) = apply_respack(pack, app.world_mut()) {
-            eprintln!("error: failed to apply respack {}: {err:#}", path.display());
+            eprintln!(
+                "error: {}",
+                t!(
+                    "cli.error.apply_respack_failed",
+                    path = path.display(),
+                    error = format!("{err:#}")
+                )
+            );
             std::process::exit(1);
         }
-        info!("loaded custom respack: {}", path.display());
+        info!(
+            "{}",
+            t!("cli.status.loaded_respack", path = path.display())
+        );
     }
 }

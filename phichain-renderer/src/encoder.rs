@@ -12,6 +12,7 @@ use bevy::render::gpu_readback::ReadbackComplete;
 use bevy::render::renderer::RenderDevice;
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use phichain_game::ChartTime;
+use rust_i18n::t;
 use std::io::Write;
 use std::process::{Child, Command, Stdio};
 use std::time::Instant;
@@ -137,8 +138,14 @@ pub fn on_frame_ready(
         let avg_fps = enc.frames_written as f32 / elapsed;
         let realtime = avg_fps / enc.fps as f32;
         info!(
-            "encoded {} frames in {:.2}s (avg {:.0} fps, {:.2}x realtime)",
-            enc.frames_written, elapsed, avg_fps, realtime,
+            "{}",
+            t!(
+                "cli.status.encoded",
+                frames = enc.frames_written,
+                elapsed = format!("{elapsed:.2}"),
+                fps = format!("{avg_fps:.0}"),
+                realtime = format!("{realtime:.2}")
+            )
         );
         // Closing stdin signals EOF; ffmpeg finalizes the file on its own.
         drop(enc.ffmpeg.stdin.take());

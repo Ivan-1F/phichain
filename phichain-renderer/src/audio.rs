@@ -9,6 +9,7 @@ use phichain_chart::migration::migrate;
 use phichain_chart::note::NoteKind;
 use phichain_chart::project::Project;
 use phichain_chart::serialization::{PhichainChart, SerializedLine};
+use rust_i18n::t;
 use serde_json::Value;
 use std::fs::File;
 use std::io::{BufWriter, Write};
@@ -69,10 +70,13 @@ pub fn render_audio_track(
     let temp = write_wav(&buf)?;
 
     info!(
-        "audio track ready: {} notes over {:.2}s mixed in {:.2}s",
-        total_notes,
-        to - from,
-        started.elapsed().as_secs_f32()
+        "{}",
+        t!(
+            "cli.status.audio_ready",
+            notes = total_notes,
+            duration = format!("{:.2}", to - from),
+            elapsed = format!("{:.2}", started.elapsed().as_secs_f32())
+        )
     );
 
     Ok(temp)
