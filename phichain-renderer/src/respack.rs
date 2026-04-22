@@ -35,9 +35,6 @@ impl Plugin for RespackPlugin {
             );
             std::process::exit(1);
         }
-        info!(
-            "{}",
-            t!("cli.status.loaded_respack", path = path.display())
-        );
+        info!("{}", t!("cli.status.loaded_respack", path = path.display()));
     }
 }

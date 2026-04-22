@@ -1,10 +1,10 @@
 //! ffmpeg subprocess management and per-frame writing.
 //!
-//! A child `ffmpeg` reads raw RGBA bytes from stdin at a fixed size/framerate
-//! and produces an h264 mp4. We drive `ChartTime` one video-frame at a time;
-//! the game code renders a matching frame; Bevy's built-in `Readback` copies
-//! that frame out of the GPU and fires `ReadbackComplete`, which we observe
-//! here to pipe the bytes into ffmpeg.
+//! A child `ffmpeg` reads raw RGBA bytes from stdin at a fixed size/framerate and produces an h264 mp4.
+//! We drive `ChartTime` one video-frame at a time;
+//! the game code renders a matching frame;
+//! Bevy's built-in `Readback` copies that frame out of the GPU and fires `ReadbackComplete`,
+//! which we observe here to pipe the bytes into ffmpeg.
 
 use bevy::app::AppExit;
 use bevy::prelude::*;
