@@ -1,10 +1,8 @@
 mod error;
-mod i18n;
 mod options;
 mod telemetry;
 
 use crate::error::{unwrap_infallible, ConvertError};
-use crate::i18n::{i18n_str, locale};
 use crate::options::{
     CliCommonOutputOptions, CliOfficialInputOptions, CliOfficialOutputOptions, CliRpeInputOptions,
 };
@@ -14,6 +12,7 @@ use phichain_chart::serialization::PhichainChart;
 use phichain_format::official::OfficialChart;
 use phichain_format::rpe::RpeChart;
 use phichain_format::{ChartFormat, CommonOutputOptions};
+use phichain_i18n::{i18n_str, locale};
 use rust_i18n::t;
 use serde::Serialize;
 use std::io::Read;
@@ -69,8 +68,8 @@ enum TelemetryCommand {
 
 #[derive(Parser, Debug, Clone)]
 #[command(name = "phichain-converter")]
-#[command(about = i18n_str("cli.about"))]
-#[command(after_help = i18n_str("cli.examples"))]
+#[command(about = i18n_str!("cli.about"))]
+#[command(after_help = i18n_str!("cli.examples"))]
 pub struct Args {
     #[arg(required = true, help = t!("cli.input").to_string())]
     input: PathBuf,
@@ -84,25 +83,25 @@ pub struct Args {
 
     #[command(flatten)]
     #[command(
-        next_help_heading = i18n_str("cli.official_input.heading")
+        next_help_heading = i18n_str!("cli.official_input.heading")
     )]
     official_input_options: CliOfficialInputOptions,
 
     #[command(flatten)]
     #[command(
-        next_help_heading = i18n_str("cli.official_output.heading")
+        next_help_heading = i18n_str!("cli.official_output.heading")
     )]
     official_output_options: CliOfficialOutputOptions,
 
     #[command(flatten)]
     #[command(
-        next_help_heading = i18n_str("cli.rpe_input.heading")
+        next_help_heading = i18n_str!("cli.rpe_input.heading")
     )]
     rpe_input_options: CliRpeInputOptions,
 
     #[command(flatten)]
     #[command(
-        next_help_heading = i18n_str("cli.common_output.heading")
+        next_help_heading = i18n_str!("cli.common_output.heading")
     )]
     common_output_options: CliCommonOutputOptions,
 

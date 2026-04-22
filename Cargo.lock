@@ -6113,12 +6113,12 @@ dependencies = [
  "owo-colors",
  "phichain-chart",
  "phichain-format",
+ "phichain-i18n",
  "phichain-telemetry",
  "rust-i18n",
  "serde",
  "serde_json",
  "strum",
- "sys-locale",
  "thiserror 2.0.17",
  "tracing-subscriber",
  "ureq 3.3.0",
@@ -6159,6 +6159,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "phichain-i18n"
+version = "1.0.0-beta.6"
+dependencies = [
+ "rust-i18n",
+ "sys-locale",
+]
+
+[[package]]
 name = "phichain-renderer"
 version = "1.0.0-beta.6"
 dependencies = [
@@ -6171,9 +6179,9 @@ dependencies = [
  "phichain-assets",
  "phichain-chart",
  "phichain-game",
+ "phichain-i18n",
  "rust-i18n",
  "serde_json",
- "sys-locale",
  "tempfile",
 ]
 

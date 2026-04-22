@@ -21,4 +21,4 @@ hound = "3.5.1"
 tempfile = "3.10"
 indicatif = "0.17"
 rust-i18n = "=3.0.1"
-sys-locale = "0.3.2"
+phichain-i18n = { path = "../phichain-i18n" }

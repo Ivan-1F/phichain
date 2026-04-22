@@ -12,13 +12,11 @@
 mod args;
 mod audio;
 mod encoder;
-mod i18n;
 mod respack;
 mod utils;
 
 use crate::args::Args;
 use crate::encoder::{on_frame_ready, Encoder};
-use crate::i18n::locale;
 use crate::respack::RespackPlugin;
 use bevy::app::ScheduleRunnerPlugin;
 use bevy::camera::RenderTarget;
@@ -35,6 +33,7 @@ use phichain_assets::AssetsPlugin;
 use phichain_chart::project::Project;
 use phichain_game::audio::AudioDuration;
 use phichain_game::{GameConfig, GamePlugin, GameSet, GameViewport, Paused};
+use phichain_i18n::locale;
 use rust_i18n::t;
 use std::time::{Duration, Instant};
 

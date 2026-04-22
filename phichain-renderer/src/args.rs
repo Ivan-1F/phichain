@@ -1,13 +1,13 @@
-use crate::i18n::i18n_str;
 use bevy::prelude::Resource;
 use bevy::render::view::Msaa;
 use clap::{Parser, ValueEnum};
 use phichain_game::GameConfig;
+use phichain_i18n::i18n_str;
 use rust_i18n::t;
 use std::path::PathBuf;
 
 #[derive(Debug, Clone, Parser, Resource)]
-#[command(about = i18n_str("cli.about"))]
+#[command(about = i18n_str!("cli.about"))]
 pub struct Args {
     #[arg(help = t!("cli.args.path").to_string())]
     pub path: String,
@@ -24,11 +24,11 @@ pub struct Args {
     pub respack: Option<PathBuf>,
 
     #[command(flatten)]
-    #[command(next_help_heading = i18n_str("cli.video.heading"))]
+    #[command(next_help_heading = i18n_str!("cli.video.heading"))]
     pub video: VideoArgs,
 
     #[command(flatten)]
-    #[command(next_help_heading = i18n_str("cli.game.heading"))]
+    #[command(next_help_heading = i18n_str!("cli.game.heading"))]
     pub game: GameArgs,
 }
 
