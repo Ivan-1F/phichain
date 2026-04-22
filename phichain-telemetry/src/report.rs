@@ -82,8 +82,8 @@ impl Reporter {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
             .as_millis();
-        let path = std::env::temp_dir()
-            .join(format!("{TELEMETRY_FILE_PREFIX}{pid}-{timestamp}.json"));
+        let path =
+            std::env::temp_dir().join(format!("{TELEMETRY_FILE_PREFIX}{pid}-{timestamp}.json"));
         let file = File::create(&path)?;
         serde_json::to_writer(file, &payload)?;
 
