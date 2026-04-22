@@ -37,4 +37,4 @@ cli:
   error:
     load_respack_failed: '加载资源包失败 %{path}: %{error}'
     apply_respack_failed: '应用资源包失败 %{path}: %{error}'
-    ffmpeg_missing: '无法运行 ffmpeg，请确认已安装并位于 PATH 中: %{error}'
+    ffmpeg_missing: '无法运行 ffmpeg，请确认已安装并位于 PATH 中 (详见 https://phicha.in/ffmpeg): %{error}'

@@ -37,4 +37,4 @@ cli:
   error:
     load_respack_failed: "failed to load respack %{path}: %{error}"
     apply_respack_failed: "failed to apply respack %{path}: %{error}"
-    ffmpeg_missing: "Failed to run ffmpeg; make sure it is installed and on your PATH: %{error}"
+    ffmpeg_missing: "Failed to run ffmpeg; make sure it is installed and on your PATH (see https://phicha.in/ffmpeg): %{error}"
