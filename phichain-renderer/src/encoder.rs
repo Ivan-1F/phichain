@@ -120,13 +120,14 @@ impl Encoder {
     }
 }
 
-/// Observer fired by Bevy's `GpuReadbackPlugin` each time a frame has been
-/// copied back from the GPU.
+/// Observer fired by Bevy's `GpuReadbackPlugin` each time a frame has been copied back from the GPU.
 pub fn on_frame_ready(
     event: On<ReadbackComplete>,
     mut enc: ResMut<Encoder>,
     mut chart_time: ResMut<ChartTime>,
     mut exit: MessageWriter<AppExit>,
+
+    telemetry: Option<Res<crate::telemetry::Shared>>,
 ) {
     chart_time.0 = enc.next_chart_time();
 
@@ -154,6 +155,15 @@ pub fn on_frame_ready(
         let elapsed = enc.start.elapsed().as_secs_f32();
         let avg_fps = enc.frames_written as f32 / elapsed;
         let realtime = avg_fps / enc.fps as f32;
+        let frames = enc.frames_written;
+        if let Some(telemetry) = telemetry {
+            telemetry.update(|m| {
+                m.duration_ms = (elapsed * 1000.0) as u64;
+                m.frames_written = frames;
+                m.avg_fps = avg_fps;
+                m.realtime_factor = realtime;
+            });
+        }
         info!(
             "{}",
             t!(
@@ -175,7 +185,7 @@ pub fn on_frame_ready(
 
 /// Pick the ffmpeg encoder name for a `(codec, hardware-accel)` combination.
 /// Hardware encoder selection is best-effort per-platform.
-fn pick_encoder(codec: Codec, hwaccel: bool) -> &'static str {
+pub(crate) fn pick_encoder(codec: Codec, hwaccel: bool) -> &'static str {
     match (codec, hwaccel) {
         (Codec::H264, false) => "libx264",
         (Codec::H265, false) => "libx265",

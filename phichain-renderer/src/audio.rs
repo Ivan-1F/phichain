@@ -24,6 +24,7 @@ const CHANNELS: u16 = 2;
 /// Returned tempfile must outlive the ffmpeg process that reads it.
 pub fn render_audio_track(
     project: &Project,
+    chart: &PhichainChart,
     respack: Option<&Path>,
     from: f32,
     to: f32,
@@ -32,7 +33,6 @@ pub fn render_audio_track(
 
     let started = Instant::now();
 
-    let chart = read_chart(project).context("read chart")?;
     let offset_secs = chart.offset.0 / 1000.0;
     let mut notes = NoteTimes::default();
     collect_notes(&chart.lines, &chart.bpm_list, from, to, &mut notes);
@@ -82,7 +82,7 @@ pub fn render_audio_track(
     Ok(temp)
 }
 
-fn read_chart(project: &Project) -> Result<PhichainChart> {
+pub fn read_chart(project: &Project) -> Result<PhichainChart> {
     let file = File::open(project.path.chart_path())?;
     let raw: Value = serde_json::from_reader(file)?;
     let migrated = migrate(&raw)?;

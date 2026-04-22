@@ -13,6 +13,7 @@ mod args;
 mod audio;
 mod encoder;
 mod respack;
+mod telemetry;
 mod utils;
 
 use crate::args::Args;
@@ -30,6 +31,7 @@ use bevy::winit::WinitPlugin;
 use bevy_kira_audio::AudioPlugin;
 use clap::Parser;
 use phichain_assets::AssetsPlugin;
+use phichain_chart::metrics::ChartMetrics;
 use phichain_chart::project::Project;
 use phichain_game::audio::AudioDuration;
 use phichain_game::{GameConfig, GamePlugin, GameSet, GameViewport, Paused};
@@ -40,6 +42,10 @@ use std::time::{Duration, Instant};
 rust_i18n::i18n!("locales", fallback = "en-US");
 
 fn main() {
+    if phichain_telemetry::handle_subcommand() {
+        return;
+    }
+
     phichain_assets::setup_assets();
     rust_i18n::set_locale(&locale());
 
@@ -50,12 +56,15 @@ fn main() {
         std::process::exit(1);
     }
 
+    let no_telemetry = args.no_telemetry;
+    let telemetry = telemetry::Shared::new(&args);
     let started = Instant::now();
 
-    App::new()
+    let exit = App::new()
         .configure_sets(Update, GameSet)
         .insert_resource(ClearColor(Color::srgb_u8(0, 0, 0)))
         .insert_resource(args)
+        .insert_resource(telemetry.clone())
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {
@@ -64,8 +73,6 @@ fn main() {
                     ..default()
                 })
                 .set(LogPlugin {
-                    // Silence the shutdown-time readback-channel warning; we
-                    // intentionally exit with a few readbacks still in flight.
                     filter: "warn,phichain_renderer=info,bevy_render::gpu_readback=error"
                         .to_string(),
                     level: bevy::log::Level::DEBUG,
@@ -74,7 +81,7 @@ fn main() {
                 // WinitPlugin will panic in environments without a display server.
                 .disable::<WinitPlugin>(),
         )
-        // Offline rendering: run the loop as fast as possible.
+        // offline rendering: run the loop as fast as possible.
         .add_plugins(ScheduleRunnerPlugin::run_loop(Duration::ZERO))
         .add_plugins(AudioPlugin)
         .add_plugins(AssetsPlugin)
@@ -90,6 +97,10 @@ fn main() {
             elapsed = format!("{:.2}", started.elapsed().as_secs_f64())
         )
     );
+
+    if !no_telemetry {
+        telemetry::report(&telemetry, exit);
+    }
 }
 
 fn setup(
@@ -99,6 +110,7 @@ fn setup(
     mut paused: ResMut<Paused>,
     mut game_config: ResMut<GameConfig>,
     args: Res<Args>,
+    telemetry: Res<telemetry::Shared>,
 ) {
     let project = Project::open(args.path.clone().into()).expect("failed to open project");
     let music_duration = utils::audio_duration(
@@ -108,6 +120,12 @@ fn setup(
             .expect("project is missing its music file"),
     )
     .expect("failed to read audio duration");
+
+    let chart = audio::read_chart(&project).expect("failed to read chart");
+    telemetry.update(|m| {
+        m.music_duration_sec = Some(music_duration);
+        m.chart = Some(ChartMetrics::collect(&chart.lines));
+    });
 
     // Offscreen GPU texture the camera renders into; Readback copies it out each frame.
     let mut target = Image::new_target_texture(
@@ -152,7 +170,7 @@ fn setup(
 
     // Prepare audio before spawning the encoder.
     // the encoder consumes the WAV as its second input, so it must exist on disk at spawn time.
-    let audio = audio::render_audio_track(&project, args.respack.as_deref(), from, to)
+    let audio = audio::render_audio_track(&project, &chart, args.respack.as_deref(), from, to)
         .expect("failed to render audio track");
     commands.insert_resource(Encoder::spawn(&args, from, to, audio));
 
