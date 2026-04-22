@@ -10,8 +10,8 @@ use bevy::app::AppExit;
 use bevy::prelude::*;
 use bevy::render::gpu_readback::ReadbackComplete;
 use bevy::render::renderer::RenderDevice;
+use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use phichain_game::ChartTime;
-use std::collections::VecDeque;
 use std::io::Write;
 use std::process::{Child, Command, Stdio};
 use std::time::Instant;
@@ -35,12 +35,9 @@ pub struct Encoder {
 
     warmup_remaining: u32,
     frames_written: u32,
-    total_frames: u32,
 
     start: Instant,
-    frame_times: VecDeque<f32>,
-    last_log_second: u32,
-    last_fps: usize,
+    progress: ProgressBar,
 
     // Keep the WAV alive until ffmpeg exits.
     _audio: NamedTempFile,
@@ -79,6 +76,8 @@ impl Encoder {
             .spawn()
             .expect("failed to spawn ffmpeg (is it on PATH?)");
 
+        let progress = build_progress_bar(total_frames as u64, fps);
+
         Self {
             ffmpeg,
             width,
@@ -88,11 +87,8 @@ impl Encoder {
             to,
             warmup_remaining: WARMUP_FRAMES,
             frames_written: 0,
-            total_frames,
             start: Instant::now(),
-            frame_times: VecDeque::new(),
-            last_log_second: 0,
-            last_fps: 0,
+            progress,
             _audio: audio,
         }
     }
@@ -133,9 +129,17 @@ pub fn on_frame_ready(
         .expect("failed to write frame to ffmpeg");
 
     enc.frames_written += 1;
-    log_progress(&mut enc);
+    enc.progress.set_position(enc.frames_written as u64);
 
     if enc.done() {
+        enc.progress.finish_and_clear();
+        let elapsed = enc.start.elapsed().as_secs_f32();
+        let avg_fps = enc.frames_written as f32 / elapsed;
+        let realtime = avg_fps / enc.fps as f32;
+        info!(
+            "encoded {} frames in {:.2}s (avg {:.0} fps, {:.2}x realtime)",
+            enc.frames_written, elapsed, avg_fps, realtime,
+        );
         // Closing stdin signals EOF; ffmpeg finalizes the file on its own.
         drop(enc.ffmpeg.stdin.take());
         enc.ffmpeg
@@ -214,34 +218,23 @@ fn unpad_rows(bytes: &[u8], width: u32, height: u32) -> Vec<u8> {
     out
 }
 
-fn log_progress(enc: &mut Encoder) {
-    let elapsed = enc.start.elapsed().as_secs_f32();
-    let second = elapsed as u32;
-
-    enc.frame_times.push_back(elapsed);
-    while enc.frame_times.front().is_some_and(|t| elapsed - *t > 1.0) {
-        enc.frame_times.pop_front();
-    }
-    if enc.last_log_second != second {
-        enc.last_fps = enc.frame_times.len();
-        enc.last_log_second = second;
-    }
-
-    if !enc.frames_written.is_multiple_of(100) {
-        return;
-    }
-    let eta = if enc.last_fps == 0 {
-        f32::INFINITY
-    } else {
-        enc.total_frames.saturating_sub(enc.frames_written) as f32 / enc.last_fps as f32
-    };
-    info!(
-        "{} / {} ({:.1}%), {} fps ({:.2}x), eta {:.1}s",
-        enc.frames_written,
-        enc.total_frames,
-        enc.frames_written as f32 / enc.total_frames.max(1) as f32 * 100.0,
-        enc.last_fps,
-        enc.last_fps as f32 / enc.fps as f32,
-        eta,
-    );
+/// Build the in-place progress bar shown during encoding.
+/// The `fps` parameter is the target output framerate, used to compute the realtime multiplier.
+fn build_progress_bar(total_frames: u64, fps: u32) -> ProgressBar {
+    let target_fps = fps as f64;
+    let template = "[{elapsed_precise}] [{bar:40.cyan/blue}] \
+        {pos}/{len} ({percent:>3}%) {fps} ({rt}) eta {eta:>4}";
+    let style = ProgressStyle::with_template(template)
+        .expect("progress bar template is valid")
+        .progress_chars("=> ")
+        .with_key("fps", |s: &ProgressState, w: &mut dyn std::fmt::Write| {
+            let _ = write!(w, "{:>3.0} fps", s.per_sec());
+        })
+        .with_key(
+            "rt",
+            move |s: &ProgressState, w: &mut dyn std::fmt::Write| {
+                let _ = write!(w, "{:.2}x", s.per_sec() / target_fps);
+            },
+        );
+    ProgressBar::new(total_frames).with_style(style)
 }
