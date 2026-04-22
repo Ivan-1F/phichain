@@ -6180,9 +6180,12 @@ dependencies = [
  "phichain-chart",
  "phichain-game",
  "phichain-i18n",
+ "phichain-telemetry",
  "rust-i18n",
+ "serde",
  "serde_json",
  "tempfile",
+ "ureq 3.3.0",
 ]
 
 [[package]]

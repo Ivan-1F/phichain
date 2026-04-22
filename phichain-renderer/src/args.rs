@@ -4,6 +4,7 @@ use clap::{Parser, ValueEnum};
 use phichain_game::GameConfig;
 use phichain_i18n::i18n_str;
 use rust_i18n::t;
+use serde::Serialize;
 use std::path::PathBuf;
 
 #[derive(Debug, Clone, Parser, Resource)]
@@ -30,6 +31,9 @@ pub struct Args {
     #[command(flatten)]
     #[command(next_help_heading = i18n_str!("cli.game.heading"))]
     pub game: GameArgs,
+
+    #[arg(long, help = t!("cli.no_telemetry").to_string())]
+    pub no_telemetry: bool,
 }
 
 #[derive(Debug, Clone, Parser)]
@@ -79,12 +83,15 @@ pub struct VideoArgs {
     pub bitrate: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy, ValueEnum)]
+#[derive(Debug, Clone, Copy, ValueEnum, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum MsaaLevel {
     Off,
     #[value(name = "2")]
+    #[serde(rename = "2")]
     Two,
     #[value(name = "4")]
+    #[serde(rename = "4")]
     Four,
 }
 
@@ -98,11 +105,13 @@ impl MsaaLevel {
     }
 }
 
-#[derive(Debug, Clone, Copy, ValueEnum)]
+#[derive(Debug, Clone, Copy, ValueEnum, Serialize)]
 pub enum Codec {
     #[value(name = "h264")]
+    #[serde(rename = "h264")]
     H264,
     #[value(name = "h265")]
+    #[serde(rename = "h265")]
     H265,
 }
 

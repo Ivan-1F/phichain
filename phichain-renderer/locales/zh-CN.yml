@@ -19,6 +19,8 @@ cli:
     crf: '固定质量因子：0 (无损) 到 51 (最差)，18 为视觉无损。对于硬件编码器，会映射到对应的原生质量参数。与 --bitrate 互斥'
     bitrate: '目标码率 (例如 "8M"、"6000k")。与 --crf 互斥'
 
+  no_telemetry: 禁用遥测上报
+
   game:
     heading: '游戏选项'
     note_scale: 音符的缩放系数

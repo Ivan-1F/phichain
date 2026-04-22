@@ -19,6 +19,8 @@ cli:
     crf: "Constant Rate Factor: 0 (lossless) to 51 (worst). 18 is \"visually lossless\". For hardware encoders this is mapped to the encoder's native quality knob. Mutually exclusive with --bitrate."
     bitrate: "Target bitrate (e.g. \"8M\", \"6000k\"). Mutually exclusive with --crf."
 
+  no_telemetry: Disable telemetry reporting
+
   game:
     heading: Game Options
     note_scale: The scale factor for notes
