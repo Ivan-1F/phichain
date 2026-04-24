@@ -59,10 +59,7 @@ impl Reporter {
         }
     }
 
-    /// Serialize a payload and hand it off to a flush subprocess.
-    ///
-    /// With `PHICHAIN_TELEMETRY_DEBUG` set, prints to stderr and returns
-    /// instead of spawning anything.
+    /// Shortcut for the common case: build a minimal payload from `event_type` + `metadata` and send it
     pub fn track(&self, event_type: &str, metadata: Value) -> std::io::Result<()> {
         let payload = TelemetryPayload::builder()
             .reporter(self.name)
@@ -72,33 +69,37 @@ impl Reporter {
             .metadata(metadata)
             .build();
 
-        if crate::env::telemetry_debug() {
-            eprintln!("[telemetry] {}", serde_json::to_string_pretty(&payload)?);
-            return Ok(());
-        }
-
-        let pid = std::process::id();
-        let timestamp = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_millis();
-        let path =
-            std::env::temp_dir().join(format!("{TELEMETRY_FILE_PREFIX}{pid}-{timestamp}.json"));
-        let file = File::create(&path)?;
-        serde_json::to_writer(file, &payload)?;
-
-        let current_exe = std::env::current_exe()?;
-        Command::new(current_exe)
-            .arg("telemetry")
-            .arg("flush")
-            .arg(path)
-            .stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .spawn()?;
-
-        Ok(())
+        send(&payload)
     }
+}
+
+/// Send a pre-built payload through the flush subprocess.
+pub fn send(payload: &TelemetryPayload) -> std::io::Result<()> {
+    if crate::env::telemetry_debug() {
+        eprintln!("[telemetry] {}", serde_json::to_string_pretty(payload)?);
+        return Ok(());
+    }
+
+    let pid = std::process::id();
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis();
+    let path = std::env::temp_dir().join(format!("{TELEMETRY_FILE_PREFIX}{pid}-{timestamp}.json"));
+    let file = File::create(&path)?;
+    serde_json::to_writer(file, payload)?;
+
+    let current_exe = std::env::current_exe()?;
+    Command::new(current_exe)
+        .arg("telemetry")
+        .arg("flush")
+        .arg(path)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()?;
+
+    Ok(())
 }
 
 /// Entry point for the `<app> telemetry flush <path>` subcommand.
