@@ -340,11 +340,11 @@ audio_setting:
 
 export:
   official:
-    success: 已導出至 %{path}
-    failed: 導出為官譜時發生錯誤：%{error}
+    success: 已匯出至 %{path}
+    failed: 匯出為官譜時發生錯誤：%{error}
   rpe:
-    success: 已導出至 %{path}
-    failed: 導出為 RPE 時發生錯誤：%{error}
+    success: 已匯出至 %{path}
+    failed: 匯出為 RPE 時發生錯誤：%{error}
 
 game:
   aspect_ratio:
@@ -385,8 +385,8 @@ action:
   phichain.zoom_out: 縮小 25％
   phichain.reset_zoom: 重設縮放至 100％
 
-  phichain.export_as_official: 導出為官譜
-  phichain.export_as_rpe: 導出為 RPE 譜面
+  phichain.export_as_official: 匯出為官譜
+  phichain.export_as_rpe: 匯出為 RPE 譜面
 
   phichain.save_layout_preset: 儲存目前佈局為佈局預設
 
