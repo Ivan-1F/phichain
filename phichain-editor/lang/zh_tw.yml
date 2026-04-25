@@ -7,8 +7,8 @@ menu_bar:
   tabs:
     title: 視窗
   export:
-    title: 導出
-    as_official: 導出為官譜
+    title: 匯出
+    as_official: 匯出為官譜
   layout:
     title: 佈局
     default: 套用佈局預設
@@ -111,7 +111,7 @@ tab:
       above: 上方
       below: 下方
   audio_setting:
-    title: 音效設定
+    title: 音訊設定
     music_volume: 音樂音量
     hit_sound_volume: 打擊音效音量
   chart_basic_setting:
@@ -303,8 +303,8 @@ error:
     migration_failed: 遷移失敗：%{error}
     cannot_load_audio: 無法載入音樂：%{error}
   load_audio:
-    unknown_format: 未知的音效檔案格式
-    unsupported_format: 不支援的音效檔案格式「%{format}」。支援的格式為 WAV、MP3、OGG 和 FLAC
+    unknown_format: 未知的音訊檔案格式
+    unsupported_format: 不支援的音訊檔案格式「%{format}」。支援的格式為 WAV、MP3、OGG 和 FLAC
     io: 無法開啟音樂檔案：%{error}
     load: 無法載入音樂：%{error}
 
@@ -336,7 +336,7 @@ home:
 
 audio_setting:
   save:
-    failed: 儲存音效設定時發生錯誤：%{error}
+    failed: 儲存音訊設定時發生錯誤：%{error}
 
 export:
   official:
