@@ -11,7 +11,7 @@ menu_bar:
     as_official: 匯出為官譜
   layout:
     title: 佈局
-    default: 套用佈局預設
+    default: 套用預設佈局
     item:
       apply: 套用
       rename: 重新命名
@@ -198,8 +198,8 @@ tab:
           label: 垂直同步
           description: 啟用垂直同步以符合顯示器更新率
       audio:
-        title: 音樂
-        description: 編輯器的音樂設定
+        title: 音訊
+        description: 編輯器的音訊設定
         music_volume:
           label: 音樂音量
           description: 音樂的音量
