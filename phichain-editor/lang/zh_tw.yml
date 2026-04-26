@@ -1,0 +1,421 @@
+menu_bar:
+  file:
+    title: 檔案
+    save: 儲存專案
+    close: 關閉專案
+    quit: 離開
+  tabs:
+    title: 視窗
+  export:
+    title: 匯出
+    as_official: 匯出為官譜
+  layout:
+    title: 佈局
+    default: 套用預設佈局
+    item:
+      apply: 套用
+      rename: 重新命名
+      update: 用目前佈局更新
+      delete: 刪除
+    messages:
+      applied: 已套用佈局預設
+      rename: 已重新命名佈局預設
+      update: 已更新佈局預設
+      delete: 已刪除佈局預設
+      created: 已新增佈局預設
+      empty_name: 佈局預設名稱不能為空
+    dialog:
+      new:
+        title: 新增佈局預設
+        name_label: 佈局預設名稱：
+        save: 儲存
+        cancel: 取消
+      rename:
+        title: 重新命名佈局預設
+        name_label: 新名稱：
+        save: 儲存
+        cancel: 取消
+
+tab:
+  game:
+    title: 預覽
+  timeline:
+    title: 時間線
+    event:
+      jump_to_event: 跳轉至該事件
+  inspector:
+    title: 檢查器
+    curve_note_track:
+      title:
+        pending: 正在新增的曲線音符軌跡
+        selected: 選擇的曲線音符軌跡
+      start: 從這裡開始新增曲線音符軌跡
+      removed:
+        incomplete: 一條曲線音符軌跡被移除：缺少起點或終點
+        invalid: 一條曲線音符軌跡被移除：起點或終點無效
+        empty: 一條曲線音符軌跡被移除：沒有包含任何音符
+      instructions:
+        select_destination: 請選擇終點
+        select_origin: 請選擇起點
+        select_origin_destination: 請選擇起點和終點
+      density: 密度
+      kind: 類型
+      curve: 曲線
+    single_note:
+      title: 單個 %{kind} 音符
+      x: X
+      beat: 時間
+      hold_beat: Hold 時間
+      above: 是否在上方
+      speed: 速度
+    single_event:
+      title: 單個 %{kind} 事件
+      start_beat: 開始時間
+      end_beat: 結束時間
+      value_type: 值類型
+      transition: 漸變
+      constant: 常數
+      start_value: 開始值
+      end_value: 結束值
+      easing: 緩動
+      value: 值
+    multiple_notes:
+      title: "%{amount} 個音符"
+      flip_by_x: 沿 X 軸中心鏡像
+      flip_by_selection: 沿選區中心鏡像
+      flip_side: 翻轉朝向
+      into_tap: 轉換為 Tap
+      into_drag: 轉換為 Drag
+      into_flick: 轉換為 Flick
+      into_hold: 轉換為 Hold
+    multiple_events:
+      title: "%{amount} 個事件"
+      negate: 數值取反（除透明度事件外）
+    line:
+      title: 選擇的判定線
+      name: 名稱
+  timeline_setting:
+    title: 時間線設定
+    zoom: 時間線縮放
+    density: 節拍線密度
+    lane: 垂直參考線
+    show_spectrogram: 顯示頻譜圖
+    spectrogram_opacity: 頻譜不透明度
+    timelines:
+      new_note_timeline: + 音符時間線
+      new_event_timeline: + 事件時間線
+      binding: 綁定
+    note_side_filter:
+      title: 音符所屬側
+      all: 所有
+      above: 上方
+      below: 下方
+  audio_setting:
+    title: 音訊設定
+    music_volume: 音樂音量
+    hit_sound_volume: 打擊音效音量
+  chart_basic_setting:
+    title: 譜面基本設定
+    offset: 延遲（毫秒）
+    name: 名稱
+    level: 難度
+    composer: 曲師
+    charter: 譜師
+    illustrator: 繪師
+  line_list:
+    title: 判定線列表
+    view:
+      state: 狀態
+      preview: 預覽
+    preview:
+      position: 位置
+      opacity: 透明度
+    create_line: 新增判定線
+    note: 音符
+    event: 事件
+    position: 位置
+    rotation: 旋轉
+    opacity: 透明
+    speed: 速度
+    index: 編號
+    remove: 移除
+    hierarchy:
+      as_child_of_current_line: 作為目前判定線的子線
+      move_to_root: 移動至根部
+      add_parent: 新增父線
+      add_child: 新增子線
+  bpm_list:
+    title: BPM 列表
+    new: 新增 BPM 點
+    zero_beat_not_editable: 每個專案中必須存在一個拍數為 0 的 BPM 點
+    point:
+      beat: 時間（拍）
+      bpm: BPM
+  settings:
+    title: 設定
+    category:
+      general:
+        title: 常規
+        description: 編輯器常規設定
+        timeline_scroll_sensitivity:
+          label: 時間線滾動靈敏度
+          description: 使用滑鼠滾輪或觸控板滾動時間線時的靈敏度。數值越大滾動越快
+        timeline_smooth_seeking:
+          label: 時間線平滑尋位
+          description: 啟用後，使用滾動、前進/後退快捷鍵等，使時間線平滑捲動
+        highlight_selected_line:
+          label: 高亮選擇判定線
+          description: 是否高亮選擇的判定線
+        show_line_anchor:
+          label: 顯示判定線錨點
+          description: 以什麼規則顯示判定線的錨點
+          never: 從不
+          always: 總是
+          visible: 僅可見判定線
+        pause_when_scroll:
+          label: 滾動時暫停
+          description: 在滾動時間線時暫停編輯器
+        send_telemetry:
+          label: 發送遙測
+          description: 是否發送遙測資料。了解更多關於遙測的資訊，請查看 https://phicha.in/telemetry
+          disabled_by_env_var: 遙測被環境變數禁用
+          debug_enabled: 已啟用遙測除錯
+        language:
+          label: 語言
+          description: 編輯器使用的語言
+      graphics:
+        title: 影像
+        description: 影像和顯示設定
+        ui_scale:
+          label: 介面縮放
+          description: 調整整體介面大小。可能需要調整視窗大小才能生效
+          xl: 超大
+          large: 大
+          base: 標準
+          small: 小
+          xs: 超小
+        vsync:
+          label: 垂直同步
+          description: 啟用垂直同步以符合顯示器更新率
+      audio:
+        title: 音訊
+        description: 編輯器的音訊設定
+        music_volume:
+          label: 音樂音量
+          description: 音樂的音量
+        hit_sound_volume:
+          label: 打擊音效音量
+          description: 打擊音效的音量
+        metronome_volume:
+          label: 節拍器音量
+          description: 節拍器的音量
+        metronome_enabled:
+          label: 節拍器
+          description: 播放時啟用節拍器
+        playback_rate:
+          label: 播放速率
+          description: 控制音樂的播放速率，這將影響編輯器的全域速度
+      game:
+        title: 遊戲
+        description: 遊戲預覽設定，自訂預覽畫面的視覺效果
+        fc_ap_indicator:
+          label: FC/AP 指示器
+          description: 是否啟用 FC/AP 指示器。編輯器不含判定，即勾選後判定線恆定為黃色，不勾選則恆定為白色
+        hide_hit_effect:
+          label: 隱藏打擊特效
+          description: 是否隱藏打擊特效
+        note_scale:
+          label: 音符縮放
+          description: 音符的縮放比例
+        multi_highlight:
+          label: 多押高亮
+          description: 是否開啟多押高亮，即高亮所有同時音符
+        hit_effect_follow_game_time:
+          label: 打擊特效使用遊戲時間（除錯）
+          description: 打擊特效是否跟隨遊戲時間。啟用後，打擊特效的渲染將不再基於遊戲全域時間，而是基於譜面時間。僅在除錯環境中存在
+      respack:
+        title: 資源包
+        description: 切換目前使用的資源包，或重新載入目前資源包。外部資源包從 respacks 目錄中讀取。
+        no_description: 無簡介
+        open_folder:
+          label: 資源包資料夾
+          button: 開啟
+        reload:
+          label: 重新載入
+          description: 從磁碟重新讀取目前資源包。在編輯資源包時無需重啟編輯器即可預覽改動。
+          button: 重新載入
+      autosave:
+        title: 自動儲存
+        description: 定期自動備份譜面檔案以防止修改遺失。自動儲存會在 .autosave 資料夾中新增備份檔案，不會覆蓋專案檔案（chart.json）
+        enabled: 啟用自動儲存
+        interval:
+          label: 自動儲存間隔
+          description: 當有未儲存更改時自動儲存專案的頻率
+          suffix: " 秒"
+        idle_delay:
+          label: 空閒儲存延時
+          description: 停止編輯後等待多長時間再自動儲存
+          suffix: " 秒"
+        max_backups:
+          label: 最大備份檔案數
+          description: 在 .autosave 資料夾中保留的自動儲存備份檔案的最大數量
+          suffix: " 個檔案"
+      hotkey:
+        title: 快捷鍵
+        description: 編輯器的鍵盤快捷鍵和按鍵綁定
+        record: 錄製
+        recording: 正在錄製
+        cancel: 取消
+        reset: 重設
+
+project:
+  save:
+    succeed: 已儲存專案
+    failed: "儲存專案時發生錯誤：%{error}"
+  autosave:
+    succeed: 已新增自動儲存備份
+    failed: "自動儲存失敗：%{error}"
+
+screenshot:
+  save:
+    succeed: 已將截圖儲存至 %{path}
+    failed: "截圖時發生錯誤：%{error}"
+    locale_failed: "無法定位截圖資料夾：%{error}"
+
+illustration:
+  load:
+    failed: "載入曲繪時發生錯誤：%{error}"
+
+respack:
+  load:
+    succeed: "已載入資源包：%{name}"
+    failed: "載入資源包失敗：%{error}"
+
+error:
+  open_project:
+    label: 載入專案時發生錯誤
+    missing_file: 缺少 %{file}
+    cannot_open_meta: 無法開啟 meta.json：%{error}
+    invalid_meta: 無效的 meta.json：%{error}
+  load_project:
+    cannot_open_chart: 無法開啟 chart.json：%{error}
+    invalid_chart: 無效的 chart.json：%{error}
+    migration_failed: 遷移失敗：%{error}
+    cannot_load_audio: 無法載入音樂：%{error}
+  load_audio:
+    unknown_format: 未知的音訊檔案格式
+    unsupported_format: 不支援的音訊檔案格式「%{format}」。支援的格式為 WAV、MP3、OGG 和 FLAC
+    io: 無法開啟音樂檔案：%{error}
+    load: 無法載入音樂：%{error}
+
+home:
+  recent_projects:
+    last_opened: 上一次開啟：%{time}
+    empty: 沒有最近的專案
+  open_project:
+    load: 載入專案
+  create_project:
+    label: 新增一個新的空專案
+    select_music: 選擇音樂
+    select_illustration: 選擇曲繪（可選）
+    unselected: 未選擇
+    back: 返回
+
+    name: 名稱
+    level: 難度
+    composer: 曲師
+    charter: 譜師
+    illustrator: 繪師
+
+    create: 新增專案
+
+    music_unselected: 尚未選擇音樂
+  loading_project: 正在載入專案...
+  settings: 編輯器設定
+  telemetry: 遙測
+
+audio_setting:
+  save:
+    failed: 儲存音訊設定時發生錯誤：%{error}
+
+export:
+  official:
+    success: 已匯出至 %{path}
+    failed: 匯出為官譜時發生錯誤：%{error}
+  rpe:
+    success: 已匯出至 %{path}
+    failed: 匯出為 RPE 時發生錯誤：%{error}
+
+game:
+  aspect_ratio:
+    free: 自由
+  event:
+    kind:
+      x: X
+      y: Y
+      rotation: 旋轉
+      opacity: 透明
+      speed: 速度
+
+hotkey:
+  phichain.place_tap: 放置 Tap
+  phichain.place_drag: 放置 Drag
+  phichain.place_flick: 放置 Flick
+  phichain.place_hold: 放置 Hold
+  phichain.place_transition_event: 放置漸變事件
+  phichain.place_constant_event: 放置常數事件
+  phichain.forward: 前進
+  phichain.backward: 後退
+
+action:
+  phichain.save_project: 儲存專案
+  phichain.close_project: 關閉專案
+  phichain.copy: 複製
+  phichain.paste: 貼上
+  phichain.cut: 剪下
+  phichain.undo: 撤銷
+  phichain.redo: 重做
+  phichain.pause_resume: 暫停/播放
+  phichain.metronome.toggle: 開關節拍器
+  phichain.take_screenshot: 截圖
+  phichain.delete_selected: 刪除選擇
+  phichain.open_action_panel: 開啟命令面板
+
+  phichain.zoom_in: 放大 25％
+  phichain.zoom_out: 縮小 25％
+  phichain.reset_zoom: 重設縮放至 100％
+
+  phichain.export_as_official: 匯出為官譜
+  phichain.export_as_rpe: 匯出為 RPE 譜面
+
+  phichain.save_layout_preset: 儲存目前佈局為佈局預設
+
+  phichain.create_line: 新增判定線
+  phichain.create_line_from_selected: 以選擇的判定線狀態新增判定線
+
+  phichain.open_in_file_manager: 在檔案管理器中開啟專案
+
+  phichain.select_prev_line: 選擇上一條判定線
+  phichain.select_next_line: 選擇下一條判定線
+
+  phichain.select_line_1: "選擇 1 號判定線"
+  phichain.select_line_2: "選擇 2 號判定線"
+  phichain.select_line_3: "選擇 3 號判定線"
+  phichain.select_line_4: "選擇 4 號判定線"
+  phichain.select_line_5: "選擇 5 號判定線"
+  phichain.select_line_6: "選擇 6 號判定線"
+  phichain.select_line_7: "選擇 7 號判定線"
+  phichain.select_line_8: "選擇 8 號判定線"
+  phichain.select_line_9: "選擇 9 號判定線"
+  phichain.select_line_0: "選擇 10 號判定線"
+
+  phichain.move_up: 上移
+  phichain.move_down: 下移
+  phichain.move_left: 左移
+  phichain.move_right: 右移
+
+  phichain.unselect_all: 取消選擇
+
+key:
+  space: Space
+  enter: Enter
