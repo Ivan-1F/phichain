@@ -26,6 +26,7 @@ use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use bevy::render::gpu_readback::Readback;
 use bevy::render::render_resource::{TextureFormat, TextureUsages};
+use bevy::render::renderer::RenderAdapterInfo;
 use bevy::window::ExitCondition;
 use bevy::winit::WinitPlugin;
 use bevy_kira_audio::AudioPlugin;
@@ -111,6 +112,9 @@ fn setup(
     mut game_config: ResMut<GameConfig>,
     args: Res<Args>,
     telemetry: Res<telemetry::Shared>,
+    // RenderPlugin inserts this during `Plugin::build`, before Startup runs;
+    // guard with `Option` in case that ever changes.
+    adapter_info: Option<Res<RenderAdapterInfo>>,
 ) {
     let project = Project::open(args.path.clone().into()).expect("failed to open project");
     let music_duration = utils::audio_duration(
@@ -126,6 +130,10 @@ fn setup(
         m.music_duration_sec = Some(music_duration);
         m.chart = Some(ChartMetrics::collect(&chart.lines));
     });
+    telemetry.set_hardware(phichain_telemetry::hardware::Hardware::collect());
+    if let Some(info) = adapter_info {
+        telemetry.set_adapter(phichain_telemetry::adapter::Adapter::from(&***info));
+    }
 
     // Offscreen GPU texture the camera renders into; Readback copies it out each frame.
     let mut target = Image::new_target_texture(

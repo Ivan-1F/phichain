@@ -22,5 +22,5 @@ tempfile = "3.10"
 indicatif = "0.17"
 rust-i18n = "=3.0.1"
 phichain-i18n = { path = "../phichain-i18n" }
-phichain-telemetry = { path = "../phichain-telemetry" }
+phichain-telemetry = { path = "../phichain-telemetry", features = ["wgpu"] }
 serde = { version = "1.0.228", features = ["derive"] }

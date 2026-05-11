@@ -4,7 +4,9 @@ use bevy::app::AppExit;
 use bevy::prelude::Resource;
 use phichain_chart::metrics::ChartMetrics;
 use phichain_i18n::locale;
-use phichain_telemetry::Reporter;
+use phichain_telemetry::adapter::Adapter;
+use phichain_telemetry::hardware::Hardware;
+use phichain_telemetry::payload::{PhichainMeta, TelemetryPayload};
 use serde::Serialize;
 use std::sync::{Arc, Mutex};
 
@@ -49,22 +51,48 @@ pub struct Metadata {
     pub realtime_factor: f32,
 }
 
-/// Shared handle so Bevy systems and the main thread can both mutate `Metadata` while the app is running.
+/// Everything the payload needs.
+///
+/// Filled incrementally from both Bevy systems and the main thread.
+/// `hardware` / `adapter` land at the payload top level via `.extra(...)`;
+/// `metadata` becomes the nested `metadata` field.
+#[derive(Default, Clone)]
+struct Inner {
+    metadata: Metadata,
+    hardware: Option<Hardware>,
+    adapter: Option<Adapter>,
+}
+
 #[derive(Resource, Clone)]
-pub struct Shared(Arc<Mutex<Metadata>>);
+pub struct Shared(Arc<Mutex<Inner>>);
 
 impl Shared {
     pub fn new(args: &Args) -> Self {
-        Self(Arc::new(Mutex::new(initial(args))))
+        Self(Arc::new(Mutex::new(Inner {
+            metadata: initial(args),
+            ..Default::default()
+        })))
     }
 
     pub fn update<F: FnOnce(&mut Metadata)>(&self, f: F) {
         if let Ok(mut guard) = self.0.lock() {
-            f(&mut guard);
+            f(&mut guard.metadata);
         }
     }
 
-    fn snapshot(&self) -> Metadata {
+    pub fn set_hardware(&self, value: Hardware) {
+        if let Ok(mut guard) = self.0.lock() {
+            guard.hardware = Some(value);
+        }
+    }
+
+    pub fn set_adapter(&self, value: Adapter) {
+        if let Ok(mut guard) = self.0.lock() {
+            guard.adapter = Some(value);
+        }
+    }
+
+    fn snapshot(&self) -> Inner {
         self.0.lock().expect("telemetry lock poisoned").clone()
     }
 }
@@ -107,16 +135,33 @@ pub fn report(shared: &Shared, exit: AppExit) {
         return;
     }
 
-    let mut meta = shared.snapshot();
-    meta.success = exit.is_success();
-    if !meta.success && meta.error_kind.is_none() {
-        meta.error_kind = Some("UnknownExit");
+    let Inner {
+        mut metadata,
+        hardware,
+        adapter,
+    } = shared.snapshot();
+
+    metadata.success = exit.is_success();
+    if !metadata.success && metadata.error_kind.is_none() {
+        metadata.error_kind = Some("UnknownExit");
     }
 
-    let reporter = Reporter::new(
-        "phichain-renderer",
-        env!("CARGO_PKG_VERSION"),
-        cfg!(debug_assertions),
-    );
-    let _ = reporter.track(EVENT_TYPE, serde_json::to_value(&meta).unwrap());
+    let mut builder = TelemetryPayload::builder()
+        .reporter("phichain-renderer")
+        .event_type(EVENT_TYPE)
+        .maybe_device_id(phichain_telemetry::device::get_device_id())
+        .phichain(PhichainMeta::new(
+            env!("CARGO_PKG_VERSION"),
+            cfg!(debug_assertions),
+        ))
+        .metadata(serde_json::to_value(&metadata).unwrap());
+
+    if let Some(hw) = hardware {
+        builder = builder.extra("hardware", hw);
+    }
+    if let Some(a) = adapter {
+        builder = builder.extra("adapter", a);
+    }
+
+    let _ = phichain_telemetry::send(&builder.build());
 }
