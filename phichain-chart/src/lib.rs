@@ -5,6 +5,7 @@ pub mod curve_note_track;
 pub mod easing;
 pub mod event;
 pub mod line;
+pub mod metrics;
 pub mod migration;
 pub mod note;
 pub mod offset;
