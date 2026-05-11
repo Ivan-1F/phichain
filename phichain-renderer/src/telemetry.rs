@@ -53,9 +53,8 @@ pub struct Metadata {
 
 /// Everything the payload needs.
 ///
-/// Filled incrementally from both Bevy systems and the main thread.
-/// `hardware` / `adapter` land at the payload top level via `.extra(...)`;
-/// `metadata` becomes the nested `metadata` field.
+/// This struct is filled incrementally during the execution, and got finalized when rendering finishes
+/// It will then be used as the telemetry payload
 #[derive(Default, Clone)]
 struct Inner {
     metadata: Metadata,
