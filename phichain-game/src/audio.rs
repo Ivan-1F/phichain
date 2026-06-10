@@ -48,12 +48,14 @@ pub fn open_audio(path: PathBuf) -> Result<AudioBytes, LoadAudioError> {
     Ok(AudioBytes(bytes))
 }
 
-pub fn load_audio(bytes: AudioBytes, commands: &mut Commands) -> Result<(), LoadAudioError> {
-    let AudioBytes(bytes) = bytes;
+/// Read and decode an audio file into a [`StaticSoundData`]
+pub fn open_and_decode_audio(path: PathBuf) -> Result<StaticSoundData, LoadAudioError> {
+    let AudioBytes(bytes) = open_audio(path)?;
+    Ok(StaticSoundData::from_cursor(Cursor::new(bytes))?)
+}
 
-    let source = AudioSource {
-        sound: StaticSoundData::from_cursor(Cursor::new(bytes))?,
-    };
+pub fn load_audio(sound: StaticSoundData, commands: &mut Commands) {
+    let source = AudioSource { sound };
     let duration = source.sound.duration();
 
     commands.queue(move |world: &mut World| {
@@ -69,6 +71,4 @@ pub fn load_audio(bytes: AudioBytes, commands: &mut Commands) -> Result<(), Load
             });
         });
     });
-
-    Ok(())
 }

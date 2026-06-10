@@ -5,11 +5,8 @@ use crate::event::EventOf;
 use crate::illustration::{load_illustration, open_illustration};
 use anyhow::Context;
 use bevy::prelude::*;
-use phichain_chart::migration::migrate;
 use phichain_chart::project::Project;
 use phichain_chart::serialization::{PhichainChart, SerializedLine};
-use serde_json::Value;
-use std::fs::File;
 
 /// Load a project to the world using a [`Commands`]
 ///
@@ -23,8 +20,9 @@ use std::fs::File;
 /// - [phichain_chart::bpm_list::BpmList] will be inserted into the world
 /// - Entities with components [`Line`] and [`Note`] will be spawned into the world, with parent-child relationship
 pub fn load_project(project: &Project, commands: &mut Commands) -> anyhow::Result<()> {
-    let file = File::open(project.path.chart_path())?;
-    load(file, commands)?;
+    let json = std::fs::read_to_string(project.path.chart_path())?;
+    let chart = PhichainChart::from_json_str(&json).context("Failed to parse chart")?;
+    load(chart, commands);
 
     if let Some(illustration_path) = project.path.illustration_path() {
         // TODO: handle error
@@ -80,22 +78,11 @@ fn load_line(line: SerializedLine, commands: &mut Commands, parent: Option<Entit
 }
 
 /// Load a chart to the world using a [`Commands`]
-fn load(file: File, commands: &mut Commands) -> anyhow::Result<()> {
-    let chart: Value = serde_json::from_reader(file).context("Failed to load chart")?;
-    let migrated = migrate(&chart).context("Migration failed")?;
-    let chart: PhichainChart =
-        serde_json::from_value(migrated).context("Failed to deserialize chart")?;
-
+fn load(chart: PhichainChart, commands: &mut Commands) {
     commands.insert_resource(chart.offset);
     commands.insert_resource(chart.bpm_list);
 
-    let mut first_line_id: Option<Entity> = None;
     for line in chart.lines {
-        let id = load_line(line, commands, None);
-        if first_line_id.is_none() {
-            first_line_id = Some(id)
-        }
+        load_line(line, commands, None);
     }
-
-    Ok(())
 }
