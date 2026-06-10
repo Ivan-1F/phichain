@@ -5,9 +5,18 @@ use crate::bpm_list::BpmList;
 use crate::curve_note_track::CurveNoteTrack;
 use crate::event::{LineEvent, LineEventKind, LineEventValue};
 use crate::line::Line;
-use crate::migration::CURRENT_FORMAT;
+use crate::migration::{migrate, CURRENT_FORMAT};
 use crate::note::Note;
 use crate::offset::Offset;
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum ParseChartError {
+    #[error("invalid chart: {0}")]
+    InvalidChart(#[from] serde_json::Error),
+    #[error("migration failed: {0}")]
+    MigrationFailed(anyhow::Error),
+}
 
 #[derive(Serialize, Deserialize)]
 pub struct PhichainChart {
@@ -24,6 +33,28 @@ impl PhichainChart {
             offset: Offset(offset),
             bpm_list,
             lines,
+        }
+    }
+
+    /// Parse a chart from JSON, migrating it to the latest format if necessary
+    ///
+    /// Charts already at the latest format are deserialized directly,
+    /// skipping the costly [`serde_json::Value`] intermediate representation
+    pub fn from_json_str(json: &str) -> Result<Self, ParseChartError> {
+        #[derive(Deserialize)]
+        struct FormatProbe {
+            #[serde(default)]
+            format: u64,
+        }
+
+        let probe: FormatProbe = serde_json::from_str(json)?;
+
+        if probe.format == CURRENT_FORMAT {
+            Ok(serde_json::from_str(json)?)
+        } else {
+            let value: serde_json::Value = serde_json::from_str(json)?;
+            let migrated = migrate(&value).map_err(ParseChartError::MigrationFailed)?;
+            Ok(serde_json::from_value(migrated)?)
         }
     }
 }
@@ -119,5 +150,39 @@ impl Default for SerializedLine {
             children: vec![],
             curve_note_tracks: vec![],
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_from_json_str_current_format() {
+        let json = serde_json::to_string(&PhichainChart::default()).unwrap();
+        let chart = PhichainChart::from_json_str(&json).unwrap();
+        assert_eq!(chart.format, CURRENT_FORMAT);
+        assert_eq!(chart.lines.len(), 1);
+    }
+
+    #[test]
+    fn test_from_json_str_old_format_migrates() {
+        // a minimal v0 chart: lines are [notes, events] tuples without a format field
+        let json = r#"{
+          "offset": 0.0,
+          "bpm_list": [{ "beat": [0, 0, 1], "bpm": 120.0, "time": 0.0 }],
+          "lines": [[[], []]]
+        }"#;
+        let chart = PhichainChart::from_json_str(json).unwrap();
+        assert_eq!(chart.format, CURRENT_FORMAT);
+        assert_eq!(chart.lines.len(), 1);
+    }
+
+    #[test]
+    fn test_from_json_str_invalid() {
+        assert!(matches!(
+            PhichainChart::from_json_str("not json"),
+            Err(ParseChartError::InvalidChart(_))
+        ));
     }
 }
