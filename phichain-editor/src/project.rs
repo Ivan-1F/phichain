@@ -7,7 +7,7 @@ use crate::hotkey::modifier::Modifier;
 use crate::hotkey::Hotkey;
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::recent_projects::{PersistentRecentProjectsExt, RecentProject, RecentProjects};
-use crate::spectrogram::{self, Spectrogram};
+use crate::spectrogram::{self, PendingSpectrogram};
 use crate::telemetry::PushTelemetry;
 use bevy::ecs::system::SystemState;
 use bevy_kira_audio::{Audio, AudioControl, AudioSource};
@@ -38,6 +38,7 @@ impl Plugin for ProjectPlugin {
     fn build(&self, app: &mut App) {
         app.add_message::<LoadProject>()
             .add_systems(Update, load_project_system.run_if(project_not_loaded()))
+            .add_systems(Update, spectrogram::poll_spectrogram_system)
             .add_message::<UnloadProject>()
             .add_systems(PreUpdate, unload_project_system.run_if(project_loaded()))
             .add_observer(project_loading_result_observer)
@@ -175,13 +176,16 @@ fn project_loading_result_observer(
                     world.insert_resource(crate::selection::SelectedLine(first));
                 }
 
-                // generate spectrogram
+                // generate spectrogram in the background
                 let audio_asset_id = world.resource::<phichain_game::audio::AudioAssetId>().0;
                 let audio_assets = world.resource::<Assets<AudioSource>>();
                 let source = audio_assets
                     .get(audio_asset_id)
                     .expect("Expected audio loaded in Assets<AudioSource>");
-                world.insert_resource(Spectrogram(spectrogram::make_spectrogram(source)));
+                let sound = source.sound.clone();
+                let task = bevy::tasks::AsyncComputeTaskPool::get()
+                    .spawn(async move { spectrogram::make_spectrogram(&sound) });
+                world.spawn(PendingSpectrogram(task));
             });
 
             commands.insert_resource(data.project.clone());
@@ -250,9 +254,14 @@ fn unload_project_system(
         let audio = world.resource::<Audio>();
         audio.stop();
 
-        // unload spectrogram resource
+        // unload spectrogram resource and cancel any pending generation task
         use crate::spectrogram::Spectrogram;
         world.remove_resource::<Spectrogram>();
+        let mut pending_query = world.query_filtered::<Entity, With<PendingSpectrogram>>();
+        let entities = pending_query.iter(world).collect::<Vec<_>>();
+        for entity in entities {
+            world.entity_mut(entity).despawn();
+        }
 
         // unload illustration
         use phichain_game::illustration::{Illustration, IllustrationAssetId};

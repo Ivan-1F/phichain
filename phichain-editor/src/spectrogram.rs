@@ -1,8 +1,10 @@
 use crate::timeline::TimelineContext;
 use crate::utils::convert::BevyEguiConvert;
 use bevy::ecs::system::SystemState;
-use bevy::prelude::{Res, Resource, World};
-use bevy_kira_audio::AudioSource;
+use bevy::prelude::{Commands, Component, Entity, Query, Res, Resource, World};
+use bevy::tasks::futures_lite::future;
+use bevy::tasks::{block_on, Task};
+use bevy_kira_audio::prelude::StaticSoundData;
 use colorous::{Gradient, INFERNO};
 use egui::epaint::{Vertex, WHITE_UV};
 use egui::{Color32, Mesh, Painter, Pos2, Rect};
@@ -17,16 +19,15 @@ pub struct AudioMono {
     pub data: Vec<f32>,   // mono [-1.0, 1.0]
 }
 
-pub fn make_spectrogram(source: &AudioSource) -> SpectrogramU8 {
-    let mono = load_audio(source);
+pub fn make_spectrogram(sound: &StaticSoundData) -> SpectrogramU8 {
+    let mono = load_audio(sound);
     make_spectrogram_u8(&mono, 2048, 512, 80.0)
 }
 
-fn load_audio(source: &AudioSource) -> AudioMono {
+fn load_audio(sound: &StaticSoundData) -> AudioMono {
     AudioMono {
-        sample_rate: source.sound.sample_rate,
-        data: source
-            .sound
+        sample_rate: sound.sample_rate,
+        data: sound
             .frames
             .iter()
             .map(|frame| frame.as_mono().left)
@@ -36,6 +37,22 @@ fn load_audio(source: &AudioSource) -> AudioMono {
 
 #[derive(Debug, Resource)]
 pub struct Spectrogram(pub SpectrogramU8);
+
+/// A background task generating the [`Spectrogram`] for the loaded audio
+#[derive(Component)]
+pub struct PendingSpectrogram(pub Task<SpectrogramU8>);
+
+pub fn poll_spectrogram_system(
+    mut commands: Commands,
+    mut tasks: Query<(Entity, &mut PendingSpectrogram)>,
+) {
+    for (entity, mut task) in &mut tasks {
+        if let Some(spectrogram) = block_on(future::poll_once(&mut task.0)) {
+            commands.entity(entity).despawn();
+            commands.insert_resource(Spectrogram(spectrogram));
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct SpectrogramU8 {
@@ -47,14 +64,19 @@ pub struct SpectrogramU8 {
 }
 
 pub fn draw(painter: &Painter, world: &mut World) {
-    let mut state = SystemState::<(TimelineContext, Res<Spectrogram>, Res<Offset>)>::new(world);
-    let (ctx, spectrogram, offset): (TimelineContext, Res<Spectrogram>, Res<Offset>) =
-        state.get_mut(world);
+    let mut state =
+        SystemState::<(TimelineContext, Option<Res<Spectrogram>>, Res<Offset>)>::new(world);
+    let (ctx, spectrogram, offset) = state.get_mut(world);
 
     let opacity = ctx.settings.spectrogram_opacity.clamp(0.0, 1.0);
     if !ctx.settings.show_spectrogram || opacity <= 0.01 {
         return;
     }
+
+    // the spectrogram is generated in the background and may not be ready yet
+    let Some(spectrogram) = spectrogram else {
+        return;
+    };
 
     let spec = &spectrogram.0;
     // Avoid rendering when there are not enough frames for interpolation
