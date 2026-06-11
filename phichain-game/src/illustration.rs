@@ -33,7 +33,23 @@ pub struct IllustrationAssetId(pub AssetId<Image>);
 pub struct Illustration;
 
 pub fn open_illustration(path: PathBuf) -> ImageResult<DynamicImage> {
-    image::open(path).map(|i| i.blur(ILLUSTRATION_BLUR))
+    let image = image::open(path)?;
+
+    // The illustration is only shown as a heavily blurred background,
+    // so downscale it first and blur with a proportionally smaller sigma
+    const MAX_DIMENSION: u32 = 1024;
+    let largest = image.width().max(image.height());
+    let (image, sigma) = if largest > MAX_DIMENSION {
+        let scale = MAX_DIMENSION as f32 / largest as f32;
+        (
+            image.thumbnail(MAX_DIMENSION, MAX_DIMENSION),
+            ILLUSTRATION_BLUR * scale,
+        )
+    } else {
+        (image, ILLUSTRATION_BLUR)
+    };
+
+    Ok(image.fast_blur(sigma))
 }
 
 pub fn load_illustration(image: DynamicImage, commands: &mut Commands) {
