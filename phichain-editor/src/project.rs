@@ -124,6 +124,8 @@ fn load_project_system(
     }
 
     if let Some(event) = events.read().last() {
+        commands.insert_resource(crate::bench::ProjectLoadStart(std::time::Instant::now()));
+
         match Project::open(event.0.clone()) {
             Ok(project) => {
                 phichain_game::loader::nonblocking::load_project(&project, &mut commands);

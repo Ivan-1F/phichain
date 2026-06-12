@@ -4,6 +4,7 @@ extern crate rust_i18n;
 mod action;
 mod audio;
 mod autosave;
+mod bench;
 mod cli;
 mod constants;
 mod editing;
@@ -124,6 +125,7 @@ fn main() {
         .add_plugins(ReqwestPlugin::default())
         .add_plugins(HotkeyPlugin)
         .add_plugins(CliPlugin)
+        .add_plugins(crate::bench::BenchPlugin)
         .add_plugins(MiscPlugin)
         .add_plugins(UiPlugin)
         .add_plugins(TranslationPlugin)
