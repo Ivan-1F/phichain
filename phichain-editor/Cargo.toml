@@ -9,6 +9,10 @@ edition = "2021"
 type_complexity = "allow"
 too_many_arguments = "allow"
 
+[features]
+# Enable Tracy profiler client (connect with a matching Tracy GUI version)
+trace_tracy = ["bevy/trace_tracy"]
+
 [package.metadata.i18n]
 available-locales = ["en_us", "zh_cn", "zh_tw", "ja_jp"]
 default-locale = "en_us"

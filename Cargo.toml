@@ -27,6 +27,16 @@ codegen-units = 1
 incremental = false
 debug = false
 
+# Fast-to-build optimized profile for profiling with Tracy.
+# Keeps opt-level 3 so timings stay representative, but drops LTO and adds
+# debug info so links are fast and Tracy shows function names.
+[profile.profiling]
+inherits = "release"
+lto = false
+codegen-units = 16
+incremental = true
+debug = "line-tables-only"
+
 [workspace.dependencies]
 bevy = { version = "0.18.1", default-features = false, features = [
     "bevy_asset",
