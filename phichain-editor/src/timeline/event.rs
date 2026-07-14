@@ -251,7 +251,7 @@ impl Timeline for EventTimeline {
                     rect,
                     0.0,
                     color,
-                    Stroke::new(2.0, color.gamma_multiply(1.2)),
+                    Stroke::new(2.0_f32, color.gamma_multiply(1.2)),
                     StrokeKind::Middle,
                 );
 

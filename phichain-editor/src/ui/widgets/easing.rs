@@ -129,11 +129,11 @@ impl Widget for EasingGraph<'_> {
 
             painter.line_segment(
                 [to_screen * Pos2::new(0.0, 1.0), to_screen * p1],
-                Stroke::new(2.0, Color32::GRAY),
+                Stroke::new(2.0_f32, Color32::GRAY),
             );
             painter.line_segment(
                 [to_screen * Pos2::new(1.0, 0.0), to_screen * p2],
-                Stroke::new(2.0, Color32::GRAY),
+                Stroke::new(2.0_f32, Color32::GRAY),
             );
 
             if drag_stopped {
@@ -204,7 +204,7 @@ pub fn draw_easing(
         .map(|x| to_screen * x)
         .collect();
 
-    painter.add(PathShape::line(points, Stroke::new(2.0, color)));
+    painter.add(PathShape::line(points, Stroke::new(2.0_f32, color)));
 }
 
 fn draw_easing_options(ui: &mut Ui, easing: Easing, selected: bool, name: &str) -> Response {

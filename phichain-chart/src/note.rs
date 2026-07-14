@@ -67,7 +67,7 @@ pub struct Note {
 
 impl fmt::Debug for Note {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct(format!("{:?}", &self.kind).as_str())
+        f.debug_struct(format!("{:?}", self.kind).as_str())
             .field("above", &self.above)
             .field("beat", &self.beat)
             .field("x", &self.x)

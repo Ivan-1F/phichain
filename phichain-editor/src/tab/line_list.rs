@@ -325,7 +325,7 @@ impl<'w, 's> LineList<'w, 's> {
                             painter.rect_stroke(
                                 response.rect,
                                 0.0,
-                                Stroke::new(1.0, Color32::WHITE),
+                                Stroke::new(1.0_f32, Color32::WHITE),
                                 StrokeKind::Middle,
                             );
 
@@ -339,7 +339,7 @@ impl<'w, 's> LineList<'w, 's> {
 
                             let p1 = pos(egui::Pos2::new(-x1 + x, y1 + y), response.rect);
                             let p2 = pos(egui::Pos2::new(-x2 + x, y2 + y), response.rect);
-                            painter.line_segment([p1, p2], Stroke::new(1.0, Color32::WHITE));
+                            painter.line_segment([p1, p2], Stroke::new(1.0_f32, Color32::WHITE));
 
                             painter.circle_filled(
                                 pos(egui::Pos2::new(x, y), response.rect),
@@ -354,7 +354,7 @@ impl<'w, 's> LineList<'w, 's> {
                             painter.rect_stroke(
                                 response.rect,
                                 0.0,
-                                Stroke::new(1.0, Color32::WHITE),
+                                Stroke::new(1.0_f32, Color32::WHITE),
                                 StrokeKind::Middle,
                             );
                             painter.rect_filled(
