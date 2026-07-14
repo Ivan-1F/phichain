@@ -1,19 +1,18 @@
 mod error;
-mod i18n;
 mod options;
-mod telemetry;
 
 use crate::error::{unwrap_infallible, ConvertError};
-use crate::i18n::{i18n_str, locale};
 use crate::options::{
     CliCommonOutputOptions, CliOfficialInputOptions, CliOfficialOutputOptions, CliRpeInputOptions,
 };
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{Parser, ValueEnum};
 use owo_colors::OwoColorize;
+use phichain_chart::metrics::ChartMetrics;
 use phichain_chart::serialization::PhichainChart;
 use phichain_format::official::OfficialChart;
 use phichain_format::rpe::RpeChart;
 use phichain_format::{ChartFormat, CommonOutputOptions};
+use phichain_i18n::{i18n_str, locale};
 use rust_i18n::t;
 use serde::Serialize;
 use std::io::Read;
@@ -55,22 +54,9 @@ enum Format {
 }
 
 #[derive(Parser, Debug, Clone)]
-#[command(name = "phichain-converter telemetry")]
-#[command(hide = true)]
-struct TelemetryCli {
-    #[command(subcommand)]
-    command: TelemetryCommand,
-}
-
-#[derive(Subcommand, Debug, Clone)]
-enum TelemetryCommand {
-    Flush { path: PathBuf },
-}
-
-#[derive(Parser, Debug, Clone)]
 #[command(name = "phichain-converter")]
-#[command(about = i18n_str("cli.about"))]
-#[command(after_help = i18n_str("cli.examples"))]
+#[command(about = i18n_str!("cli.about"))]
+#[command(after_help = i18n_str!("cli.examples"))]
 pub struct Args {
     #[arg(required = true, help = t!("cli.input").to_string())]
     input: PathBuf,
@@ -84,25 +70,25 @@ pub struct Args {
 
     #[command(flatten)]
     #[command(
-        next_help_heading = i18n_str("cli.official_input.heading")
+        next_help_heading = i18n_str!("cli.official_input.heading")
     )]
     official_input_options: CliOfficialInputOptions,
 
     #[command(flatten)]
     #[command(
-        next_help_heading = i18n_str("cli.official_output.heading")
+        next_help_heading = i18n_str!("cli.official_output.heading")
     )]
     official_output_options: CliOfficialOutputOptions,
 
     #[command(flatten)]
     #[command(
-        next_help_heading = i18n_str("cli.rpe_input.heading")
+        next_help_heading = i18n_str!("cli.rpe_input.heading")
     )]
     rpe_input_options: CliRpeInputOptions,
 
     #[command(flatten)]
     #[command(
-        next_help_heading = i18n_str("cli.common_output.heading")
+        next_help_heading = i18n_str!("cli.common_output.heading")
     )]
     common_output_options: CliCommonOutputOptions,
 
@@ -150,31 +136,6 @@ fn read_input(path: &std::path::Path) -> Result<String, ConvertError> {
 }
 
 #[derive(Serialize)]
-struct ChartMetrics {
-    lines: usize,
-    notes: usize,
-    events: usize,
-}
-
-fn collect_chart_metrics(lines: &[phichain_chart::serialization::SerializedLine]) -> ChartMetrics {
-    let mut metrics = ChartMetrics {
-        lines: 0,
-        notes: 0,
-        events: 0,
-    };
-    for line in lines {
-        metrics.lines += 1;
-        metrics.notes += line.notes.len();
-        metrics.events += line.events.len();
-        let child = collect_chart_metrics(&line.children);
-        metrics.lines += child.lines;
-        metrics.notes += child.notes;
-        metrics.events += child.events;
-    }
-    metrics
-}
-
-#[derive(Serialize)]
 struct ConvertTelemetry {
     locale: String,
     from: Option<Format>,
@@ -191,7 +152,7 @@ struct ConvertTelemetry {
 impl Chart {
     fn metrics(&self) -> ChartMetrics {
         match self {
-            Chart::Phichain(c) => collect_chart_metrics(&c.lines),
+            Chart::Phichain(c) => ChartMetrics::collect(&c.lines),
             Chart::Official(c) => ChartMetrics {
                 lines: c.lines.len(),
                 notes: c
@@ -310,14 +271,7 @@ fn convert(args: Args, meta: &mut ConvertTelemetry) -> Result<(), ConvertError> 
 }
 
 fn main() {
-    // Route `phichain-converter telemetry <subcommand>` before normal arg parsing
-    if std::env::args().nth(1).as_deref() == Some("telemetry") {
-        let cli = TelemetryCli::parse_from(std::env::args().skip(1));
-        match cli.command {
-            TelemetryCommand::Flush { path } => {
-                let _ = telemetry::flush(path);
-            }
-        }
+    if phichain_telemetry::handle_subcommand() {
         return;
     }
 
@@ -354,7 +308,12 @@ fn main() {
     }
 
     if !no_telemetry && !phichain_telemetry::env::telemetry_disabled() {
-        let _ = telemetry::track(
+        let reporter = phichain_telemetry::Reporter::new(
+            "phichain-converter",
+            env!("CARGO_PKG_VERSION"),
+            cfg!(debug_assertions),
+        );
+        let _ = reporter.track(
             "phichain.converter.convert",
             serde_json::to_value(&meta).unwrap(),
         );

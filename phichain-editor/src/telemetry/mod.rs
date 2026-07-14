@@ -13,6 +13,8 @@ use phichain_chart::event::LineEvent;
 use phichain_chart::line::Line;
 use phichain_chart::note::Note;
 use phichain_chart::project::Project;
+use phichain_telemetry::adapter::Adapter;
+use phichain_telemetry::hardware::Hardware;
 use phichain_telemetry::payload::{PhichainMeta, TelemetryPayload};
 use serde_json::{json, Value};
 use std::process;
@@ -102,11 +104,17 @@ fn handle_push_telemetry_event_system(
             .unwrap_or_default();
         let average_fps = diagnostic.and_then(|x| x.average()).unwrap_or_default();
 
-        let mut system = sysinfo::System::new_all();
-        system.refresh_all();
-
+        // fetch process memory
+        let mut system = sysinfo::System::new();
         let pid = process::id();
-        let process = system.process(Pid::from_u32(pid)).unwrap();
+        system.refresh_processes(
+            sysinfo::ProcessesToUpdate::Some(&[Pid::from_u32(pid)]),
+            true,
+        );
+        let process_memory = system
+            .process(Pid::from_u32(pid))
+            .map(|p| p.memory())
+            .unwrap_or(0);
 
         let mut phichain_meta =
             PhichainMeta::new(env!("CARGO_PKG_VERSION"), cfg!(debug_assertions));
@@ -119,20 +127,18 @@ fn handle_push_telemetry_event_system(
             .phichain(phichain_meta)
             .metadata(event.metadata.clone())
             .extra("session_id", telemetry_manager.uuid)
-            .extra("hardware", json!({
-                "cpu": system.cpus().first().unwrap().brand(),
-                "core_count": system.cpus().len(),
-                "memory": system.total_memory(),
-                "memory_formatted": format!("{:.1} GiB", system.total_memory() as f64 / 1024.0 / 1024.0 / 1024.0),
-            }))
-            .extra("adapter", &***adapter_info)
+            .extra("hardware", Hardware::collect())
+            .extra("adapter", Adapter::from(&***adapter_info))
             .extra("project", project_info)
-            .extra("performance", json!({
-                "fps_samples": fps_samples,
-                "fps": average_fps,
-                "entities": entities.len(),
-                "memory": process.memory(),
-            }))
+            .extra(
+                "performance",
+                json!({
+                    "fps_samples": fps_samples,
+                    "fps": average_fps,
+                    "entities": entities.len(),
+                    "memory": process_memory,
+                }),
+            )
             .extra("uptime", time.elapsed().as_secs_f32())
             .build();
 
