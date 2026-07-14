@@ -9,7 +9,9 @@ use phichain_chart::serialization::{PhichainChart, SerializedLine};
 /// Usage: gen_chart <output-path> <target-size-mb>
 fn main() {
     let mut args = std::env::args().skip(1);
-    let out = args.next().expect("usage: gen_chart <output-path> <target-size-mb>");
+    let out = args
+        .next()
+        .expect("usage: gen_chart <output-path> <target-size-mb>");
     let target_mb: usize = args
         .next()
         .expect("usage: gen_chart <output-path> <target-size-mb>")
@@ -44,7 +46,13 @@ fn main() {
                 ),
             })
             .collect();
-        lines.push(SerializedLine::new(Line::default(), notes, events, vec![], vec![]));
+        lines.push(SerializedLine::new(
+            Line::default(),
+            notes,
+            events,
+            vec![],
+            vec![],
+        ));
         total += (per_line_notes * 110 + per_line_events * 160) as usize;
     }
 

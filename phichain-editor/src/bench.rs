@@ -24,10 +24,7 @@ impl Plugin for BenchPlugin {
     }
 }
 
-fn report_load_time_system(
-    start: Option<Res<ProjectLoadStart>>,
-    mut exit: MessageWriter<AppExit>,
-) {
+fn report_load_time_system(start: Option<Res<ProjectLoadStart>>, mut exit: MessageWriter<AppExit>) {
     let Some(start) = start else {
         return;
     };
