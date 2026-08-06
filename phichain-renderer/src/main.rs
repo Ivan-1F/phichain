@@ -19,7 +19,7 @@ mod utils;
 use crate::args::Args;
 use crate::encoder::{ensure_ffmpeg_available, on_frame_ready, Encoder};
 use crate::respack::RespackPlugin;
-use bevy::app::ScheduleRunnerPlugin;
+use bevy::app::{AppExit, ScheduleRunnerPlugin};
 use bevy::camera::RenderTarget;
 use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::log::LogPlugin;
@@ -42,9 +42,9 @@ use std::time::{Duration, Instant};
 
 rust_i18n::i18n!("locales", fallback = "en-US");
 
-fn main() {
+fn main() -> AppExit {
     if phichain_telemetry::handle_subcommand() {
-        return;
+        return AppExit::Success;
     }
 
     phichain_assets::setup_assets();
@@ -91,17 +91,21 @@ fn main() {
         .add_systems(Startup, setup)
         .run();
 
-    info!(
-        "{}",
-        t!(
-            "cli.status.completed",
-            elapsed = format!("{:.2}", started.elapsed().as_secs_f64())
-        )
-    );
+    if exit.is_success() {
+        info!(
+            "{}",
+            t!(
+                "cli.status.completed",
+                elapsed = format!("{:.2}", started.elapsed().as_secs_f64())
+            )
+        );
+    }
 
     if !no_telemetry {
-        telemetry::report(&telemetry, exit);
+        telemetry::report(&telemetry, exit.clone());
     }
+
+    exit
 }
 
 fn setup(

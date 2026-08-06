@@ -164,22 +164,31 @@ pub fn on_frame_ready(
                 m.realtime_factor = realtime;
             });
         }
-        info!(
-            "{}",
-            t!(
-                "cli.status.encoded",
-                frames = enc.frames_written,
-                elapsed = format!("{elapsed:.2}"),
-                fps = format!("{avg_fps:.0}"),
-                realtime = format!("{realtime:.2}")
-            )
-        );
         // Closing stdin signals EOF; ffmpeg finalizes the file on its own.
         drop(enc.ffmpeg.stdin.take());
-        enc.ffmpeg
-            .wait()
-            .expect("ffmpeg exited with a non-zero status");
-        exit.write(AppExit::Success);
+        match enc.ffmpeg.wait() {
+            Ok(status) if status.success() => {
+                info!(
+                    "{}",
+                    t!(
+                        "cli.status.encoded",
+                        frames = enc.frames_written,
+                        elapsed = format!("{elapsed:.2}"),
+                        fps = format!("{avg_fps:.0}"),
+                        realtime = format!("{realtime:.2}")
+                    )
+                );
+                exit.write(AppExit::Success);
+            }
+            Ok(status) => {
+                error!("{}", t!("cli.error.ffmpeg_failed", error = status));
+                exit.write(AppExit::error());
+            }
+            Err(err) => {
+                error!("{}", t!("cli.error.ffmpeg_failed", error = err));
+                exit.write(AppExit::error());
+            }
+        }
     }
 }
 
