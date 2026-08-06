@@ -159,13 +159,18 @@ pub fn apply_respack(loaded: LoadedRespack, world: &mut World) -> anyhow::Result
         audio,
     } = loaded;
 
+    // Validate all metadata-derived arithmetic before mutating Bevy's asset stores.
+    // A malformed custom pack should be reported through the caller's existing
+    // error path instead of panicking while splitting images or building atlases.
+    validate_respack(&meta, &images)?;
+
     // Images
     let (image_assets, hold_parts, hit_atlas, dimensions) =
         world.resource_scope(|world, mut bevy_images: Mut<Assets<Image>>| {
             world.resource_scope(|_, mut atlas_layouts: Mut<Assets<TextureAtlasLayout>>| {
                 build_image_resources(images, &meta, &mut bevy_images, &mut atlas_layouts)
             })
-        });
+        })?;
 
     // Audio
     let hit_sound = world.resource_scope(|_, mut sources: Mut<Assets<AudioSource>>| {
@@ -191,7 +196,7 @@ fn build_image_resources(
     meta: &RespackMeta,
     bevy_images: &mut Assets<Image>,
     atlas_layouts: &mut Assets<TextureAtlasLayout>,
-) -> (ImageAssets, HoldParts, HitEffectAtlas, RespackDimensions) {
+) -> anyhow::Result<(ImageAssets, HoldParts, HitEffectAtlas, RespackDimensions)> {
     let note_width = images.tap.width() as f32;
 
     let tap = bevy_images.add(dynamic_to_bevy(images.tap));
@@ -204,10 +209,10 @@ fn build_image_resources(
 
     // Split hold into head/body/tail parts based on hold_atlas / hold_highlight_atlas.
     let hold_bevy = dynamic_to_bevy(images.hold);
-    let (tail, body, head) = split_hold_image(&hold_bevy, meta.hold.atlas);
+    let (tail, body, head) = split_hold_image(&hold_bevy, meta.hold.atlas)?;
     let hold_body_height = body.height() as f32;
     let hold_hl_bevy = dynamic_to_bevy(images.hold_highlight);
-    let (tail_hl, body_hl, head_hl) = split_hold_image(&hold_hl_bevy, meta.hold.highlight_atlas);
+    let (tail_hl, body_hl, head_hl) = split_hold_image(&hold_hl_bevy, meta.hold.highlight_atlas)?;
     let hold_highlight_body_height = body_hl.height() as f32;
 
     let hold_parts = HoldParts {
@@ -223,16 +228,19 @@ fn build_image_resources(
     let hit_image = dynamic_to_bevy(images.hit);
     let [cols, rows] = meta.hit_fx.grid;
     let frame_size = UVec2::new(hit_image.width() / cols, hit_image.height() / rows);
+    let frame_count = cols
+        .checked_mul(rows)
+        .ok_or_else(|| anyhow::anyhow!("hit_fx.grid frame count overflows u32"))?;
     let hit = bevy_images.add(hit_image);
     let hit_atlas = HitEffectAtlas {
         layout: atlas_layouts.add(TextureAtlasLayout::from_grid(
             frame_size, cols, rows, None, None,
         )),
-        frame_count: cols * rows,
+        frame_count,
         frame_size,
     };
 
-    (
+    Ok((
         ImageAssets {
             tap,
             tap_highlight,
@@ -250,7 +258,63 @@ fn build_image_resources(
             hold_body_height,
             hold_highlight_body_height,
         },
-    )
+    ))
+}
+
+fn validate_respack(meta: &RespackMeta, images: &LoadedImages) -> anyhow::Result<()> {
+    validate_hold_atlas("hold.atlas", meta.hold.atlas, images.hold.height())?;
+    validate_hold_atlas(
+        "hold.highlight_atlas",
+        meta.hold.highlight_atlas,
+        images.hold_highlight.height(),
+    )?;
+
+    validate_hit_fx(&meta.hit_fx, images.hit.width(), images.hit.height())
+}
+
+fn validate_hit_fx(
+    meta: &crate::meta::HitFxMeta,
+    hit_width: u32,
+    hit_height: u32,
+) -> anyhow::Result<()> {
+    let [cols, rows] = meta.grid;
+    anyhow::ensure!(
+        cols > 0 && rows > 0,
+        "hit_fx.grid values must be greater than zero, got [{cols}, {rows}]"
+    );
+
+    anyhow::ensure!(
+        cols <= hit_width && rows <= hit_height,
+        "hit_fx.grid [{cols}, {rows}] exceeds hit.png dimensions {hit_width}x{hit_height}"
+    );
+    anyhow::ensure!(
+        cols.checked_mul(rows).is_some(),
+        "hit_fx.grid frame count overflows u32: [{cols}, {rows}]"
+    );
+    anyhow::ensure!(
+        std::time::Duration::try_from_secs_f32(meta.duration).is_ok(),
+        "hit_fx.duration cannot be represented as a duration, got {}",
+        meta.duration
+    );
+    anyhow::ensure!(
+        meta.scale.is_finite(),
+        "hit_fx.scale must be finite, got {}",
+        meta.scale
+    );
+
+    Ok(())
+}
+
+fn validate_hold_atlas(name: &str, atlas: [u32; 2], image_height: u32) -> anyhow::Result<()> {
+    let [tail_height, head_height] = atlas;
+    let fixed_height = tail_height.checked_add(head_height).ok_or_else(|| {
+        anyhow::anyhow!("{name} tail and head heights overflow u32: [{tail_height}, {head_height}]")
+    })?;
+    anyhow::ensure!(
+        fixed_height <= image_height,
+        "{name} tail and head heights ({tail_height} + {head_height}) exceed image height {image_height}"
+    );
+    Ok(())
 }
 
 fn build_hit_sound_assets(
@@ -302,11 +366,16 @@ fn dynamic_to_bevy(img: DynamicImage) -> Image {
 ///
 /// The layout is top-to-bottom: tail (atlas[0] pixels) | body | head (atlas[1] pixels).
 /// A zero-height part becomes a 1×1 transparent placeholder (wgpu requires non-zero dims).
-fn split_hold_image(image: &Image, atlas: [u32; 2]) -> (Image, Image, Image) {
+fn split_hold_image(image: &Image, atlas: [u32; 2]) -> anyhow::Result<(Image, Image, Image)> {
     let w = image.width();
     let h = image.height();
     let [tail_h, head_h] = atlas;
-    let body_h = h - tail_h - head_h;
+    let body_h = h
+        .checked_sub(tail_h)
+        .and_then(|remaining| remaining.checked_sub(head_h))
+        .ok_or_else(|| {
+            anyhow::anyhow!("hold atlas [{tail_h}, {head_h}] exceeds image height {h}")
+        })?;
     let bpp = 4u32; // RGBA8
     let row = w * bpp;
     let data = image.data.as_ref().expect("image should have data");
@@ -344,7 +413,7 @@ fn split_hold_image(image: &Image, atlas: [u32; 2]) -> (Image, Image, Image) {
     let body = crop(tail_h, body_h);
     let head = crop(tail_h + body_h, head_h);
 
-    (tail, body, head)
+    Ok((tail, body, head))
 }
 
 /// Premultiplied-alpha copies of image assets for correct egui rendering.
