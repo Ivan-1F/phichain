@@ -457,7 +457,8 @@ fn setup_egui_images_system(
         let mut copy = src.clone();
         premultiply_alpha(&mut copy);
         let copy_handle = images.add(copy);
-        egui_context.add_image(bevy_egui::EguiTextureHandle::Strong(copy_handle.clone()));
+        // EguiImageAssets owns the strong handle. Register a weak handle so replacing the resource lets Bevy remove the image and bevy_egui clean up its texture entry
+        egui_context.add_image(bevy_egui::EguiTextureHandle::Weak(copy_handle.id()));
         copy_handle
     };
 
