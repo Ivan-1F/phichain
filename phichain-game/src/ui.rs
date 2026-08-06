@@ -6,6 +6,7 @@ use crate::{ChartTime, PauseToggleRequest, SeekRequest};
 use bevy::picking::Pickable;
 use bevy::prelude::*;
 use bevy::ui::RelativeCursorPosition;
+use phichain_chart::offset::Offset;
 
 const CJK_FONT: &str = "font/MiSans-Regular.ttf";
 const ASCII_FONT: &str = "font/phigros.ttf";
@@ -413,12 +414,14 @@ fn spawn_progress_bar_system(mut commands: Commands) {
 fn update_progress_bar_system(
     time: Res<ChartTime>,
     audio_duration: Res<AudioDuration>,
+    offset: Res<Offset>,
     mut fill_query: Query<&mut Node, (With<ProgressBarFill>, Without<ProgressBarMarker>)>,
     mut marker_query: Query<&mut Node, (With<ProgressBarMarker>, Without<ProgressBarFill>)>,
 ) -> Result {
     let total = audio_duration.0.as_secs_f32();
+    let audio_time = time.0 + offset.0 / 1000.0;
     let progress = if total > 0.0 {
-        (time.0 / total).clamp(0.0, 1.0)
+        (audio_time / total).clamp(0.0, 1.0)
     } else {
         0.0
     };
