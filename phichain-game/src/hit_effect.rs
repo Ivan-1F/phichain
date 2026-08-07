@@ -10,6 +10,7 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::easing::Easing;
 use phichain_chart::event::{EventEvaluationResult, LineEvent, LineEventKind};
+use phichain_chart::line::Line;
 use phichain_chart::note::{Note, NoteKind};
 use rand::Rng;
 use std::time::Duration;
@@ -162,41 +163,42 @@ fn evaluate_line_at_beat(
     )
 }
 
-/// Compute the world position for a hit effect given line event values and note x offset.
+/// Compute the world position for a hit effect by composing the note's line hierarchy.
 fn compute_hit_effect_position(
-    line_x: f32,
-    line_y: f32,
-    line_rotation_deg: f32,
+    mut line_entity: Entity,
+    beat: f32,
     note_x: f32,
+    line_query: &Query<(Option<&Events>, Option<&ChildOf>), With<Line>>,
+    line_event_query: &Query<&LineEvent>,
     game_viewport: &GameViewport,
-) -> Vec2 {
+) -> Option<Vec2> {
     let vw = game_viewport.0.width();
     let vh = game_viewport.0.height();
-    let line_scale = crate::scale::line_world_scale(vw);
+    let mut position = Vec2::new(note_x / CANVAS_WIDTH * vw, 0.0);
 
-    // line world position
-    let world_line_x = line_x / CANVAS_WIDTH * vw;
-    let world_line_y = line_y / CANVAS_HEIGHT * vh;
+    loop {
+        let (events, parent) = line_query.get(line_entity).ok()?;
+        let (line_x, line_y, line_rotation) = events
+            .map(|events| evaluate_line_at_beat(beat, events, line_event_query))
+            .unwrap_or_default();
+        let (sin, cos) = line_rotation.to_radians().sin_cos();
 
-    // note x offset in world space (same formula as update_note_system, then multiplied by line scale)
-    let local_note_x = (note_x / CANVAS_WIDTH) * vw / line_scale;
-    let scaled_note_x = local_note_x * line_scale;
+        position = Vec2::new(
+            line_x / CANVAS_WIDTH * vw + position.x * cos - position.y * sin,
+            line_y / CANVAS_HEIGHT * vh + position.x * sin + position.y * cos,
+        );
 
-    // rotate note offset by line rotation
-    let rotation_rad = line_rotation_deg.to_radians();
-    let cos = rotation_rad.cos();
-    let sin = rotation_rad.sin();
-
-    Vec2::new(
-        world_line_x + scaled_note_x * cos,
-        world_line_y + scaled_note_x * sin,
-    )
+        let Some(parent) = parent else {
+            return Some(position);
+        };
+        line_entity = parent.parent();
+    }
 }
 
 fn spawn_hit_effect_system(
     mut commands: Commands,
     query: Query<(&Note, &ChildOf, Entity, Option<&PlayedHitEffect>)>,
-    line_query: Query<Option<&Events>>,
+    line_query: Query<(Option<&Events>, Option<&ChildOf>), With<Line>>,
     line_event_query: Query<&LineEvent>,
     time: Res<ChartTime>,
     bpm_list: Res<BpmList>,
@@ -215,11 +217,6 @@ fn spawn_hit_effect_system(
     }
 
     for (note, child_of, entity, played) in &query {
-        let events = match line_query.get(child_of.parent()).ok().flatten() {
-            Some(events) => events,
-            None => continue,
-        };
-
         let note_time = bpm_list.time_at(note.beat);
 
         // For hold notes, use current time; for other notes, use note hit time
@@ -229,10 +226,16 @@ fn spawn_hit_effect_system(
         };
 
         let mut spawn = || {
-            let (line_x, line_y, line_rotation) =
-                evaluate_line_at_beat(effect_beat, events, &line_event_query);
-            let position =
-                compute_hit_effect_position(line_x, line_y, line_rotation, note.x, &game_viewport);
+            let Some(position) = compute_hit_effect_position(
+                child_of.parent(),
+                effect_beat,
+                note.x,
+                &line_query,
+                &line_event_query,
+                &game_viewport,
+            ) else {
+                return;
+            };
 
             let mut sprite = Sprite::from_atlas_image(
                 assets.hit.clone(),
