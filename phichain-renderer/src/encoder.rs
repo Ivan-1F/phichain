@@ -7,6 +7,7 @@
 //! which we observe here to pipe the bytes into ffmpeg.
 
 use bevy::app::AppExit;
+use bevy::diagnostic::FrameCount;
 use bevy::prelude::*;
 use bevy::render::gpu_readback::ReadbackComplete;
 use bevy::render::renderer::RenderDevice;
@@ -120,17 +121,24 @@ impl Encoder {
     }
 }
 
+/// Advance game time from the frame being rendered, before game systems consume it.
+pub fn update_chart_time(
+    frame_count: Res<FrameCount>,
+    enc: Res<Encoder>,
+    mut chart_time: ResMut<ChartTime>,
+) {
+    let output_frame = frame_count.0.saturating_sub(WARMUP_FRAMES);
+    chart_time.0 = enc.from + output_frame as f32 / enc.fps as f32;
+}
+
 /// Observer fired by Bevy's `GpuReadbackPlugin` each time a frame has been copied back from the GPU.
 pub fn on_frame_ready(
     event: On<ReadbackComplete>,
     mut enc: ResMut<Encoder>,
-    mut chart_time: ResMut<ChartTime>,
     mut exit: MessageWriter<AppExit>,
 
     telemetry: Option<Res<crate::telemetry::Shared>>,
 ) {
-    chart_time.0 = enc.next_chart_time();
-
     if enc.warmup_remaining > 0 {
         enc.warmup_remaining -= 1;
         return;

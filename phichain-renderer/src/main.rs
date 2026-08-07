@@ -17,7 +17,7 @@ mod telemetry;
 mod utils;
 
 use crate::args::Args;
-use crate::encoder::{ensure_ffmpeg_available, on_frame_ready, Encoder};
+use crate::encoder::{ensure_ffmpeg_available, on_frame_ready, update_chart_time, Encoder};
 use crate::respack::RespackPlugin;
 use bevy::app::{AppExit, ScheduleRunnerPlugin};
 use bevy::camera::RenderTarget;
@@ -88,6 +88,7 @@ fn main() -> AppExit {
         .add_plugins(AssetsPlugin)
         .add_plugins(RespackPlugin)
         .add_plugins(GamePlugin)
+        .add_systems(Update, update_chart_time.before(GameSet))
         .add_systems(Startup, setup)
         .run();
 
