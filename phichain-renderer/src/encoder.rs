@@ -146,11 +146,9 @@ pub fn on_frame_ready(
 
     let (width, height) = (enc.width, enc.height);
     let pixels = unpad_rows(&event.data, width, height);
-    let stdin = enc
-        .ffmpeg
-        .stdin
-        .as_mut()
-        .expect("ffmpeg stdin was closed early");
+    let Some(stdin) = enc.ffmpeg.stdin.as_mut() else {
+        return;
+    };
     stdin
         .write_all(&pixels)
         .expect("failed to write frame to ffmpeg");
