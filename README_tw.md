@@ -19,4 +19,4 @@
 
 - [Phira](https://github.com/teamflos/phira)
 - [cmdysj](https://space.bilibili.com/252635690) 的 Re:PhiEdit
-- `assets/image` 和 `assets/audio` 路徑下的資源檔案來自 [https://github.com/MisaLiu/phi-chart-render]，並且遵守 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) 許可協議
+- `assets/respack` 路徑下的資源檔案來自 [https://github.com/MisaLiu/phi-chart-render]，並且遵守 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) 許可協議
