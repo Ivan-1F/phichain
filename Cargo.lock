@@ -6039,7 +6039,7 @@ dependencies = [
 
 [[package]]
 name = "phichain"
-version = "1.0.0-beta.6"
+version = "1.0.0-beta.7"
 dependencies = [
  "anyhow",
  "bevy",
@@ -6094,7 +6094,7 @@ dependencies = [
 
 [[package]]
 name = "phichain-assets"
-version = "1.0.0-beta.6"
+version = "1.0.0-beta.7"
 dependencies = [
  "anyhow",
  "bevy",
@@ -6109,7 +6109,7 @@ dependencies = [
 
 [[package]]
 name = "phichain-chart"
-version = "1.0.0-beta.6"
+version = "1.0.0-beta.7"
 dependencies = [
  "anyhow",
  "bevy",
@@ -6129,7 +6129,7 @@ dependencies = [
 
 [[package]]
 name = "phichain-compiler"
-version = "1.0.0-beta.6"
+version = "1.0.0-beta.7"
 dependencies = [
  "anyhow",
  "itertools 0.14.0",
@@ -6141,7 +6141,7 @@ dependencies = [
 
 [[package]]
 name = "phichain-converter"
-version = "1.0.0-beta.6"
+version = "1.0.0-beta.7"
 dependencies = [
  "clap",
  "o2o",
@@ -6160,7 +6160,7 @@ dependencies = [
 
 [[package]]
 name = "phichain-format"
-version = "1.0.0-beta.6"
+version = "1.0.0-beta.7"
 dependencies = [
  "anyhow",
  "nalgebra 0.34.1",
@@ -6176,7 +6176,7 @@ dependencies = [
 
 [[package]]
 name = "phichain-game"
-version = "1.0.0-beta.6"
+version = "1.0.0-beta.7"
 dependencies = [
  "anyhow",
  "bevy",
@@ -6194,7 +6194,7 @@ dependencies = [
 
 [[package]]
 name = "phichain-i18n"
-version = "1.0.0-beta.6"
+version = "1.0.0-beta.7"
 dependencies = [
  "rust-i18n",
  "sys-locale",
@@ -6202,7 +6202,7 @@ dependencies = [
 
 [[package]]
 name = "phichain-renderer"
-version = "1.0.0-beta.6"
+version = "1.0.0-beta.7"
 dependencies = [
  "anyhow",
  "bevy",
@@ -6223,7 +6223,7 @@ dependencies = [
 
 [[package]]
 name = "phichain-telemetry"
-version = "1.0.0-beta.6"
+version = "1.0.0-beta.7"
 dependencies = [
  "bon",
  "chrono",
