@@ -1,5 +1,6 @@
 use crate::beat::Beat;
 use crate::easing::{Easing, Tween};
+use crate::id::{EventId, HasId};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
@@ -152,11 +153,16 @@ impl LineEventValue {
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(bevy::prelude::Component))]
+#[cfg_attr(feature = "bevy", require(EventId))]
 pub struct LineEvent {
     pub kind: LineEventKind,
     pub start_beat: Beat,
     pub end_beat: Beat,
     pub value: LineEventValue,
+}
+
+impl HasId for LineEvent {
+    type Id = EventId;
 }
 
 impl PartialOrd for LineEvent {

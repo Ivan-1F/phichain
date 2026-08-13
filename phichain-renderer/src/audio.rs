@@ -100,6 +100,7 @@ struct NoteTimes {
 fn collect_notes(lines: &[SerializedLine], bpm: &BpmList, from: f32, to: f32, out: &mut NoteTimes) {
     for line in lines {
         for note in &line.notes {
+            let note = &note.data;
             let t = bpm.time_at(note.beat);
             if t < from || t >= to {
                 continue;

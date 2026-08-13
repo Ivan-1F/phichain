@@ -6,6 +6,7 @@ use bevy::prelude::*;
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{EventEvaluationResult, LineEvent, LineEventKind, LineEventValue};
+use phichain_chart::id::{Identified, LineId};
 use phichain_chart::serialization::SerializedLine;
 use phichain_game::event::Events;
 use phichain_game::serialization::{SerializeLine, SerializeLineParam};
@@ -210,38 +211,39 @@ impl Edit for CreateLineFromSelected {
 
         let new_line = SerializedLine {
             line: Default::default(),
+            id: LineId::new(),
             notes: vec![],
             events: vec![
-                LineEvent {
+                Identified::new(LineEvent {
                     kind: LineEventKind::X,
                     value: LineEventValue::constant(current_state.0),
                     start_beat: Beat::ZERO,
                     end_beat: Beat::ONE,
-                },
-                LineEvent {
+                }),
+                Identified::new(LineEvent {
                     kind: LineEventKind::Y,
                     value: LineEventValue::constant(current_state.1),
                     start_beat: Beat::ZERO,
                     end_beat: Beat::ONE,
-                },
-                LineEvent {
+                }),
+                Identified::new(LineEvent {
                     kind: LineEventKind::Rotation,
                     value: LineEventValue::constant(current_state.2),
                     start_beat: Beat::ZERO,
                     end_beat: Beat::ONE,
-                },
-                LineEvent {
+                }),
+                Identified::new(LineEvent {
                     kind: LineEventKind::Opacity,
                     value: LineEventValue::constant(current_state.3),
                     start_beat: Beat::ZERO,
                     end_beat: Beat::ONE,
-                },
-                LineEvent {
+                }),
+                Identified::new(LineEvent {
                     kind: LineEventKind::Speed,
                     value: LineEventValue::constant(current_state.4),
                     start_beat: Beat::ZERO,
                     end_beat: Beat::ONE,
-                },
+                }),
             ],
             children: vec![],
             curve_note_tracks: vec![],

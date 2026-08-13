@@ -1,5 +1,6 @@
 use crate::beat;
 use crate::easing::Easing;
+use crate::id::{CurveNoteTrackId, NoteId};
 use crate::note::{Note, NoteKind};
 use num::iter;
 use serde::{Deserialize, Serialize};
@@ -24,8 +25,9 @@ impl Default for CurveNoteTrackOptions {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CurveNoteTrack {
-    pub from: usize,
-    pub to: usize,
+    pub id: CurveNoteTrackId,
+    pub from: NoteId,
+    pub to: NoteId,
 
     #[serde(flatten)]
     pub options: CurveNoteTrackOptions,
@@ -80,9 +82,12 @@ mod tests {
 
     #[test]
     fn test_serialize_curve_note_track_with_hold_kind() {
+        let from = NoteId::new();
+        let to = NoteId::new();
         let track = CurveNoteTrack {
-            from: 1,
-            to: 2,
+            id: CurveNoteTrackId::from_uuid(uuid::Uuid::nil()),
+            from,
+            to,
             options: CurveNoteTrackOptions {
                 kind: NoteKind::Hold {
                     hold_beat: beat!(0, 1, 2),
@@ -102,8 +107,9 @@ mod tests {
         assert_eq!(
             value,
             json!({
-                "from": 1,
-                "to": 2,
+                "id": uuid::Uuid::nil().to_string(),
+                "from": from.to_string(),
+                "to": to.to_string(),
                 "kind": "hold",
                 "hold_beat": [0, 1, 2],
                 "density": 8,
@@ -120,9 +126,13 @@ mod tests {
 
     #[test]
     fn test_deserialize_curve_note_track_with_drag_kind() {
+        let from = NoteId::new();
+        let to = NoteId::new();
+        let id = CurveNoteTrackId::new();
         let value = json!({
-            "from": 0,
-            "to": 1,
+            "id": id.to_string(),
+            "from": from.to_string(),
+            "to": to.to_string(),
             "kind": "drag",
             "density": 16,
             "curve": {
@@ -132,8 +142,9 @@ mod tests {
 
         let track: CurveNoteTrack = serde_json::from_value(value).unwrap();
 
-        assert_eq!(track.from, 0);
-        assert_eq!(track.to, 1);
+        assert_eq!(track.id, id);
+        assert_eq!(track.from, from);
+        assert_eq!(track.to, to);
         assert!(matches!(track.options.kind, NoteKind::Drag));
         assert_eq!(track.options.density, 16);
         assert_eq!(track.options.curve, Easing::Linear);

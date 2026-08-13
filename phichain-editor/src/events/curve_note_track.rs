@@ -4,6 +4,7 @@ use bevy::app::{App, Plugin};
 use bevy::log::debug;
 use bevy::prelude::{ChildOf, Entity, Message, World};
 use bon::Builder;
+use phichain_chart::id::CurveNoteTrackId;
 use phichain_game::curve_note_track::CurveNoteTrack;
 
 pub struct CurveNoteTrackEventPlugin;
@@ -18,6 +19,7 @@ impl Plugin for CurveNoteTrackEventPlugin {
 #[derive(Debug, Clone, Message, Builder)]
 pub struct SpawnCurveNoteTrackEvent {
     track: CurveNoteTrack,
+    id: CurveNoteTrackId,
     line_entity: Entity,
     target: Option<Entity>,
 }
@@ -42,6 +44,7 @@ impl EditorEvent for SpawnCurveNoteTrackEvent {
         world
             .entity_mut(id)
             .insert(self.track)
+            .insert(self.id)
             .insert(ChildOf(self.line_entity))
             .id()
     }

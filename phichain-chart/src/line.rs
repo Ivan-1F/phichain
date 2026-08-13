@@ -1,6 +1,8 @@
+#[cfg(feature = "bevy")]
+use crate::id::LineId;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(bevy::prelude::Component))]
 #[cfg_attr(
     feature = "bevy",
@@ -11,6 +13,7 @@ use serde::{Deserialize, Serialize};
         LineRotation,
         LineOpacity,
         LineSpeed,
+        LineId,
     )
 )]
 pub struct Line {

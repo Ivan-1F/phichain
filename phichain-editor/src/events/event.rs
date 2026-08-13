@@ -3,6 +3,7 @@ use crate::utils::entity::replace_with_empty;
 use bevy::prelude::*;
 use bon::Builder;
 use phichain_chart::event::LineEvent;
+use phichain_chart::id::EventId;
 use phichain_game::event::EventOf;
 
 pub struct LineEventEventPlugin;
@@ -17,6 +18,7 @@ impl Plugin for LineEventEventPlugin {
 #[derive(Debug, Clone, Message, Builder)]
 pub struct SpawnLineEventEvent {
     event: LineEvent,
+    id: EventId,
     line_entity: Entity,
     target: Option<Entity>,
 }
@@ -40,6 +42,7 @@ impl EditorEvent for SpawnLineEventEvent {
         world
             .entity_mut(id)
             .insert(self.event)
+            .insert(self.id)
             .insert(EventOf(self.line_entity))
             .id()
     }

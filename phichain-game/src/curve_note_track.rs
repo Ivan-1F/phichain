@@ -1,10 +1,12 @@
 use crate::GameSet;
 use bevy::prelude::*;
 use phichain_chart::curve_note_track::{generate_notes, CurveNoteTrackOptions};
+use phichain_chart::id::CurveNoteTrackId;
 use phichain_chart::note::Note;
 
 /// Represents a curve note track
 #[derive(Debug, Clone, Component)]
+#[require(CurveNoteTrackId)]
 pub struct CurveNoteTrack {
     pub from: Option<Entity>,
     pub to: Option<Entity>,

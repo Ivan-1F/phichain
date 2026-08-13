@@ -9,7 +9,30 @@
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::hash::Hash;
 use uuid::Uuid;
+
+/// A chart data type whose identity is carried by a separate id component
+pub trait HasId {
+    type Id: Copy + Eq + Hash + Default + Serialize + for<'de> Deserialize<'de>;
+}
+
+/// A chart object paired with its id, used at the serialization boundary
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct Identified<T: HasId> {
+    pub id: T::Id,
+    #[serde(flatten)]
+    pub data: T,
+}
+
+impl<T: HasId> Identified<T> {
+    pub fn new(data: T) -> Self {
+        Self {
+            id: T::Id::default(),
+            data,
+        }
+    }
+}
 
 macro_rules! define_ids {
     ($($(#[$meta:meta])* $name:ident => $variant:ident),* $(,)?) => {
@@ -22,7 +45,6 @@ macro_rules! define_ids {
             pub struct $name(Uuid);
 
             impl $name {
-                /// Mint a new unique id
                 pub fn new() -> Self {
                     Self(Uuid::now_v7())
                 }

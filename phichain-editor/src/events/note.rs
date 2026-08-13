@@ -4,6 +4,7 @@ use bevy::app::{App, Plugin};
 use bevy::log::debug;
 use bevy::prelude::{ChildOf, Entity, Message, World};
 use bon::Builder;
+use phichain_chart::id::NoteId;
 use phichain_chart::note::Note;
 
 pub struct NoteEventPlugin;
@@ -18,6 +19,7 @@ impl Plugin for NoteEventPlugin {
 #[derive(Debug, Clone, Message, Builder)]
 pub struct SpawnNoteEvent {
     note: Note,
+    id: NoteId,
     line_entity: Entity,
     target: Option<Entity>,
 }
@@ -41,6 +43,7 @@ impl EditorEvent for SpawnNoteEvent {
         world
             .entity_mut(id)
             .insert(self.note)
+            .insert(self.id)
             .insert(ChildOf(self.line_entity))
             .id()
     }

@@ -1,6 +1,7 @@
 use crate::events::note::{DespawnNoteEvent, SpawnNoteEvent};
 use crate::events::EditorEvent;
 use bevy::prelude::*;
+use phichain_chart::id::NoteId;
 use phichain_chart::note::Note;
 use undo::Edit;
 
@@ -8,6 +9,7 @@ use undo::Edit;
 pub struct CreateNote {
     pub line_entity: Entity,
     pub note: Note,
+    pub note_id: NoteId,
 
     pub note_entity: Option<Entity>,
 }
@@ -17,6 +19,7 @@ impl CreateNote {
         Self {
             line_entity: line,
             note,
+            note_id: NoteId::new(),
             note_entity: None,
         }
     }
@@ -29,6 +32,7 @@ impl Edit for CreateNote {
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
         let entity = SpawnNoteEvent::builder()
             .note(self.note)
+            .id(self.note_id)
             .line_entity(self.line_entity)
             .maybe_target(self.note_entity)
             .build()
@@ -50,7 +54,7 @@ impl Edit for CreateNote {
 #[derive(Debug, Copy, Clone)]
 pub struct RemoveNote {
     pub entity: Entity,
-    pub note: Option<(Note, Entity)>,
+    pub note: Option<(Note, NoteId, Entity)>,
 }
 
 impl RemoveNote {
@@ -65,11 +69,12 @@ impl Edit for RemoveNote {
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
         let note = target.entity(self.entity).get::<Note>().copied();
+        let note_id = target.entity(self.entity).get::<NoteId>().copied();
         let parent = target
             .entity(self.entity)
             .get::<ChildOf>()
             .map(|x| x.parent());
-        self.note = Some((note.unwrap(), parent.unwrap()));
+        self.note = Some((note.unwrap(), note_id.unwrap(), parent.unwrap()));
         DespawnNoteEvent::builder()
             .target(self.entity)
             .keep_entity(true)
@@ -78,10 +83,11 @@ impl Edit for RemoveNote {
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
-        if let Some((note, line_entity)) = self.note {
+        if let Some((note, note_id, line_entity)) = self.note {
             SpawnNoteEvent::builder()
                 .target(self.entity)
                 .note(note)
+                .id(note_id)
                 .line_entity(line_entity)
                 .build()
                 .run(target);

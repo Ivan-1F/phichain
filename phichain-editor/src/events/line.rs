@@ -97,16 +97,19 @@ impl EditorEvent for SpawnLineEvent {
     // TODO: move part of the logic to phichain-game utils, duplication of phichain_game::loader::load_line()
     fn run(self, world: &mut World) -> Self::Output {
         let id = match self.target {
-            None => world.spawn(self.line.line).id(),
-            Some(target) => world.entity_mut(target).insert(self.line.line).id(),
+            None => world.spawn((self.line.line, self.line.id)).id(),
+            Some(target) => world
+                .entity_mut(target)
+                .insert((self.line.line, self.line.id))
+                .id(),
         };
 
-        for event in self.line.notes {
-            world.spawn((event, ChildOf(id)));
+        for note in self.line.notes {
+            world.spawn((note.data, note.id, ChildOf(id)));
         }
 
         for event in self.line.events {
-            world.spawn((event, EventOf(id)));
+            world.spawn((event.data, event.id, EventOf(id)));
         }
 
         if let Some(parent) = self.parent {

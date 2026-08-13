@@ -1,6 +1,7 @@
 use crate::events::curve_note_track::{DespawnCurveNoteTrackEvent, SpawnCurveNoteTrackEvent};
 use crate::events::EditorEvent;
 use bevy::prelude::{debug, ChildOf, Entity, World};
+use phichain_chart::id::CurveNoteTrackId;
 use phichain_game::curve_note_track::CurveNoteTrack;
 use undo::Edit;
 
@@ -8,6 +9,7 @@ use undo::Edit;
 pub struct CreateCurveNoteTrack {
     pub line_entity: Entity,
     pub track: CurveNoteTrack,
+    pub track_id: CurveNoteTrackId,
 
     pub track_entity: Option<Entity>,
 }
@@ -17,6 +19,8 @@ impl CreateCurveNoteTrack {
         Self {
             line_entity: line,
             track,
+            track_id: CurveNoteTrackId::new(),
+
             track_entity: None,
         }
     }
@@ -29,6 +33,7 @@ impl Edit for CreateCurveNoteTrack {
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
         let entity = SpawnCurveNoteTrackEvent::builder()
             .track(self.track.clone())
+            .id(self.track_id)
             .line_entity(self.line_entity)
             .maybe_target(self.track_entity)
             .build()
@@ -59,7 +64,7 @@ impl Edit for CreateCurveNoteTrack {
 #[derive(Debug, Clone)]
 pub struct RemoveCurveNoteTrack {
     pub entity: Entity,
-    pub track: Option<(CurveNoteTrack, Entity)>,
+    pub track: Option<(CurveNoteTrack, CurveNoteTrackId, Entity)>,
 }
 
 impl RemoveCurveNoteTrack {
@@ -77,11 +82,15 @@ impl Edit for RemoveCurveNoteTrack {
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
         let track = target.entity(self.entity).get::<CurveNoteTrack>().cloned();
+        let track_id = target
+            .entity(self.entity)
+            .get::<CurveNoteTrackId>()
+            .copied();
         let parent = target
             .entity(self.entity)
             .get::<ChildOf>()
             .map(|x| x.parent());
-        self.track = Some((track.unwrap(), parent.unwrap()));
+        self.track = Some((track.unwrap(), track_id.unwrap(), parent.unwrap()));
         DespawnCurveNoteTrackEvent::builder()
             .target(self.entity)
             .keep_entity(true)
@@ -90,10 +99,11 @@ impl Edit for RemoveCurveNoteTrack {
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
-        if let Some((track, line_entity)) = self.track.clone() {
+        if let Some((track, track_id, line_entity)) = self.track.clone() {
             SpawnCurveNoteTrackEvent::builder()
                 .target(self.entity)
                 .track(track)
+                .id(track_id)
                 .line_entity(line_entity)
                 .build()
                 .run(target);
