@@ -19,7 +19,7 @@ nom = "8.0.0"
 
 thiserror = "2.0.17"
 
-uuid = { version = "1.13.1", features = ["v4"] }
+uuid = { version = "1.13.1", features = ["v4", "v7", "serde"] }
 
 [features]
 bevy = ["bevy/bevy_sprite", "bevy/bevy_picking"]
