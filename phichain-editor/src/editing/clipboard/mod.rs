@@ -13,7 +13,7 @@ use bevy::prelude::*;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::LineEvent;
 use phichain_chart::note::Note;
-use phichain_game::curve_note_track::{CurveNoteTrackFroms, CurveNoteTrackTos};
+use phichain_game::curve_note_track::{CurveNoteTracksFrom, CurveNoteTracksTo};
 
 #[derive(Resource, Default)]
 struct EditorClipboard {
@@ -79,7 +79,7 @@ fn cut_system(
     event_query: Query<&LineEvent>,
 
     selected_query: Query<Entity, With<Selected>>,
-    target_query: Query<(Option<&CurveNoteTrackFroms>, Option<&CurveNoteTrackTos>)>,
+    target_query: Query<(Option<&CurveNoteTracksFrom>, Option<&CurveNoteTracksTo>)>,
 
     mut event_writer: MessageWriter<DoCommand>,
 ) -> Result {

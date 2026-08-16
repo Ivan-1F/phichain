@@ -7,23 +7,23 @@ use phichain_chart::note::Note;
 
 /// The origin note of a curve note track
 #[derive(Debug, Clone, Copy, Component)]
-#[relationship(relationship_target = CurveNoteTrackFroms)]
+#[relationship(relationship_target = CurveNoteTracksFrom)]
 #[require(CurveNoteTrackOptions)]
 pub struct CurveNoteTrackFrom(pub Entity);
 
 /// The destination note of a curve note track
 #[derive(Debug, Clone, Copy, Component)]
-#[relationship(relationship_target = CurveNoteTrackTos)]
+#[relationship(relationship_target = CurveNoteTracksTo)]
 #[require(CurveNoteTrackId)]
 pub struct CurveNoteTrackTo(pub Entity);
 
 #[derive(Debug, Component)]
 #[relationship_target(relationship = CurveNoteTrackFrom, linked_spawn)]
-pub struct CurveNoteTrackFroms(Vec<Entity>);
+pub struct CurveNoteTracksFrom(Vec<Entity>);
 
 #[derive(Debug, Component)]
 #[relationship_target(relationship = CurveNoteTrackTo, linked_spawn)]
-pub struct CurveNoteTrackTos(Vec<Entity>);
+pub struct CurveNoteTracksTo(Vec<Entity>);
 
 /// A complete curve note track
 #[derive(QueryData)]
@@ -137,8 +137,8 @@ mod tests {
 
         assert_eq!(world.get::<CurveNoteTrackFrom>(track).unwrap().0, a);
         assert_eq!(world.get::<CurveNoteTrackTo>(track).unwrap().0, b);
-        assert!(world.get::<CurveNoteTrackFroms>(a).is_some());
-        assert!(world.get::<CurveNoteTrackTos>(b).is_some());
+        assert!(world.get::<CurveNoteTracksFrom>(a).is_some());
+        assert!(world.get::<CurveNoteTracksTo>(b).is_some());
     }
 
     #[test]
@@ -201,7 +201,7 @@ mod tests {
         world.entity_mut(track).despawn();
 
         // empty relationship target collections are removed entirely
-        assert!(world.get::<CurveNoteTrackFroms>(a).is_none());
+        assert!(world.get::<CurveNoteTracksFrom>(a).is_none());
         assert!(world.get_entity(a).is_ok());
         assert!(world.get_entity(b).is_ok());
     }

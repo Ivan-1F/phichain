@@ -9,7 +9,7 @@ use crate::selection::Selected;
 use bevy::prelude::*;
 use phichain_chart::event::LineEvent;
 use phichain_chart::note::Note;
-use phichain_game::curve_note_track::{CurveNoteTrackFroms, CurveNoteTrackTo, CurveNoteTrackTos};
+use phichain_game::curve_note_track::{CurveNoteTrackTo, CurveNoteTracksFrom, CurveNoteTracksTo};
 
 pub struct DeleteSelectedPlugin;
 
@@ -28,7 +28,7 @@ fn delete_selected_system(
         Query<Entity, (With<Selected>, With<Note>)>,
         Query<Entity, (With<Selected>, With<LineEvent>)>,
         Query<Entity, (With<Selected>, With<CurveNoteTrackTo>)>,
-        Query<(Option<&CurveNoteTrackFroms>, Option<&CurveNoteTrackTos>)>,
+        Query<(Option<&CurveNoteTracksFrom>, Option<&CurveNoteTracksTo>)>,
     )>,
     mut events: MessageWriter<DoCommand>,
 ) -> Result {
