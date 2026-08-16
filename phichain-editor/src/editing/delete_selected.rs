@@ -9,7 +9,7 @@ use crate::selection::Selected;
 use bevy::prelude::*;
 use phichain_chart::event::LineEvent;
 use phichain_chart::note::Note;
-use phichain_game::curve_note_track::CurveNoteTrack;
+use phichain_game::curve_note_track::{CurveNoteTrackFroms, CurveNoteTrackTo, CurveNoteTrackTos};
 
 pub struct DeleteSelectedPlugin;
 
@@ -27,25 +27,46 @@ fn delete_selected_system(
     mut set: ParamSet<(
         Query<Entity, (With<Selected>, With<Note>)>,
         Query<Entity, (With<Selected>, With<LineEvent>)>,
-        Query<Entity, (With<Selected>, With<CurveNoteTrack>)>,
+        Query<Entity, (With<Selected>, With<CurveNoteTrackTo>)>,
+        Query<(Option<&CurveNoteTrackFroms>, Option<&CurveNoteTrackTos>)>,
     )>,
     mut events: MessageWriter<DoCommand>,
 ) -> Result {
     let mut sequence = CommandSequence(vec![]);
-    for note in &set.p0() {
+
+    let notes: Vec<Entity> = set.p0().iter().collect();
+    let events_: Vec<Entity> = set.p1().iter().collect();
+
+    // tracks referencing a deleted note go first: their links must be
+    // snapshotted before the note's tombstone strips them
+    let mut tracks: Vec<Entity> = set.p2().iter().collect();
+    for note in &notes {
+        if let Ok((froms, tos)) = set.p3().get(*note) {
+            if let Some(froms) = froms {
+                tracks.extend(froms.iter());
+            }
+            if let Some(tos) = tos {
+                tracks.extend(tos.iter());
+            }
+        }
+    }
+    tracks.sort();
+    tracks.dedup();
+    for track in tracks {
+        sequence.0.push(EditorCommand::RemoveCurveNoteTrack(
+            RemoveCurveNoteTrack::new(track),
+        ));
+    }
+
+    for note in notes {
         sequence
             .0
             .push(EditorCommand::RemoveNote(RemoveNote::new(note)));
     }
-    for event in &set.p1() {
+    for event in events_ {
         sequence
             .0
             .push(EditorCommand::RemoveEvent(RemoveEvent::new(event)));
-    }
-    for track in &set.p2() {
-        sequence.0.push(EditorCommand::RemoveCurveNoteTrack(
-            RemoveCurveNoteTrack::new(track),
-        ));
     }
 
     if !sequence.0.is_empty() {

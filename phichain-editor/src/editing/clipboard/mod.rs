@@ -1,4 +1,5 @@
 use crate::action::ActionRegistrationExt;
+use crate::editing::command::curve_note_track::RemoveCurveNoteTrack;
 use crate::editing::command::event::{CreateEvent, RemoveEvent};
 use crate::editing::command::note::{CreateNote, RemoveNote};
 use crate::editing::command::{CommandSequence, EditorCommand};
@@ -12,6 +13,7 @@ use bevy::prelude::*;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::LineEvent;
 use phichain_chart::note::Note;
+use phichain_game::curve_note_track::{CurveNoteTrackFroms, CurveNoteTrackTos};
 
 #[derive(Resource, Default)]
 struct EditorClipboard {
@@ -77,12 +79,35 @@ fn cut_system(
     event_query: Query<&LineEvent>,
 
     selected_query: Query<Entity, With<Selected>>,
+    target_query: Query<(Option<&CurveNoteTrackFroms>, Option<&CurveNoteTrackTos>)>,
 
     mut event_writer: MessageWriter<DoCommand>,
 ) -> Result {
     clipboard.clear();
 
     let mut commands = vec![];
+
+    // tracks referencing a cut note are deleted alongside, links snapshotted first
+    let mut tracks = vec![];
+    for entity in &selected_query {
+        if note_query.contains(entity) {
+            if let Ok((froms, tos)) = target_query.get(entity) {
+                if let Some(froms) = froms {
+                    tracks.extend(froms.iter());
+                }
+                if let Some(tos) = tos {
+                    tracks.extend(tos.iter());
+                }
+            }
+        }
+    }
+    tracks.sort();
+    tracks.dedup();
+    for track in tracks {
+        commands.push(EditorCommand::RemoveCurveNoteTrack(
+            RemoveCurveNoteTrack::new(track),
+        ));
+    }
 
     for entity in &selected_query {
         if let Ok(note) = note_query.get(entity) {

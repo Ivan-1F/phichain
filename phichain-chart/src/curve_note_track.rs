@@ -6,6 +6,7 @@ use num::iter;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "bevy", derive(bevy::prelude::Component))]
 pub struct CurveNoteTrackOptions {
     #[serde(flatten)]
     pub kind: NoteKind,

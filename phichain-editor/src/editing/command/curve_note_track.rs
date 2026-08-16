@@ -1,24 +1,29 @@
 use crate::events::curve_note_track::{DespawnCurveNoteTrackEvent, SpawnCurveNoteTrackEvent};
 use crate::events::EditorEvent;
 use bevy::prelude::{debug, ChildOf, Entity, World};
+use phichain_chart::curve_note_track::CurveNoteTrackOptions;
 use phichain_chart::id::CurveNoteTrackId;
-use phichain_game::curve_note_track::CurveNoteTrack;
+use phichain_game::curve_note_track::{CurveNoteTrackFrom, CurveNoteTrackTo};
 use undo::Edit;
 
 #[derive(Debug, Clone)]
 pub struct CreateCurveNoteTrack {
     pub line_entity: Entity,
-    pub track: CurveNoteTrack,
+    pub options: CurveNoteTrackOptions,
+    pub from: Entity,
+    pub to: Entity,
     pub track_id: CurveNoteTrackId,
 
     pub track_entity: Option<Entity>,
 }
 
 impl CreateCurveNoteTrack {
-    pub fn new(line: Entity, track: CurveNoteTrack) -> Self {
+    pub fn new(line: Entity, from: Entity, to: Entity, options: CurveNoteTrackOptions) -> Self {
         Self {
             line_entity: line,
-            track,
+            options,
+            from,
+            to,
             track_id: CurveNoteTrackId::new(),
 
             track_entity: None,
@@ -32,7 +37,9 @@ impl Edit for CreateCurveNoteTrack {
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
         let entity = SpawnCurveNoteTrackEvent::builder()
-            .track(self.track.clone())
+            .options(self.options.clone())
+            .from(self.from)
+            .to(self.to)
             .id(self.track_id)
             .line_entity(self.line_entity)
             .maybe_target(self.track_entity)
@@ -64,7 +71,14 @@ impl Edit for CreateCurveNoteTrack {
 #[derive(Debug, Clone)]
 pub struct RemoveCurveNoteTrack {
     pub entity: Entity,
-    pub track: Option<(CurveNoteTrack, CurveNoteTrackId, Entity)>,
+    #[allow(clippy::type_complexity)]
+    pub track: Option<(
+        CurveNoteTrackOptions,
+        CurveNoteTrackFrom,
+        CurveNoteTrackTo,
+        CurveNoteTrackId,
+        Entity,
+    )>,
 }
 
 impl RemoveCurveNoteTrack {
@@ -81,16 +95,19 @@ impl Edit for RemoveCurveNoteTrack {
     type Output = ();
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
-        let track = target.entity(self.entity).get::<CurveNoteTrack>().cloned();
-        let track_id = target
-            .entity(self.entity)
-            .get::<CurveNoteTrackId>()
-            .copied();
-        let parent = target
-            .entity(self.entity)
-            .get::<ChildOf>()
-            .map(|x| x.parent());
-        self.track = Some((track.unwrap(), track_id.unwrap(), parent.unwrap()));
+        let entity = target.entity(self.entity);
+        let options = entity.get::<CurveNoteTrackOptions>().cloned();
+        let from = entity.get::<CurveNoteTrackFrom>().copied();
+        let to = entity.get::<CurveNoteTrackTo>().copied();
+        let track_id = entity.get::<CurveNoteTrackId>().copied();
+        let parent = entity.get::<ChildOf>().map(|x| x.parent());
+        self.track = Some((
+            options.unwrap(),
+            from.unwrap(),
+            to.unwrap(),
+            track_id.unwrap(),
+            parent.unwrap(),
+        ));
         DespawnCurveNoteTrackEvent::builder()
             .target(self.entity)
             .keep_entity(true)
@@ -99,10 +116,12 @@ impl Edit for RemoveCurveNoteTrack {
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
-        if let Some((track, track_id, line_entity)) = self.track.clone() {
+        if let Some((options, from, to, track_id, line_entity)) = self.track.clone() {
             SpawnCurveNoteTrackEvent::builder()
                 .target(self.entity)
-                .track(track)
+                .options(options)
+                .from(from.0)
+                .to(to.0)
                 .id(track_id)
                 .line_entity(line_entity)
                 .build()

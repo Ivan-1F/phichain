@@ -6,6 +6,7 @@ use bevy::prelude::*;
 use bon::Builder;
 use phichain_chart::line::Line;
 use phichain_chart::serialization::SerializedLine;
+use phichain_game::curve_note_track::{CurveNoteTrackFrom, CurveNoteTrackTo};
 use phichain_game::event::EventOf;
 
 pub struct LineEventPlugin;
@@ -104,12 +105,30 @@ impl EditorEvent for SpawnLineEvent {
                 .id(),
         };
 
+        let mut note_entities = std::collections::HashMap::new();
         for note in self.line.notes {
-            world.spawn((note.data, note.id, ChildOf(id)));
+            let entity = world.spawn((note.data, note.id, ChildOf(id))).id();
+            note_entities.insert(note.id, entity);
         }
 
         for event in self.line.events {
             world.spawn((event.data, event.id, EventOf(id)));
+        }
+
+        for track in self.line.curve_note_tracks {
+            if let (Some(from), Some(to)) =
+                (note_entities.get(&track.from), note_entities.get(&track.to))
+            {
+                world.spawn((
+                    track.options,
+                    track.id,
+                    CurveNoteTrackFrom(*from),
+                    CurveNoteTrackTo(*to),
+                    ChildOf(id),
+                ));
+            } else {
+                warn!("dangling curve note track detected: {:?}", track);
+            }
         }
 
         if let Some(parent) = self.parent {

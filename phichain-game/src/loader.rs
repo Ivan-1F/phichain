@@ -1,6 +1,6 @@
 pub mod nonblocking;
 
-use crate::curve_note_track::CurveNoteTrack;
+use crate::curve_note_track::{CurveNoteTrackFrom, CurveNoteTrackTo};
 use crate::event::EventOf;
 use crate::illustration::{load_illustration, open_illustration};
 use anyhow::Context;
@@ -51,12 +51,10 @@ fn load_line(line: SerializedLine, commands: &mut Commands, parent: Option<Entit
                     (note_entities.get(&track.from), note_entities.get(&track.to))
                 {
                     parent.spawn((
-                        CurveNoteTrack {
-                            from: Some(*from),
-                            to: Some(*to),
-                            options: track.options,
-                        },
+                        track.options,
                         track.id,
+                        CurveNoteTrackFrom(*from),
+                        CurveNoteTrackTo(*to),
                     ));
                 } else {
                     warn!("dangling curve note track detected: {:?}", track);
