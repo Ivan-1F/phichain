@@ -1,4 +1,5 @@
 use crate::GameSet;
+use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
 use phichain_chart::curve_note_track::{generate_notes, CurveNoteTrackOptions};
 use phichain_chart::id::CurveNoteTrackId;
@@ -24,6 +25,16 @@ pub struct CurveNoteTrackFroms(Vec<Entity>);
 #[relationship_target(relationship = CurveNoteTrackTo, linked_spawn)]
 pub struct CurveNoteTrackTos(Vec<Entity>);
 
+/// A complete curve note track
+#[derive(QueryData)]
+#[query_data(mutable)]
+pub struct CurveNoteTrack {
+    pub options: &'static mut CurveNoteTrackOptions,
+    pub from: &'static CurveNoteTrackFrom,
+    pub to: &'static CurveNoteTrackTo,
+    pub id: &'static CurveNoteTrackId,
+}
+
 pub struct CurveNoteTrackPlugin;
 
 impl Plugin for CurveNoteTrackPlugin {
@@ -35,7 +46,7 @@ impl Plugin for CurveNoteTrackPlugin {
 #[derive(Component)]
 pub struct CurveNoteCache(Vec<Note>);
 
-/// Inner value is the attached entity ID of [`CurveNoteTrack`]
+/// A note generated from a curve note track; inner value is the track entity
 #[derive(Component)]
 #[relationship(relationship_target = CurveNotes)]
 pub struct CurveNote(pub Entity);
@@ -52,20 +63,18 @@ pub fn update_curve_note_track_system(
     note_query: Query<(&Note, &ChildOf)>,
     query: Query<(&CurveNote, Entity)>,
     mut track_query: Query<(
-        &CurveNoteTrackOptions,
-        &CurveNoteTrackFrom,
-        &CurveNoteTrackTo,
+        CurveNoteTrack,
         &ChildOf,
         Option<&mut CurveNoteCache>,
         Entity,
     )>,
 ) {
-    for (options, from, to, child_of, cache, entity) in &mut track_query {
-        let (Ok(from), Ok(to)) = (note_query.get(from.0), note_query.get(to.0)) else {
+    for (track, child_of, cache, entity) in &mut track_query {
+        let (Ok(from), Ok(to)) = (note_query.get(track.from.0), note_query.get(track.to.0)) else {
             continue;
         };
 
-        let notes = generate_notes(*from.0, *to.0, options);
+        let notes = generate_notes(*from.0, *to.0, &track.options);
 
         let update = match cache {
             None => {

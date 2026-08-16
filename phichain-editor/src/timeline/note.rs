@@ -17,7 +17,9 @@ use phichain_chart::constants::CANVAS_WIDTH;
 use phichain_chart::curve_note_track::CurveNoteTrackOptions;
 use phichain_chart::line::Line;
 use phichain_chart::note::{Note, NoteKind};
-use phichain_game::curve_note_track::{CurveNote, CurveNoteTrackFrom, CurveNoteTrackTo};
+use phichain_game::curve_note_track::{
+    CurveNote, CurveNoteTrack, CurveNoteTrackFrom, CurveNoteTrackTo,
+};
 use phichain_game::highlight::Highlighted;
 use std::cmp::Ordering;
 
@@ -58,13 +60,7 @@ impl Timeline for NoteTimeline {
                 Option<&Pending>,
             )>,
             Query<&Selected>,
-            Query<(
-                &mut CurveNoteTrackOptions,
-                &CurveNoteTrackFrom,
-                &CurveNoteTrackTo,
-                &ChildOf,
-                Entity,
-            )>,
+            Query<(CurveNoteTrack, &ChildOf, Entity)>,
             Query<(&CurveNoteTrackFrom, &CurveNoteTrackOptions, Entity), Without<CurveNoteTrackTo>>,
             Res<BpmList>,
             Res<phichain_assets::EguiImageAssets>,
@@ -263,14 +259,14 @@ impl Timeline for NoteTimeline {
             );
         }
 
-        for (mut options, from_link, to_link, child_of, entity) in &mut track_query {
+        for (mut track, child_of, entity) in &mut track_query {
             if child_of.parent() != line_entity {
                 continue;
             }
 
             if let (Ok(from), Ok(to)) = (
-                note_query.get(from_link.0).map(|x| x.0),
-                note_query.get(to_link.0).map(|x| x.0),
+                note_query.get(track.from.0).map(|x| x.0),
+                note_query.get(track.to.0).map(|x| x.0),
             ) {
                 let (from, to) = if from.beat < to.beat {
                     (from, to)
@@ -286,7 +282,7 @@ impl Timeline for NoteTimeline {
                 // FIXME: this will not be written to history
                 ui.put(
                     rect,
-                    EasingGraph::new(&mut options.curve)
+                    EasingGraph::new(&mut track.options.curve)
                         .inverse(true)
                         .mirror(from.x > to.x)
                         .color(match selected_query.get(entity) {

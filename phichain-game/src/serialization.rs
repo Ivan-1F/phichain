@@ -1,12 +1,11 @@
-use crate::curve_note_track::{CurveNote, CurveNoteTrackFrom, CurveNoteTrackTo};
+use crate::curve_note_track::{CurveNote, CurveNoteTrackReadOnly};
 use crate::event::Events;
 use crate::line::LineOrder;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::{ChildOf, Children, Entity, Query, Res, With, Without};
 use phichain_chart::bpm_list::BpmList;
-use phichain_chart::curve_note_track::CurveNoteTrackOptions;
 use phichain_chart::event::LineEvent;
-use phichain_chart::id::{CurveNoteTrackId, EventId, Identified, LineId, NoteId};
+use phichain_chart::id::{EventId, Identified, LineId, NoteId};
 use phichain_chart::line::Line;
 use phichain_chart::note::Note;
 use phichain_chart::offset::Offset;
@@ -54,13 +53,15 @@ impl SerializeLine for SerializedLine {
                 }
             }
             for child in children.iter() {
-                if let Ok((options, track_id, from, to)) = params.curve_note_track.get(*child) {
-                    if let (Some(from), Some(to)) = (note_ids.get(&from.0), note_ids.get(&to.0)) {
+                if let Ok(track) = params.curve_note_track.get(*child) {
+                    if let (Some(from), Some(to)) =
+                        (note_ids.get(&track.from.0), note_ids.get(&track.to.0))
+                    {
                         cnts.push(phichain_chart::curve_note_track::CurveNoteTrack {
-                            id: *track_id,
+                            id: *track.id,
                             from: *from,
                             to: *to,
-                            options: options.clone(),
+                            options: track.options.clone(),
                         })
                     }
                 }
@@ -97,16 +98,7 @@ pub struct SerializeLineParam<'w, 's> {
     line_event: Query<'w, 's, (&'static LineEvent, &'static EventId)>,
     note: Query<'w, 's, (&'static Note, &'static NoteId), Without<CurveNote>>,
 
-    curve_note_track: Query<
-        'w,
-        's,
-        (
-            &'static CurveNoteTrackOptions,
-            &'static CurveNoteTrackId,
-            &'static CurveNoteTrackFrom,
-            &'static CurveNoteTrackTo,
-        ),
-    >,
+    curve_note_track: Query<'w, 's, CurveNoteTrackReadOnly>,
 }
 
 #[derive(SystemParam)]

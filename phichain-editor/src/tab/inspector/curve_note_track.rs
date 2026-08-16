@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use egui::{Color32, DragValue, RichText, Ui};
 use phichain_chart::curve_note_track::CurveNoteTrackOptions;
 use phichain_chart::note::NoteKind;
-use phichain_game::curve_note_track::CurveNoteTrackTo;
+use phichain_game::curve_note_track::{CurveNoteTrack, CurveNoteTrackTo};
 
 fn options_grid(ui: &mut Ui, options: &mut CurveNoteTrackOptions) {
     egui::Grid::new("inspector_grid")
@@ -33,12 +33,12 @@ fn options_grid(ui: &mut Ui, options: &mut CurveNoteTrackOptions) {
 // TODO: write to history to support undo/redo
 pub fn curve_note_track_inspector(
     In(mut ui): In<Ui>,
-    mut options: Single<&mut CurveNoteTrackOptions, (With<Selected>, With<CurveNoteTrackTo>)>,
+    mut track: Single<CurveNoteTrack, With<Selected>>,
 ) -> Result {
     ui.label(t!("tab.inspector.curve_note_track.title.selected"));
     ui.separator();
 
-    options_grid(&mut ui, &mut options);
+    options_grid(&mut ui, &mut track.options);
 
     ui.separator();
 
