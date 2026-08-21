@@ -31,6 +31,16 @@ use bevy_prototype_lyon::prelude::ShapePlugin;
 #[derive(Debug, Clone, Resource)]
 pub struct GameViewport(pub Rect);
 
+/// An entity whose state is derived from canonical document data and can be
+/// regenerated at any time (e.g. notes generated from a curve note track)
+///
+/// Derived entities are not part of the document: systems that care about
+/// canonical state (undo history, serialization) ignore entities carrying
+/// this marker. Producers should attach it via `#[require(Derived)]` on the
+/// mechanism's own marker component
+#[derive(Debug, Default, Component)]
+pub struct Derived;
+
 /// If the chart is paused
 #[derive(Debug, Clone, Resource)]
 pub struct Paused(pub bool);

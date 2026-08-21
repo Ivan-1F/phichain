@@ -1,4 +1,5 @@
 use crate::GameSet;
+use crate::Derived;
 use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
 use phichain_chart::curve_note_track::{generate_notes, CurveNoteTrackOptions};
@@ -49,6 +50,7 @@ pub struct CurveNoteCache(Vec<Note>);
 /// A note generated from a curve note track; inner value is the track entity
 #[derive(Component)]
 #[relationship(relationship_target = CurveNotes)]
+#[require(Derived)]
 pub struct CurveNote(pub Entity);
 
 #[derive(Component)]
