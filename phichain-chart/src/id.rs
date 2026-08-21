@@ -12,6 +12,9 @@ use std::fmt;
 use std::hash::Hash;
 use uuid::Uuid;
 
+#[cfg(feature = "bevy")]
+use bevy::ecs::reflect::ReflectComponent;
+
 /// A chart data type whose identity is carried by a separate id component
 pub trait HasId {
     type Id: Copy + Eq + Hash + Default + Serialize + for<'de> Deserialize<'de>;
@@ -42,6 +45,8 @@ macro_rules! define_ids {
             #[serde(transparent)]
             #[repr(transparent)]
             #[cfg_attr(feature = "bevy", derive(bevy::prelude::Component))]
+            #[cfg_attr(feature = "bevy", derive(bevy::prelude::Reflect))]
+            #[cfg_attr(feature = "bevy", reflect(opaque, Component, Clone, PartialEq, Debug))]
             pub struct $name(Uuid);
 
             impl $name {

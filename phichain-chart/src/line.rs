@@ -1,9 +1,12 @@
+use crate::id::{HasId, LineId};
 #[cfg(feature = "bevy")]
-use crate::id::LineId;
+use bevy::ecs::reflect::ReflectComponent;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(bevy::prelude::Component))]
+#[cfg_attr(feature = "bevy", derive(bevy::prelude::Reflect))]
+#[cfg_attr(feature = "bevy", reflect(Component, Clone, PartialEq, Debug))]
 #[cfg_attr(
     feature = "bevy",
     require(
@@ -18,6 +21,10 @@ use serde::{Deserialize, Serialize};
 )]
 pub struct Line {
     pub name: String,
+}
+
+impl HasId for Line {
+    type Id = LineId;
 }
 
 impl Default for Line {

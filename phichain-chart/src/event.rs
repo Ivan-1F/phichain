@@ -1,6 +1,8 @@
 use crate::beat::Beat;
 use crate::easing::{Easing, Tween};
 use crate::id::{EventId, HasId};
+#[cfg(feature = "bevy")]
+use bevy::ecs::reflect::ReflectComponent;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
@@ -14,6 +16,8 @@ pub enum Boundary {
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, IntoPrimitive, TryFromPrimitive,
 )]
+#[cfg_attr(feature = "bevy", derive(bevy::prelude::Reflect))]
+#[cfg_attr(feature = "bevy", reflect(Clone, PartialEq, Debug))]
 #[serde(rename_all = "snake_case")]
 #[repr(u8)]
 pub enum LineEventKind {
@@ -47,6 +51,8 @@ impl LineEventKind {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "bevy", derive(bevy::prelude::Reflect))]
+#[cfg_attr(feature = "bevy", reflect(Clone, PartialEq, Debug))]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum LineEventValue {
     Transition {
@@ -154,6 +160,8 @@ impl LineEventValue {
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(bevy::prelude::Component))]
 #[cfg_attr(feature = "bevy", require(EventId))]
+#[cfg_attr(feature = "bevy", derive(bevy::prelude::Reflect))]
+#[cfg_attr(feature = "bevy", reflect(Component, Clone, PartialEq, Debug))]
 pub struct LineEvent {
     pub kind: LineEventKind,
     pub start_beat: Beat,

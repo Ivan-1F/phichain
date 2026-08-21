@@ -34,6 +34,8 @@ macro_rules! beat {
 /// The [`Beat`] is represented with a whole part and a ratio part,
 /// powered by [num_rational](https://docs.rs/num-rational/latest/num_rational)
 #[derive(Clone, Copy)]
+#[cfg_attr(feature = "bevy", derive(bevy::prelude::Reflect))]
+#[cfg_attr(feature = "bevy", reflect(opaque, Clone, PartialEq, Debug))]
 pub struct Beat(i32, Rational32);
 
 impl Serialize for Beat {

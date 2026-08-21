@@ -1,11 +1,15 @@
 use crate::beat::Beat;
 use crate::id::{HasId, NoteId};
+#[cfg(feature = "bevy")]
+use bevy::ecs::reflect::ReflectComponent;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::fmt;
 use std::fmt::Formatter;
 
 #[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "bevy", derive(bevy::prelude::Reflect))]
+#[cfg_attr(feature = "bevy", reflect(Clone, PartialEq, Debug))]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum NoteKind {
     Tap,
@@ -57,6 +61,8 @@ impl NoteKind {
     feature = "bevy",
     require(bevy::prelude::Sprite, bevy::prelude::Pickable, NoteId)
 )]
+#[cfg_attr(feature = "bevy", derive(bevy::prelude::Reflect))]
+#[cfg_attr(feature = "bevy", reflect(Component, Clone, PartialEq, Debug))]
 pub struct Note {
     #[serde(flatten)]
     pub kind: NoteKind,

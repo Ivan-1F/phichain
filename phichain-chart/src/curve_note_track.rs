@@ -1,17 +1,25 @@
 use crate::beat;
 use crate::easing::Easing;
-use crate::id::{CurveNoteTrackId, NoteId};
+use crate::id::{CurveNoteTrackId, HasId, NoteId};
 use crate::note::{Note, NoteKind};
+#[cfg(feature = "bevy")]
+use bevy::ecs::reflect::ReflectComponent;
 use num::iter;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(bevy::prelude::Component))]
+#[cfg_attr(feature = "bevy", derive(bevy::prelude::Reflect))]
+#[cfg_attr(feature = "bevy", reflect(Component, Clone, PartialEq, Debug))]
 pub struct CurveNoteTrackOptions {
     #[serde(flatten)]
     pub kind: NoteKind,
     pub density: u32,
     pub curve: Easing,
+}
+
+impl HasId for CurveNoteTrackOptions {
+    type Id = CurveNoteTrackId;
 }
 
 impl Default for CurveNoteTrackOptions {
