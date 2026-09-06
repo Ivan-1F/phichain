@@ -16,6 +16,7 @@ mod graphics;
 mod hit_sound;
 mod home;
 mod hotkey;
+mod id_index;
 mod identifier;
 mod ime;
 mod l10n;
@@ -153,6 +154,7 @@ fn main() {
         .add_plugins(GraphicsPlugin)
         .add_plugins(ImeCompatPlugin)
         .add_plugins(GamePlugin)
+        .add_plugins(id_index::IdIndexPlugin)
         .add_plugins(ActionPlugin)
         .add_plugins(AutoSavePlugin)
         .add_plugins(ScreenshotPlugin)
