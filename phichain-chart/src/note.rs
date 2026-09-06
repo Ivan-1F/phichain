@@ -57,6 +57,7 @@ impl NoteKind {
 
 #[derive(Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(bevy::prelude::Component))]
+#[cfg_attr(feature = "bevy", component(immutable))]
 #[cfg_attr(
     feature = "bevy",
     require(bevy::prelude::Sprite, bevy::prelude::Pickable, NoteId)

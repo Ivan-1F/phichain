@@ -371,7 +371,7 @@ fn ui_system(world: &mut World) {
             ui.label(format!("Selected Events: {selected_events}"));
 
             world.resource_scope(|_world: &mut World, history: Mut<EditorHistory>| {
-                if !history.0.is_saved() {
+                if !history.is_saved() {
                     ui.label("*");
                 }
             });

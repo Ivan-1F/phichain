@@ -1,3 +1,9 @@
+history:
+  create_notes: "新增 %{count} 個音符"
+  edit_notes: "修改 %{count} 個音符"
+  delete_notes: "刪除 %{count} 個音符"
+  unsupported_delete: "所選內容包含無法刪除的物件，未執行刪除。"
+
 menu_bar:
   file:
     title: 檔案

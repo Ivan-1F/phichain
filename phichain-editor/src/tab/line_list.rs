@@ -76,7 +76,10 @@ impl<'w, 's> LineList<'w, 's> {
         let mut create_line = false;
 
         ui.with_layout(Layout::top_down_justified(egui::Align::Center), |ui| {
-            if ui.button(t!("tab.line_list.create_line")).clicked() {
+            if ui
+                .add_enabled(false, egui::Button::new(t!("tab.line_list.create_line")))
+                .clicked()
+            {
                 create_line = true;
             }
         });
@@ -199,6 +202,7 @@ impl<'w, 's> LineList<'w, 's> {
                         .on_hover_cursor(egui::CursorIcon::PointingHand);
 
                     response.context_menu(|ui| {
+                        ui.disable();
                         ui.add_enabled_ui(!selected, |ui| {
                             if ui
                                 .button(t!("tab.line_list.hierarchy.as_child_of_current_line"))

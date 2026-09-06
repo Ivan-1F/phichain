@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
-use undo::At;
+use uuid::Uuid;
 
 mod backup;
 
@@ -44,7 +44,7 @@ impl LastEditTime {
 #[derive(Resource, Default)]
 pub struct AutoSaveState {
     pub last_save_time: Option<f32>,
-    pub last_auto_saved_head: Option<At>,
+    pub last_auto_saved_head: Option<Uuid>,
     pub is_saving: bool,
 }
 
@@ -78,12 +78,12 @@ fn auto_save_system(
 
     debug!("Triggering autosave...");
 
-    if state.is_saving || history.0.is_saved() {
+    if state.is_saving || history.is_saved() {
         debug!("Skipping auto-save: is saving or already saved");
         return;
     }
 
-    let current_head = history.0.head();
+    let current_head = history.head();
     let has_new_edits = match &state.last_auto_saved_head {
         Some(last_head) => current_head != *last_head,
         None => true, // first auto-save
@@ -142,7 +142,7 @@ fn track_edit_time_system(
     mut last_edit: ResMut<LastEditTime>,
     history: Res<EditorHistory>,
 ) {
-    if history.is_changed() && !history.0.is_saved() {
+    if history.is_changed() && !history.is_saved() {
         last_edit.update(time.elapsed_secs());
     }
 }

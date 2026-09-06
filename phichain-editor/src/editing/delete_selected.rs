@@ -1,15 +1,13 @@
 use crate::action::ActionRegistrationExt;
-use crate::editing::command::curve_note_track::RemoveCurveNoteTrack;
-use crate::editing::command::event::RemoveEvent;
-use crate::editing::command::note::RemoveNote;
-use crate::editing::command::{CommandSequence, EditorCommand};
-use crate::editing::DoCommand;
+use crate::editing::history::Edits;
+use crate::editing::pending::Pending;
 use crate::hotkey::Hotkey;
+use crate::notification::{ToastsExt, ToastsStorage};
 use crate::selection::Selected;
 use bevy::prelude::*;
-use phichain_chart::event::LineEvent;
 use phichain_chart::note::Note;
-use phichain_game::curve_note_track::{CurveNoteTrackTo, CurveNoteTracksFrom, CurveNoteTracksTo};
+use phichain_game::curve_note_track::{CurveNoteTracksFrom, CurveNoteTracksTo};
+use phichain_game::Derived;
 
 pub struct DeleteSelectedPlugin;
 
@@ -23,55 +21,52 @@ impl Plugin for DeleteSelectedPlugin {
     }
 }
 
-fn delete_selected_system(
-    mut set: ParamSet<(
-        Query<Entity, (With<Selected>, With<Note>)>,
-        Query<Entity, (With<Selected>, With<LineEvent>)>,
-        Query<Entity, (With<Selected>, With<CurveNoteTrackTo>)>,
-        Query<(Option<&CurveNoteTracksFrom>, Option<&CurveNoteTracksTo>)>,
-    )>,
-    mut events: MessageWriter<DoCommand>,
+pub(super) fn delete_selected_system(
+    selected: Query<
+        (
+            Entity,
+            Option<&Note>,
+            Has<Derived>,
+            Has<Pending>,
+            Option<&CurveNoteTracksFrom>,
+            Option<&CurveNoteTracksTo>,
+        ),
+        With<Selected>,
+    >,
+    children: Query<&Children>,
+    derived_entities: Query<(), With<Derived>>,
+    mut edits: Edits,
+    mut toasts: ResMut<ToastsStorage>,
 ) -> Result {
-    let mut sequence = CommandSequence(vec![]);
-
-    let notes: Vec<Entity> = set.p0().iter().collect();
-    let events_: Vec<Entity> = set.p1().iter().collect();
-
-    // tracks referencing a deleted note go first: their links must be
-    // snapshotted before the note's tombstone strips them
-    let mut tracks: Vec<Entity> = set.p2().iter().collect();
-    for note in &notes {
-        if let Ok((froms, tos)) = set.p3().get(*note) {
-            if let Some(froms) = froms {
-                tracks.extend(froms.iter());
-            }
-            if let Some(tos) = tos {
-                tracks.extend(tos.iter());
-            }
+    let mut targets = Vec::new();
+    for (entity, note, derived, pending, from, to) in &selected {
+        // Validate the entire selection before queueing anything. In particular,
+        // deleting an endpoint must not silently lose its unrecorded curve track.
+        if note.is_none()
+            || derived
+            || pending
+            || from.is_some_and(|tracks| tracks.iter().next().is_some())
+            || to.is_some_and(|tracks| tracks.iter().next().is_some())
+            // Render descendants (e.g. a Hold's head and tail) are regenerated
+            // after undo. Authored descendants must not be deleted implicitly.
+            || children
+                .iter_descendants::<Children>(entity)
+                .any(|child| !derived_entities.contains(child))
+        {
+            toasts.info(t!("history.unsupported_delete"));
+            return Ok(());
         }
+        targets.push(entity);
     }
-    tracks.sort();
-    tracks.dedup();
-    for track in tracks {
-        sequence.0.push(EditorCommand::RemoveCurveNoteTrack(
-            RemoveCurveNoteTrack::new(track),
-        ));
+    if !targets.is_empty() {
+        edits.once(
+            t!("history.delete_notes", count = targets.len()),
+            move |commands| {
+                for entity in targets {
+                    commands.entity(entity).try_despawn();
+                }
+            },
+        );
     }
-
-    for note in notes {
-        sequence
-            .0
-            .push(EditorCommand::RemoveNote(RemoveNote::new(note)));
-    }
-    for event in events_ {
-        sequence
-            .0
-            .push(EditorCommand::RemoveEvent(RemoveEvent::new(event)));
-    }
-
-    if !sequence.0.is_empty() {
-        events.write(DoCommand(EditorCommand::CommandSequence(sequence)));
-    }
-
     Ok(())
 }

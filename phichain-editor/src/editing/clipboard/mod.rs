@@ -32,22 +32,11 @@ pub struct ClipboardPlugin;
 
 impl Plugin for ClipboardPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<EditorClipboard>()
-            .add_action(
-                "phichain.copy",
-                copy_system,
-                Some(Hotkey::new(KeyCode::KeyC, vec![Modifier::Control])),
-            )
-            .add_action(
-                "phichain.cut",
-                cut_system,
-                Some(Hotkey::new(KeyCode::KeyX, vec![Modifier::Control])),
-            )
-            .add_action(
-                "phichain.paste",
-                paste_system,
-                Some(Hotkey::new(KeyCode::KeyV, vec![Modifier::Control])),
-            );
+        app.init_resource::<EditorClipboard>().add_action(
+            "phichain.copy",
+            copy_system,
+            Some(Hotkey::new(KeyCode::KeyC, vec![Modifier::Control])),
+        );
     }
 }
 

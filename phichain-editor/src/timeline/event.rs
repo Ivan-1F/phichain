@@ -1,12 +1,8 @@
 use crate::constants::INDICATOR_POSITION;
-use crate::editing::command::event::EditEvent;
-use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
-use crate::editing::DoCommand;
 use crate::selection::{Select, Selected, SelectedLine};
 use crate::timeline::{Timeline, TimelineContext};
 use crate::timing::SeekTo;
-use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::{Entity, MessageWriter, Query, Res, World};
 use egui::{Align2, Color32, FontId, Rect, Sense, Stroke, StrokeKind, Ui};
@@ -127,23 +123,15 @@ impl Timeline for EventTimeline {
 
         let mut state: SystemState<(
             TimelineContext,
-            Query<(&mut LineEvent, Entity, Option<&Selected>, Option<&Pending>)>,
+            Query<(&LineEvent, Entity, Option<&Selected>, Option<&Pending>)>,
             Query<&Events>,
             Res<BpmList>,
             MessageWriter<Select>,
-            MessageWriter<DoCommand>,
             MessageWriter<SeekTo>,
         )> = SystemState::new(world);
 
-        let (
-            ctx,
-            mut event_query,
-            events_query,
-            bpm_list,
-            mut select_events,
-            mut event_writer,
-            mut seek_to,
-        ) = state.get_mut(world);
+        let (ctx, event_query, events_query, bpm_list, mut select_events, mut seek_to) =
+            state.get_mut(world);
 
         let track_width = viewport.width() / 5.0;
         let event_width = track_width / 2.0;
@@ -186,7 +174,7 @@ impl Timeline for EventTimeline {
         let viewport_margin = 100.0;
 
         for entity in events.iter() {
-            let (mut event, entity, selected, pending) = event_query.get_mut(*entity).unwrap();
+            let (event, entity, selected, pending) = event_query.get(*entity).unwrap();
 
             let rect = get_event_rect(&event);
 
@@ -254,14 +242,6 @@ impl Timeline for EventTimeline {
                     Stroke::new(2.0_f32, color.gamma_multiply(1.2)),
                     StrokeKind::Middle,
                 );
-
-                if let Some(drag) =
-                    BeatRangeDragZone::new(rect, "event-drag", &ctx, &mut *event).show(ui)
-                {
-                    event_writer.write(DoCommand(EditorCommand::EditEvent(EditEvent::new(
-                        entity, drag.from, drag.to,
-                    ))));
-                }
 
                 ui.painter().text(
                     if end_outside_bottom.contains(&Some(entity)) {

@@ -6,10 +6,10 @@ use phichain_chart::line::Line;
 
 pub fn line_inspector(
     In(mut ui): In<Ui>,
-    mut line_query: Query<&mut Line>,
+    line_query: Query<&Line>,
     selected_line: Res<SelectedLine>,
 ) -> Result {
-    let mut line = line_query.get_mut(selected_line.0)?;
+    let mut line = line_query.get(selected_line.0)?.clone();
 
     ui.label(t!("tab.inspector.line.title"));
     ui.separator();

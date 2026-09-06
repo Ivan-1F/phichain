@@ -14,12 +14,13 @@ use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 
 pub fn single_event_inspector(
     In(mut ui): In<Ui>,
-    event: Single<(&mut LineEvent, Entity), With<Selected>>,
+    event: Single<(&LineEvent, Entity), With<Selected>>,
     ctx: TimelineContext,
     mut event_writer: MessageWriter<DoCommand>,
 ) -> Result {
-    let (mut event, entity) = event.into_inner();
-    let event = event.as_mut();
+    let (event, entity) = event.into_inner();
+    let mut draft = *event;
+    let event = &mut draft;
 
     let kind = match event.kind {
         LineEventKind::X => t!("game.event.kind.x"),

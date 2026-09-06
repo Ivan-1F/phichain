@@ -91,14 +91,23 @@ pub fn inspector_ui_system(In(mut ui): In<Ui>, world: &mut World) {
         };
 
         if condition_met {
-            let _ = world.run_system_with(
-                inspector.system,
-                ui.new_child(
-                    UiBuilder::new()
-                        .max_rect(ui.max_rect())
-                        .layout(*ui.layout()),
-                ),
+            let mut child = ui.new_child(
+                UiBuilder::new()
+                    .max_rect(ui.max_rect())
+                    .layout(*ui.layout()),
             );
+            let mut selected = world.query_filtered::<Entity, With<Selected>>();
+            let selected: Vec<_> = selected.iter(world).collect();
+            let editable = selected.len() == 1
+                && world.get::<Note>(selected[0]).is_some()
+                && world.get::<phichain_game::Derived>(selected[0]).is_none()
+                && world
+                    .get::<crate::editing::pending::Pending>(selected[0])
+                    .is_none();
+            if !editable {
+                child.disable();
+            }
+            let _ = world.run_system_with(inspector.system, child);
 
             break;
         }

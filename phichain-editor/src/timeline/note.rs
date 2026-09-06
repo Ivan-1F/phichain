@@ -1,12 +1,7 @@
-use crate::editing::command::curve_note_track::CreateCurveNoteTrack;
-use crate::editing::command::note::EditNote;
-use crate::editing::command::EditorCommand;
 use crate::editing::pending::Pending;
-use crate::editing::DoCommand;
 use crate::selection::{Select, Selected, SelectedLine};
 use crate::tab::timeline::TimelineFilter;
 use crate::timeline::{Timeline, TimelineContext};
-use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
 use crate::ui::widgets::easing::EasingGraph;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
@@ -14,12 +9,9 @@ use bevy_egui::EguiUserTextures;
 use egui::{Color32, Pos2, Rect, Sense, Ui};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::CANVAS_WIDTH;
-use phichain_chart::curve_note_track::CurveNoteTrackOptions;
 use phichain_chart::line::Line;
 use phichain_chart::note::{Note, NoteKind};
-use phichain_game::curve_note_track::{
-    CurveNote, CurveNoteTrack, CurveNoteTrackFrom, CurveNoteTrackTo,
-};
+use phichain_game::curve_note_track::{CurveNote, CurveNoteTrackReadOnly};
 use phichain_game::highlight::Highlighted;
 use std::cmp::Ordering;
 
@@ -51,7 +43,7 @@ impl Timeline for NoteTimeline {
         let mut state: SystemState<(
             TimelineContext,
             Query<(
-                &mut Note,
+                &Note,
                 &ChildOf,
                 Entity,
                 Option<&Highlighted>,
@@ -60,40 +52,31 @@ impl Timeline for NoteTimeline {
                 Option<&Pending>,
             )>,
             Query<&Selected>,
-            Query<(CurveNoteTrack, &ChildOf, Entity)>,
-            Query<(&CurveNoteTrackFrom, &CurveNoteTrackOptions, Entity), Without<CurveNoteTrackTo>>,
+            Query<(CurveNoteTrackReadOnly, &ChildOf, Entity)>,
             Res<BpmList>,
             Res<phichain_assets::EguiImageAssets>,
             Res<phichain_assets::RespackDimensions>,
             Res<Assets<Image>>,
             Res<EguiUserTextures>,
             MessageWriter<Select>,
-            MessageWriter<DoCommand>,
         )> = SystemState::new(world);
 
         let (
             ctx,
-            mut note_query,
+            note_query,
             selected_query,
-            mut track_query,
-            pending_track_query,
+            track_query,
             bpm_list,
             assets,
             dimensions,
             images,
             textures,
             mut select_events,
-            mut event_writer,
         ) = state.get_mut(world);
-
-        let pending_cnt = pending_track_query
-            .iter()
-            .find(|(_, _, entity)| selected_query.get(*entity).is_ok())
-            .map(|(from, options, entity)| (from.0, options.clone(), entity));
 
         // TODO: optimize
         // make sure hold is rendered below other note
-        let mut notes: Vec<_> = note_query.iter_mut().collect();
+        let mut notes: Vec<_> = note_query.iter().collect();
         notes.sort_by(|a, b| {
             let a_is_hold = a.0.kind.is_hold();
             let b_is_hold = b.0.kind.is_hold();
@@ -169,10 +152,7 @@ impl Timeline for NoteTimeline {
             }};
         }
 
-        let mut start_track_note = None::<Entity>;
-        let mut despawn_cnt = None::<Entity>;
-
-        for (mut note, child_of, entity, highlighted, selected, curve_note, pending) in notes {
+        for (note, child_of, entity, highlighted, selected, curve_note, pending) in notes {
             if !ctx.settings.note_side_filter.filter(*note) {
                 continue;
             }
@@ -180,7 +160,7 @@ impl Timeline for NoteTimeline {
                 continue;
             }
 
-            let (response, rect) = render_note!(
+            let (response, _) = render_note!(
                 note: &note,
                 highlighted: highlighted.is_some(),
                 fake: pending.is_some(),
@@ -198,46 +178,8 @@ impl Timeline for NoteTimeline {
                 }
             );
 
-            if curve_note.is_none() {
-                response.context_menu(|ui| {
-                    if ui
-                        .button(t!("tab.inspector.curve_note_track.start")) // TODO: this should not be under `tab.inspector`
-                        .clicked()
-                    {
-                        start_track_note.replace(entity);
-                        ui.close();
-                    }
-                });
-            }
-
-            if let NoteKind::Hold { .. } = note.kind {
-                if let Some(drag) =
-                    BeatRangeDragZone::new(rect, "hold-drag", &ctx, &mut *note).show(ui)
-                {
-                    event_writer.write(DoCommand(EditorCommand::EditNote(EditNote::new(
-                        entity, drag.from, drag.to,
-                    ))));
-                }
-            }
-
             if response.clicked() {
-                let mut handled = false;
-
-                if curve_note.is_none() {
-                    if let Some((from, options, pending_entity)) = &pending_cnt {
-                        let (from, options, pending_entity) =
-                            (*from, options.clone(), *pending_entity);
-                        despawn_cnt.replace(pending_entity);
-                        event_writer.write(DoCommand(EditorCommand::CreateCurveNoteTrack(
-                            CreateCurveNoteTrack::new(child_of.parent(), from, entity, options),
-                        )));
-                        handled = true;
-                    }
-                }
-
-                if !handled {
-                    select_events.write(Select(vec![entity]));
-                }
+                select_events.write(Select(vec![entity]));
             }
         }
 
@@ -259,7 +201,7 @@ impl Timeline for NoteTimeline {
             );
         }
 
-        for (mut track, child_of, entity) in &mut track_query {
+        for (track, child_of, entity) in &track_query {
             if child_of.parent() != line_entity {
                 continue;
             }
@@ -279,39 +221,20 @@ impl Timeline for NoteTimeline {
                 let to_x = viewport.min.x + (to.x / CANVAS_WIDTH + 0.5) * viewport.width();
                 let to_y = ctx.time_to_y(bpm_list.time_at(to.beat));
                 let rect = Rect::from_two_pos(Pos2::new(from_x, from_y), Pos2::new(to_x, to_y));
-                // FIXME: this will not be written to history
-                ui.put(
-                    rect,
-                    EasingGraph::new(&mut track.options.curve)
-                        .inverse(true)
-                        .mirror(from.x > to.x)
-                        .color(match selected_query.get(entity) {
-                            Ok(_) => Color32::LIGHT_GREEN,
-                            Err(_) => Color32::WHITE,
-                        }),
-                );
+                let mut curve = track.options.curve.clone();
+                ui.add_enabled_ui(false, |ui| {
+                    ui.put(
+                        rect,
+                        EasingGraph::new(&mut curve)
+                            .inverse(true)
+                            .mirror(from.x > to.x)
+                            .color(match selected_query.get(entity) {
+                                Ok(_) => Color32::LIGHT_GREEN,
+                                Err(_) => Color32::WHITE,
+                            }),
+                    );
+                });
             }
-        }
-
-        if let Some(entity) = start_track_note {
-            let parent = note_query.get(entity).unwrap().1.parent();
-
-            let stale: Vec<Entity> = pending_track_query
-                .iter()
-                .map(|(_, _, entity)| entity)
-                .collect();
-            for stale in stale {
-                world.entity_mut(stale).despawn();
-            }
-
-            world.entity_mut(parent).with_children(|p| {
-                p.spawn((CurveNoteTrackFrom(entity), Selected));
-            });
-            // TODO: unselect everything
-        }
-
-        if let Some(despawn_cnt) = despawn_cnt {
-            world.entity_mut(despawn_cnt).despawn();
         }
     }
 

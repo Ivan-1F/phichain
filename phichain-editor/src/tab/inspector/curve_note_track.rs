@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use egui::{Color32, DragValue, RichText, Ui};
 use phichain_chart::curve_note_track::CurveNoteTrackOptions;
 use phichain_chart::note::NoteKind;
-use phichain_game::curve_note_track::{CurveNoteTrack, CurveNoteTrackTo};
+use phichain_game::curve_note_track::{CurveNoteTrackReadOnly, CurveNoteTrackTo};
 
 fn options_grid(ui: &mut Ui, options: &mut CurveNoteTrackOptions) {
     egui::Grid::new("inspector_grid")
@@ -30,15 +30,14 @@ fn options_grid(ui: &mut Ui, options: &mut CurveNoteTrackOptions) {
         });
 }
 
-// TODO: write to history to support undo/redo
 pub fn curve_note_track_inspector(
     In(mut ui): In<Ui>,
-    mut track: Single<CurveNoteTrack, With<Selected>>,
+    track: Single<CurveNoteTrackReadOnly, With<Selected>>,
 ) -> Result {
     ui.label(t!("tab.inspector.curve_note_track.title.selected"));
     ui.separator();
 
-    options_grid(&mut ui, &mut track.options);
+    options_grid(&mut ui, &mut track.options.clone());
 
     ui.separator();
 
@@ -47,7 +46,7 @@ pub fn curve_note_track_inspector(
 
 pub fn pending_curve_note_track_inspector(
     In(mut ui): In<Ui>,
-    mut options: Single<&mut CurveNoteTrackOptions, (With<Selected>, Without<CurveNoteTrackTo>)>,
+    options: Single<&CurveNoteTrackOptions, (With<Selected>, Without<CurveNoteTrackTo>)>,
 ) -> Result {
     ui.label(t!("tab.inspector.curve_note_track.title.pending"));
     ui.separator();
@@ -59,7 +58,7 @@ pub fn pending_curve_note_track_inspector(
     );
     ui.separator();
 
-    options_grid(&mut ui, &mut options);
+    options_grid(&mut ui, &mut (**options).clone());
 
     Ok(())
 }

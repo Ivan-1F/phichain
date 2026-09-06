@@ -91,7 +91,7 @@ fn save_project_system(
     match result {
         Ok(_) => {
             toasts.success(t!("project.save.succeed"));
-            history.0.set_saved();
+            history.set_saved();
         }
         Err(error) => {
             toasts.error(t!("project.save.failed", error = error));
@@ -191,6 +191,7 @@ fn project_loading_result_observer(
             });
 
             commands.insert_resource(data.project.clone());
+            commands.queue(crate::editing::history::open_document);
         }
         Err(error) => {
             let message = match error {
@@ -241,6 +242,8 @@ fn unload_project_system(
     let mut events = params.get_mut(world);
     if !events.is_empty() {
         events.clear();
+
+        crate::editing::history::close_document(world);
 
         // remove the project first to stop all systems
         world.remove_resource::<Project>();
@@ -308,9 +311,6 @@ fn unload_project_system(
         for entity in to_remove {
             world.entity_mut(entity).despawn();
         }
-
-        // clear editor history
-        world.resource_mut::<EditorHistory>().0.clear();
 
         // reset editor timing
         use crate::timing::{ChartTime, Timing};

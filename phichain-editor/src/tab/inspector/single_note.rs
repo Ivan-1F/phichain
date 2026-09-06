@@ -1,9 +1,6 @@
-use crate::editing::command::note::EditNote;
-use crate::editing::command::EditorCommand;
-use crate::editing::DoCommand;
+use crate::editing::history::Edits;
 use crate::selection::Selected;
 use crate::timeline::TimelineContext;
-use crate::ui::latch;
 use crate::ui::sides::SidesExt;
 use crate::ui::widgets::beat_value::BeatValue;
 use bevy::prelude::*;
@@ -12,82 +9,58 @@ use phichain_chart::note::{Note, NoteKind};
 
 pub fn single_note_inspector(
     In(mut ui): In<Ui>,
-    note: Single<(&mut Note, Entity), With<Selected>>,
+    note: Single<(&Note, Entity), With<Selected>>,
     ctx: TimelineContext,
-    mut event_writer: MessageWriter<DoCommand>,
+    mut edits: Edits,
 ) -> Result {
-    let (mut note, entity) = note.into_inner();
-
+    let (note, entity) = note.into_inner();
+    let mut display = *note;
     ui.label(t!("tab.inspector.single_note.title", kind = note.kind));
     ui.separator();
 
-    let result = latch::latch(&mut ui, "note", *note, |ui| {
-        let mut finished = false;
-
+    ui.sides(
+        |ui| ui.label(t!("tab.inspector.single_note.beat")),
+        |ui| {
+            ui.add_enabled(
+                false,
+                BeatValue::new(&mut display.beat)
+                    .reversed(true)
+                    .density(ctx.settings.density),
+            )
+        },
+    );
+    ui.sides(
+        |ui| ui.label(t!("tab.inspector.single_note.x")),
+        |ui| ui.add_enabled(false, DragValue::new(&mut display.x).speed(1)),
+    );
+    if let NoteKind::Hold { mut hold_beat } = display.kind {
         ui.sides(
-            |ui| ui.label(t!("tab.inspector.single_note.beat")),
+            |ui| ui.label(t!("tab.inspector.single_note.hold_beat")),
             |ui| {
-                let response = ui.add(
-                    BeatValue::new(&mut note.beat)
+                ui.add_enabled(
+                    false,
+                    BeatValue::new(&mut hold_beat)
                         .reversed(true)
                         .density(ctx.settings.density),
-                );
-                finished |= response.drag_stopped() || response.lost_focus();
+                )
             },
         );
-
-        ui.sides(
-            |ui| ui.label(t!("tab.inspector.single_note.x")),
-            |ui| {
-                let response = ui.add(DragValue::new(&mut note.x).speed(1));
-                finished |= response.drag_stopped() || response.lost_focus();
-            },
-        );
-
-        if let NoteKind::Hold { hold_beat } = note.kind {
-            ui.sides(
-                |ui| ui.label(t!("tab.inspector.single_note.hold_beat")),
-                |ui| {
-                    let mut bind = hold_beat;
-                    let response = ui.add(
-                        BeatValue::new(&mut bind)
-                            .reversed(true)
-                            .density(ctx.settings.density),
-                    );
-                    finished |= response.drag_stopped() || response.lost_focus();
-                    if bind != hold_beat {
-                        note.kind = NoteKind::Hold { hold_beat: bind };
-                    }
-                },
-            );
-        }
-
-        ui.sides(
-            |ui| ui.label(t!("tab.inspector.single_note.above")),
-            |ui| {
-                let response = ui.checkbox(&mut note.above, "");
-                finished |= response.changed();
-            },
-        );
-
-        ui.sides(
-            |ui| ui.label(t!("tab.inspector.single_note.speed")),
-            |ui| {
-                let response = ui.add(DragValue::new(&mut note.speed).speed(0.1));
-                finished |= response.drag_stopped() || response.lost_focus();
-            },
-        );
-
-        finished
-    });
-
-    if let Some(from) = result {
-        if from != *note {
-            event_writer.write(DoCommand(EditorCommand::EditNote(EditNote::new(
-                entity, from, *note,
-            ))));
-        }
     }
-
+    ui.sides(
+        |ui| ui.label(t!("tab.inspector.single_note.above")),
+        |ui| {
+            let mut above = note.above;
+            if ui.checkbox(&mut above, "").changed() {
+                let next = Note { above, ..*note };
+                edits.once(t!("history.edit_notes", count = 1), move |commands| {
+                    commands.entity(entity).insert(next);
+                });
+            }
+        },
+    );
+    ui.sides(
+        |ui| ui.label(t!("tab.inspector.single_note.speed")),
+        |ui| ui.add_enabled(false, DragValue::new(&mut display.speed).speed(0.1)),
+    );
     Ok(())
 }

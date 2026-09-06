@@ -1,3 +1,9 @@
+history:
+  create_notes: "%{count} 個のノーツを追加"
+  edit_notes: "%{count} 個のノーツを変更"
+  delete_notes: "%{count} 個のノーツを削除"
+  unsupported_delete: "選択内容に削除できないオブジェクトが含まれています。削除は行われませんでした。"
+
 menu_bar:
   file:
     title: ファイル

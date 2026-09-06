@@ -113,15 +113,11 @@ impl Edit for EditNote {
     type Output = ();
 
     fn edit(&mut self, target: &mut Self::Target) -> Self::Output {
-        if let Some(mut note) = target.entity_mut(self.entity).get_mut::<Note>() {
-            *note = self.to;
-        }
+        target.entity_mut(self.entity).insert(self.to);
     }
 
     fn undo(&mut self, target: &mut Self::Target) -> Self::Output {
-        if let Some(mut note) = target.entity_mut(self.entity).get_mut::<Note>() {
-            *note = self.from;
-        }
+        target.entity_mut(self.entity).insert(self.from);
     }
 }
 
