@@ -1,7 +1,6 @@
 use crate::action::RunAction;
-use crate::editing::command::line::{CreateLine, MoveLineAsChild, RemoveLine};
-use crate::editing::command::{CommandSequence, EditorCommand};
-use crate::editing::DoCommand;
+use crate::editing::history::Edits;
+use crate::editing::line::spawn_line;
 use crate::selection::SelectedLine;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
@@ -9,6 +8,7 @@ use egui::{Color32, Layout, RichText, Sense, Stroke, StrokeKind, Ui};
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::line::{Line, LineOpacity, LinePosition, LineRotation, LineSpeed};
 use phichain_chart::note::Note;
+use phichain_chart::serialization::SerializedLine;
 use phichain_game::event::Events;
 use phichain_game::line::LineOrder;
 
@@ -55,7 +55,8 @@ pub struct LineListParams<'w, 's> {
     >,
     child_of_query: Query<'w, 's, &'static ChildOf>,
     selected_line: ResMut<'w, SelectedLine>,
-    do_command_event: MessageWriter<'w, DoCommand>,
+    edits: Edits<'w, 's>,
+    order_query: Query<'w, 's, &'static LineOrder>,
 }
 
 impl<'w, 's> LineList<'w, 's> {
@@ -76,10 +77,7 @@ impl<'w, 's> LineList<'w, 's> {
         let mut create_line = false;
 
         ui.with_layout(Layout::top_down_justified(egui::Align::Center), |ui| {
-            if ui
-                .add_enabled(false, egui::Button::new(t!("tab.line_list.create_line")))
-                .clicked()
-            {
+            if ui.button(t!("tab.line_list.create_line")).clicked() {
                 create_line = true;
             }
         });
@@ -183,11 +181,11 @@ impl<'w, 's> LineList<'w, 's> {
         {
             let selected = self.params.selected_line.0 == entity;
 
-            let under_selected_node = self
+            let contains_selected = self
                 .params
                 .child_of_query
-                .iter_ancestors(entity)
-                .any(|ancestor| ancestor == self.params.selected_line.0);
+                .iter_ancestors(self.params.selected_line.0)
+                .any(|ancestor| ancestor == entity);
 
             ui.horizontal(|ui| {
                 ui.horizontal(|ui| {
@@ -202,18 +200,17 @@ impl<'w, 's> LineList<'w, 's> {
                         .on_hover_cursor(egui::CursorIcon::PointingHand);
 
                     response.context_menu(|ui| {
-                        ui.disable();
-                        ui.add_enabled_ui(!selected, |ui| {
+                        ui.add_enabled_ui(!selected && !contains_selected, |ui| {
                             if ui
                                 .button(t!("tab.line_list.hierarchy.as_child_of_current_line"))
                                 .clicked()
                             {
-                                self.params.do_command_event.write(DoCommand(
-                                    EditorCommand::MoveLineAsChild(MoveLineAsChild::new(
-                                        entity,
-                                        Some(self.params.selected_line.0),
-                                    )),
-                                ));
+                                let parent = self.params.selected_line.0;
+                                self.params
+                                    .edits
+                                    .once(t!("history.move_line"), move |commands| {
+                                        commands.entity(entity).insert(ChildOf(parent));
+                                    });
                                 ui.close();
                             }
                         });
@@ -223,11 +220,11 @@ impl<'w, 's> LineList<'w, 's> {
                                 .button(t!("tab.line_list.hierarchy.move_to_root"))
                                 .clicked()
                             {
-                                self.params.do_command_event.write(DoCommand(
-                                    EditorCommand::MoveLineAsChild(MoveLineAsChild::new(
-                                        entity, None,
-                                    )),
-                                ));
+                                self.params
+                                    .edits
+                                    .once(t!("history.move_line"), move |commands| {
+                                        commands.entity(entity).remove::<ChildOf>();
+                                    });
                                 ui.close();
                             }
                         }
@@ -244,11 +241,16 @@ impl<'w, 's> LineList<'w, 's> {
                             ui.close();
                         }
                         ui.separator();
-                        ui.add_enabled_ui(!under_selected_node && !selected, |ui| {
+                        let can_delete =
+                            parent.is_some() || self.params.root_line_query.iter().len() > 1;
+                        ui.add_enabled_ui(can_delete, |ui| {
                             if ui.button(t!("tab.line_list.remove")).clicked() {
-                                self.params.do_command_event.write(DoCommand(
-                                    EditorCommand::RemoveLine(RemoveLine::new(entity)),
-                                ));
+                                self.params.edits.once(
+                                    t!("history.delete_line"),
+                                    move |commands| {
+                                        commands.entity(entity).despawn();
+                                    },
+                                );
                                 ui.close();
                             }
                         });
@@ -391,7 +393,7 @@ impl<'w, 's> LineList<'w, 's> {
 
             ui.separator();
 
-            let children_lines = children
+            let mut children_lines = children
                 .map(|children| {
                     children
                         .iter()
@@ -399,46 +401,26 @@ impl<'w, 's> LineList<'w, 's> {
                         .collect::<Vec<_>>()
                 })
                 .unwrap_or_default();
+            children_lines.sort_by_key(|child| self.params.order_query.get(*child).ok().copied());
             for child in children_lines {
                 self.entity_ui(ui, child, level + 1);
             }
         }
 
         if let Some(current_parent) = add_parent {
-            let mut new_line_entity = self.params.commands.spawn_empty();
-
-            if let Some(current_parent) = current_parent {
-                new_line_entity.insert(ChildOf(current_parent));
-            }
-
-            let new_line_entity = new_line_entity.id();
-
             self.params
-                .commands
-                .write_message(DoCommand(EditorCommand::CommandSequence(CommandSequence(
-                    vec![
-                        EditorCommand::CreateLine(CreateLine::with_target(new_line_entity)),
-                        EditorCommand::MoveLineAsChild(MoveLineAsChild::new(
-                            entity,
-                            Some(new_line_entity),
-                        )),
-                    ],
-                ))));
+                .edits
+                .once(t!("history.create_parent_line"), move |commands| {
+                    let parent = spawn_line(SerializedLine::default(), commands, current_parent);
+                    commands.entity(entity).insert(ChildOf(parent));
+                });
         }
-
         if add_child {
-            let new_line_entity = self.params.commands.spawn_empty().id();
             self.params
-                .commands
-                .write_message(DoCommand(EditorCommand::CommandSequence(CommandSequence(
-                    vec![
-                        EditorCommand::CreateLine(CreateLine::with_target(new_line_entity)),
-                        EditorCommand::MoveLineAsChild(MoveLineAsChild::new(
-                            new_line_entity,
-                            Some(entity),
-                        )),
-                    ],
-                ))));
+                .edits
+                .once(t!("history.create_line"), move |commands| {
+                    spawn_line(SerializedLine::default(), commands, Some(entity));
+                });
         }
     }
 }

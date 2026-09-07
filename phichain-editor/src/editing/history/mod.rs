@@ -15,8 +15,15 @@ use self::changes::{ChangeSet, Recorder, Registry};
 use bevy::ecs::system::SystemParam;
 use bevy::ecs::world::CommandQueue;
 use bevy::prelude::*;
-use phichain_chart::id::NoteId;
+use phichain_chart::bpm_list::BpmPoint;
+use phichain_chart::curve_note_track::CurveNoteTrackOptions;
+use phichain_chart::event::LineEvent;
+use phichain_chart::id::{BpmPointId, CurveNoteTrackId, EventId, LineId, NoteId};
+use phichain_chart::line::Line;
 use phichain_chart::note::Note;
+use phichain_game::curve_note_track::{CurveNoteTrackFrom, CurveNoteTrackTo};
+use phichain_game::event::EventOf;
+use phichain_game::line::LineOrder;
 use std::fmt;
 use undo::{Edit, Record};
 use uuid::Uuid;
@@ -35,6 +42,18 @@ impl Plugin for HistoryPlugin {
         changes::register_component::<NoteId>(app, true);
         changes::register_component::<Note>(app, false);
         changes::register_component::<ChildOf>(app, false);
+        changes::register_component::<EventId>(app, true);
+        changes::register_component::<LineEvent>(app, false);
+        changes::register_component::<EventOf>(app, false);
+        changes::register_component::<LineId>(app, true);
+        changes::register_component::<Line>(app, false);
+        changes::register_component::<LineOrder>(app, false);
+        changes::register_component::<CurveNoteTrackId>(app, true);
+        changes::register_component::<CurveNoteTrackOptions>(app, false);
+        changes::register_component::<CurveNoteTrackFrom>(app, false);
+        changes::register_component::<CurveNoteTrackTo>(app, false);
+        changes::register_component::<BpmPointId>(app, true);
+        changes::register_component::<BpmPoint>(app, false);
     }
 }
 
@@ -183,6 +202,7 @@ fn apply_edit(world: &mut World, description: String, edit: impl FnOnce(&mut Com
 
 /// Called only after the initial document has finished loading.
 pub fn open_document(world: &mut World) {
+    world.flush();
     *world.resource_mut::<EditorHistory>() = EditorHistory::default();
     *world.resource_mut::<Recorder>() = Recorder::default();
     world.resource_mut::<Recorder>().enabled = true;

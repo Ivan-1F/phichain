@@ -6,14 +6,18 @@ use crate::ui::widgets::beat_value::BeatValue;
 use bevy::prelude::*;
 use egui::{DragValue, Ui};
 use phichain_chart::note::{Note, NoteKind};
+use phichain_game::{Derived, Pending};
 
 pub fn single_note_inspector(
     In(mut ui): In<Ui>,
-    note: Single<(&Note, Entity), With<Selected>>,
+    note: Single<(&Note, Entity, Has<Derived>, Has<Pending>), With<Selected>>,
     ctx: TimelineContext,
     mut edits: Edits,
 ) -> Result {
-    let (note, entity) = note.into_inner();
+    let (note, entity, derived, pending) = note.into_inner();
+    if derived || pending {
+        ui.disable();
+    }
     let mut display = *note;
     ui.label(t!("tab.inspector.single_note.title", kind = note.kind));
     ui.separator();

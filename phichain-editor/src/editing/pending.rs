@@ -1,4 +1,1 @@
-use bevy::prelude::*;
-
-#[derive(Component, Debug, Copy, Clone)]
-pub struct Pending;
+pub use phichain_game::Pending;

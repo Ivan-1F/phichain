@@ -333,7 +333,7 @@ fn clean_dangle_timelines_observer(
     remove: On<Remove, Line>,
     mut timeline_settings: ResMut<TimelineSettings>,
 ) {
-    if let Some(index) =
+    while let Some(index) =
         timeline_settings
             .container
             .timelines

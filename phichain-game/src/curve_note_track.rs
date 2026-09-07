@@ -1,5 +1,5 @@
-use crate::GameSet;
 use crate::Derived;
+use crate::GameSet;
 use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
 use phichain_chart::curve_note_track::{generate_notes, CurveNoteTrackOptions};
@@ -7,16 +7,18 @@ use phichain_chart::id::CurveNoteTrackId;
 use phichain_chart::note::Note;
 
 /// The origin note of a curve note track
-#[derive(Debug, Clone, Copy, Component)]
+#[derive(Debug, Clone, Copy, PartialEq, Component, Reflect)]
+#[reflect(Component, Clone, PartialEq, Debug)]
 #[relationship(relationship_target = CurveNoteTracksFrom)]
 #[require(CurveNoteTrackOptions)]
-pub struct CurveNoteTrackFrom(pub Entity);
+pub struct CurveNoteTrackFrom(#[entities] pub Entity);
 
 /// The destination note of a curve note track
-#[derive(Debug, Clone, Copy, Component)]
+#[derive(Debug, Clone, Copy, PartialEq, Component, Reflect)]
+#[reflect(Component, Clone, PartialEq, Debug)]
 #[relationship(relationship_target = CurveNoteTracksTo)]
 #[require(CurveNoteTrackId)]
-pub struct CurveNoteTrackTo(pub Entity);
+pub struct CurveNoteTrackTo(#[entities] pub Entity);
 
 #[derive(Debug, Component)]
 #[relationship_target(relationship = CurveNoteTrackFrom, linked_spawn)]
@@ -28,9 +30,8 @@ pub struct CurveNoteTracksTo(Vec<Entity>);
 
 /// A complete curve note track
 #[derive(QueryData)]
-#[query_data(mutable)]
 pub struct CurveNoteTrack {
-    pub options: &'static mut CurveNoteTrackOptions,
+    pub options: &'static CurveNoteTrackOptions,
     pub from: &'static CurveNoteTrackFrom,
     pub to: &'static CurveNoteTrackTo,
     pub id: &'static CurveNoteTrackId,

@@ -115,6 +115,8 @@ define_ids! {
     LineId => Line,
     /// Id of a [`crate::curve_note_track::CurveNoteTrack`]
     CurveNoteTrackId => CurveNoteTrack,
+    /// Id of a [`crate::bpm_list::BpmPoint`]
+    BpmPointId => BpmPoint,
 }
 
 #[cfg(test)]

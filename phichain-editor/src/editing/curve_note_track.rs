@@ -57,3 +57,35 @@ fn cancel_pending_curve_note_track_system(
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::editing::pending::Pending;
+    use crate::selection::{handle_select_event, Select};
+
+    #[test]
+    fn a_curve_preview_remains_selected_until_cancelled() {
+        let mut app = App::new();
+        app.init_resource::<ButtonInput<KeyCode>>()
+            .init_resource::<ToastsStorage>()
+            .add_message::<Select>()
+            .add_plugins(CurveNoteTrackPlugin)
+            .add_systems(Update, handle_select_event.before(GameSet));
+        let origin = app.world_mut().spawn_empty().id();
+        let preview = app
+            .world_mut()
+            .spawn((CurveNoteTrackFrom(origin), Pending))
+            .id();
+        app.world_mut().write_message(Select(vec![preview]));
+        app.update();
+        assert!(app.world().get::<Selected>(preview).is_some());
+        app.update();
+        assert!(app.world().get_entity(preview).is_ok());
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::Escape);
+        app.update();
+        assert!(app.world().get_entity(preview).is_err());
+    }
+}

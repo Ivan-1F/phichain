@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(bevy::prelude::Component))]
+#[cfg_attr(feature = "bevy", component(immutable))]
 #[cfg_attr(feature = "bevy", derive(bevy::prelude::Reflect))]
 #[cfg_attr(feature = "bevy", reflect(Component, Clone, PartialEq, Debug))]
 pub struct CurveNoteTrackOptions {

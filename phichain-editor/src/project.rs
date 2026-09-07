@@ -191,6 +191,7 @@ fn project_loading_result_observer(
             });
 
             commands.insert_resource(data.project.clone());
+            commands.queue(crate::editing::bpm::load);
             commands.queue(crate::editing::history::open_document);
         }
         Err(error) => {
@@ -287,6 +288,7 @@ fn unload_project_system(
         use phichain_chart::{bpm_list::BpmList, offset::Offset};
         world.remove_resource::<Offset>();
         world.remove_resource::<BpmList>();
+        crate::editing::bpm::unload(world);
         world.remove_resource::<SelectedLine>();
 
         // unload lines, notes and events

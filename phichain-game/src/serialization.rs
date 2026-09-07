@@ -1,6 +1,7 @@
-use crate::curve_note_track::{CurveNote, CurveNoteTrackReadOnly};
+use crate::curve_note_track::CurveNoteTrack;
 use crate::event::Events;
 use crate::line::LineOrder;
+use crate::{Derived, Pending};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::{ChildOf, Children, Entity, Query, Res, With, Without};
 use phichain_chart::bpm_list::BpmList;
@@ -71,7 +72,9 @@ impl SerializeLine for SerializedLine {
         let mut child_lines = vec![];
 
         if let Ok(children) = children {
-            for child in children.iter() {
+            let mut children: Vec<_> = children.iter().copied().collect();
+            children.sort_by_key(|child| params.order.get(*child).ok().copied());
+            for child in &children {
                 if params.line.get(*child).is_ok() {
                     child_lines.push(SerializedLine::serialize_line(params, *child));
                 }
@@ -95,10 +98,11 @@ pub struct SerializeLineParam<'w, 's> {
     events: Query<'w, 's, &'static Events>,
     line: Query<'w, 's, (&'static Line, &'static LineId)>,
 
-    line_event: Query<'w, 's, (&'static LineEvent, &'static EventId)>,
-    note: Query<'w, 's, (&'static Note, &'static NoteId), Without<CurveNote>>,
+    line_event: Query<'w, 's, (&'static LineEvent, &'static EventId), Without<Pending>>,
+    note: Query<'w, 's, (&'static Note, &'static NoteId), (Without<Derived>, Without<Pending>)>,
 
-    curve_note_track: Query<'w, 's, CurveNoteTrackReadOnly>,
+    curve_note_track: Query<'w, 's, CurveNoteTrack>,
+    order: Query<'w, 's, &'static LineOrder>,
 }
 
 #[derive(SystemParam)]

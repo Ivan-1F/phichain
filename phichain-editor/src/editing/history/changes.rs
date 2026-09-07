@@ -218,6 +218,17 @@ impl PendingChanges {
     pub fn settle(mut self, world: &World) -> ChangeSet {
         let registry = world.resource::<Registry>();
         let index = world.resource::<IdIndex>();
+        // An identity may be inserted after some of the object's components.
+        // Capture the complete initial state once the object has been assembled.
+        for id in &self.born {
+            if let Ok(entity) = world.get_entity(self.touched[id]) {
+                for (ty, descriptor) in &registry.types {
+                    if descriptor.component.reflect(entity).is_some() {
+                        self.before.entry((*id, *ty)).or_insert(None);
+                    }
+                }
+            }
+        }
         let mut objects: HashMap<Uuid, ObjectChange> = HashMap::new();
         for ((id, ty), mut before) in self.before {
             let existed_before = !self.born.contains(&id);
@@ -441,7 +452,9 @@ impl ChangeSet {
             } else {
                 object.existed_before
             }) {
-                world.entity_mut(entities[&object.id]).despawn();
+                if let Ok(entity) = world.get_entity_mut(entities[&object.id]) {
+                    entity.despawn();
+                }
             }
         }
         world.flush();

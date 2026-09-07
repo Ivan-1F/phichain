@@ -41,6 +41,10 @@ pub struct GameViewport(pub Rect);
 #[derive(Debug, Default, Component)]
 pub struct Derived;
 
+/// An object being placed, before the user confirms its creation.
+#[derive(Component, Debug, Copy, Clone)]
+pub struct Pending;
+
 /// If the chart is paused
 #[derive(Debug, Clone, Resource)]
 pub struct Paused(pub bool);

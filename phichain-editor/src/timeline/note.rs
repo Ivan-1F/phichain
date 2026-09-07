@@ -1,3 +1,4 @@
+use crate::editing::history::Edits;
 use crate::editing::pending::Pending;
 use crate::selection::{Select, Selected, SelectedLine};
 use crate::tab::timeline::TimelineFilter;
@@ -9,9 +10,12 @@ use bevy_egui::EguiUserTextures;
 use egui::{Color32, Pos2, Rect, Sense, Ui};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::CANVAS_WIDTH;
+use phichain_chart::curve_note_track::CurveNoteTrackOptions;
 use phichain_chart::line::Line;
 use phichain_chart::note::{Note, NoteKind};
-use phichain_game::curve_note_track::{CurveNote, CurveNoteTrackReadOnly};
+use phichain_game::curve_note_track::{
+    CurveNote, CurveNoteTrack, CurveNoteTrackFrom, CurveNoteTrackTo,
+};
 use phichain_game::highlight::Highlighted;
 use std::cmp::Ordering;
 
@@ -52,13 +56,19 @@ impl Timeline for NoteTimeline {
                 Option<&Pending>,
             )>,
             Query<&Selected>,
-            Query<(CurveNoteTrackReadOnly, &ChildOf, Entity)>,
+            Query<(CurveNoteTrack, &ChildOf, Entity)>,
             Res<BpmList>,
             Res<phichain_assets::EguiImageAssets>,
             Res<phichain_assets::RespackDimensions>,
             Res<Assets<Image>>,
             Res<EguiUserTextures>,
             MessageWriter<Select>,
+            Commands,
+            Edits,
+            Query<
+                (Entity, &CurveNoteTrackFrom, &CurveNoteTrackOptions),
+                (With<Pending>, Without<CurveNoteTrackTo>),
+            >,
         )> = SystemState::new(world);
 
         let (
@@ -72,6 +82,9 @@ impl Timeline for NoteTimeline {
             images,
             textures,
             mut select_events,
+            mut commands,
+            mut edits,
+            pending_tracks,
         ) = state.get_mut(world);
 
         // TODO: optimize
@@ -178,7 +191,44 @@ impl Timeline for NoteTimeline {
                 }
             );
 
+            if curve_note.is_none() && pending.is_none() {
+                response.context_menu(|ui| {
+                    if ui
+                        .button(t!("tab.inspector.curve_note_track.start"))
+                        .clicked()
+                    {
+                        for (preview, _, _) in &pending_tracks {
+                            commands.entity(preview).despawn();
+                        }
+                        let preview = commands
+                            .spawn((CurveNoteTrackFrom(entity), ChildOf(line_entity), Pending))
+                            .id();
+                        select_events.write(Select(vec![preview]));
+                        ui.close();
+                    }
+                });
+            }
             if response.clicked() {
+                if curve_note.is_none() && pending.is_none() {
+                    if let Ok((preview, from, options)) = pending_tracks.single() {
+                        let from = from.0;
+                        let options = options.clone();
+                        let line = note_query.get(from).unwrap().1.parent();
+                        if line != line_entity {
+                            continue;
+                        }
+                        commands.entity(preview).despawn();
+                        edits.once(t!("history.create_track"), move |commands| {
+                            commands.spawn((
+                                options,
+                                CurveNoteTrackFrom(from),
+                                CurveNoteTrackTo(entity),
+                                ChildOf(line),
+                            ));
+                        });
+                        continue;
+                    }
+                }
                 select_events.write(Select(vec![entity]));
             }
         }
@@ -236,6 +286,7 @@ impl Timeline for NoteTimeline {
                 });
             }
         }
+        state.apply(world);
     }
 
     fn on_drag_selection(&self, world: &mut World, viewport: Rect, selection: Rect) -> Vec<Entity> {

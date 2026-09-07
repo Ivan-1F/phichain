@@ -159,6 +159,7 @@ impl LineEventValue {
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(bevy::prelude::Component))]
+#[cfg_attr(feature = "bevy", component(immutable))]
 #[cfg_attr(feature = "bevy", require(EventId))]
 #[cfg_attr(feature = "bevy", derive(bevy::prelude::Reflect))]
 #[cfg_attr(feature = "bevy", reflect(Component, Clone, PartialEq, Debug))]
@@ -206,12 +207,13 @@ impl PartialOrd for EventEvaluationResult {
 ///
 /// [`Inherited`] compares as less than [`Affecting`]
 ///
-/// Two [`Affecting`] compare based on their contained values, two [`Inherited`] compare based on their `from` values
+/// Two [`Affecting`] compare based on their contained values. Two [`Inherited`]
+/// compare by `from`, then by value when they end at the same beat.
 ///
 /// In other words:
 ///
 /// - [`Unaffected`] < [`Inherited`] < [`Affecting`]
-/// - Two [`Affecting`] compare based on their contained values, two [`Inherited`] compare based on their `from` values
+/// - Two [`Affecting`] compare by value; two [`Inherited`] compare by `from`, then value
 ///
 /// ```rust
 /// # use phichain_chart::beat;
@@ -221,6 +223,9 @@ impl PartialOrd for EventEvaluationResult {
 /// assert!(R::Inherited { from: beat!(0), value: 200.0 } < R::Affecting(10.0));
 /// assert!(R::Inherited { from: beat!(0), value: 200.0 } < R::Inherited { from: beat!(2), value: 10.0 });
 /// assert!(R::Affecting(5.0) < R::Affecting(10.0));
+/// let a = R::Inherited { from: beat!(2), value: 5.0 };
+/// let b = R::Inherited { from: beat!(2), value: 10.0 };
+/// assert_eq!((&a).max(&b), (&b).max(&a));
 /// ```
 ///
 /// [`Unaffected`]: EventEvaluationResult::Unaffected
@@ -236,9 +241,9 @@ impl Ord for EventEvaluationResult {
             (_, EventEvaluationResult::Unaffected) => Ordering::Greater,
 
             (
-                EventEvaluationResult::Inherited { from: a, .. },
-                EventEvaluationResult::Inherited { from: b, .. },
-            ) => a.cmp(b),
+                EventEvaluationResult::Inherited { from: a, value: av },
+                EventEvaluationResult::Inherited { from: b, value: bv },
+            ) => a.cmp(b).then_with(|| av.total_cmp(bv)),
             (EventEvaluationResult::Affecting(a), EventEvaluationResult::Affecting(b)) => {
                 a.total_cmp(b)
             }

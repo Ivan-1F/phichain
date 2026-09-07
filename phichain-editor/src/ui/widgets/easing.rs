@@ -150,6 +150,7 @@ pub struct EasingValue<'a> {
 
     /// Easings in this vec will not be shown in the combobox
     disabled_easings: Vec<Easing>,
+    numeric_editable: bool,
 }
 
 impl<'a> EasingValue<'a> {
@@ -158,7 +159,13 @@ impl<'a> EasingValue<'a> {
             value,
 
             disabled_easings: vec![],
+            numeric_editable: true,
         }
+    }
+
+    pub fn numeric_editable(mut self, editable: bool) -> Self {
+        self.numeric_editable = editable;
+        self
     }
 
     #[allow(dead_code)]
@@ -319,15 +326,20 @@ impl Widget for EasingValue<'_> {
                 .response;
 
             if let Easing::Steps { count: steps } = self.value {
-                let dv_response = ui.add(egui::DragValue::new(steps).speed(1).range(1..=64));
+                let dv_response = ui.add_enabled(
+                    self.numeric_editable,
+                    egui::DragValue::new(steps).speed(1).range(1..=64),
+                );
                 if dv_response.changed() {
                     response.flags |= Flags::DRAG_STOPPED;
                 }
             }
 
             if let Easing::Elastic { omega } = self.value {
-                let dv_response =
-                    ui.add(egui::DragValue::new(omega).speed(0.1).range(10.0..=128.0));
+                let dv_response = ui.add_enabled(
+                    self.numeric_editable,
+                    egui::DragValue::new(omega).speed(0.1).range(10.0..=128.0),
+                );
                 if dv_response.changed() {
                     response.flags |= Flags::DRAG_STOPPED;
                 }

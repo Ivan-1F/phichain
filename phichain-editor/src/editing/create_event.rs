@@ -2,10 +2,8 @@ use bevy::prelude::*;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::easing::Easing;
 
-use crate::editing::command::event::CreateEvent;
-use crate::editing::command::EditorCommand;
+use crate::editing::history::Edits;
 use crate::editing::pending::Pending;
-use crate::editing::DoCommand;
 use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
 use crate::identifier::{Identifier, IntoIdentifier};
 use crate::schedule::EditorSet;
@@ -58,9 +56,9 @@ fn create_event_system(
     window_query: Query<&Window>,
     bpm_list: Res<BpmList>,
 
-    mut event: MessageWriter<DoCommand>,
+    mut edits: Edits,
 
-    mut pending_event_query: Query<(&mut LineEvent, Entity), With<Pending>>,
+    pending_event_query: Query<(&LineEvent, Entity), With<Pending>>,
 
     event_query: Query<(&LineEvent, &EventOf), Without<Pending>>,
 ) -> Result {
@@ -87,17 +85,21 @@ fn create_event_system(
                 let beat = bpm_list.beat_at(time).value();
                 let beat = ctx.settings.attach(beat);
 
-                let track =
-                    ((cursor_position.x - viewport.min.x) / (viewport.width() / 5.0)).ceil() as u8;
+                let track = (((cursor_position.x - viewport.min.x) / (viewport.width() / 5.0))
+                    .floor() as u8
+                    + 1)
+                .min(5);
 
                 (track, beat)
             };
 
-            if let Ok((mut pending_event, _)) = pending_event_query.single_mut() {
+            if let Ok((pending_event, entity)) = pending_event_query.single() {
+                let mut pending_event = *pending_event;
                 let (track, beat) = calc_event_attrs();
                 pending_event.end_beat =
                     beat.max(pending_event.start_beat + ctx.settings.minimum_beat());
                 pending_event.kind = LineEventKind::try_from(track).expect("Unknown event track");
+                commands.entity(entity).insert(pending_event);
             }
 
             if hotkey.just_pressed(CreateEventHotkeys::PlaceTransitionEvent)
@@ -106,13 +108,17 @@ fn create_event_system(
                 if let Ok((pending_event, entity)) = pending_event_query.single() {
                     // inherit event's start & end value from neighbor events
                     let mut new_event = *pending_event;
+                    let (track, beat) = calc_event_attrs();
+                    new_event.kind = LineEventKind::try_from(track).expect("Unknown event track");
+                    new_event.end_beat =
+                        beat.max(new_event.start_beat + ctx.settings.minimum_beat());
                     let mut events = event_query.iter().collect::<Vec<_>>();
                     events.sort_by_key(|x| x.0.start_beat);
                     if let Some(last_event) = events
                         .iter()
-                        .filter(|(e, _)| e.kind == pending_event.kind)
+                        .filter(|(e, _)| e.kind == new_event.kind)
                         .filter(|(_, e)| e.target() == line_entity)
-                        .take_while(|(e, _)| e.end_beat <= pending_event.start_beat)
+                        .take_while(|(e, _)| e.end_beat <= new_event.start_beat)
                         .map(|x| x.0)
                         .last()
                     {
@@ -128,9 +134,9 @@ fn create_event_system(
                     events.reverse();
                     if let Some(next_event) = events
                         .iter()
-                        .filter(|(e, _)| e.kind == pending_event.kind)
+                        .filter(|(e, _)| e.kind == new_event.kind)
                         .filter(|(_, e)| e.target() == line_entity)
-                        .take_while(|(e, _)| e.start_beat >= pending_event.end_beat)
+                        .take_while(|(e, _)| e.start_beat >= new_event.end_beat)
                         .map(|x| x.0)
                         .last()
                     {
@@ -144,10 +150,9 @@ fn create_event_system(
                         }
                     }
                     commands.entity(entity).despawn();
-                    event.write(DoCommand(EditorCommand::CreateEvent(CreateEvent::new(
-                        line_entity,
-                        new_event,
-                    ))));
+                    edits.once(t!("history.create_events", count = 1), move |commands| {
+                        commands.spawn((new_event, EventOf(line_entity)));
+                    });
                 } else {
                     let (track, beat) = calc_event_attrs();
                     let kind = LineEventKind::try_from(track).expect("Unknown event track");

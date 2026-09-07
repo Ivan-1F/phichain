@@ -35,7 +35,7 @@ pub fn load_project(project: &Project, commands: &mut Commands) -> anyhow::Resul
     Ok(())
 }
 
-fn load_line(line: SerializedLine, commands: &mut Commands, parent: Option<Entity>) -> Entity {
+pub fn load_line(line: SerializedLine, commands: &mut Commands, parent: Option<Entity>) -> Entity {
     let id = commands
         .spawn((line.line, line.id))
         .with_children(|parent| {

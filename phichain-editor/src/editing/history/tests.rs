@@ -11,7 +11,11 @@ use phichain_game::Derived;
 
 fn fixture() -> (App, Entity) {
     let mut app = App::new();
-    app.add_plugins((IdIndexPlugin, HistoryPlugin));
+    app.add_plugins((
+        IdIndexPlugin,
+        phichain_game::line::LinePlugin,
+        HistoryPlugin,
+    ));
     let line = app.world_mut().spawn(Line::default()).id();
     app.world_mut().insert_resource(SelectedLine(line));
     open_document(app.world_mut());
@@ -399,7 +403,7 @@ fn batch_delete_with_hold_rebuilds_render_children_on_undo() {
 }
 
 #[test]
-fn mixed_and_curve_endpoint_selections_are_rejected_as_a_whole() {
+fn invalid_selections_are_rejected_and_curve_endpoints_delete_their_tracks() {
     use phichain_game::curve_note_track::{CurveNoteTrackFrom, CurveNoteTrackTo};
     let (mut app, line) = fixture();
     app.init_resource::<crate::notification::ToastsStorage>();
@@ -439,10 +443,28 @@ fn mixed_and_curve_endpoint_selections_are_rejected_as_a_whole() {
         .run_system_once::<_, Result, _>(crate::editing::delete_selected::delete_selected_system)
         .unwrap()
         .unwrap();
-    for entity in [from, to, unrelated, track] {
-        assert!(app.world().get_entity(entity).is_ok());
+    assert!(app.world().get_entity(to).is_ok());
+    for entity in [from, unrelated, track] {
+        assert!(app.world().get_entity(entity).is_err());
     }
-    assert_eq!(app.world().resource::<EditorHistory>().record.len(), 0);
+    assert_eq!(app.world().resource::<EditorHistory>().record.len(), 1);
+    undo(&mut app);
+    assert_eq!(
+        app.world_mut().query::<&Note>().iter(app.world()).count(),
+        3
+    );
+    let (from, to_link) = app
+        .world_mut()
+        .query::<(&CurveNoteTrackFrom, &CurveNoteTrackTo)>()
+        .single(app.world())
+        .unwrap();
+    assert!(app.world().get::<Note>(from.0).is_some());
+    assert_eq!(to_link.0, to);
+    redo(&mut app);
+    assert_eq!(
+        app.world_mut().query::<&Note>().iter(app.world()).count(),
+        1
+    );
 }
 
 #[test]
@@ -516,4 +538,225 @@ fn replacing_an_objects_identity_is_a_programming_error() {
             commands.entity(entity).insert(NoteId::default());
         },
     );
+}
+
+#[test]
+fn deleting_a_line_restores_its_events_tracks_and_sibling_order() {
+    use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
+    use phichain_chart::id::{EventId, LineId};
+    use phichain_chart::serialization::SerializedLine;
+    use phichain_game::curve_note_track::{CurveNoteTrackFrom, CurveNoteTrackTo};
+    use phichain_game::event::EventOf;
+    use phichain_game::serialization::{SerializeLine, SerializeLineParam};
+    let (mut app, root) = fixture();
+    let root_id = *app.world().get::<LineId>(root).unwrap();
+    apply_edit(app.world_mut(), "add children".into(), |commands| {
+        for name in ["first", "second", "third"] {
+            let child = commands
+                .spawn((Line { name: name.into() }, ChildOf(root)))
+                .id();
+            let from = commands.spawn((note(), ChildOf(child))).id();
+            let to = commands
+                .spawn((
+                    Note {
+                        beat: Beat::from(4.0),
+                        ..note()
+                    },
+                    ChildOf(child),
+                ))
+                .id();
+            commands.spawn((
+                CurveNoteTrackFrom(from),
+                CurveNoteTrackTo(to),
+                ChildOf(child),
+            ));
+            commands.spawn((
+                LineEvent {
+                    kind: LineEventKind::X,
+                    start_beat: Beat::ZERO,
+                    end_beat: Beat::ONE,
+                    value: LineEventValue::constant(12.0),
+                },
+                EventOf(child),
+            ));
+        }
+    });
+    let snapshot = |app: &mut App| {
+        let root = app
+            .world()
+            .resource::<crate::id_index::IdIndex>()
+            .entity(root_id.uuid())
+            .unwrap();
+        let mut line = app
+            .world_mut()
+            .run_system_once(move |params: SerializeLineParam| {
+                SerializedLine::serialize_line(&params, root)
+            })
+            .unwrap();
+        // Object collection order is incidental; child line order is document data.
+        fn sort_objects(line: &mut SerializedLine) {
+            line.notes.sort_by_key(|note| note.id);
+            line.events.sort_by_key(|event| event.id);
+            line.curve_note_tracks.sort_by_key(|track| track.id);
+            for child in &mut line.children {
+                sort_objects(child);
+            }
+        }
+        sort_objects(&mut line);
+        serde_json::to_value(line).unwrap()
+    };
+    let before = snapshot(&mut app);
+    let second = app
+        .world_mut()
+        .query::<(Entity, &Line)>()
+        .iter(app.world())
+        .find(|(_, line)| line.name == "second")
+        .unwrap()
+        .0;
+    apply_edit(app.world_mut(), "delete child".into(), |commands| {
+        commands.entity(second).despawn();
+    });
+    assert_eq!(
+        app.world_mut()
+            .query::<&EventId>()
+            .iter(app.world())
+            .count(),
+        2
+    );
+    for _ in 0..3 {
+        undo(&mut app);
+        assert_eq!(snapshot(&mut app), before);
+        redo(&mut app);
+        assert_eq!(
+            app.world_mut()
+                .query::<&EventId>()
+                .iter(app.world())
+                .count(),
+            2
+        );
+    }
+}
+
+#[test]
+fn undoing_an_inserted_parent_keeps_the_original_line_and_events() {
+    use phichain_chart::serialization::SerializedLine;
+    use phichain_game::event::Events;
+    let (mut app, root) = fixture();
+    let root_id = *app.world().get::<phichain_chart::id::LineId>(root).unwrap();
+    apply_edit(app.world_mut(), "insert parent".into(), |commands| {
+        let parent = crate::editing::line::spawn_line(SerializedLine::default(), commands, None);
+        commands.entity(root).insert(ChildOf(parent));
+    });
+    let parent = app.world().get::<ChildOf>(root).unwrap().parent();
+    let parent_id = *app
+        .world()
+        .get::<phichain_chart::id::LineId>(parent)
+        .unwrap();
+    let event_count = app.world().get::<Events>(parent).unwrap().len();
+    undo(&mut app);
+    assert!(app.world().get::<Line>(root).is_some());
+    assert!(app.world().get::<ChildOf>(root).is_none());
+    assert!(app.world().get_entity(parent).is_err());
+    redo(&mut app);
+    let index = app.world().resource::<crate::id_index::IdIndex>();
+    let restored = index.entity(parent_id.uuid()).unwrap();
+    assert_eq!(index.entity(root_id.uuid()), Some(root));
+    assert_eq!(app.world().get::<ChildOf>(root).unwrap().parent(), restored);
+    assert_eq!(
+        app.world().get::<Events>(restored).unwrap().len(),
+        event_count
+    );
+}
+
+#[test]
+fn bpm_history_restores_source_points_and_recomputes_timing() {
+    use phichain_chart::bpm_list::{BpmList, BpmPoint};
+    use phichain_chart::id::BpmPointId;
+    let mut app = App::new();
+    app.add_plugins((
+        IdIndexPlugin,
+        HistoryPlugin,
+        crate::editing::bpm::BpmEditingPlugin,
+    ));
+    app.insert_resource(BpmList::default());
+    crate::editing::bpm::load(app.world_mut());
+    open_document(app.world_mut());
+    let id = BpmPointId::new();
+    apply_edit(app.world_mut(), "add bpm".into(), |commands| {
+        commands.spawn((id, BpmPoint::new(Beat::from(4.0), 240.0)));
+    });
+    assert_eq!(
+        app.world().resource::<BpmList>().time_at(Beat::from(8.0)),
+        3.0
+    );
+    undo(&mut app);
+    assert_eq!(
+        app.world().resource::<BpmList>().time_at(Beat::from(8.0)),
+        4.0
+    );
+    redo(&mut app);
+    let entity = app
+        .world()
+        .resource::<crate::id_index::IdIndex>()
+        .entity(id.uuid())
+        .unwrap();
+    apply_edit(app.world_mut(), "delete bpm".into(), |commands| {
+        commands.entity(entity).despawn();
+    });
+    assert_eq!(
+        app.world().resource::<BpmList>().time_at(Beat::from(8.0)),
+        4.0
+    );
+    undo(&mut app);
+    let restored = app
+        .world()
+        .resource::<crate::id_index::IdIndex>()
+        .entity(id.uuid())
+        .unwrap();
+    assert_ne!(entity, restored);
+    assert_eq!(
+        app.world().resource::<BpmList>().time_at(Beat::from(8.0)),
+        3.0
+    );
+    assert_eq!(
+        serde_json::to_value(app.world().resource::<BpmList>()).unwrap(),
+        serde_json::json!([
+            {"beat": [0, 0, 1], "bpm": 120.0}, {"beat": [4, 0, 1], "bpm": 240.0}
+        ])
+    );
+    close_document(app.world_mut());
+    app.world_mut().remove_resource::<BpmList>();
+    crate::editing::bpm::unload(app.world_mut());
+    app.world_mut().flush();
+    assert!(!app.world().contains_resource::<BpmList>());
+}
+
+#[test]
+fn previews_and_generated_objects_are_excluded_from_saving() {
+    use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
+    use phichain_chart::serialization::SerializedLine;
+    use phichain_game::event::EventOf;
+    use phichain_game::serialization::{SerializeLine, SerializeLineParam};
+    let (mut app, line) = fixture();
+    app.world_mut().spawn((note(), Pending, ChildOf(line)));
+    app.world_mut().spawn((note(), Derived, ChildOf(line)));
+    app.world_mut().spawn((
+        LineEvent {
+            kind: LineEventKind::X,
+            start_beat: Beat::ZERO,
+            end_beat: Beat::ONE,
+            value: LineEventValue::constant(1.0),
+        },
+        Pending,
+        EventOf(line),
+    ));
+    let serialized = app
+        .world_mut()
+        .run_system_once(move |params: SerializeLineParam| {
+            SerializedLine::serialize_line(&params, line)
+        })
+        .unwrap();
+    assert!(serialized.notes.is_empty());
+    assert!(serialized.events.is_empty());
+    assert!(app.world().resource::<EditorHistory>().is_saved());
 }
