@@ -1,6 +1,7 @@
 use crate::editing::history::Edits;
 use crate::selection::Selected;
-use crate::ui::widgets::easing::EasingValue;
+use crate::ui::edit::EditResponse;
+use crate::ui::widgets::easing::{EasingParameter, EasingValue};
 use bevy::prelude::*;
 use egui::{Color32, DragValue, RichText, Ui};
 use phichain_chart::curve_note_track::CurveNoteTrackOptions;
@@ -14,23 +15,21 @@ fn options_grid(ui: &mut Ui, options: &mut CurveNoteTrackOptions) {
         .striped(true)
         .show(ui, |ui| {
             ui.label(t!("tab.inspector.curve_note_track.density"));
-            ui.add_enabled(
-                false,
-                DragValue::new(&mut options.density).range(1..=32).speed(1),
-            );
+            ui.add(DragValue::new(&mut options.density).range(1..=32).speed(1));
             ui.end_row();
 
             ui.label(t!("tab.inspector.curve_note_track.kind"));
-            ui.horizontal(|ui| {
-                ui.selectable_value(&mut options.kind, NoteKind::Tap, "Tap");
-                ui.selectable_value(&mut options.kind, NoteKind::Drag, "Drag");
-                ui.selectable_value(&mut options.kind, NoteKind::Flick, "Flick");
-            });
+            note_kind_ui(ui, &mut options.kind);
             ui.end_row();
 
             ui.label(t!("tab.inspector.curve_note_track.curve"));
-            ui.add(EasingValue::new(&mut options.curve).numeric_editable(false));
+            ui.add(EasingValue::new(&mut options.curve));
             ui.end_row();
+            if options.curve.is_steps() || options.curve.is_elastic() {
+                ui.label(t!("game.easing.parameter"));
+                ui.add(EasingParameter(&mut options.curve));
+                ui.end_row();
+            }
         });
 }
 
@@ -43,12 +42,40 @@ pub fn curve_note_track_inspector(
     ui.separator();
 
     let (entity, track) = track.into_inner();
-    let mut options = track.options.clone();
-    options_grid(&mut ui, &mut options);
-    if options != *track.options {
-        edits.once(t!("history.edit_tracks", count = 1), move |commands| {
-            commands.entity(entity).insert(options);
-        });
+    let mut editor = edits.component(entity, track.options, t!("history.edit_tracks", count = 1));
+    editor.field(
+        &mut ui,
+        "density",
+        t!("tab.inspector.curve_note_track.density"),
+        |ui, options| {
+            ui.add(DragValue::new(&mut options.density).range(1..=32).speed(1));
+        },
+    );
+    editor.field(
+        &mut ui,
+        "kind",
+        t!("tab.inspector.curve_note_track.kind"),
+        |ui, options| {
+            ui.custom(|ui| EditResponse::Once(note_kind_ui(ui, &mut options.kind)));
+        },
+    );
+    editor.field(
+        &mut ui,
+        "curve",
+        t!("tab.inspector.curve_note_track.curve"),
+        |ui, options| {
+            ui.add(EasingValue::new(&mut options.curve));
+        },
+    );
+    if editor.value().curve.is_steps() || editor.value().curve.is_elastic() {
+        editor.field(
+            &mut ui,
+            "parameter",
+            t!("game.easing.parameter"),
+            |ui, options| {
+                ui.add(EasingParameter(&mut options.curve));
+            },
+        );
     }
 
     ui.separator();
@@ -79,4 +106,13 @@ pub fn pending_curve_note_track_inspector(
     }
 
     Ok(())
+}
+
+fn note_kind_ui(ui: &mut Ui, kind: &mut NoteKind) -> egui::Response {
+    ui.horizontal(|ui| {
+        ui.selectable_value(kind, NoteKind::Tap, "Tap")
+            | ui.selectable_value(kind, NoteKind::Drag, "Drag")
+            | ui.selectable_value(kind, NoteKind::Flick, "Flick")
+    })
+    .inner
 }

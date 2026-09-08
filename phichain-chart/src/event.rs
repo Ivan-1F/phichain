@@ -122,6 +122,27 @@ impl LineEventValue {
         }
     }
 
+    pub fn start_mut(&mut self) -> &mut f32 {
+        match self {
+            Self::Transition { start, .. } => start,
+            Self::Constant { value } => value,
+        }
+    }
+
+    pub fn end_mut(&mut self) -> &mut f32 {
+        match self {
+            Self::Transition { end, .. } => end,
+            Self::Constant { value } => value,
+        }
+    }
+
+    pub fn easing_mut(&mut self) -> Option<&mut Easing> {
+        match self {
+            Self::Transition { easing, .. } => Some(easing),
+            Self::Constant { .. } => None,
+        }
+    }
+
     pub fn direction(&self) -> Direction {
         let start = self.start();
         let end = self.end();

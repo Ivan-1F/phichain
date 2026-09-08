@@ -201,6 +201,7 @@ fn project_loading_result_observer(
 
             commands.insert_resource(data.project.clone());
             commands.queue(crate::editing::bpm::load);
+            commands.queue(crate::editing::project_settings::load);
             commands.queue(crate::editing::history::open_document);
         }
         Err(error) => {
@@ -254,6 +255,7 @@ fn unload_project_system(
         events.clear();
 
         crate::editing::history::close_document(world);
+        crate::editing::project_settings::unload(world);
 
         // remove the project first to stop all systems
         world.remove_resource::<Project>();

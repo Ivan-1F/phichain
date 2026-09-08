@@ -1,4 +1,8 @@
 history:
+  edit_line: 判定線を編集
+  edit_bpm_point: BPM ポイントを編集
+  edit_offset: オフセットを編集
+  edit_meta: 譜面情報を編集
   mirror_notes: "%{count} 個のノーツを反転"
   edit_events: "%{count} 個のイベントを変更"
   delete_objects: "%{count} 個のオブジェクトを削除"
@@ -368,6 +372,8 @@ export:
     failed: 'RPE 譜面としてエクスポート中にエラーが発生しました: %{error}'
 
 game:
+  easing:
+    parameter: パラメータ
   aspect_ratio:
     free: フリー
   event:

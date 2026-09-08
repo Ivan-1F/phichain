@@ -21,9 +21,11 @@ use bevy::prelude::*;
 use phichain_chart::bpm_list::BpmPoint;
 use phichain_chart::curve_note_track::CurveNoteTrackOptions;
 use phichain_chart::event::LineEvent;
-use phichain_chart::id::{BpmPointId, CurveNoteTrackId, EventId, LineId, NoteId};
+use phichain_chart::id::{BpmPointId, CurveNoteTrackId, EventId, LineId, NoteId, ProjectId};
 use phichain_chart::line::Line;
 use phichain_chart::note::Note;
+use phichain_chart::offset::Offset;
+use phichain_chart::project::ProjectMeta;
 use phichain_game::curve_note_track::{CurveNoteTrackFrom, CurveNoteTrackTo};
 use phichain_game::event::EventOf;
 use phichain_game::line::LineOrder;
@@ -58,6 +60,9 @@ impl Plugin for HistoryPlugin {
         changes::register_component::<CurveNoteTrackTo>(app, false);
         changes::register_component::<BpmPointId>(app, true);
         changes::register_component::<BpmPoint>(app, false);
+        changes::register_component::<ProjectId>(app, true);
+        changes::register_component::<Offset>(app, false);
+        changes::register_component::<ProjectMeta>(app, false);
     }
 }
 

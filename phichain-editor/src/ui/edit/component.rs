@@ -39,6 +39,11 @@ impl<'w, 's> Edits<'w, 's> {
 }
 
 impl<T: Component + Clone + PartialEq> ComponentEditor<'_, '_, '_, T> {
+    /// The latest value, including fields already edited in this frame.
+    pub fn value(&self) -> &T {
+        &self.value
+    }
+
     /// Draw a labeled property using the inspector's left/right layout.
     ///
     /// `key` identifies the UI field, not a reflected component path. `draw`
@@ -63,7 +68,7 @@ impl<T: Component + Clone + PartialEq> ComponentEditor<'_, '_, '_, T> {
     ///
     /// Uses the same writeback and interaction policy as `field`. Identity is
     /// scoped to the parent UI, entity and key, independently of rendering order.
-    /// The callback must add exactly one adapted widget. All data changes in
+    /// The callback must report one operation through `add` or `custom`. Changes in
     /// that callback belong to this region; only a changed value is written back.
     /// Disabled regions discard even changes caused by a widget's value clamping.
     pub fn edit<R>(
@@ -117,7 +122,7 @@ impl<T: Component + Clone + PartialEq> ComponentEditor<'_, '_, '_, T> {
 }
 
 /// An edit region's widget host. It deliberately does not dereference to egui::Ui:
-/// document widgets must report their interaction policy through EditWidget.
+/// document widgets report their interaction policy through EditWidget or `custom`.
 pub struct FieldUi<'a> {
     ui: &'a mut Ui,
     response: Option<EditResponse>,
@@ -132,6 +137,21 @@ impl FieldUi<'_> {
             "use a separate region for each widget"
         );
         let response = widget.edit_ui(self.ui);
+        self.record(response)
+    }
+
+    /// Use native egui layout and explicitly report one edit operation.
+    /// Independent operations need separate regions so each retains its own value.
+    pub fn custom(&mut self, draw: impl FnOnce(&mut Ui) -> EditResponse) -> Response {
+        assert!(
+            self.response.is_none(),
+            "use a separate region for each edit"
+        );
+        let response = draw(self.ui);
+        self.record(response)
+    }
+
+    fn record(&mut self, response: EditResponse) -> Response {
         let combined = match &response {
             EditResponse::Once(response) => response.clone(),
             EditResponse::Gesture(responses) => responses
@@ -173,5 +193,11 @@ impl EditWidget for egui::DragValue<'_> {
 impl EditWidget for egui::Checkbox<'_> {
     fn edit_ui(self, ui: &mut Ui) -> EditResponse {
         EditResponse::Once(self.ui(ui))
+    }
+}
+
+impl EditWidget for egui::TextEdit<'_> {
+    fn edit_ui(self, ui: &mut Ui) -> EditResponse {
+        EditResponse::Gesture(vec![self.ui(ui)])
     }
 }

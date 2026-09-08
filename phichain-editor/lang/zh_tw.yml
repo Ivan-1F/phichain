@@ -1,4 +1,8 @@
 history:
+  edit_line: 修改判定線
+  edit_bpm_point: 修改 BPM 點
+  edit_offset: 修改偏移
+  edit_meta: 修改譜面資訊
   mirror_notes: "鏡像 %{count} 個音符"
   edit_events: "修改 %{count} 個事件"
   delete_objects: "刪除 %{count} 個物件"
@@ -368,6 +372,8 @@ export:
     failed: 匯出為 RPE 時發生錯誤：%{error}
 
 game:
+  easing:
+    parameter: 參數
   aspect_ratio:
     free: 自由
   event:

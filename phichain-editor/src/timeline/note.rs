@@ -280,19 +280,20 @@ impl Timeline for NoteTimeline {
                 let to_x = viewport.min.x + (to.x / CANVAS_WIDTH + 0.5) * viewport.width();
                 let to_y = ctx.time_to_y(bpm_list.time_at(to.beat));
                 let rect = Rect::from_two_pos(Pos2::new(from_x, from_y), Pos2::new(to_x, to_y));
-                let mut curve = track.options.curve.clone();
-                ui.add_enabled_ui(false, |ui| {
-                    ui.put(
-                        rect,
-                        EasingGraph::new(&mut curve)
-                            .inverse(true)
-                            .mirror(from.x > to.x)
-                            .color(match selected_query.get(entity) {
-                                Ok(_) => Color32::LIGHT_GREEN,
-                                Err(_) => Color32::WHITE,
-                            }),
-                    );
-                });
+                edits
+                    .component(entity, track.options, t!("history.edit_tracks", count = 1))
+                    .edit(ui, "track_curve", |ui, options| {
+                        ui.add(
+                            EasingGraph::new(&mut options.curve)
+                                .rect(rect)
+                                .inverse(true)
+                                .mirror(from.x > to.x)
+                                .color(match selected_query.get(entity) {
+                                    Ok(_) => Color32::LIGHT_GREEN,
+                                    Err(_) => Color32::WHITE,
+                                }),
+                        );
+                    });
             }
         }
         state.apply(world);

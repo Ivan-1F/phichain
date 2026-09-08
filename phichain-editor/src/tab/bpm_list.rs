@@ -15,15 +15,27 @@ pub fn bpm_list_tab(
     points.sort_by_key(|(_, id, point)| (point.beat, **id));
     ScrollArea::vertical().show(&mut ui, |ui| {
         for (entity, _, point) in &points {
-            let mut display = **point;
             ui.push_id(*entity, |ui| {
                 ui.horizontal_top(|ui| {
                     egui::Grid::new("bpm_point").num_columns(2).show(ui, |ui| {
+                        let mut editor =
+                            edits.component(*entity, *point, t!("history.edit_bpm_point"));
                         ui.label(t!("tab.bpm_list.point.beat"));
-                        ui.add_enabled(false, BeatValue::new(&mut display.beat));
+                        ui.add_enabled_ui(point.beat != Beat::ZERO, |ui| {
+                            editor.edit(ui, "beat", |ui, point| {
+                                ui.add(
+                                    BeatValue::new(&mut point.beat)
+                                        .range(phichain_chart::beat!(0, 1, i32::MAX)..=Beat::MAX),
+                                );
+                            });
+                        })
+                        .response
+                        .on_disabled_hover_text(t!("tab.bpm_list.zero_beat_not_editable"));
                         ui.end_row();
                         ui.label(t!("tab.bpm_list.point.bpm"));
-                        ui.add_enabled(false, egui::DragValue::new(&mut display.bpm));
+                        editor.edit(ui, "bpm", |ui, point| {
+                            ui.add(egui::DragValue::new(&mut point.bpm).range(0.01..=f32::MAX));
+                        });
                         ui.end_row();
                     });
                     if ui

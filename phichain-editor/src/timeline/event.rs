@@ -1,8 +1,10 @@
 use crate::constants::INDICATOR_POSITION;
+use crate::editing::history::Edits;
 use crate::editing::pending::Pending;
 use crate::selection::{Select, Selected, SelectedLine};
 use crate::timeline::{Timeline, TimelineContext};
 use crate::timing::SeekTo;
+use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::{Entity, MessageWriter, Query, Res, World};
 use egui::{Align2, Color32, FontId, Rect, Sense, Stroke, StrokeKind, Ui};
@@ -128,9 +130,10 @@ impl Timeline for EventTimeline {
             Res<BpmList>,
             MessageWriter<Select>,
             MessageWriter<SeekTo>,
+            Edits,
         )> = SystemState::new(world);
 
-        let (ctx, event_query, events_query, bpm_list, mut select_events, mut seek_to) =
+        let (ctx, event_query, events_query, bpm_list, mut select_events, mut seek_to, mut edits) =
             state.get_mut(world);
 
         let track_width = viewport.width() / 5.0;
@@ -273,6 +276,14 @@ impl Timeline for EventTimeline {
                 );
             }
 
+            if pending.is_none() {
+                edits
+                    .component(entity, event, t!("history.edit_events", count = 1))
+                    .edit(ui, "event_range", |ui, event| {
+                        ui.add(BeatRangeDragZone::new(rect, &ctx, event));
+                    });
+            }
+
             if response.clicked() {
                 select_events.write(Select(vec![entity]));
             }
@@ -353,6 +364,7 @@ impl Timeline for EventTimeline {
             );
         }
         ui.style_mut().interaction.selectable_labels = true;
+        state.apply(world);
     }
 
     fn on_drag_selection(&self, world: &mut World, viewport: Rect, selection: Rect) -> Vec<Entity> {

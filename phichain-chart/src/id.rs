@@ -117,6 +117,8 @@ define_ids! {
     CurveNoteTrackId => CurveNoteTrack,
     /// Id of a [`crate::bpm_list::BpmPoint`]
     BpmPointId => BpmPoint,
+    /// Id of the open project session, carrying its editable metadata and offset.
+    ProjectId => Project,
 }
 
 #[cfg(test)]

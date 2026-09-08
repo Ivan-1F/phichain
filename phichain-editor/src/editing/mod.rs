@@ -17,6 +17,7 @@ pub mod history;
 pub(crate) mod line;
 mod moving;
 pub mod pending;
+pub(crate) mod project_settings;
 
 pub struct EditingPlugin;
 
@@ -31,6 +32,7 @@ impl Plugin for EditingPlugin {
             .add_plugins(line::LineEditingPlugin)
             .add_plugins(curve_note_track::CurveNoteTrackPlugin)
             .add_plugins(bpm::BpmEditingPlugin)
+            .add_plugins(project_settings::ProjectSettingsPlugin)
             .add_action(
                 "phichain.undo",
                 undo_system,

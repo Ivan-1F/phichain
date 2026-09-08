@@ -4,7 +4,9 @@ use bevy::ecs::lifecycle::HookContext;
 use bevy::ecs::world::DeferredWorld;
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
-use phichain_chart::id::{BpmPointId, CurveNoteTrackId, EventId, LineId, NoteId, ObjectId};
+use phichain_chart::id::{
+    BpmPointId, CurveNoteTrackId, EventId, LineId, NoteId, ObjectId, ProjectId,
+};
 use uuid::Uuid;
 
 /// Lookup between chart object IDs and their current ECS entities.
@@ -34,6 +36,7 @@ impl Plugin for IdIndexPlugin {
         register::<LineId>(app);
         register::<CurveNoteTrackId>(app);
         register::<BpmPointId>(app);
+        register::<ProjectId>(app);
     }
 }
 
@@ -91,12 +94,14 @@ mod tests {
         let line = LineId::new();
         let track = CurveNoteTrackId::new();
         let bpm = BpmPointId::new();
+        let project = ProjectId::new();
         let objects = [
             (app.world_mut().spawn(note).id(), note.uuid()),
             (app.world_mut().spawn(event).id(), event.uuid()),
             (app.world_mut().spawn(line).id(), line.uuid()),
             (app.world_mut().spawn(track).id(), track.uuid()),
             (app.world_mut().spawn(bpm).id(), bpm.uuid()),
+            (app.world_mut().spawn(project).id(), project.uuid()),
         ];
         for (entity, id) in objects {
             let index = app.world().resource::<IdIndex>();
