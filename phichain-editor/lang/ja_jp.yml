@@ -14,7 +14,6 @@ history:
   create_line: "判定線を追加"
   move_line: "判定線を移動"
   delete_line: "判定線を削除"
-  create_parent_line: "親判定線を追加"
   create_track: "曲線トラックを追加"
   create_bpm_point: "BPM ポイントを追加"
   delete_bpm_point: "BPM ポイントを削除"

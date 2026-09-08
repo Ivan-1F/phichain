@@ -14,7 +14,6 @@ history:
   create_line: "新增判定线"
   move_line: "移动判定线"
   delete_line: "删除判定线"
-  create_parent_line: "新增父判定线"
   create_track: "新增曲线轨迹"
   create_bpm_point: "新增 BPM 点"
   delete_bpm_point: "删除 BPM 点"

@@ -410,7 +410,7 @@ impl<'w, 's> LineList<'w, 's> {
         if let Some(current_parent) = add_parent {
             self.params
                 .edits
-                .once(t!("history.create_parent_line"), move |commands| {
+                .once(t!("history.create_line"), move |commands| {
                     let parent = spawn_line(SerializedLine::default(), commands, current_parent);
                     commands.entity(entity).insert(ChildOf(parent));
                 });
