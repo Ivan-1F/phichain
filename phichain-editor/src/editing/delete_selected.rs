@@ -1,13 +1,9 @@
 use crate::action::ActionRegistrationExt;
 use crate::editing::history::Edits;
 use crate::hotkey::Hotkey;
-use crate::notification::{ToastsExt, ToastsStorage};
 use crate::selection::Selected;
 use bevy::prelude::*;
-use phichain_chart::event::LineEvent;
-use phichain_chart::note::Note;
-use phichain_game::curve_note_track::CurveNoteTrackTo;
-use phichain_game::{Derived, Pending};
+use phichain_game::Pending;
 
 pub struct DeleteSelectedPlugin;
 
@@ -22,22 +18,17 @@ impl Plugin for DeleteSelectedPlugin {
 }
 
 pub(super) fn delete_selected_system(
-    selected: Query<EntityRef, With<Selected>>,
+    selected: Query<(Entity, Has<Pending>), With<Selected>>,
+    mut commands: Commands,
     mut edits: Edits,
-    mut toasts: ResMut<ToastsStorage>,
 ) -> Result {
     let mut targets = Vec::new();
-    for entity in &selected {
-        if entity.contains::<Derived>()
-            || entity.contains::<Pending>()
-            || !(entity.contains::<Note>()
-                || entity.contains::<LineEvent>()
-                || entity.contains::<CurveNoteTrackTo>())
-        {
-            toasts.info(t!("history.unsupported_delete"));
-            return Ok(());
+    for (entity, pending) in &selected {
+        if pending {
+            commands.entity(entity).try_despawn();
+        } else {
+            targets.push(entity);
         }
-        targets.push(entity.id());
     }
     if !targets.is_empty() {
         edits.once(

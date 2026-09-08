@@ -21,7 +21,6 @@ history:
   create_notes: "Add %{count} note(s)"
   edit_notes: "Modify %{count} note(s)"
   delete_notes: "Delete %{count} note(s)"
-  unsupported_delete: "The selection contains objects that cannot be deleted. Nothing was deleted."
 
 menu_bar:
   file:

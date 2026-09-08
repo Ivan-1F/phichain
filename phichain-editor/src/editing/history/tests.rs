@@ -104,8 +104,7 @@ fn repeated_replacements_keep_the_first_value_and_redo_does_not_run_the_action()
 #[test]
 fn undo_delete_restores_an_unselected_note_and_preserves_current_selection() {
     let mut app = App::new();
-    app.add_plugins((IdIndexPlugin, HistoryPlugin))
-        .init_resource::<crate::notification::ToastsStorage>();
+    app.add_plugins((IdIndexPlugin, HistoryPlugin));
     let line = app.world_mut().spawn(Line::default()).id();
     let other_line = app.world_mut().spawn(Line::default()).id();
     app.world_mut().insert_resource(SelectedLine(line));
@@ -260,7 +259,6 @@ fn bounded_history_and_saved_state_survive_eviction() {
 #[test]
 fn batch_delete_is_one_entry_and_earlier_edits_follow_restored_entities() {
     let (mut app, line) = fixture();
-    app.init_resource::<crate::notification::ToastsStorage>();
     apply_edit(app.world_mut(), "create two".into(), |commands| {
         commands.spawn((note(), ChildOf(line), Selected));
         commands.spawn((Note { x: 200.0, ..note() }, ChildOf(line), Selected));
@@ -313,8 +311,7 @@ fn batch_delete_with_hold_rebuilds_render_children_on_undo() {
     use phichain_game::core::{spawn_hold_component_system, HoldHead, HoldTail};
 
     let (mut app, line) = fixture();
-    app.init_resource::<crate::notification::ToastsStorage>()
-        .add_systems(Update, spawn_hold_component_system);
+    app.add_systems(Update, spawn_hold_component_system);
     let hold = Note {
         kind: NoteKind::Hold {
             hold_beat: Beat::ONE,
@@ -402,24 +399,10 @@ fn batch_delete_with_hold_rebuilds_render_children_on_undo() {
 }
 
 #[test]
-fn invalid_selections_are_rejected_and_curve_endpoints_delete_their_tracks() {
+fn curve_endpoints_delete_their_tracks() {
     use phichain_game::curve_note_track::{CurveNoteTrackFrom, CurveNoteTrackTo};
     let (mut app, line) = fixture();
-    app.init_resource::<crate::notification::ToastsStorage>();
-    let (entity, _) = create(&mut app, line);
-    app.world_mut().entity_mut(entity).insert(Selected);
-    app.world_mut().entity_mut(line).insert(Selected);
-    app.world_mut()
-        .run_system_once::<_, Result, _>(crate::editing::delete_selected::delete_selected_system)
-        .unwrap()
-        .unwrap();
-    assert!(app.world().get::<Note>(entity).is_some());
-    assert_eq!(app.world().resource::<EditorHistory>().record.len(), 1);
-    app.world_mut().entity_mut(line).remove::<Selected>();
-    // Load an ordinary second note and a curve track before recording resumes.
     close_document(app.world_mut());
-    app.world_mut().entity_mut(line).despawn();
-    let line = app.world_mut().spawn(Line::default()).id();
     let from = app
         .world_mut()
         .spawn((note(), ChildOf(line), Selected))
@@ -464,6 +447,65 @@ fn invalid_selections_are_rejected_and_curve_endpoints_delete_their_tracks() {
         app.world_mut().query::<&Note>().iter(app.world()).count(),
         1
     );
+}
+
+#[test]
+fn deleting_curve_previews_only_records_selected_document_objects() {
+    use phichain_game::curve_note_track::CurveNoteTrackFrom;
+
+    for select_note in [false, true] {
+        let (mut app, line) = fixture();
+        let (origin, id) = create(&mut app, line);
+        let preview = app
+            .world_mut()
+            .spawn((CurveNoteTrackFrom(origin), ChildOf(line), Pending, Selected))
+            .id();
+        if select_note {
+            app.world_mut().entity_mut(origin).insert(Selected);
+        }
+
+        app.world_mut()
+            .run_system_once::<_, Result, _>(
+                crate::editing::delete_selected::delete_selected_system,
+            )
+            .unwrap()
+            .unwrap();
+
+        assert!(app.world().get_entity(preview).is_err());
+        assert_eq!(app.world().get_entity(origin).is_err(), select_note);
+        assert_eq!(
+            app.world().resource::<EditorHistory>().record.len(),
+            if select_note { 2 } else { 1 }
+        );
+
+        undo(&mut app);
+        if select_note {
+            let restored = entity_with_id(&mut app, id);
+            assert_eq!(app.world().get::<Note>(restored), Some(&note()));
+        } else {
+            assert!(app.world().get_entity(origin).is_err());
+        }
+        assert_eq!(
+            app.world_mut()
+                .query::<&CurveNoteTrackFrom>()
+                .iter(app.world())
+                .count(),
+            0
+        );
+
+        redo(&mut app);
+        assert_eq!(
+            app.world_mut().query::<&Note>().iter(app.world()).count(),
+            if select_note { 0 } else { 1 }
+        );
+        assert_eq!(
+            app.world_mut()
+                .query::<&CurveNoteTrackFrom>()
+                .iter(app.world())
+                .count(),
+            0
+        );
+    }
 }
 
 #[test]
