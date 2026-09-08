@@ -1,14 +1,22 @@
 history:
+  object:
+    note: "%{count} 個のノーツ"
+    notes: "%{count} 個のノーツ"
+    event: "%{count} 個のイベント"
+    events: "%{count} 個のイベント"
+    track: "%{count} 本の曲線トラック"
+    tracks: "%{count} 本の曲線トラック"
+    separator: "、"
   edit_line: 判定線を編集
   edit_bpm_point: BPM ポイントを編集
   edit_offset: オフセットを編集
   edit_meta: 譜面情報を編集
   mirror_notes: "%{count} 個のノーツを反転"
   edit_events: "%{count} 個のイベントを変更"
-  delete_objects: "%{count} 個のオブジェクトを削除"
-  move_objects: "%{count} 個のオブジェクトを移動"
-  paste_objects: "%{count} 個のオブジェクトを貼り付け"
-  cut_objects: "%{count} 個のオブジェクトを切り取り"
+  delete: "%{objects}を削除"
+  move: "%{objects}を移動"
+  paste: "%{objects}を貼り付け"
+  cut: "%{objects}を切り取り"
   edit_tracks: "%{count} 本の曲線トラックを変更"
   create_events: "%{count} 個のイベントを追加"
   create_line: "判定線を追加"

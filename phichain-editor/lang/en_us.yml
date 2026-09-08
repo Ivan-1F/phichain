@@ -1,14 +1,22 @@
 history:
+  object:
+    note: "%{count} note"
+    notes: "%{count} notes"
+    event: "%{count} event"
+    events: "%{count} events"
+    track: "%{count} curve track"
+    tracks: "%{count} curve tracks"
+    separator: ", "
   edit_line: Edit line
   edit_bpm_point: Edit BPM point
   edit_offset: Edit offset
   edit_meta: Edit chart information
   mirror_notes: "Mirror %{count} notes"
   edit_events: "Edit %{count} events"
-  delete_objects: "Delete %{count} objects"
-  move_objects: "Move %{count} objects"
-  paste_objects: "Paste %{count} objects"
-  cut_objects: "Cut %{count} objects"
+  delete: "Delete %{objects}"
+  move: "Move %{objects}"
+  paste: "Paste %{objects}"
+  cut: "Cut %{objects}"
   edit_tracks: "Edit %{count} curve tracks"
   create_events: "Create %{count} events"
   create_line: "Create line"

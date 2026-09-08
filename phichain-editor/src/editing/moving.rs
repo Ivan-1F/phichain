@@ -1,4 +1,5 @@
 use crate::action::ActionRegistrationExt;
+use crate::editing::description::ObjectCounts;
 use crate::editing::history::Edits;
 use crate::hotkey::Hotkey;
 use crate::selection::Selected;
@@ -86,8 +87,13 @@ fn move_vertical(
             )
         })
         .collect();
+    let counts = ObjectCounts {
+        notes: notes.len(),
+        events: events.len(),
+        ..default()
+    };
     edits.once(
-        t!("history.move_objects", count = notes.len() + events.len()),
+        t!("history.move", objects = counts.text()),
         move |commands| {
             for (entity, note) in notes {
                 commands.entity(entity).insert(note);
@@ -144,8 +150,12 @@ fn move_horizontal(
             )
         })
         .collect();
+    let counts = ObjectCounts {
+        notes: notes.len(),
+        ..default()
+    };
     edits.once(
-        t!("history.move_objects", count = notes.len()),
+        t!("history.move", objects = counts.text()),
         move |commands| {
             for (entity, note) in notes {
                 commands.entity(entity).insert(note);

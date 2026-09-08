@@ -13,6 +13,7 @@ mod create_event;
 mod create_note;
 pub mod curve_note_track;
 mod delete_selected;
+mod description;
 pub mod history;
 pub(crate) mod line;
 mod moving;

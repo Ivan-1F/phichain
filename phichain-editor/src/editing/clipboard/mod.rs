@@ -1,4 +1,5 @@
 use crate::action::ActionRegistrationExt;
+use crate::editing::description::ObjectCounts;
 use crate::editing::history::Edits;
 use crate::hotkey::modifier::Modifier;
 use crate::hotkey::Hotkey;
@@ -25,6 +26,7 @@ use std::sync::Arc;
 struct EditorClipboard {
     scene: Arc<DynamicScene>,
     first_beat: Option<Beat>,
+    counts: ObjectCounts,
 }
 
 pub struct ClipboardPlugin;
@@ -91,6 +93,14 @@ fn copy_system(world: &mut World) -> Result {
                 })
         })
         .min();
+    let mut counts = ObjectCounts::default();
+    let mut kinds = world.query::<(Has<Note>, Has<LineEvent>, Has<CurveNoteTrackTo>)>();
+    for entity in &entities {
+        let (note, event, track) = kinds.get(world, *entity)?;
+        counts.notes += usize::from(note);
+        counts.events += usize::from(event);
+        counts.tracks += usize::from(track);
+    }
     let scene = DynamicSceneBuilder::from_world(world)
         .deny_all()
         .allow_component::<Note>()
@@ -103,6 +113,7 @@ fn copy_system(world: &mut World) -> Result {
     *world.resource_mut::<EditorClipboard>() = EditorClipboard {
         scene: Arc::new(scene),
         first_beat,
+        counts,
     };
     Ok(())
 }
@@ -123,23 +134,28 @@ fn cut_system(world: &mut World) -> Result {
         return Ok(());
     }
     copy_system(world)?;
-    let targets: Vec<_> = world
-        .query_filtered::<Entity, With<Selected>>()
+    let mut targets = Vec::new();
+    let mut counts = ObjectCounts::default();
+    for (entity, note, event, track) in world
+        .query_filtered::<(Entity, Has<Note>, Has<LineEvent>, Has<CurveNoteTrackTo>), With<Selected>>()
         .iter(world)
-        .collect();
+    {
+        targets.push(entity);
+        counts.notes += usize::from(note);
+        counts.events += usize::from(event);
+        counts.tracks += usize::from(track);
+    }
+    let description = t!("history.cut", objects = counts.text()).into_owned();
     world
         .run_system_once_with(
-            |In(targets): In<Vec<Entity>>, mut edits: Edits| {
-                edits.once(
-                    t!("history.cut_objects", count = targets.len()),
-                    move |commands| {
-                        for entity in targets {
-                            commands.entity(entity).try_despawn();
-                        }
-                    },
-                );
+            |In((targets, description)): In<(Vec<Entity>, String)>, mut edits: Edits| {
+                edits.once(description, move |commands| {
+                    for entity in targets {
+                        commands.entity(entity).try_despawn();
+                    }
+                });
             },
-            targets,
+            (targets, description),
         )
         .expect("Failed to cut selection");
     Ok(())
@@ -175,7 +191,7 @@ fn paste_system(
     let delta = beat - first;
     let scene = clipboard.scene.clone();
     edits.once(
-        t!("history.paste_objects", count = scene.entities.len()),
+        t!("history.paste", objects = clipboard.counts.text()),
         move |commands| {
             commands.queue(move |world: &mut World| paste(world, &scene, line, delta));
         },
@@ -286,6 +302,8 @@ mod tests {
         assert_eq!(world.query::<&CurveNoteTrackTo>().iter(world).count(), 0);
         let clipboard = world.resource::<EditorClipboard>().scene.clone();
         assert_eq!(clipboard.entities.len(), 4);
+        let counts = &world.resource::<EditorClipboard>().counts;
+        assert_eq!((counts.notes, counts.events, counts.tracks), (2, 1, 1));
         for delta in [Beat::from(8.0), Beat::from(16.0)] {
             world
                 .run_system_once_with(
@@ -338,5 +356,16 @@ mod tests {
         assert!(ids
             .iter()
             .all(|id| world.resource::<IdIndex>().entity(id.uuid()).is_some()));
+
+        let track = world
+            .query::<(Entity, &CurveNoteTrackTo)>()
+            .iter(world)
+            .next()
+            .unwrap()
+            .0;
+        world.entity_mut(track).insert(Selected);
+        copy_system(world).unwrap();
+        let counts = &world.resource::<EditorClipboard>().counts;
+        assert_eq!((counts.notes, counts.events, counts.tracks), (2, 0, 1));
     }
 }
