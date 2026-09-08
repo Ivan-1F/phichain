@@ -54,8 +54,12 @@ pub(super) struct Recorder {
 
 impl Recorder {
     pub fn begin(&mut self) {
+        self.resume(PendingChanges::default());
+    }
+
+    pub fn resume(&mut self, pending: PendingChanges) {
         assert!(self.active.is_none(), "nested document edit");
-        self.active = Some(PendingChanges::default());
+        self.active = Some(pending);
     }
 
     pub fn finish(&mut self) -> PendingChanges {
@@ -138,7 +142,7 @@ fn capture<T: Component + Reflect>(
     let pending = recorder
         .active
         .as_mut()
-        .expect("document mutation outside Edits::once");
+        .expect("document mutation outside Edits");
     let ty = TypeId::of::<T>();
     pending.touched.insert(id, entity.id());
     pending.references.insert(entity.id(), id);
@@ -215,6 +219,10 @@ pub(super) struct ChangeSet {
 }
 
 impl PendingChanges {
+    pub fn is_empty(&self) -> bool {
+        self.before.is_empty()
+    }
+
     pub fn settle(mut self, world: &World) -> ChangeSet {
         let registry = world.resource::<Registry>();
         let index = world.resource::<IdIndex>();

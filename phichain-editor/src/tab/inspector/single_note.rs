@@ -1,6 +1,7 @@
 use crate::editing::history::Edits;
 use crate::selection::Selected;
 use crate::timeline::TimelineContext;
+use crate::ui::edit::gesture_response;
 use crate::ui::sides::SidesExt;
 use crate::ui::widgets::beat_value::BeatValue;
 use bevy::prelude::*;
@@ -33,9 +34,23 @@ pub fn single_note_inspector(
             )
         },
     );
-    ui.sides(
+    let (_, x_response) = ui.sides(
         |ui| ui.label(t!("tab.inspector.single_note.x")),
-        |ui| ui.add_enabled(false, DragValue::new(&mut display.x).speed(1)),
+        |ui| {
+            ui.push_id((entity, "note_x"), |ui| {
+                ui.add(DragValue::new(&mut display.x).speed(1))
+            })
+            .inner
+        },
+    );
+    let next = display;
+    gesture_response(
+        &mut edits,
+        &x_response,
+        t!("history.edit_notes", count = 1),
+        move |commands| {
+            commands.entity(entity).insert(next);
+        },
     );
     if let NoteKind::Hold { mut hold_beat } = display.kind {
         ui.sides(
@@ -55,7 +70,7 @@ pub fn single_note_inspector(
         |ui| {
             let mut above = note.above;
             if ui.checkbox(&mut above, "").changed() {
-                let next = Note { above, ..*note };
+                let next = Note { above, ..display };
                 edits.once(t!("history.edit_notes", count = 1), move |commands| {
                     commands.entity(entity).insert(next);
                 });

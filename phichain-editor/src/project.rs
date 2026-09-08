@@ -68,7 +68,16 @@ impl Plugin for ProjectPlugin {
     }
 }
 
-fn save_project_system(
+fn save_project_system(world: &mut World) -> Result {
+    use bevy::ecs::system::RunSystemOnce;
+    world.resource_scope(|world, mut history: Mut<EditorHistory>| history.finish_gesture(world));
+    world
+        .run_system_once::<_, Result, _>(write_project_system)
+        .expect("save system parameters must be available")?;
+    Ok(())
+}
+
+fn write_project_system(
     project: Res<Project>,
     mut toasts: ResMut<ToastsStorage>,
     mut history: ResMut<EditorHistory>,

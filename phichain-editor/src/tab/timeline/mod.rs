@@ -73,7 +73,9 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
         .iter()
         .enumerate()
     {
-        item.timeline.ui(&mut ui, world, item.viewport);
+        ui.push_id(("timeline", index), |ui| {
+            item.timeline.ui(ui, world, item.viewport);
+        });
         timeline::common::timeline_badge_ui(&mut ui, world, item, index);
     }
 

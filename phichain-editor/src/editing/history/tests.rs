@@ -516,7 +516,7 @@ fn queued_edits_cannot_leak_into_a_reopened_project() {
 }
 
 #[test]
-#[should_panic(expected = "document mutation outside Edits::once")]
+#[should_panic(expected = "document mutation outside Edits")]
 fn authored_data_cannot_change_outside_an_edit() {
     let (mut app, line) = fixture();
     let (entity, _) = create(&mut app, line);
@@ -759,4 +759,166 @@ fn previews_and_generated_objects_are_excluded_from_saving() {
     assert!(serialized.notes.is_empty());
     assert!(serialized.events.is_empty());
     assert!(app.world().resource::<EditorHistory>().is_saved());
+}
+
+fn begin_gesture(app: &mut App) -> GestureId {
+    app.world_mut()
+        .run_system_once(|mut edits: Edits| edits.begin_gesture("drag"))
+        .unwrap()
+}
+
+fn drag_x(app: &mut App, id: GestureId, entity: Entity, x: f32) {
+    app.world_mut()
+        .run_system_once(move |mut edits: Edits| {
+            edits.gesture(id, move |commands| {
+                commands.entity(entity).insert(Note { x, ..note() });
+            });
+        })
+        .unwrap();
+}
+
+fn finish_gesture(app: &mut App, id: GestureId) {
+    app.world_mut()
+        .run_system_once(move |mut edits: Edits| edits.finish_gesture(id))
+        .unwrap();
+}
+
+#[test]
+fn gesture_updates_are_live_and_commit_as_one_edit() {
+    let (mut app, line) = fixture();
+    let (entity, _) = create(&mut app, line);
+    app.world_mut().resource_mut::<EditorHistory>().set_saved();
+    let before = app.world().resource::<EditorHistory>().head();
+    let id = begin_gesture(&mut app);
+    for x in [110.0, 200.0, 80.0, 160.0] {
+        drag_x(&mut app, id, entity, x);
+        assert_eq!(app.world().get::<Note>(entity).unwrap().x, x);
+        let history = app.world().resource::<EditorHistory>();
+        assert_eq!(history.record.len(), 1);
+        assert_eq!(history.head(), before);
+        assert!(!history.is_saved());
+    }
+    finish_gesture(&mut app, id);
+    assert_eq!(app.world().resource::<EditorHistory>().record.len(), 2);
+    undo(&mut app);
+    assert_eq!(app.world().get::<Note>(entity).unwrap().x, 100.0);
+    assert!(app.world().resource::<EditorHistory>().is_saved());
+    redo(&mut app);
+    assert_eq!(app.world().get::<Note>(entity).unwrap().x, 160.0);
+}
+
+#[test]
+fn cancelled_and_no_op_gestures_preserve_saved_state_and_redo() {
+    let (mut app, line) = fixture();
+    let (entity, _) = create(&mut app, line);
+    app.world_mut().resource_mut::<EditorHistory>().set_saved();
+    apply_edit(app.world_mut(), "edit".into(), |commands| {
+        commands.entity(entity).insert(Note { x: 200.0, ..note() });
+    });
+    undo(&mut app);
+    let before = app.world().resource::<EditorHistory>().head();
+    let id = begin_gesture(&mut app);
+    drag_x(&mut app, id, entity, 300.0);
+    app.world_mut()
+        .run_system_once(move |mut edits: Edits| edits.cancel_gesture(id))
+        .unwrap();
+    drag_x(&mut app, id, entity, 400.0);
+    assert_eq!(app.world().get::<Note>(entity).unwrap().x, 100.0);
+    let id = begin_gesture(&mut app);
+    drag_x(&mut app, id, entity, 150.0);
+    drag_x(&mut app, id, entity, 100.0);
+    finish_gesture(&mut app, id);
+    let history = app.world().resource::<EditorHistory>();
+    assert_eq!(history.head(), before);
+    assert!(history.is_saved());
+    assert!(history.record.can_redo());
+    redo(&mut app);
+    assert_eq!(app.world().get::<Note>(entity).unwrap().x, 200.0);
+}
+
+#[test]
+fn once_finishes_the_gesture_before_deleting_and_late_updates_are_ignored() {
+    let (mut app, line) = fixture();
+    let (entity, note_id) = create(&mut app, line);
+    let id = begin_gesture(&mut app);
+    drag_x(&mut app, id, entity, 250.0);
+    app.world_mut()
+        .run_system_once(move |mut edits: Edits| {
+            edits.once("delete", move |commands| {
+                commands.entity(entity).despawn();
+            });
+        })
+        .unwrap();
+    drag_x(&mut app, id, entity, 500.0);
+    assert!(app.world().get_entity(entity).is_err());
+    undo(&mut app);
+    let restored = entity_with_id(&mut app, note_id);
+    assert_eq!(app.world().get::<Note>(restored).unwrap().x, 250.0);
+    undo(&mut app);
+    assert_eq!(app.world().get::<Note>(restored).unwrap().x, 100.0);
+}
+
+#[test]
+fn undo_cancels_the_live_gesture_without_undoing_an_earlier_edit() {
+    let (mut app, line) = fixture();
+    let (entity, _) = create(&mut app, line);
+    let id = begin_gesture(&mut app);
+    drag_x(&mut app, id, entity, 250.0);
+    undo(&mut app);
+    drag_x(&mut app, id, entity, 500.0);
+    assert_eq!(app.world().get::<Note>(entity).unwrap().x, 100.0);
+    assert_eq!(app.world().resource::<EditorHistory>().record.head(), 1);
+    undo(&mut app);
+    assert!(app.world().get_entity(entity).is_err());
+}
+
+#[test]
+fn gesture_ends_when_its_owner_disappears_but_not_while_idle_and_present() {
+    let (mut app, line) = fixture();
+    let (entity, _) = create(&mut app, line);
+    let id = begin_gesture(&mut app);
+    drag_x(&mut app, id, entity, 250.0);
+    app.update();
+    for _ in 0..3 {
+        app.world_mut()
+            .run_system_once(move |mut edits: Edits| edits.keep_gesture_alive(id))
+            .unwrap();
+        app.update();
+        assert!(app.world().resource::<EditorHistory>().has_gesture());
+    }
+    app.update();
+    assert!(!app.world().resource::<EditorHistory>().has_gesture());
+    assert_eq!(app.world().resource::<EditorHistory>().record.len(), 2);
+    undo(&mut app);
+    assert_eq!(app.world().get::<Note>(entity).unwrap().x, 100.0);
+}
+
+#[test]
+fn saving_a_gesture_creates_a_stable_saved_revision() {
+    let (mut app, line) = fixture();
+    let (entity, _) = create(&mut app, line);
+    let id = begin_gesture(&mut app);
+    drag_x(&mut app, id, entity, 250.0);
+    app.world_mut()
+        .resource_scope(|world, mut history: Mut<EditorHistory>| {
+            history.finish_gesture(world);
+            history.set_saved();
+        });
+    drag_x(&mut app, id, entity, 500.0);
+    assert_eq!(app.world().get::<Note>(entity).unwrap().x, 250.0);
+    undo(&mut app);
+    assert!(!app.world().resource::<EditorHistory>().is_saved());
+    redo(&mut app);
+    assert!(app.world().resource::<EditorHistory>().is_saved());
+}
+
+#[test]
+#[should_panic(expected = "document mutation outside Edits")]
+fn an_open_gesture_does_not_allow_unscoped_mutations() {
+    let (mut app, line) = fixture();
+    let (entity, _) = create(&mut app, line);
+    begin_gesture(&mut app);
+    app.world_mut()
+        .entity_mut(entity)
+        .insert(Note { x: 99.0, ..note() });
 }

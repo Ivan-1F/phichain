@@ -4,10 +4,13 @@
 //! undo and redo never execute the original editing closure again.
 //!
 //! Registered document components are immutable: replace them with `insert`
-//! inside `Edits::once`, and use `despawn` to delete an object. Its identity must
-//! stay fixed. Loading, teardown, `Pending`, and `Derived` are excluded.
+//! inside `Edits::once` or `Edits::gesture`, and use `despawn` to delete an object.
+//! Its identity must stay fixed. Loading, teardown, `Pending`, and `Derived` are excluded.
 
 mod changes;
+mod gesture;
+pub use gesture::GestureId;
+use gesture::{finish_unattended_gesture, ActiveGesture};
 #[cfg(test)]
 mod tests;
 
@@ -38,7 +41,8 @@ impl Plugin for HistoryPlugin {
         app.init_resource::<AppTypeRegistry>()
             .init_resource::<Registry>()
             .init_resource::<Recorder>()
-            .init_resource::<EditorHistory>();
+            .init_resource::<EditorHistory>()
+            .add_systems(Last, finish_unattended_gesture);
         changes::register_component::<NoteId>(app, true);
         changes::register_component::<Note>(app, false);
         changes::register_component::<ChildOf>(app, false);
@@ -63,6 +67,7 @@ pub struct EditorHistory {
     record: Record<RecordedEdit>,
     current: Uuid,
     epoch: Uuid,
+    gesture: Option<ActiveGesture>,
 }
 
 impl Default for EditorHistory {
@@ -71,6 +76,7 @@ impl Default for EditorHistory {
             record: Record::builder().limit(MAX_HISTORY_ENTRIES).build(),
             current: Uuid::new_v4(),
             epoch: Uuid::new_v4(),
+            gesture: None,
         }
     }
 }
@@ -78,9 +84,17 @@ impl Default for EditorHistory {
 impl EditorHistory {
     pub fn is_saved(&self) -> bool {
         self.record.is_saved()
+            && self
+                .gesture
+                .as_ref()
+                .is_none_or(|gesture| gesture.pending.is_empty())
     }
 
     pub fn set_saved(&mut self) {
+        assert!(
+            !self.has_gesture(),
+            "finish the active gesture before saving"
+        );
         self.record.set_saved();
     }
 
@@ -90,6 +104,10 @@ impl EditorHistory {
     }
 
     pub fn undo(&mut self, world: &mut World) -> anyhow::Result<()> {
+        if self.has_gesture() {
+            self.cancel_gesture(world);
+            return Ok(());
+        }
         if !self.record.can_undo() {
             return Ok(());
         }
@@ -100,6 +118,10 @@ impl EditorHistory {
     }
 
     pub fn redo(&mut self, world: &mut World) -> anyhow::Result<()> {
+        if self.has_gesture() {
+            self.cancel_gesture(world);
+            return Ok(());
+        }
         if !self.record.can_redo() {
             return Ok(());
         }
@@ -107,6 +129,22 @@ impl EditorHistory {
         entry.as_ref().changes.validate(world, true)?;
         self.current = self.record.redo(world).unwrap();
         Ok(())
+    }
+
+    fn record_changes(&mut self, world: &mut World, description: String, changes: ChangeSet) {
+        if changes.is_empty() {
+            return;
+        }
+        let revision_after = Uuid::new_v4();
+        let entry = RecordedEdit {
+            description,
+            changes,
+            revision_before: self.current,
+            revision_after,
+        };
+        debug!("Committed edit: {}", entry);
+        self.record.edit(world, entry);
+        self.current = revision_after;
     }
 }
 
@@ -158,13 +196,22 @@ impl Edits<'_, '_> {
         edit: impl FnOnce(&mut Commands) + Send + 'static,
     ) {
         let description = description.into();
+        self.queue(move |world| {
+            world.resource_scope(|world, mut history: Mut<EditorHistory>| {
+                history.finish_gesture(world)
+            });
+            apply_edit(world, description, edit);
+        });
+    }
+
+    fn queue(&mut self, edit: impl FnOnce(&mut World) + Send + 'static) {
         let epoch = self.history.epoch;
         self.commands.queue(move |world: &mut World| {
             // A queued UI action must not leak into another project.
             if world.resource::<EditorHistory>().epoch == epoch
                 && world.resource::<Recorder>().enabled
             {
-                apply_edit(world, description, edit);
+                edit(world);
             }
         });
     }
@@ -174,30 +221,20 @@ fn apply_edit(world: &mut World, description: String, edit: impl FnOnce(&mut Com
     // Flush unrelated work before opening the recording scope.
     world.flush();
     world.resource_mut::<Recorder>().begin();
+    run_commands(world, edit);
+    let pending = world.resource_mut::<Recorder>().finish();
+    let changes = pending.settle(world);
+    world.resource_scope(|world, mut history: Mut<EditorHistory>| {
+        history.record_changes(world, description, changes);
+    });
+}
 
+fn run_commands(world: &mut World, edit: impl FnOnce(&mut Commands)) {
     let mut queue = CommandQueue::default();
     edit(&mut Commands::new(&mut queue, world));
     queue.apply(world);
     // Include commands issued by synchronous lifecycle observers.
     world.flush();
-
-    let pending = world.resource_mut::<Recorder>().finish();
-    let changes = pending.settle(world);
-    if changes.is_empty() {
-        return;
-    }
-    world.resource_scope(|world, mut history: Mut<EditorHistory>| {
-        let revision_after = Uuid::new_v4();
-        let entry = RecordedEdit {
-            description,
-            changes,
-            revision_before: history.current,
-            revision_after,
-        };
-        debug!("Committed edit: {}", entry);
-        history.record.edit(world, entry);
-        history.current = revision_after;
-    });
 }
 
 /// Called only after the initial document has finished loading.

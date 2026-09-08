@@ -78,7 +78,7 @@ fn auto_save_system(
 
     debug!("Triggering autosave...");
 
-    if state.is_saving || history.is_saved() {
+    if state.is_saving || history.is_saved() || history.has_gesture() {
         debug!("Skipping auto-save: is saving or already saved");
         return;
     }
