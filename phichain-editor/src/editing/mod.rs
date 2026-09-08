@@ -16,7 +16,6 @@ mod delete_selected;
 pub mod history;
 pub(crate) mod line;
 mod moving;
-pub mod pending;
 pub(crate) mod project_settings;
 
 pub struct EditingPlugin;

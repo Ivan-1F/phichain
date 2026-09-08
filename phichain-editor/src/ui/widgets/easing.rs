@@ -169,24 +169,11 @@ fn curve_point(point: Pos2, inverse: bool, mirror: bool) -> Pos2 {
 
 pub struct EasingValue<'a> {
     value: &'a mut Easing,
-
-    /// Easings in this vec will not be shown in the combobox
-    disabled_easings: Vec<Easing>,
 }
 
 impl<'a> EasingValue<'a> {
     pub fn new(value: &'a mut Easing) -> Self {
-        Self {
-            value,
-
-            disabled_easings: vec![],
-        }
-    }
-
-    #[allow(dead_code)]
-    pub fn disabled_easings(mut self, disabled_easings: Vec<Easing>) -> Self {
-        self.disabled_easings = disabled_easings;
-        self
+        Self { value }
     }
 }
 
@@ -270,6 +257,7 @@ impl Widget for EasingValue<'_> {
                                     if ui
                                         .selectable_label(self.value.is_custom(), "Custom")
                                         .clicked()
+                                        && !self.value.is_custom()
                                     {
                                         combobox_changed = true;
                                         *self.value = Easing::Custom {
@@ -284,11 +272,7 @@ impl Widget for EasingValue<'_> {
                         });
                         Grid::new("easing-grid").num_columns(3).show(ui, |ui| {
                             for easing in Easing::iter().filter(|x| {
-                                !self.disabled_easings.contains(x)
-                                    && !x.is_custom()
-                                    && !x.is_linear()
-                                    && !x.is_steps()
-                                    && !x.is_elastic()
+                                !x.is_custom() && !x.is_linear() && !x.is_steps() && !x.is_elastic()
                             }) {
                                 let selected = self.value == &easing;
 
@@ -316,6 +300,7 @@ impl Widget for EasingValue<'_> {
                                 "Steps",
                             )
                             .clicked()
+                                && !self.value.is_steps()
                             {
                                 combobox_changed = true;
                                 *self.value = Easing::Steps { count: 4 };
@@ -328,6 +313,7 @@ impl Widget for EasingValue<'_> {
                                 "Elastic",
                             )
                             .clicked()
+                                && !self.value.is_elastic()
                             {
                                 combobox_changed = true;
                                 *self.value = Easing::Elastic { omega: 20.0 };

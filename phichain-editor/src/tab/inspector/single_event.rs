@@ -1,5 +1,4 @@
 use crate::editing::history::Edits;
-use crate::editing::pending::Pending;
 use crate::selection::Selected;
 use crate::timeline::TimelineContext;
 use crate::ui::edit::EditResponse;
@@ -9,6 +8,7 @@ use bevy::prelude::*;
 use egui::{DragValue, Ui};
 use phichain_chart::beat::Beat;
 use phichain_chart::event::{LineEvent, LineEventKind};
+use phichain_game::Pending;
 
 pub fn single_event_inspector(
     In(mut ui): In<Ui>,

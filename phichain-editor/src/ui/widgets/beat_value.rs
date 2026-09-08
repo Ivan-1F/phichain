@@ -1,5 +1,6 @@
 use crate::ui::edit::{EditResponse, EditWidget};
 use egui::{Response, Ui, Vec2, Widget};
+use num::{FromPrimitive, Rational32};
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
 use std::cmp::Ordering;
@@ -64,18 +65,18 @@ impl BeatValue<'_> {
                 ui.spacing_mut().interact_size = Vec2::new(20.0, 18.0);
                 let response_denom = ui.add(
                     egui::DragValue::new(&mut denom)
-                        .range(1..=u32::MAX)
+                        .range(1..=i32::MAX)
                         .speed(1),
                 );
                 let response_numer = ui.add(
                     egui::DragValue::new(&mut numer)
-                        .range(0..=u32::MAX)
+                        .range(0..=i32::MAX)
                         .speed(1),
                 );
                 ui.spacing_mut().interact_size = Vec2::new(40.0, 18.0);
                 let response_whole = ui.add(
                     egui::DragValue::new(&mut whole)
-                        .range(0..=u32::MAX)
+                        .range(0..=i32::MAX)
                         .speed(1),
                 );
 
@@ -88,18 +89,18 @@ impl BeatValue<'_> {
             } else {
                 let response_whole = ui.add(
                     egui::DragValue::new(&mut whole)
-                        .range(0..=u32::MAX)
+                        .range(0..=i32::MAX)
                         .speed(1),
                 );
                 ui.spacing_mut().interact_size = Vec2::new(20.0, 18.0);
                 let response_numer = ui.add(
                     egui::DragValue::new(&mut numer)
-                        .range(0..=u32::MAX)
+                        .range(0..=i32::MAX)
                         .speed(1),
                 );
                 let response_denom = ui.add(
                     egui::DragValue::new(&mut denom)
-                        .range(1..=u32::MAX)
+                        .range(1..=i32::MAX)
                         .speed(1),
                 );
                 ui.spacing_mut().interact_size = Vec2::new(40.0, 18.0);
@@ -122,11 +123,20 @@ impl BeatValue<'_> {
             if whole != self.beat.beat() || numer != self.beat.numer() || denom != self.beat.denom()
             {
                 *self.beat = clamp_to_range(beat!(whole, numer, denom), &self.clamp_range);
-            } else if value != self.beat.value() {
+            } else if value.is_finite() && value != self.beat.value() {
+                // Reject values outside Rational32 before converting or snapping.
+                let Some(ratio) = Rational32::from_f32(value) else {
+                    return [
+                        response_value,
+                        response_whole,
+                        response_numer,
+                        response_denom,
+                    ];
+                };
                 let new_beat = if let Some(density) = self.density {
                     beat::utils::attach(value, density)
                 } else {
-                    value.into()
+                    Beat::from(ratio)
                 };
                 *self.beat = clamp_to_range(new_beat, &self.clamp_range);
             }
@@ -170,16 +180,5 @@ fn clamp_to_range(x: Beat, range: &RangeInclusive<Beat>) -> Beat {
             Ordering::Greater | Ordering::Equal => max,
             Ordering::Less => x,
         },
-    }
-}
-
-#[allow(dead_code)]
-pub trait BeatExt {
-    fn beat(&mut self, beat: &mut Beat) -> Response;
-}
-
-impl BeatExt for Ui {
-    fn beat(&mut self, beat: &mut Beat) -> Response {
-        BeatValue::new(beat).ui(self)
     }
 }

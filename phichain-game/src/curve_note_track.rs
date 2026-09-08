@@ -64,15 +64,17 @@ pub struct CurveNotes(Vec<Entity>);
 pub fn update_curve_note_track_system(
     mut commands: Commands,
     note_query: Query<(&Note, &ChildOf)>,
-    query: Query<(&CurveNote, Entity)>,
-    mut track_query: Query<(
-        CurveNoteTrack,
-        &ChildOf,
-        Option<&mut CurveNoteCache>,
-        Entity,
-    )>,
+    mut track_query: Query<
+        (
+            CurveNoteTrack,
+            Option<&CurveNotes>,
+            Option<&mut CurveNoteCache>,
+            Entity,
+        ),
+        With<ChildOf>,
+    >,
 ) {
-    for (track, child_of, cache, entity) in &mut track_query {
+    for (track, curve_notes, cache, entity) in &mut track_query {
         let (Ok(from), Ok(to)) = (note_query.get(track.from.0), note_query.get(track.to.0)) else {
             continue;
         };
@@ -97,14 +99,8 @@ pub fn update_curve_note_track_system(
         };
 
         if update {
-            for (note, note_entity) in &query {
-                if note.0 == entity {
-                    // despawning children does not remove references for parent
-                    // https://github.com/bevyengine/bevy/issues/12235
-                    // TODO bevy-0.16: maybe this is unnecessary now
-                    commands
-                        .entity(child_of.parent())
-                        .detach_children(&[note_entity]);
+            if let Some(curve_notes) = curve_notes {
+                for note_entity in curve_notes.iter() {
                     commands.entity(note_entity).despawn();
                 }
             }

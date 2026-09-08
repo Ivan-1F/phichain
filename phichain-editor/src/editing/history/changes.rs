@@ -1,4 +1,3 @@
-use crate::editing::pending::Pending;
 use crate::id_index::IdIndex;
 use anyhow::ensure;
 use bevy::ecs::component::Immutable;
@@ -6,7 +5,7 @@ use bevy::ecs::entity::EntityMapper;
 use bevy::ecs::reflect::{AppTypeRegistry, ReflectComponent};
 use bevy::prelude::*;
 use bevy::reflect::{FromType, GetTypeRegistration, TypePath};
-use phichain_game::Derived;
+use phichain_game::{Derived, Pending};
 use std::any::TypeId;
 use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
@@ -257,7 +256,6 @@ impl PendingChanges {
             }
             let descriptor = &registry.types[&ty];
             let mut after = entity
-                .filter(|_| exists_after)
                 .and_then(|entity| descriptor.component.reflect(entity))
                 .map(clone_value);
             if let Some(value) = &mut after {

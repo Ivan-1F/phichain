@@ -2,9 +2,9 @@ use bevy::prelude::*;
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::note::{Note, NoteKind};
+use phichain_game::Pending;
 
 use crate::editing::history::Edits;
-use crate::editing::pending::Pending;
 use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
 use crate::identifier::{Identifier, IntoIdentifier};
 use crate::schedule::EditorSet;

@@ -1,9 +1,9 @@
 use bevy::prelude::*;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::easing::Easing;
+use phichain_game::Pending;
 
 use crate::editing::history::Edits;
-use crate::editing::pending::Pending;
 use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
 use crate::identifier::{Identifier, IntoIdentifier};
 use crate::schedule::EditorSet;
@@ -112,42 +112,34 @@ fn create_event_system(
                     new_event.kind = LineEventKind::try_from(track).expect("Unknown event track");
                     new_event.end_beat =
                         beat.max(new_event.start_beat + ctx.settings.minimum_beat());
-                    let mut events = event_query.iter().collect::<Vec<_>>();
-                    events.sort_by_key(|x| x.0.start_beat);
+                    let events: Vec<_> = event_query
+                        .iter()
+                        .filter(|(event, parent)| {
+                            event.kind == new_event.kind && parent.target() == line_entity
+                        })
+                        .map(|(event, _)| event)
+                        .collect();
                     if let Some(last_event) = events
                         .iter()
-                        .filter(|(e, _)| e.kind == new_event.kind)
-                        .filter(|(_, e)| e.target() == line_entity)
-                        .take_while(|(e, _)| e.end_beat <= new_event.start_beat)
-                        .map(|x| x.0)
-                        .last()
+                        .filter(|event| event.end_beat <= new_event.start_beat)
+                        .max_by(|a, b| {
+                            a.end_beat
+                                .cmp(&b.end_beat)
+                                .then_with(|| a.value.end().total_cmp(&b.value.end()))
+                        })
                     {
-                        match new_event.value {
-                            LineEventValue::Transition { ref mut start, .. } => {
-                                *start = last_event.value.end();
-                            }
-                            LineEventValue::Constant { ref mut value } => {
-                                *value = last_event.value.end();
-                            }
-                        }
+                        *new_event.value.start_mut() = last_event.value.end();
                     }
-                    events.reverse();
                     if let Some(next_event) = events
                         .iter()
-                        .filter(|(e, _)| e.kind == new_event.kind)
-                        .filter(|(_, e)| e.target() == line_entity)
-                        .take_while(|(e, _)| e.start_beat >= new_event.end_beat)
-                        .map(|x| x.0)
-                        .last()
+                        .filter(|event| event.start_beat >= new_event.end_beat)
+                        .min_by(|a, b| {
+                            a.start_beat
+                                .cmp(&b.start_beat)
+                                .then_with(|| b.value.start().total_cmp(&a.value.start()))
+                        })
                     {
-                        match new_event.value {
-                            LineEventValue::Transition { ref mut end, .. } => {
-                                *end = next_event.value.start();
-                            }
-                            LineEventValue::Constant { ref mut value } => {
-                                *value = next_event.value.start();
-                            }
-                        }
+                        *new_event.value.end_mut() = next_event.value.start();
                     }
                     commands.entity(entity).despawn();
                     edits.once(t!("history.create_events", count = 1), move |commands| {

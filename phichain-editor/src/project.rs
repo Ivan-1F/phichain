@@ -85,17 +85,14 @@ fn write_project_system(
     chart_params: SerializeChartParam,
     line_params: SerializeLineParam,
 ) -> Result {
-    let result: anyhow::Result<()> = {
+    let result = (|| -> anyhow::Result<()> {
         let chart = serialize_chart(chart_params, line_params);
         let chart_string = serde_json::to_string(&chart)?;
+        let meta_string = serde_json::to_string(&project.meta)?;
         std::fs::write(project.path.chart_path(), chart_string)?;
-        std::fs::write(
-            project.path.meta_path(),
-            serde_json::to_string(&project.meta).unwrap(),
-        )?;
-
+        std::fs::write(project.path.meta_path(), meta_string)?;
         Ok(())
-    };
+    })();
 
     match result {
         Ok(_) => {
@@ -308,20 +305,6 @@ fn unload_project_system(
         let entities = line_query.iter(world).collect::<Vec<_>>();
         for entity in entities {
             // notes and events will be despawned as children
-            world.entity_mut(entity).despawn();
-        }
-
-        // despawn ghost entities created when despawning an entity with `keep_entity`
-        let to_remove = world
-            .query::<Entity>()
-            .iter(world)
-            .filter(|entity| {
-                world
-                    .inspect_entity(*entity)
-                    .is_ok_and(|x| x.collect::<Vec<_>>().is_empty())
-            })
-            .collect::<Vec<_>>();
-        for entity in to_remove {
             world.entity_mut(entity).despawn();
         }
 

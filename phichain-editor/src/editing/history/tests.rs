@@ -1,5 +1,4 @@
 use super::*;
-use crate::editing::pending::Pending;
 use crate::id_index::IdIndexPlugin;
 use crate::selection::{Selected, SelectedLine};
 use bevy::ecs::system::RunSystemOnce;
@@ -7,7 +6,7 @@ use bevy::ecs::system::SystemState;
 use phichain_chart::beat::Beat;
 use phichain_chart::line::Line;
 use phichain_chart::note::NoteKind;
-use phichain_game::Derived;
+use phichain_game::{Derived, Pending};
 
 fn fixture() -> (App, Entity) {
     let mut app = App::new();

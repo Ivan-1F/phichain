@@ -308,7 +308,11 @@ impl LineEvent {
         match self.value {
             LineEventValue::Transition { start, end, easing } => {
                 if beat >= start_beat && beat <= end_beat {
-                    let percent = (beat - start_beat) / (end_beat - start_beat);
+                    let percent = if start_beat == end_beat {
+                        1.0
+                    } else {
+                        (beat - start_beat) / (end_beat - start_beat)
+                    };
                     EventEvaluationResult::Affecting(start.ease_to(end, percent, easing))
                 } else if beat > end_beat {
                     EventEvaluationResult::Inherited {

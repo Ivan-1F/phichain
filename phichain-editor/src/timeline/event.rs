@@ -1,6 +1,5 @@
 use crate::constants::INDICATOR_POSITION;
 use crate::editing::history::Edits;
-use crate::editing::pending::Pending;
 use crate::selection::{Select, Selected, SelectedLine};
 use crate::timeline::{Timeline, TimelineContext};
 use crate::timing::SeekTo;
@@ -12,6 +11,7 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use phichain_chart::line::Line;
 use phichain_game::event::{EventOf, Events};
+use phichain_game::Pending;
 use std::iter;
 
 #[derive(Debug, Clone)]

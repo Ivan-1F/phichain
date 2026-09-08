@@ -1,5 +1,4 @@
 use crate::action::ActionRegistrationExt;
-use crate::editing::pending::Pending;
 use crate::hotkey::modifier::Modifier;
 use crate::hotkey::Hotkey;
 use crate::project::project_loaded;
@@ -10,6 +9,7 @@ use phichain_chart::line::Line;
 use phichain_game::curve_note_track::{CurveNote, CurveNoteTrackFrom};
 use phichain_game::utils::query_ordered_lines;
 use phichain_game::GameSet;
+use phichain_game::Pending;
 
 #[derive(Resource)]
 pub struct SelectedLine(pub Entity);

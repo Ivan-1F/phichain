@@ -1,5 +1,4 @@
 use crate::editing::history::Edits;
-use crate::editing::pending::Pending;
 use crate::selection::{Select, Selected, SelectedLine};
 use crate::tab::timeline::TimelineFilter;
 use crate::timeline::{Timeline, TimelineContext};
@@ -18,6 +17,7 @@ use phichain_game::curve_note_track::{
     CurveNote, CurveNoteTrack, CurveNoteTrackFrom, CurveNoteTrackTo,
 };
 use phichain_game::highlight::Highlighted;
+use phichain_game::Pending;
 use std::cmp::Ordering;
 
 #[derive(Debug, Clone)]

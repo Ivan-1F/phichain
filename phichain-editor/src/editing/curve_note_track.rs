@@ -61,8 +61,8 @@ fn cancel_pending_curve_note_track_system(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::editing::pending::Pending;
     use crate::selection::{handle_select_event, Select};
+    use phichain_game::Pending;
 
     #[test]
     fn a_curve_preview_remains_selected_until_cancelled() {
