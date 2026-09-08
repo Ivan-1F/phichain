@@ -3,7 +3,6 @@ use crate::editing::pending::Pending;
 use crate::selection::{Select, Selected, SelectedLine};
 use crate::tab::timeline::TimelineFilter;
 use crate::timeline::{Timeline, TimelineContext};
-use crate::ui::edit::gesture_response;
 use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
 use crate::ui::widgets::easing::EasingGraph;
 use bevy::ecs::system::SystemState;
@@ -194,19 +193,11 @@ impl Timeline for NoteTimeline {
             );
 
             if note.kind.is_hold() && curve_note.is_none() && pending.is_none() {
-                let mut draft = *note;
-                let id = ui.id().with(("hold_range", entity));
-                for response in BeatRangeDragZone::new(rect, id, &ctx, &mut draft).show(ui) {
-                    let next = draft;
-                    gesture_response(
-                        &mut edits,
-                        &response,
-                        t!("history.edit_notes", count = 1),
-                        move |commands| {
-                            commands.entity(entity).insert(next);
-                        },
-                    );
-                }
+                edits
+                    .component(entity, note, t!("history.edit_notes", count = 1))
+                    .edit(ui, "hold_range", |ui, note| {
+                        ui.add(BeatRangeDragZone::new(rect, &ctx, note));
+                    });
             }
 
             if curve_note.is_none() && pending.is_none() {

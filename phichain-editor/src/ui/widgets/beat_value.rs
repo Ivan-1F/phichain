@@ -1,3 +1,4 @@
+use crate::ui::edit::{EditResponse, EditWidget};
 use egui::{Response, Ui, Vec2, Widget};
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
@@ -37,8 +38,8 @@ impl<'a> BeatValue<'a> {
     }
 }
 
-impl Widget for BeatValue<'_> {
-    fn ui(self, ui: &mut Ui) -> Response {
+impl BeatValue<'_> {
+    fn show(self, ui: &mut Ui) -> [Response; 4] {
         ui.horizontal(|ui| {
             let mut value = self.beat.value();
 
@@ -118,11 +119,6 @@ impl Widget for BeatValue<'_> {
                 )
             };
 
-            let response = response_value
-                .union(response_whole)
-                .union(response_numer)
-                .union(response_denom);
-
             if whole != self.beat.beat() || numer != self.beat.numer() || denom != self.beat.denom()
             {
                 *self.beat = clamp_to_range(beat!(whole, numer, denom), &self.clamp_range);
@@ -135,9 +131,29 @@ impl Widget for BeatValue<'_> {
                 *self.beat = clamp_to_range(new_beat, &self.clamp_range);
             }
 
-            response
+            [
+                response_value,
+                response_whole,
+                response_numer,
+                response_denom,
+            ]
         })
         .inner
+    }
+}
+
+impl Widget for BeatValue<'_> {
+    fn ui(self, ui: &mut Ui) -> Response {
+        self.show(ui)
+            .into_iter()
+            .reduce(|response, other| response.union(other))
+            .unwrap()
+    }
+}
+
+impl EditWidget for BeatValue<'_> {
+    fn edit_ui(self, ui: &mut Ui) -> EditResponse {
+        EditResponse::Gesture(self.show(ui).into())
     }
 }
 

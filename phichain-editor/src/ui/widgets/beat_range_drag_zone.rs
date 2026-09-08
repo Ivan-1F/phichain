@@ -1,5 +1,6 @@
 use crate::timeline::TimelineContext;
-use egui::{Id, Rangef, Rect, Response, Sense, Ui};
+use crate::ui::edit::{EditResponse, EditWidget};
+use egui::{Rangef, Rect, Response, Sense, Ui};
 use phichain_chart::beat::Beat;
 use phichain_chart::event::LineEvent;
 use phichain_chart::note::Note;
@@ -57,19 +58,13 @@ impl TimelineBeatRange for LineEvent {
 /// callers decide how its responses update the document.
 pub struct BeatRangeDragZone<'a, T: TimelineBeatRange> {
     rect: Rect,
-    id: Id,
     ctx: &'a TimelineContext<'a>,
     data: &'a mut T,
 }
 
 impl<'a, T: TimelineBeatRange> BeatRangeDragZone<'a, T> {
-    pub fn new(rect: Rect, id: Id, ctx: &'a TimelineContext<'a>, data: &'a mut T) -> Self {
-        Self {
-            rect,
-            id,
-            ctx,
-            data,
-        }
+    pub fn new(rect: Rect, ctx: &'a TimelineContext<'a>, data: &'a mut T) -> Self {
+        Self { rect, ctx, data }
     }
 
     pub fn show(mut self, ui: &mut Ui) -> [Response; 2] {
@@ -86,7 +81,7 @@ impl<'a, T: TimelineBeatRange> BeatRangeDragZone<'a, T> {
                 Rangef::from(self.rect.min.y..=self.rect.min.y + height)
             },
         );
-        let id = self.id.with(start);
+        let id = ui.id().with(("beat_range", start));
         let mut response = ui
             .interact(zone, id, Sense::drag())
             .on_hover_and_drag_cursor(egui::CursorIcon::ResizeVertical);
@@ -134,6 +129,12 @@ impl<'a, T: TimelineBeatRange> BeatRangeDragZone<'a, T> {
     }
 }
 
+impl<T: TimelineBeatRange> EditWidget for BeatRangeDragZone<'_, T> {
+    fn edit_ui(self, ui: &mut Ui) -> EditResponse {
+        EditResponse::Gesture(self.show(ui).into())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -142,10 +143,9 @@ mod tests {
     use crate::tab::timeline::TimelineViewport;
     use crate::timeline::settings::TimelineSettings;
     use crate::timing::ChartTime;
-    use crate::ui::edit::gesture_response;
     use bevy::ecs::system::SystemState;
     use bevy::prelude::*;
-    use egui::{Context, Event, Modifiers, PointerButton, Pos2, RawInput, Rect};
+    use egui::{Context, Event, Id, Modifiers, PointerButton, Pos2, RawInput, Rect};
     use phichain_chart::bpm_list::BpmList;
     use phichain_chart::note::NoteKind;
     use phichain_game::audio::AudioDuration;
@@ -161,7 +161,7 @@ mod tests {
             },
             |ctx| {
                 egui::CentralPanel::default().show(ctx, |ui| {
-                    let mut note = *app.world().get::<Note>(entity).unwrap();
+                    let note = *app.world().get::<Note>(entity).unwrap();
                     let mut state: SystemState<(TimelineContext, Edits)> =
                         SystemState::new(app.world_mut());
                     let (timeline, mut edits) = state.get_mut(app.world_mut());
@@ -172,13 +172,11 @@ mod tests {
                     let background =
                         ui.interact(ui.max_rect(), Id::new("background"), Sense::drag());
                     ui.interact(rect, Id::new("note"), Sense::click());
-                    for response in
-                        BeatRangeDragZone::new(rect, Id::new("hold"), &timeline, &mut note).show(ui)
-                    {
-                        gesture_response(&mut edits, &response, "resize hold", move |commands| {
-                            commands.entity(entity).insert(note);
+                    edits
+                        .component(entity, &note, "resize hold")
+                        .edit(ui, "hold", |ui, note| {
+                            ui.add(BeatRangeDragZone::new(rect, &timeline, note));
                         });
-                    }
                     assert!(
                         !background.dragged(),
                         "the range handle must capture the drag before the background"
