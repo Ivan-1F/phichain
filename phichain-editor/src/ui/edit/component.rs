@@ -1,6 +1,5 @@
 use super::gesture_response;
 use crate::editing::history::Edits;
-use crate::ui::sides::SidesExt;
 use bevy::prelude::*;
 use egui::{Response, Ui, UiBuilder, Widget, WidgetText};
 use std::hash::Hash;
@@ -60,7 +59,9 @@ impl<T: Component + Clone + PartialEq> ComponentEditor<'_, '_, '_, T> {
         label: impl Into<WidgetText>,
         draw: impl FnOnce(&mut FieldUi<'_>, &mut T) -> R,
     ) -> R {
-        ui.sides(|ui| ui.label(label), |ui| self.edit(ui, key, draw))
+        egui::Sides::new()
+            .shrink_right()
+            .show(ui, |ui| ui.label(label), |ui| self.edit(ui, key, draw))
             .1
     }
 
