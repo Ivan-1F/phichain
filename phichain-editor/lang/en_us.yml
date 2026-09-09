@@ -72,6 +72,10 @@ tab:
     title: Preview
   timeline:
     title: Timeline
+    curve_note_track:
+      creating: Creating curve note track
+      select_destination: Select an end note on the same line.
+      cancel: Cancel
     event:
       jump_to_event: Jump to this event
   inspector:

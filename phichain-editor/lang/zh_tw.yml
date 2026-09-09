@@ -72,6 +72,10 @@ tab:
     title: 預覽
   timeline:
     title: 時間線
+    curve_note_track:
+      creating: 正在建立曲線音符軌跡
+      select_destination: 請選擇同一判定線上的終點
+      cancel: 取消
     event:
       jump_to_event: 跳轉至該事件
   inspector:

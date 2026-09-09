@@ -72,6 +72,10 @@ tab:
     title: プレビュー
   timeline:
     title: タイムライン
+    curve_note_track:
+      creating: カーブノーツトラックを作成中
+      select_destination: 同じ判定線上の終点ノーツを選択してください
+      cancel: キャンセル
     event:
       jump_to_event: このイベントにジャンプ
   inspector:
