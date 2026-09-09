@@ -209,10 +209,7 @@ impl Timeline for NoteTimeline {
                         for (preview, _, _) in &pending_tracks {
                             commands.entity(preview).despawn();
                         }
-                        let preview = commands
-                            .spawn((CurveNoteTrackFrom(entity), ChildOf(line_entity), Pending))
-                            .id();
-                        select_events.write(Select(vec![preview]));
+                        commands.spawn((CurveNoteTrackFrom(entity), ChildOf(line_entity), Pending));
                         ui.close();
                     }
                 });

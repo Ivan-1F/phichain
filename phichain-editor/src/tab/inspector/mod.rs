@@ -6,9 +6,7 @@ mod single_event;
 mod single_note;
 
 use crate::selection::Selected;
-use crate::tab::inspector::curve_note_track::{
-    curve_note_track_inspector, pending_curve_note_track_inspector,
-};
+use crate::tab::inspector::curve_note_track::curve_note_track_inspector;
 use crate::tab::inspector::line::line_inspector;
 use crate::tab::inspector::multiple_events::multiple_events_inspector;
 use crate::tab::inspector::multiple_notes::multiple_notes_inspector;
@@ -19,7 +17,7 @@ use bevy::prelude::*;
 use egui::{Ui, UiBuilder};
 use phichain_chart::event::LineEvent;
 use phichain_chart::note::Note;
-use phichain_game::curve_note_track::{CurveNoteTrackFrom, CurveNoteTrackTo};
+use phichain_game::curve_note_track::CurveNoteTrackTo;
 
 #[derive(Debug, Clone, Copy, Component)]
 pub struct Inspector {
@@ -64,7 +62,6 @@ impl Plugin for InspectorPlugin {
                 curve_note_track_inspector,
                 single_selected::<CurveNoteTrackTo>,
             )
-            .add_inspector(pending_curve_note_track_inspector, cnt_pending_selected)
             .add_inspector(single_event_inspector, single_selected::<LineEvent>)
             .add_inspector(multiple_events_inspector, multiple_selected::<LineEvent>)
             .add_inspector(line_inspector, || true);
@@ -124,17 +121,4 @@ where
     T: Component,
 {
     !selected_query.is_empty() && selected_query.iter().all(|e| query.contains(e))
-}
-
-/// Returns true if the selected entity is an incomplete curve note track
-/// (has an origin link but no destination link yet)
-pub fn cnt_pending_selected(
-    selected_query: Option<Single<Entity, With<Selected>>>,
-    query: Query<(), (With<CurveNoteTrackFrom>, Without<CurveNoteTrackTo>)>,
-) -> bool {
-    if let Some(entity) = selected_query {
-        query.contains(*entity)
-    } else {
-        false
-    }
 }

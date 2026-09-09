@@ -11,7 +11,6 @@ pub(crate) mod bpm;
 mod clipboard;
 mod create_event;
 mod create_note;
-pub mod curve_note_track;
 mod delete_selected;
 mod description;
 pub mod history;
@@ -30,7 +29,6 @@ impl Plugin for EditingPlugin {
             .add_plugins(create_event::CreateEventPlugin)
             .add_plugins(moving::MovingPlugin)
             .add_plugins(line::LineEditingPlugin)
-            .add_plugins(curve_note_track::CurveNoteTrackPlugin)
             .add_plugins(bpm::BpmEditingPlugin)
             .add_plugins(project_settings::ProjectSettingsPlugin)
             .add_action(

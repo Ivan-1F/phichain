@@ -450,65 +450,6 @@ fn curve_endpoints_delete_their_tracks() {
 }
 
 #[test]
-fn deleting_curve_previews_only_records_selected_document_objects() {
-    use phichain_game::curve_note_track::CurveNoteTrackFrom;
-
-    for select_note in [false, true] {
-        let (mut app, line) = fixture();
-        let (origin, id) = create(&mut app, line);
-        let preview = app
-            .world_mut()
-            .spawn((CurveNoteTrackFrom(origin), ChildOf(line), Pending, Selected))
-            .id();
-        if select_note {
-            app.world_mut().entity_mut(origin).insert(Selected);
-        }
-
-        app.world_mut()
-            .run_system_once::<_, Result, _>(
-                crate::editing::delete_selected::delete_selected_system,
-            )
-            .unwrap()
-            .unwrap();
-
-        assert!(app.world().get_entity(preview).is_err());
-        assert_eq!(app.world().get_entity(origin).is_err(), select_note);
-        assert_eq!(
-            app.world().resource::<EditorHistory>().record.len(),
-            if select_note { 2 } else { 1 }
-        );
-
-        undo(&mut app);
-        if select_note {
-            let restored = entity_with_id(&mut app, id);
-            assert_eq!(app.world().get::<Note>(restored), Some(&note()));
-        } else {
-            assert!(app.world().get_entity(origin).is_err());
-        }
-        assert_eq!(
-            app.world_mut()
-                .query::<&CurveNoteTrackFrom>()
-                .iter(app.world())
-                .count(),
-            0
-        );
-
-        redo(&mut app);
-        assert_eq!(
-            app.world_mut().query::<&Note>().iter(app.world()).count(),
-            if select_note { 0 } else { 1 }
-        );
-        assert_eq!(
-            app.world_mut()
-                .query::<&CurveNoteTrackFrom>()
-                .iter(app.world())
-                .count(),
-            0
-        );
-    }
-}
-
-#[test]
 fn lifecycle_observer_commands_belong_to_the_edit_that_triggered_them() {
     let (mut app, line) = fixture();
     // Use a different component as the trigger to avoid recursively observing

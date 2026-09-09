@@ -78,17 +78,8 @@ tab:
     title: 檢查器
     curve_note_track:
       title:
-        pending: 正在新增的曲線音符軌跡
         selected: 選擇的曲線音符軌跡
       start: 從這裡開始新增曲線音符軌跡
-      removed:
-        incomplete: 一條曲線音符軌跡被移除：缺少起點或終點
-        invalid: 一條曲線音符軌跡被移除：起點或終點無效
-        empty: 一條曲線音符軌跡被移除：沒有包含任何音符
-      instructions:
-        select_destination: 請選擇終點
-        select_origin: 請選擇起點
-        select_origin_destination: 請選擇起點和終點
       density: 密度
       kind: 類型
       curve: 曲線

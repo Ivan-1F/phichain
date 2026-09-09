@@ -78,17 +78,8 @@ tab:
     title: インスペクター
     curve_note_track:
       title:
-        pending: 作成中のカーブノーツトラック
         selected: 選択されたカーブノーツトラック
       start: ここからカーブノーツトラックを新規作成
-      removed:
-        incomplete: カーブノーツトラックが削除されました：始点または終点がありません
-        invalid: カーブノーツトラックが削除されました：始点または終点が無効です
-        empty: カーブノーツトラックが削除されました：ノーツが含まれていません
-      instructions:
-        select_destination: 終点を選択してください
-        select_origin: 始点を選択してください
-        select_origin_destination: 始点と終点を選択してください
       density: 密度
       kind: 種類
       curve: カーブ

@@ -6,7 +6,7 @@ use crate::utils::compat::ControlKeyExt;
 use anyhow::Context;
 use bevy::prelude::*;
 use phichain_chart::line::Line;
-use phichain_game::curve_note_track::{CurveNote, CurveNoteTrackFrom};
+use phichain_game::curve_note_track::CurveNote;
 use phichain_game::utils::query_ordered_lines;
 use phichain_game::GameSet;
 use phichain_game::Pending;
@@ -131,7 +131,7 @@ pub fn handle_select_event(
     keyboard: Res<ButtonInput<KeyCode>>,
 
     curve_note_query: Query<&CurveNote>,
-    pending_query: Query<Has<CurveNoteTrackFrom>, With<Pending>>,
+    pending_query: Query<(), With<Pending>>,
 
     selected_query: Query<Entity, With<Selected>>,
 ) {
@@ -148,8 +148,7 @@ pub fn handle_select_event(
                 commands.entity(curve_note.0).insert(Selected);
                 continue;
             }
-            // A curve preview is selected while choosing its destination and options.
-            if pending_query.get(*entity) == Ok(false) {
+            if pending_query.contains(*entity) {
                 continue;
             }
             commands.entity(*entity).insert(Selected);

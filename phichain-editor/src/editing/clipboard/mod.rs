@@ -119,20 +119,6 @@ fn copy_system(world: &mut World) -> Result {
 }
 
 fn cut_system(world: &mut World) -> Result {
-    // Validate before changing either the clipboard or the document.
-    let valid = world
-        .query_filtered::<EntityRef, With<Selected>>()
-        .iter(world)
-        .all(|entity| {
-            !entity.contains::<Derived>()
-                && !entity.contains::<Pending>()
-                && (entity.contains::<Note>()
-                    || entity.contains::<LineEvent>()
-                    || entity.contains::<CurveNoteTrackTo>())
-        });
-    if !valid {
-        return Ok(());
-    }
     copy_system(world)?;
     let mut targets = Vec::new();
     let mut counts = ObjectCounts::default();
