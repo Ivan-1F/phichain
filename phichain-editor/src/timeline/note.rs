@@ -1,3 +1,4 @@
+use crate::constants::INDICATOR_POSITION;
 use crate::editing::history::Edits;
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::selection::{Select, Selected, SelectedLine};
@@ -42,9 +43,70 @@ impl NoteTimeline {
     }
 }
 
+fn pending_curve_note_track_ui(
+    ui: &mut Ui,
+    world: &mut World,
+    viewport: Rect,
+    line_entity: Entity,
+) {
+    let preview = world
+        .query_filtered::<(Entity, &ChildOf), (With<Pending>, With<CurveNoteTrackFrom>)>()
+        .iter(world)
+        .find_map(|(entity, parent)| (parent.parent() == line_entity).then_some(entity));
+    if let Some(preview) = preview {
+        let escape = world
+            .resource::<ButtonInput<KeyCode>>()
+            .just_pressed(KeyCode::Escape);
+        let cancel = escape
+            || egui::Area::new(ui.id().with("pending_curve_note_track"))
+                .order(egui::Order::Foreground)
+                .pivot(egui::Align2::CENTER_CENTER)
+                .fixed_pos(egui::pos2(
+                    viewport.center().x,
+                    viewport.top() + viewport.height() * (INDICATOR_POSITION + 1.0) / 2.0,
+                ))
+                .constrain_to(viewport)
+                .show(ui.ctx(), |ui| {
+                    ui.set_width((viewport.width() - 16.0).clamp(0.0, 280.0));
+                    for font in ui.style_mut().text_styles.values_mut() {
+                        font.size *= 0.9;
+                    }
+                    ui.spacing_mut().interact_size.y *= 0.9;
+                    egui::Frame::popup(ui.style())
+                        .inner_margin(egui::Margin::symmetric(10, 6))
+                        .show(ui, |ui| {
+                            let (_, cancel) = egui::Sides::new().shrink_left().wrap().show(
+                                ui,
+                                |ui| {
+                                    ui.strong(t!("tab.timeline.curve_note_track.creating"));
+                                },
+                                |ui| {
+                                    ui.add(
+                                        egui::Button::new(t!(
+                                            "tab.timeline.curve_note_track.cancel"
+                                        ))
+                                        .frame(false),
+                                    )
+                                    .on_hover_text("Esc")
+                                },
+                            );
+                            ui.small(t!("tab.timeline.curve_note_track.select_destination"));
+                            cancel.clicked()
+                        })
+                        .inner
+                })
+                .inner;
+        if cancel {
+            world.despawn(preview);
+        }
+    }
+}
+
 impl Timeline for NoteTimeline {
     fn ui(&self, ui: &mut Ui, world: &mut World, viewport: Rect) {
         let line_entity = self.line_entity(world);
+
+        pending_curve_note_track_ui(ui, world, viewport, line_entity);
 
         let mut state: SystemState<(
             TimelineContext,

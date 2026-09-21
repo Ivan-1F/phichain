@@ -2,7 +2,6 @@ use bevy::prelude::*;
 use bevy_persistent::Persistent;
 use egui::Ui;
 
-use crate::constants::INDICATOR_POSITION;
 use crate::settings::EditorSettings;
 use crate::timeline::settings::TimelineSettings;
 use crate::timeline::Timeline;
@@ -10,69 +9,9 @@ use crate::timing::{Pause, Paused, Seek};
 use crate::utils::convert::BevyEguiConvert;
 use crate::{spectrogram, timeline};
 use phichain_chart::note::Note;
-use phichain_game::curve_note_track::CurveNoteTrackFrom;
-use phichain_game::Pending;
 
 pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
     let clip_rect = ui.clip_rect();
-    if let Ok(preview) = world
-        .query_filtered::<Entity, (With<Pending>, With<CurveNoteTrackFrom>)>()
-        .single(world)
-    {
-        let viewport = world
-            .resource::<TimelineSettings>()
-            .container
-            .allocate(clip_rect)
-            .into_iter()
-            .find(|item| matches!(item.timeline, timeline::TimelineItem::Note(_)))
-            .map(|item| item.viewport)
-            .unwrap_or(clip_rect);
-        let escape = world
-            .resource::<ButtonInput<KeyCode>>()
-            .just_pressed(KeyCode::Escape);
-        let cancel = escape
-            || egui::Area::new(ui.id().with("pending_curve_note_track"))
-                .order(egui::Order::Foreground)
-                .pivot(egui::Align2::CENTER_CENTER)
-                .fixed_pos(egui::pos2(
-                    viewport.center().x,
-                    viewport.top() + viewport.height() * (INDICATOR_POSITION + 1.0) / 2.0,
-                ))
-                .constrain_to(viewport)
-                .show(ui.ctx(), |ui| {
-                    ui.set_width((viewport.width() - 16.0).clamp(0.0, 280.0));
-                    for font in ui.style_mut().text_styles.values_mut() {
-                        font.size *= 0.9;
-                    }
-                    ui.spacing_mut().interact_size.y *= 0.9;
-                    egui::Frame::popup(ui.style())
-                        .inner_margin(egui::Margin::symmetric(10, 6))
-                        .show(ui, |ui| {
-                            let (_, cancel) = egui::Sides::new().shrink_left().wrap().show(
-                                ui,
-                                |ui| {
-                                    ui.strong(t!("tab.timeline.curve_note_track.creating"));
-                                },
-                                |ui| {
-                                    ui.add(
-                                        egui::Button::new(t!(
-                                            "tab.timeline.curve_note_track.cancel"
-                                        ))
-                                        .frame(false),
-                                    )
-                                    .on_hover_text("Esc")
-                                },
-                            );
-                            ui.small(t!("tab.timeline.curve_note_track.select_destination"));
-                            cancel.clicked()
-                        })
-                        .inner
-                })
-                .inner;
-        if cancel {
-            world.despawn(preview);
-        }
-    }
     let mut timeline_viewport = world.resource_mut::<TimelineViewport>();
     timeline_viewport.0 = Rect::from_corners(
         Vec2 {
