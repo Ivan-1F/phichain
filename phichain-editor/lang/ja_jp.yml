@@ -75,6 +75,7 @@ tab:
     curve_note_track:
       creating: カーブノーツトラックを作成中
       select_destination: 同じ判定線上の終点ノーツを選択してください
+      same_endpoint: 始点と終点に同じノーツは指定できません
       cancel: キャンセル
     event:
       jump_to_event: このイベントにジャンプ

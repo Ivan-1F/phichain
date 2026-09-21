@@ -1,4 +1,5 @@
 use crate::editing::history::Edits;
+use crate::notification::{ToastsExt, ToastsStorage};
 use crate::selection::{Select, Selected, SelectedLine};
 use crate::tab::timeline::TimelineFilter;
 use crate::timeline::{Timeline, TimelineContext};
@@ -66,6 +67,7 @@ impl Timeline for NoteTimeline {
             MessageWriter<Select>,
             Commands,
             Edits,
+            ResMut<ToastsStorage>,
             Query<
                 (Entity, &CurveNoteTrackFrom, &CurveNoteTrackOptions),
                 (With<Pending>, Without<CurveNoteTrackTo>),
@@ -85,6 +87,7 @@ impl Timeline for NoteTimeline {
             mut select_events,
             mut commands,
             mut edits,
+            mut toasts,
             pending_tracks,
         ) = state.get_mut(world);
 
@@ -218,6 +221,10 @@ impl Timeline for NoteTimeline {
                 if curve_note.is_none() && pending.is_none() {
                     if let Ok((preview, from, options)) = pending_tracks.single() {
                         let from = from.0;
+                        if from == entity {
+                            toasts.info(t!("tab.timeline.curve_note_track.same_endpoint"));
+                            continue;
+                        }
                         let options = options.clone();
                         let line = note_query.get(from).unwrap().1.parent();
                         if line != line_entity {

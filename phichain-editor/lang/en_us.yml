@@ -75,6 +75,7 @@ tab:
     curve_note_track:
       creating: Creating curve note track
       select_destination: Select an end note on the same line.
+      same_endpoint: The start and end cannot be the same note.
       cancel: Cancel
     event:
       jump_to_event: Jump to this event

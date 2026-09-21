@@ -75,6 +75,7 @@ tab:
     curve_note_track:
       creating: 正在创建曲线音符轨迹
       select_destination: 请选择同一判定线上的终点
+      same_endpoint: 起点和终点不能是同一个音符
       cancel: 取消
     event:
       jump_to_event: 跳转至该事件
