@@ -98,10 +98,6 @@ impl TimelineContext<'_> {
     pub fn y_to_beat_f32(&self, y: f32) -> f32 {
         self.bpm_list.beat_at_f32(self.y_to_time(y))
     }
-
-    pub fn beat_f32_to_y(&self, beat: f32) -> f32 {
-        self.beat_to_y(Beat::from(beat))
-    }
 }
 
 #[enum_dispatch(TimelineItem)]
@@ -333,7 +329,7 @@ fn clean_dangle_timelines_observer(
     remove: On<Remove, Line>,
     mut timeline_settings: ResMut<TimelineSettings>,
 ) {
-    if let Some(index) =
+    while let Some(index) =
         timeline_settings
             .container
             .timelines

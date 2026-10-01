@@ -1,4 +1,3 @@
-use crate::editing::pending::Pending;
 use crate::project::project_loaded;
 use crate::selection::{Selected, SelectedLine};
 use crate::settings::{EditorSettings, ShowLineAnchorOption};
@@ -11,6 +10,7 @@ use phichain_chart::project::Project;
 use phichain_game::core::HoldComponent;
 use phichain_game::curve_note_track::CurveNote;
 use phichain_game::GameConfig;
+use phichain_game::Pending;
 
 pub struct CoreGamePlugin;
 

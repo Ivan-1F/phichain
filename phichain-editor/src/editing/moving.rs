@@ -1,15 +1,19 @@
 use crate::action::ActionRegistrationExt;
-use crate::editing::command::event::EditEvent;
-use crate::editing::command::note::EditNote;
-use crate::editing::command::{CommandSequence, EditorCommand};
-use crate::editing::DoCommand;
+use crate::editing::description::ObjectCounts;
+use crate::editing::history::Edits;
 use crate::hotkey::Hotkey;
 use crate::selection::Selected;
 use crate::timeline::settings::TimelineSettings;
 use bevy::prelude::*;
-use num::{FromPrimitive, Rational32};
+use phichain_chart::beat::Beat;
 use phichain_chart::event::LineEvent;
 use phichain_chart::note::Note;
+use phichain_game::{Derived, Pending};
+
+type SelectedNotes<'w, 's> =
+    Query<'w, 's, (Entity, &'static Note), (With<Selected>, Without<Derived>, Without<Pending>)>;
+type SelectedEvents<'w, 's> =
+    Query<'w, 's, (Entity, &'static LineEvent), (With<Selected>, Without<Pending>)>;
 
 pub struct MovingPlugin;
 
@@ -38,154 +42,208 @@ impl Plugin for MovingPlugin {
     }
 }
 
+fn move_vertical(
+    settings: &TimelineSettings,
+    notes: &SelectedNotes,
+    events: &SelectedEvents,
+    edits: &mut Edits,
+    forward: bool,
+) {
+    let start = notes
+        .iter()
+        .map(|(_, note)| note.beat)
+        .chain(events.iter().map(|(_, event)| event.start_beat))
+        .min();
+    let Some(start) = start else {
+        return;
+    };
+    let step = settings.minimum_beat();
+    let to = settings
+        .attach((if forward { start + step } else { start - step }).value())
+        .max(Beat::ZERO);
+    let delta = to - start;
+    let notes: Vec<_> = notes
+        .iter()
+        .map(|(entity, note)| {
+            (
+                entity,
+                Note {
+                    beat: note.beat + delta,
+                    ..*note
+                },
+            )
+        })
+        .collect();
+    let events: Vec<_> = events
+        .iter()
+        .map(|(entity, event)| {
+            (
+                entity,
+                LineEvent {
+                    start_beat: event.start_beat + delta,
+                    end_beat: event.end_beat + delta,
+                    ..*event
+                },
+            )
+        })
+        .collect();
+    let counts = ObjectCounts {
+        notes: notes.len(),
+        events: events.len(),
+        ..default()
+    };
+    edits.once(
+        t!("history.move", objects = counts.text()),
+        move |commands| {
+            for (entity, note) in notes {
+                commands.entity(entity).insert(note);
+            }
+            for (entity, event) in events {
+                commands.entity(entity).insert(event);
+            }
+        },
+    );
+}
+
 fn move_up_system(
-    timeline_settings: Res<TimelineSettings>,
-    selected_notes: Query<(&Note, Entity), With<Selected>>,
-    selected_events: Query<(&LineEvent, Entity), With<Selected>>,
-    mut event_writer: MessageWriter<DoCommand>,
+    settings: Res<TimelineSettings>,
+    notes: SelectedNotes,
+    events: SelectedEvents,
+    mut edits: Edits,
 ) -> Result {
-    if let Some((start, _)) = selected_notes.iter().min_by_key(|(note, _)| note.beat) {
-        let to = timeline_settings.attach((start.beat + timeline_settings.minimum_beat()).value());
-        let delta = to - start.beat;
-        event_writer.write(DoCommand(EditorCommand::CommandSequence(CommandSequence(
-            selected_notes
-                .iter()
-                .map(|(note, entity)| {
-                    let new_note = Note {
-                        beat: note.beat + delta,
-                        ..*note
-                    };
-                    EditorCommand::EditNote(EditNote::new(entity, *note, new_note))
-                })
-                .collect(),
-        ))));
-    }
-
-    if let Some((start, _)) = selected_events
-        .iter()
-        .min_by_key(|(event, _)| event.start_beat)
-    {
-        let to =
-            timeline_settings.attach((start.start_beat + timeline_settings.minimum_beat()).value());
-        let delta = to - start.start_beat;
-        event_writer.write(DoCommand(EditorCommand::CommandSequence(CommandSequence(
-            selected_events
-                .iter()
-                .map(|(event, entity)| {
-                    let new_event = LineEvent {
-                        start_beat: event.start_beat + delta,
-                        end_beat: event.end_beat + delta,
-                        ..*event
-                    };
-                    EditorCommand::EditEvent(EditEvent::new(entity, *event, new_event))
-                })
-                .collect(),
-        ))));
-    }
-
+    move_vertical(&settings, &notes, &events, &mut edits, true);
     Ok(())
 }
-
 fn move_down_system(
-    timeline_settings: Res<TimelineSettings>,
-    selected_notes: Query<(&Note, Entity), With<Selected>>,
-    selected_events: Query<(&LineEvent, Entity), With<Selected>>,
-    mut event_writer: MessageWriter<DoCommand>,
+    settings: Res<TimelineSettings>,
+    notes: SelectedNotes,
+    events: SelectedEvents,
+    mut edits: Edits,
 ) -> Result {
-    if let Some((start, _)) = selected_notes.iter().min_by_key(|(note, _)| note.beat) {
-        let to = timeline_settings.attach((start.beat - timeline_settings.minimum_beat()).value());
-        let delta = to - start.beat;
-        event_writer.write(DoCommand(EditorCommand::CommandSequence(CommandSequence(
-            selected_notes
-                .iter()
-                .map(|(note, entity)| {
-                    let new_note = Note {
-                        beat: note.beat + delta,
-                        ..*note
-                    };
-                    EditorCommand::EditNote(EditNote::new(entity, *note, new_note))
-                })
-                .collect(),
-        ))));
-    }
-
-    if let Some((start, _)) = selected_events
-        .iter()
-        .min_by_key(|(event, _)| event.start_beat)
-    {
-        let to =
-            timeline_settings.attach((start.start_beat - timeline_settings.minimum_beat()).value());
-        let delta = to - start.start_beat;
-        event_writer.write(DoCommand(EditorCommand::CommandSequence(CommandSequence(
-            selected_events
-                .iter()
-                .map(|(event, entity)| {
-                    let new_event = LineEvent {
-                        start_beat: event.start_beat + delta,
-                        end_beat: event.end_beat + delta,
-                        ..*event
-                    };
-                    EditorCommand::EditEvent(EditEvent::new(entity, *event, new_event))
-                })
-                .collect(),
-        ))));
-    }
-
+    move_vertical(&settings, &notes, &events, &mut edits, false);
     Ok(())
 }
-
+fn move_horizontal(
+    settings: &TimelineSettings,
+    notes: &SelectedNotes,
+    edits: &mut Edits,
+    right: bool,
+) {
+    let edge = notes
+        .iter()
+        .map(|(_, note)| note.x)
+        .reduce(|a, b| if right { a.max(b) } else { a.min(b) });
+    let Some(edge) = edge else {
+        return;
+    };
+    let step = settings.minimum_lane() * if right { 1.0 } else { -1.0 };
+    let delta = settings.attach_x(edge + step) - edge;
+    let notes: Vec<_> = notes
+        .iter()
+        .map(|(entity, note)| {
+            (
+                entity,
+                Note {
+                    x: note.x + delta,
+                    ..*note
+                },
+            )
+        })
+        .collect();
+    let counts = ObjectCounts {
+        notes: notes.len(),
+        ..default()
+    };
+    edits.once(
+        t!("history.move", objects = counts.text()),
+        move |commands| {
+            for (entity, note) in notes {
+                commands.entity(entity).insert(note);
+            }
+        },
+    );
+}
 fn move_left_system(
-    timeline_settings: Res<TimelineSettings>,
-    selected_notes: Query<(&Note, Entity), With<Selected>>,
-    mut event_writer: MessageWriter<DoCommand>,
+    settings: Res<TimelineSettings>,
+    notes: SelectedNotes,
+    mut edits: Edits,
 ) -> Result {
-    if let Some((start, _)) = selected_notes
-        .iter()
-        .min_by_key(|(note, _)| Rational32::from_f32(note.x))
-    {
-        let to = timeline_settings.attach_x(start.x - timeline_settings.minimum_lane());
-        let delta = to - start.x;
-        event_writer.write(DoCommand(EditorCommand::CommandSequence(CommandSequence(
-            selected_notes
-                .iter()
-                .map(|(note, entity)| {
-                    let new_note = Note {
-                        x: note.x + delta,
-                        ..*note
-                    };
-                    EditorCommand::EditNote(EditNote::new(entity, *note, new_note))
-                })
-                .collect(),
-        ))));
-    }
-
+    move_horizontal(&settings, &notes, &mut edits, false);
+    Ok(())
+}
+fn move_right_system(
+    settings: Res<TimelineSettings>,
+    notes: SelectedNotes,
+    mut edits: Edits,
+) -> Result {
+    move_horizontal(&settings, &notes, &mut edits, true);
     Ok(())
 }
 
-fn move_right_system(
-    timeline_settings: Res<TimelineSettings>,
-    selected_notes: Query<(&Note, Entity), With<Selected>>,
-    mut event_writer: MessageWriter<DoCommand>,
-) -> Result {
-    if let Some((start, _)) = selected_notes
-        .iter()
-        .max_by_key(|(note, _)| Rational32::from_f32(note.x))
-    {
-        let to = timeline_settings.attach_x(start.x + timeline_settings.minimum_lane());
-        let delta = to - start.x;
-        event_writer.write(DoCommand(EditorCommand::CommandSequence(CommandSequence(
-            selected_notes
-                .iter()
-                .map(|(note, entity)| {
-                    let new_note = Note {
-                        x: note.x + delta,
-                        ..*note
-                    };
-                    EditorCommand::EditNote(EditNote::new(entity, *note, new_note))
-                })
-                .collect(),
-        ))));
-    }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::editing::history::{open_document, EditorHistory, HistoryPlugin};
+    use crate::id_index::IdIndexPlugin;
+    use bevy::ecs::system::RunSystemOnce;
+    use phichain_chart::event::{LineEventKind, LineEventValue};
+    use phichain_chart::note::NoteKind;
 
-    Ok(())
+    #[test]
+    fn mixed_selection_moves_as_one_edit_and_a_blocked_move_preserves_redo() {
+        let mut app = App::new();
+        app.add_plugins((IdIndexPlugin, HistoryPlugin))
+            .init_resource::<TimelineSettings>();
+        let world = app.world_mut();
+        let note = Note::new(NoteKind::Tap, true, Beat::ZERO, 0.0, 1.0);
+        let event = LineEvent {
+            kind: LineEventKind::X,
+            start_beat: Beat::from(2.0),
+            end_beat: Beat::from(5.0),
+            value: LineEventValue::constant(1.0),
+        };
+        let note_entity = world.spawn((note, Selected)).id();
+        let event_entity = world.spawn((event, Selected)).id();
+        let preview = world.spawn((note, Selected, Pending)).id();
+        let generated = world.spawn((note, Selected, Derived)).id();
+        open_document(world);
+
+        world
+            .run_system_once::<_, Result, _>(move_up_system)
+            .unwrap()
+            .unwrap();
+        let step = world.resource::<TimelineSettings>().minimum_beat();
+        assert_eq!(world.get::<Note>(note_entity).unwrap().beat, step);
+        assert_eq!(
+            world.get::<LineEvent>(event_entity).unwrap().start_beat,
+            event.start_beat + step
+        );
+        assert_eq!(
+            world.get::<LineEvent>(event_entity).unwrap().end_beat,
+            event.end_beat + step
+        );
+        assert_eq!(world.get::<Note>(preview), Some(&note));
+        assert_eq!(world.get::<Note>(generated), Some(&note));
+
+        world
+            .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world))
+            .unwrap();
+        assert_eq!(world.get::<Note>(note_entity), Some(&note));
+        assert_eq!(world.get::<LineEvent>(event_entity), Some(&event));
+        assert!(world.resource::<EditorHistory>().is_saved());
+
+        world
+            .run_system_once::<_, Result, _>(move_down_system)
+            .unwrap()
+            .unwrap();
+        assert!(world.resource::<EditorHistory>().is_saved());
+        world
+            .resource_scope(|world, mut history: Mut<EditorHistory>| history.redo(world))
+            .unwrap();
+        assert_eq!(world.get::<Note>(note_entity).unwrap().beat, step);
+        assert_eq!(
+            world.get::<LineEvent>(event_entity).unwrap().start_beat,
+            event.start_beat + step
+        );
+    }
 }

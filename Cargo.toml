@@ -63,6 +63,7 @@ bevy = { version = "0.18.1", default-features = false, features = [
     "bevy_ui_render",
     "bevy_window",
     "bevy_winit",
+    "reflect_auto_register",
     "custom_cursor",
     "default_font",
     "hdr",

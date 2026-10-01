@@ -1,64 +1,57 @@
+use crate::Derived;
 use crate::GameSet;
+use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
 use phichain_chart::curve_note_track::{generate_notes, CurveNoteTrackOptions};
+use phichain_chart::id::CurveNoteTrackId;
 use phichain_chart::note::Note;
 
-/// Represents a curve note track
-#[derive(Debug, Clone, Component)]
+/// The origin note of a curve note track
+#[derive(Debug, Clone, Copy, PartialEq, Component, Reflect)]
+#[reflect(Component, Clone, PartialEq, Debug)]
+#[relationship(relationship_target = CurveNoteTracksFrom)]
+#[require(CurveNoteTrackOptions)]
+pub struct CurveNoteTrackFrom(#[entities] pub Entity);
+
+/// The destination note of a curve note track
+#[derive(Debug, Clone, Copy, PartialEq, Component, Reflect)]
+#[reflect(Component, Clone, PartialEq, Debug)]
+#[relationship(relationship_target = CurveNoteTracksTo)]
+#[require(CurveNoteTrackId)]
+pub struct CurveNoteTrackTo(#[entities] pub Entity);
+
+#[derive(Debug, Component)]
+#[relationship_target(relationship = CurveNoteTrackFrom, linked_spawn)]
+pub struct CurveNoteTracksFrom(Vec<Entity>);
+
+#[derive(Debug, Component)]
+#[relationship_target(relationship = CurveNoteTrackTo, linked_spawn)]
+pub struct CurveNoteTracksTo(Vec<Entity>);
+
+/// A complete curve note track
+#[derive(QueryData)]
 pub struct CurveNoteTrack {
-    pub from: Option<Entity>,
-    pub to: Option<Entity>,
-
-    pub options: CurveNoteTrackOptions,
-}
-
-impl CurveNoteTrack {
-    pub fn start(entity: Entity) -> Self {
-        Self {
-            from: Some(entity),
-            to: None,
-
-            options: Default::default(),
-        }
-    }
-
-    pub fn to(&mut self, entity: Entity) {
-        self.to = Some(entity);
-    }
-
-    /// Return the [`Entity`] of the origin and the destination
-    ///
-    /// If one of them is missing, return a [`None`], otherwise a [`Some`]
-    pub fn get_entities(&self) -> Option<(Entity, Entity)> {
-        if let (Some(from), Some(to)) = (self.from, self.to) {
-            Some((from, to))
-        } else {
-            None
-        }
-    }
+    pub options: &'static CurveNoteTrackOptions,
+    pub from: &'static CurveNoteTrackFrom,
+    pub to: &'static CurveNoteTrackTo,
+    pub id: &'static CurveNoteTrackId,
 }
 
 pub struct CurveNoteTrackPlugin;
 
 impl Plugin for CurveNoteTrackPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            Update,
-            (
-                update_curve_note_track_system,
-                // despawn_dangle_curve_note_system,
-            )
-                .in_set(GameSet),
-        );
+        app.add_systems(Update, update_curve_note_track_system.in_set(GameSet));
     }
 }
 
 #[derive(Component)]
 pub struct CurveNoteCache(Vec<Note>);
 
-/// Inner value is the attached entity ID of [`CurveNoteTrack`]
+/// A note generated from a curve note track; inner value is the track entity
 #[derive(Component)]
 #[relationship(relationship_target = CurveNotes)]
+#[require(Derived)]
 pub struct CurveNote(pub Entity);
 
 #[derive(Component)]
@@ -71,20 +64,18 @@ pub struct CurveNotes(Vec<Entity>);
 pub fn update_curve_note_track_system(
     mut commands: Commands,
     note_query: Query<(&Note, &ChildOf)>,
-    query: Query<(&CurveNote, Entity)>,
-    mut track_query: Query<(
-        &CurveNoteTrack,
-        &ChildOf,
-        Option<&mut CurveNoteCache>,
-        Entity,
-    )>,
+    mut track_query: Query<
+        (
+            CurveNoteTrack,
+            Option<&CurveNotes>,
+            Option<&mut CurveNoteCache>,
+            Entity,
+        ),
+        With<ChildOf>,
+    >,
 ) {
-    for (track, child_of, cache, entity) in &mut track_query {
-        let Some((from, to)) = track.get_entities() else {
-            continue;
-        };
-
-        let (Ok(from), Ok(to)) = (note_query.get(from), note_query.get(to)) else {
+    for (track, curve_notes, cache, entity) in &mut track_query {
+        let (Ok(from), Ok(to)) = (note_query.get(track.from.0), note_query.get(track.to.0)) else {
             continue;
         };
 
@@ -108,14 +99,8 @@ pub fn update_curve_note_track_system(
         };
 
         if update {
-            for (note, note_entity) in &query {
-                if note.0 == entity {
-                    // despawning children does not remove references for parent
-                    // https://github.com/bevyengine/bevy/issues/12235
-                    // TODO bevy-0.16: maybe this is unnecessary now
-                    commands
-                        .entity(child_of.parent())
-                        .detach_children(&[note_entity]);
+            if let Some(curve_notes) = curve_notes {
+                for note_entity in curve_notes.iter() {
                     commands.entity(note_entity).despawn();
                 }
             }
@@ -128,20 +113,138 @@ pub fn update_curve_note_track_system(
     }
 }
 
-// TODO: this should be removed as we use relationship for CNTs
-// CurveNotes has linked_spawn, so despawning a CurveNoteTrack will also despawn all CurveNotes
-// This works when **despawning** the CurveNoteTrack, but will not work with deletion of undo/redo
-// we are still using `replace_with_empty` based undo/redo, so ** CurveNoteTrack will be removed from the entity** instead of **despawning the CurveNoteTrack entity**
-// TODO: remove this after merging disabled-based-undo
-/// Search for [`CurveNote`] with an invalid associated [`CurveNoteTrack`] and despawn them
-pub fn despawn_dangle_curve_note_system(
-    mut commands: Commands,
-    query: Query<(Entity, &CurveNote)>,
-    track_query: Query<&CurveNoteTrack>,
-) {
-    for (entity, note) in &query {
-        if track_query.get(note.0).is_err() {
-            commands.entity(entity).despawn();
-        }
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn spawn_track(world: &mut World, from: Entity, to: Entity) -> Entity {
+        world
+            .spawn((
+                CurveNoteTrackOptions::default(),
+                CurveNoteTrackFrom(from),
+                CurveNoteTrackTo(to),
+            ))
+            .id()
+    }
+
+    #[test]
+    fn two_relationships_coexist_on_one_entity() {
+        let mut world = World::new();
+        let a = world.spawn_empty().id();
+        let b = world.spawn_empty().id();
+        let track = spawn_track(&mut world, a, b);
+
+        assert_eq!(world.get::<CurveNoteTrackFrom>(track).unwrap().0, a);
+        assert_eq!(world.get::<CurveNoteTrackTo>(track).unwrap().0, b);
+        assert!(world.get::<CurveNoteTracksFrom>(a).is_some());
+        assert!(world.get::<CurveNoteTracksTo>(b).is_some());
+    }
+
+    #[test]
+    fn despawning_from_note_cascades_to_track() {
+        let mut world = World::new();
+        let a = world.spawn_empty().id();
+        let b = world.spawn_empty().id();
+        let track = spawn_track(&mut world, a, b);
+
+        world.entity_mut(a).despawn();
+
+        assert!(world.get_entity(track).is_err());
+    }
+
+    #[test]
+    fn despawning_to_note_cascades_to_track() {
+        let mut world = World::new();
+        let a = world.spawn_empty().id();
+        let b = world.spawn_empty().id();
+        let track = spawn_track(&mut world, a, b);
+
+        world.entity_mut(b).despawn();
+
+        assert!(world.get_entity(track).is_err());
+    }
+
+    #[test]
+    fn one_note_can_be_referenced_by_many_tracks() {
+        let mut world = World::new();
+        let a = world.spawn_empty().id();
+        let b = world.spawn_empty().id();
+        let c = world.spawn_empty().id();
+        let t1 = spawn_track(&mut world, a, b);
+        let t2 = spawn_track(&mut world, a, c);
+
+        world.entity_mut(a).despawn();
+
+        assert!(world.get_entity(t1).is_err());
+        assert!(world.get_entity(t2).is_err());
+    }
+
+    #[test]
+    fn degenerate_from_equals_to_despawns_once() {
+        let mut world = World::new();
+        let a = world.spawn_empty().id();
+        let track = spawn_track(&mut world, a, a);
+
+        world.entity_mut(a).despawn();
+
+        assert!(world.get_entity(track).is_err());
+    }
+
+    #[test]
+    fn despawning_track_unlinks_from_targets() {
+        let mut world = World::new();
+        let a = world.spawn_empty().id();
+        let b = world.spawn_empty().id();
+        let track = spawn_track(&mut world, a, b);
+
+        world.entity_mut(track).despawn();
+
+        // empty relationship target collections are removed entirely
+        assert!(world.get::<CurveNoteTracksFrom>(a).is_none());
+        assert!(world.get_entity(a).is_ok());
+        assert!(world.get_entity(b).is_ok());
+    }
+
+    #[test]
+    fn from_requires_options() {
+        let mut world = World::new();
+        let a = world.spawn_empty().id();
+        let entity = world.spawn(CurveNoteTrackFrom(a)).id();
+
+        assert!(world.get::<CurveNoteTrackOptions>(entity).is_some());
+    }
+
+    #[test]
+    fn to_requires_id() {
+        let mut world = World::new();
+        let a = world.spawn_empty().id();
+        let entity = world.spawn(CurveNoteTrackTo(a)).id();
+
+        assert!(world.get::<CurveNoteTrackId>(entity).is_some());
+    }
+
+    #[test]
+    fn explicit_components_win_over_required_defaults() {
+        let mut world = World::new();
+        let a = world.spawn_empty().id();
+        let options = CurveNoteTrackOptions {
+            density: 24,
+            ..Default::default()
+        };
+        let id = CurveNoteTrackId::new();
+        let entity = world
+            .spawn((
+                options.clone(),
+                id,
+                CurveNoteTrackFrom(a),
+                CurveNoteTrackTo(a),
+            ))
+            .id();
+
+        assert_eq!(
+            world.get::<CurveNoteTrackOptions>(entity).unwrap().density,
+            24
+        );
+        assert_eq!(world.get::<CurveNoteTrackId>(entity).unwrap(), &id);
     }
 }

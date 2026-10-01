@@ -10,6 +10,7 @@ use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::{BpmList, BpmPoint};
 use phichain_chart::easing::Easing;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
+use phichain_chart::id::{Identified, LineId};
 use phichain_chart::line::Line;
 use phichain_chart::note::{Note, NoteKind};
 use phichain_chart::offset::Offset;
@@ -181,8 +182,9 @@ fn build_flattened_line(
 
     Ok(SerializedLine {
         line: Line { name },
-        notes,
-        events,
+        id: LineId::new(),
+        notes: notes.into_iter().map(Identified::new).collect(),
+        events: events.into_iter().map(Identified::new).collect(),
         children: vec![],
         curve_note_tracks: vec![],
     })
@@ -415,6 +417,7 @@ mod tests {
                 line: Line {
                     name: name.to_string(),
                 },
+                id: LineId::new(),
                 notes: vec![],
                 events: vec![],
                 children: vec![],

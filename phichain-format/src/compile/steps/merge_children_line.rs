@@ -2,6 +2,7 @@ use nalgebra::{Isometry2, Rotation2, Vector2};
 use phichain_chart::beat;
 use phichain_chart::easing::Easing;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
+use phichain_chart::id::Identified;
 use phichain_chart::serialization::{PhichainChart, SerializedLine};
 use phichain_compiler::sequence::EventSequence;
 
@@ -26,6 +27,7 @@ fn merge(parent: SerializedLine) -> Vec<SerializedLine> {
             for event in parent
                 .events
                 .iter()
+                .map(|x| x.data)
                 .filter(|x| x.kind.is_x() || x.kind.is_y() || x.kind.is_rotation())
             {
                 splits.push(event.start_beat);
@@ -34,6 +36,7 @@ fn merge(parent: SerializedLine) -> Vec<SerializedLine> {
             for event in child
                 .events
                 .iter()
+                .map(|x| x.data)
                 .filter(|x| x.kind.is_x() || x.kind.is_y() || x.kind.is_rotation())
             {
                 splits.push(event.start_beat);
@@ -42,6 +45,9 @@ fn merge(parent: SerializedLine) -> Vec<SerializedLine> {
 
             splits.sort();
             splits.dedup();
+
+            let parent_events: Vec<_> = parent.events.iter().map(|x| x.data).collect();
+            let child_events: Vec<_> = child.events.iter().map(|x| x.data).collect();
 
             let minimum = beat!(1, 32);
 
@@ -54,8 +60,8 @@ fn merge(parent: SerializedLine) -> Vec<SerializedLine> {
                     macro_rules! evaluate {
                         ($target:ident, $filter:ident) => {
                             (
-                                $target.events.$filter().evaluate_inclusive(start_beat),
-                                $target.events.$filter().evaluate_inclusive(end_beat),
+                                $target.$filter().evaluate_inclusive(start_beat),
+                                $target.$filter().evaluate_inclusive(end_beat),
                             )
                         };
                     }
@@ -79,13 +85,13 @@ fn merge(parent: SerializedLine) -> Vec<SerializedLine> {
                         }};
                     }
 
-                    let (parent_start, parent_end) = evaluate_line!(parent);
-                    let (child_start, child_end) = evaluate_line!(child);
+                    let (parent_start, parent_end) = evaluate_line!(parent_events);
+                    let (child_start, child_end) = evaluate_line!(child_events);
 
                     let start = parent_start * child_start;
                     let end = parent_end * child_end;
 
-                    merged_move_events.push(LineEvent {
+                    merged_move_events.push(Identified::new(LineEvent {
                         kind: LineEventKind::X,
                         start_beat,
                         end_beat,
@@ -94,8 +100,8 @@ fn merge(parent: SerializedLine) -> Vec<SerializedLine> {
                             end.translation.x,
                             Easing::Linear,
                         ),
-                    });
-                    merged_move_events.push(LineEvent {
+                    }));
+                    merged_move_events.push(Identified::new(LineEvent {
                         kind: LineEventKind::Y,
                         start_beat,
                         end_beat,
@@ -104,8 +110,8 @@ fn merge(parent: SerializedLine) -> Vec<SerializedLine> {
                             end.translation.y,
                             Easing::Linear,
                         ),
-                    });
-                    merged_rotate_events.push(LineEvent {
+                    }));
+                    merged_rotate_events.push(Identified::new(LineEvent {
                         kind: LineEventKind::Rotation,
                         start_beat,
                         end_beat,
@@ -114,7 +120,7 @@ fn merge(parent: SerializedLine) -> Vec<SerializedLine> {
                             end.rotation.angle().to_degrees(),
                             Easing::Linear,
                         ),
-                    });
+                    }));
 
                     current += minimum;
                 }
@@ -123,7 +129,9 @@ fn merge(parent: SerializedLine) -> Vec<SerializedLine> {
             let other_events = child
                 .events
                 .iter()
-                .filter(|x| !x.kind.is_x() && !x.kind.is_y() && !x.kind.is_rotation())
+                .filter(|x| {
+                    !x.data.kind.is_x() && !x.data.kind.is_y() && !x.data.kind.is_rotation()
+                })
                 .cloned()
                 .collect::<Vec<_>>();
 

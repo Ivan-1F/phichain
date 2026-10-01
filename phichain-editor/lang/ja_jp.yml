@@ -1,3 +1,34 @@
+history:
+  object:
+    note: "%{count} 個のノーツ"
+    notes: "%{count} 個のノーツ"
+    event: "%{count} 個のイベント"
+    events: "%{count} 個のイベント"
+    track: "%{count} 本の曲線トラック"
+    tracks: "%{count} 本の曲線トラック"
+    separator: "、"
+  edit_line: 判定線を編集
+  edit_bpm_point: BPM ポイントを編集
+  edit_offset: オフセットを編集
+  edit_meta: 譜面情報を編集
+  mirror_notes: "%{count} 個のノーツを反転"
+  edit_events: "%{count} 個のイベントを変更"
+  delete: "%{objects}を削除"
+  move: "%{objects}を移動"
+  paste: "%{objects}を貼り付け"
+  cut: "%{objects}を切り取り"
+  edit_tracks: "%{count} 本の曲線トラックを変更"
+  create_events: "%{count} 個のイベントを追加"
+  create_line: "判定線を追加"
+  move_line: "判定線を移動"
+  delete_line: "判定線を削除"
+  create_track: "曲線トラックを追加"
+  create_bpm_point: "BPM ポイントを追加"
+  delete_bpm_point: "BPM ポイントを削除"
+  create_notes: "%{count} 個のノーツを追加"
+  edit_notes: "%{count} 個のノーツを変更"
+  delete_notes: "%{count} 個のノーツを削除"
+
 menu_bar:
   file:
     title: ファイル
@@ -41,23 +72,19 @@ tab:
     title: プレビュー
   timeline:
     title: タイムライン
+    curve_note_track:
+      creating: カーブノーツトラックを作成中
+      select_destination: 同じ判定線上の終点ノーツを選択してください
+      same_endpoint: 始点と終点に同じノーツは指定できません
+      cancel: キャンセル
     event:
       jump_to_event: このイベントにジャンプ
   inspector:
     title: インスペクター
     curve_note_track:
       title:
-        pending: 作成中のカーブノーツトラック
         selected: 選択されたカーブノーツトラック
       start: ここからカーブノーツトラックを新規作成
-      removed:
-        incomplete: カーブノーツトラックが削除されました：始点または終点がありません
-        invalid: カーブノーツトラックが削除されました：始点または終点が無効です
-        empty: カーブノーツトラックが削除されました：ノーツが含まれていません
-      instructions:
-        select_destination: 終点を選択してください
-        select_origin: 始点を選択してください
-        select_origin_destination: 始点と終点を選択してください
       density: 密度
       kind: 種類
       curve: カーブ
@@ -347,6 +374,8 @@ export:
     failed: 'RPE 譜面としてエクスポート中にエラーが発生しました: %{error}'
 
 game:
+  easing:
+    parameter: パラメータ
   aspect_ratio:
     free: フリー
   event:

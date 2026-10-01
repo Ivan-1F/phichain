@@ -7,7 +7,6 @@ use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
 use bevy_kira_audio::AudioInstance;
 use bevy_persistent::Persistent;
-use phichain_chart::bpm_list::BpmList;
 use phichain_chart::offset::Offset;
 use phichain_game::audio::InstanceHandle;
 
@@ -70,10 +69,6 @@ impl Plugin for TimingPlugin {
             .add_systems(
                 Update,
                 forward_pause_toggle_request_system.run_if(project_loaded()),
-            )
-            .add_systems(
-                Update,
-                compute_bpm_list_system.run_if(project_loaded().and(resource_changed::<BpmList>)),
             )
             .insert_resource(Timing::new())
             .add_systems(
@@ -161,10 +156,6 @@ fn progress_control_system(hotkey: HotkeyContext, mut events: MessageWriter<Seek
     if hotkey.pressed(TimingHotkeys::Forward) {
         events.write(Seek(0.02));
     }
-}
-
-fn compute_bpm_list_system(mut bpm_list: ResMut<BpmList>) {
-    bpm_list.compute();
 }
 
 /// Controls global editor timing
