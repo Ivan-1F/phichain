@@ -5,24 +5,7 @@
 ///
 /// This function will return the old value in [`Some`] after the value is confirmed
 ///
-/// # Example
-///
-/// ```
-/// if let Some(from) = latch::latch(ui, "note", note.clone(), |ui| {
-///     let mut finished = false;
-///     let mut changed = false;
-///     
-///     let response = ui.add(egui::DragValue::new(&mut note.x).speed(1));
-///     changed |= response.changed();
-///     finished |= response.drag_stopped();
-///     
-///     finished && changed
-/// })
-/// {
-///     let to = note;
-///     // `note` changed from `from` to `to`    
-/// }
-/// ```
+/// Used for editor preference persistence. Document edits use `Edits` instead.
 pub fn latch<State, F>(
     ui: &mut egui::Ui,
     id_src: impl std::hash::Hash,

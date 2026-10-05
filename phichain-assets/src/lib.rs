@@ -481,7 +481,7 @@ fn setup_egui_images_system(
 #[cfg(feature = "egui")]
 fn premultiply_alpha(image: &mut Image) {
     let data = image.data.as_mut().expect("image should have data");
-    for chunk in data.chunks_exact_mut(4) {
+    for chunk in data.as_chunks_mut::<4>().0 {
         let r = chunk[0] as f32 / 255.0;
         let g = chunk[1] as f32 / 255.0;
         let b = chunk[2] as f32 / 255.0;

@@ -1,10 +1,15 @@
 use crate::beat::Beat;
+use crate::id::{HasId, NoteId};
+#[cfg(feature = "bevy")]
+use bevy::ecs::reflect::ReflectComponent;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::fmt;
 use std::fmt::Formatter;
 
 #[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "bevy", derive(bevy::prelude::Reflect))]
+#[cfg_attr(feature = "bevy", reflect(Clone, PartialEq, Debug))]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum NoteKind {
     Tap,
@@ -52,10 +57,13 @@ impl NoteKind {
 
 #[derive(Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(bevy::prelude::Component))]
+#[cfg_attr(feature = "bevy", component(immutable))]
 #[cfg_attr(
     feature = "bevy",
-    require(bevy::prelude::Sprite, bevy::prelude::Pickable)
+    require(bevy::prelude::Sprite, bevy::prelude::Pickable, NoteId)
 )]
+#[cfg_attr(feature = "bevy", derive(bevy::prelude::Reflect))]
+#[cfg_attr(feature = "bevy", reflect(Component, Clone, PartialEq, Debug))]
 pub struct Note {
     #[serde(flatten)]
     pub kind: NoteKind,
@@ -63,6 +71,10 @@ pub struct Note {
     pub beat: Beat,
     pub x: f32,
     pub speed: f32,
+}
+
+impl HasId for Note {
+    type Id = NoteId;
 }
 
 impl fmt::Debug for Note {
@@ -139,6 +151,25 @@ impl Note {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "bevy")]
+    #[test]
+    fn test_require_fills_and_preserves_id() {
+        let mut world = bevy::prelude::World::new();
+
+        // require fills a minted id when none is provided
+        let entity = world
+            .spawn(Note::new(NoteKind::Tap, true, beat!(0), 0.0, 1.0))
+            .id();
+        assert!(world.get::<NoteId>(entity).is_some());
+
+        // an explicitly provided id wins over the filled default
+        let id = NoteId::new();
+        let entity = world
+            .spawn((Note::new(NoteKind::Tap, true, beat!(0), 0.0, 1.0), id))
+            .id();
+        assert_eq!(world.get::<NoteId>(entity), Some(&id));
+    }
+
     use super::*;
     use crate::beat;
     use serde_json::{json, Value};

@@ -17,7 +17,7 @@ use bevy::prelude::*;
 use egui::{Ui, UiBuilder};
 use phichain_chart::event::LineEvent;
 use phichain_chart::note::Note;
-use phichain_game::curve_note_track::CurveNoteTrack;
+use phichain_game::curve_note_track::CurveNoteTrackTo;
 
 #[derive(Debug, Clone, Copy, Component)]
 pub struct Inspector {
@@ -60,7 +60,7 @@ impl Plugin for InspectorPlugin {
             .add_inspector(multiple_notes_inspector, multiple_selected::<Note>)
             .add_inspector(
                 curve_note_track_inspector,
-                single_selected::<CurveNoteTrack>,
+                single_selected::<CurveNoteTrackTo>,
             )
             .add_inspector(single_event_inspector, single_selected::<LineEvent>)
             .add_inspector(multiple_events_inspector, multiple_selected::<LineEvent>)
@@ -88,14 +88,12 @@ pub fn inspector_ui_system(In(mut ui): In<Ui>, world: &mut World) {
         };
 
         if condition_met {
-            let _ = world.run_system_with(
-                inspector.system,
-                ui.new_child(
-                    UiBuilder::new()
-                        .max_rect(ui.max_rect())
-                        .layout(*ui.layout()),
-                ),
+            let child = ui.new_child(
+                UiBuilder::new()
+                    .max_rect(ui.max_rect())
+                    .layout(*ui.layout()),
             );
+            let _ = world.run_system_with(inspector.system, child);
 
             break;
         }

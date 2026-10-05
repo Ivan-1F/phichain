@@ -1,3 +1,5 @@
+#[cfg(feature = "bevy")]
+use bevy::ecs::reflect::ReflectComponent;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::path::{Path, PathBuf};
@@ -5,6 +7,12 @@ use thiserror::Error;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[cfg_attr(
+    feature = "bevy",
+    derive(bevy::prelude::Component, bevy::prelude::Reflect)
+)]
+#[cfg_attr(feature = "bevy", component(immutable))]
+#[cfg_attr(feature = "bevy", reflect(Component, Clone, PartialEq, Debug))]
 pub struct ProjectMeta {
     pub composer: String,
     pub charter: String,

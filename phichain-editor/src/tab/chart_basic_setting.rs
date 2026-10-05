@@ -1,79 +1,65 @@
-use crate::editing::command::meta::{EditMeta, EditOffset};
-use crate::editing::command::EditorCommand;
-use crate::editing::DoCommand;
-use crate::project::Project;
-use crate::ui::latch;
+use crate::editing::history::Edits;
 use bevy::prelude::*;
 use egui::Ui;
+use phichain_chart::id::ProjectId;
 use phichain_chart::offset::Offset;
+use phichain_chart::project::ProjectMeta;
 
 pub fn chart_basic_setting_tab(
     In(mut ui): In<Ui>,
-    mut offset: ResMut<Offset>,
-    mut project: ResMut<Project>,
-
-    mut event_writer: MessageWriter<DoCommand>,
+    settings: Single<(Entity, &Offset, &ProjectMeta), With<ProjectId>>,
+    mut edits: Edits,
 ) {
-    egui::Grid::new("chart_basic_setting_grid")
-        .num_columns(2)
-        .spacing([20.0, 2.0])
-        .striped(true)
-        .show(&mut ui, |ui| {
-            let result = latch::latch(
-                ui,
-                "chart-basic-settings",
-                (project.meta.clone(), offset.0),
-                |ui| {
-                    let mut finished = false;
-
-                    ui.label(t!("tab.chart_basic_setting.offset"));
-                    let response = ui.add(egui::DragValue::new(&mut offset.0).speed(1));
-                    finished |= response.drag_stopped() || response.lost_focus();
-                    ui.end_row();
-
-                    ui.label(t!("tab.chart_basic_setting.name"));
-                    let response = ui.text_edit_singleline(&mut project.meta.name);
-                    finished |= response.drag_stopped() || response.lost_focus();
-                    ui.end_row();
-
-                    ui.label(t!("tab.chart_basic_setting.level"));
-                    let response = ui.text_edit_singleline(&mut project.meta.level);
-                    finished |= response.drag_stopped() || response.lost_focus();
-                    ui.end_row();
-
-                    ui.label(t!("tab.chart_basic_setting.composer"));
-                    let response = ui.text_edit_singleline(&mut project.meta.composer);
-                    finished |= response.drag_stopped() || response.lost_focus();
-                    ui.end_row();
-
-                    ui.label(t!("tab.chart_basic_setting.charter"));
-                    let response = ui.text_edit_singleline(&mut project.meta.charter);
-                    finished |= response.drag_stopped() || response.lost_focus();
-                    ui.end_row();
-
-                    ui.label(t!("tab.chart_basic_setting.illustrator"));
-                    let response = ui.text_edit_singleline(&mut project.meta.illustrator);
-                    finished |= response.drag_stopped() || response.lost_focus();
-                    ui.end_row();
-
-                    finished
-                },
-            );
-
-            if let Some((meta_from, offset_from)) = result {
-                if meta_from != project.meta {
-                    event_writer.write(DoCommand(EditorCommand::EditMeta(EditMeta::new(
-                        meta_from,
-                        project.meta.clone(),
-                    ))));
-                }
-
-                if offset_from != offset.0 {
-                    event_writer.write(DoCommand(EditorCommand::EditOffset(EditOffset::new(
-                        offset_from,
-                        offset.0,
-                    ))));
-                }
-            }
-        });
+    let (entity, offset, meta) = settings.into_inner();
+    edits
+        .component(entity, offset, t!("history.edit_offset"))
+        .field(
+            &mut ui,
+            "offset",
+            t!("tab.chart_basic_setting.offset"),
+            |ui, offset| {
+                ui.add(egui::DragValue::new(&mut offset.0).speed(1));
+            },
+        );
+    let mut editor = edits.component(entity, meta, t!("history.edit_meta"));
+    editor.field(
+        &mut ui,
+        "name",
+        t!("tab.chart_basic_setting.name"),
+        |ui, meta| {
+            ui.add(egui::TextEdit::singleline(&mut meta.name));
+        },
+    );
+    editor.field(
+        &mut ui,
+        "level",
+        t!("tab.chart_basic_setting.level"),
+        |ui, meta| {
+            ui.add(egui::TextEdit::singleline(&mut meta.level));
+        },
+    );
+    editor.field(
+        &mut ui,
+        "composer",
+        t!("tab.chart_basic_setting.composer"),
+        |ui, meta| {
+            ui.add(egui::TextEdit::singleline(&mut meta.composer));
+        },
+    );
+    editor.field(
+        &mut ui,
+        "charter",
+        t!("tab.chart_basic_setting.charter"),
+        |ui, meta| {
+            ui.add(egui::TextEdit::singleline(&mut meta.charter));
+        },
+    );
+    editor.field(
+        &mut ui,
+        "illustrator",
+        t!("tab.chart_basic_setting.illustrator"),
+        |ui, meta| {
+            ui.add(egui::TextEdit::singleline(&mut meta.illustrator));
+        },
+    );
 }

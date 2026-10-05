@@ -11,7 +11,7 @@ use crate::event::Events;
 use crate::highlight::Highlighted;
 use crate::layer::{HOLD_LAYER, NOTE_LAYER};
 use crate::scale;
-use crate::{ChartTime, GameConfig, GameSet, GameViewport};
+use crate::{ChartTime, Derived, GameConfig, GameSet, GameViewport};
 use phichain_chart::line::LineSpeed;
 use phichain_chart::note::{Note, NoteKind};
 
@@ -305,6 +305,7 @@ pub struct HoldHead;
 #[require(Sprite, Anchor::BOTTOM_CENTER, HoldComponent)]
 pub struct HoldTail;
 #[derive(Debug, Component, Default, Clone)]
+#[require(Derived)]
 pub struct HoldComponent;
 
 pub fn spawn_hold_component_system(

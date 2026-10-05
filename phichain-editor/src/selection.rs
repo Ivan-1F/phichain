@@ -1,13 +1,15 @@
 use crate::action::ActionRegistrationExt;
-use crate::editing::pending::Pending;
 use crate::hotkey::modifier::Modifier;
 use crate::hotkey::Hotkey;
 use crate::project::project_loaded;
 use crate::utils::compat::ControlKeyExt;
 use anyhow::Context;
 use bevy::prelude::*;
+use phichain_chart::line::Line;
 use phichain_game::curve_note_track::CurveNote;
 use phichain_game::utils::query_ordered_lines;
+use phichain_game::GameSet;
+use phichain_game::Pending;
 
 #[derive(Resource)]
 pub struct SelectedLine(pub Entity);
@@ -23,8 +25,12 @@ pub struct SelectionPlugin;
 
 impl Plugin for SelectionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_message::<Select>()
-            .add_systems(Update, handle_select_event.run_if(project_loaded()))
+        app.add_observer(line_removed)
+            .add_message::<Select>()
+            .add_systems(
+                Update,
+                handle_select_event.before(GameSet).run_if(project_loaded()),
+            )
             .add_action(
                 "phichain.unselect_all",
                 unselect_all_system,
@@ -93,6 +99,20 @@ impl Plugin for SelectionPlugin {
     }
 }
 
+fn line_removed(_: On<Remove, Line>, mut commands: Commands) {
+    commands.queue(|world: &mut World| {
+        let Some(selected) = world.get_resource::<SelectedLine>() else {
+            return;
+        };
+        if world.get::<Line>(selected.0).is_some() {
+            return;
+        }
+        if let Some(line) = query_ordered_lines(world).first().copied() {
+            world.resource_mut::<SelectedLine>().0 = line;
+        }
+    });
+}
+
 pub fn unselect_all_system(
     mut commands: Commands,
     selected_query: Query<Entity, With<Selected>>,
@@ -111,7 +131,7 @@ pub fn handle_select_event(
     keyboard: Res<ButtonInput<KeyCode>>,
 
     curve_note_query: Query<&CurveNote>,
-    pending_query: Query<&Pending>,
+    pending_query: Query<(), With<Pending>>,
 
     selected_query: Query<Entity, With<Selected>>,
 ) {
@@ -128,11 +148,56 @@ pub fn handle_select_event(
                 commands.entity(curve_note.0).insert(Selected);
                 continue;
             }
-            // pending entities cannot be selected
-            if pending_query.get(*entity).is_ok() {
+            if pending_query.contains(*entity) {
                 continue;
             }
             commands.entity(*entity).insert(Selected);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::editing::history::{open_document, EditorHistory, Edits, HistoryPlugin};
+    use crate::id_index::{IdIndex, IdIndexPlugin};
+    use bevy::ecs::system::RunSystemOnce;
+    use phichain_chart::id::LineId;
+
+    #[test]
+    fn undoing_creation_of_the_current_line_selects_a_surviving_line() {
+        let mut app = App::new();
+        app.add_plugins((
+            IdIndexPlugin,
+            phichain_game::line::LinePlugin,
+            HistoryPlugin,
+        ))
+        .add_observer(line_removed);
+        let world = app.world_mut();
+        let original = world.spawn(Line::default()).id();
+        world.insert_resource(SelectedLine(original));
+        open_document(world);
+        let id = LineId::new();
+        world
+            .run_system_once(move |mut edits: Edits| {
+                edits.once("create line", move |commands| {
+                    commands.spawn((Line::default(), id));
+                });
+            })
+            .unwrap();
+        let created = world.resource::<IdIndex>().entity(id.uuid()).unwrap();
+        world.resource_mut::<SelectedLine>().0 = created;
+        world
+            .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world))
+            .unwrap();
+        assert_eq!(world.resource::<SelectedLine>().0, original);
+        world
+            .resource_scope(|world, mut history: Mut<EditorHistory>| history.redo(world))
+            .unwrap();
+        assert_ne!(
+            world.resource::<IdIndex>().entity(id.uuid()).unwrap(),
+            created
+        );
+        assert_eq!(world.resource::<SelectedLine>().0, original);
     }
 }
