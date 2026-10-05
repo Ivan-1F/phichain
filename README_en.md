@@ -10,6 +10,9 @@
 
 Phigros charting toolchain written in Rust and Bevy
 
+> [!NOTE]
+> This is an unofficial project. It is not authorized by, partnered with, or operated by Pigeon Games (南京鸽游网络有限公司) or the official Phigros team
+
 - QQ Group: [768476938](https://phicha.in/qq)
 - Discord: [discord.gg/ESUwcdMBPv](https://phicha.in/discord)
 

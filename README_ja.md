@@ -10,6 +10,9 @@
 
 RustとBevyをベースにしたPhigrosの譜面制作ツールチェインです。
 
+> [!NOTE]
+> 本プロジェクトは非公式プロジェクトです。南京鸽游网络有限公司（Pigeon Games）および『Phigros』公式から許諾を受けておらず、提携関係や運営上の関係もありません
+
 - QQグループ: [768476938](https://phicha.in/qq)
 - Discord: [discord.gg/ESUwcdMBPv](https://phicha.in/discord)
 

@@ -10,6 +10,9 @@
 
 基於 Rust 和 Bevy 的 Phigros 製譜工具鏈
 
+> [!NOTE]
+> 本專案為非官方專案，與南京鴿遊網絡有限公司（Pigeon Games）及《Phigros》官方不存在授權、合作或營運關係
+
 - QQ 群：[768476938](https://phicha.in/qq)
 - Discord：[discord.gg/ESUwcdMBPv](https://phicha.in/discord)
 
