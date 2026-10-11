@@ -39,14 +39,12 @@ fn create(app: &mut App, line: Entity) -> (Entity, NoteId) {
 
 fn undo(app: &mut App) {
     app.world_mut()
-        .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world))
-        .unwrap();
+        .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world));
 }
 
 fn redo(app: &mut App) {
     app.world_mut()
-        .resource_scope(|world, mut history: Mut<EditorHistory>| history.redo(world))
-        .unwrap();
+        .resource_scope(|world, mut history: Mut<EditorHistory>| history.redo(world));
 }
 
 fn entity_with_id(app: &mut App, id: NoteId) -> Entity {
@@ -213,28 +211,6 @@ fn edit_commands_are_deferred_grouped_and_keep_queue_order() {
     assert_eq!(app.world().get::<Note>(entity).unwrap().x, 200.0);
     undo(&mut app);
     assert_eq!(app.world().get::<Note>(entity).unwrap().x, 100.0);
-}
-
-#[test]
-fn missing_parent_is_rejected_before_moving_history_cursor() {
-    let (mut app, line) = fixture();
-    let (_, id) = create(&mut app, line);
-    undo(&mut app);
-    // Simulate an external document inconsistency, rather than a supported edit.
-    app.world_mut().resource_mut::<Recorder>().enabled = false;
-    app.world_mut().entity_mut(line).despawn();
-    let before = app.world().resource::<EditorHistory>().head();
-    let result = app
-        .world_mut()
-        .resource_scope(|world, mut history: Mut<EditorHistory>| history.redo(world));
-    assert!(result.is_err());
-    assert_eq!(app.world().resource::<EditorHistory>().head(), before);
-    assert!(app.world().resource::<EditorHistory>().record.can_redo());
-    assert!(!app
-        .world_mut()
-        .query::<&NoteId>()
-        .iter(app.world())
-        .any(|candidate| *candidate == id));
 }
 
 #[test]

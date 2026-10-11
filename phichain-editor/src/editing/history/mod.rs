@@ -108,32 +108,26 @@ impl EditorHistory {
         self.current
     }
 
-    pub fn undo(&mut self, world: &mut World) -> anyhow::Result<()> {
+    pub fn undo(&mut self, world: &mut World) {
         if self.has_gesture() {
             self.cancel_gesture(world);
-            return Ok(());
+            return;
         }
         if !self.record.can_undo() {
-            return Ok(());
+            return;
         }
-        let entry = self.record.get_entry(self.record.head() - 1).unwrap();
-        entry.as_ref().changes.validate(world, false)?;
         self.current = self.record.undo(world).unwrap();
-        Ok(())
     }
 
-    pub fn redo(&mut self, world: &mut World) -> anyhow::Result<()> {
+    pub fn redo(&mut self, world: &mut World) {
         if self.has_gesture() {
             self.cancel_gesture(world);
-            return Ok(());
+            return;
         }
         if !self.record.can_redo() {
-            return Ok(());
+            return;
         }
-        let entry = self.record.get_entry(self.record.head()).unwrap();
-        entry.as_ref().changes.validate(world, true)?;
         self.current = self.record.redo(world).unwrap();
-        Ok(())
     }
 
     fn record_changes(&mut self, world: &mut World, description: String, changes: ChangeSet) {

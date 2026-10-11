@@ -225,9 +225,7 @@ mod tests {
         assert_eq!(world.get::<Note>(preview), Some(&note));
         assert_eq!(world.get::<Note>(generated), Some(&note));
 
-        world
-            .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world))
-            .unwrap();
+        world.resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world));
         assert_eq!(world.get::<Note>(note_entity), Some(&note));
         assert_eq!(world.get::<LineEvent>(event_entity), Some(&event));
         assert!(world.resource::<EditorHistory>().is_saved());
@@ -237,9 +235,7 @@ mod tests {
             .unwrap()
             .unwrap();
         assert!(world.resource::<EditorHistory>().is_saved());
-        world
-            .resource_scope(|world, mut history: Mut<EditorHistory>| history.redo(world))
-            .unwrap();
+        world.resource_scope(|world, mut history: Mut<EditorHistory>| history.redo(world));
         assert_eq!(world.get::<Note>(note_entity).unwrap().beat, step);
         assert_eq!(
             world.get::<LineEvent>(event_entity).unwrap().start_beat,

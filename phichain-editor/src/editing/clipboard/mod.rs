@@ -353,13 +353,9 @@ mod tests {
         assert_eq!(ids.len(), 4);
         assert!(ids.iter().all(|id| !old_ids.contains(id)));
         assert_eq!(world.query::<&CurveNoteTrackTo>().iter(world).count(), 0);
-        world
-            .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world))
-            .unwrap();
+        world.resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world));
         assert_eq!(world.query::<&Note>().iter(world).count(), 2);
-        world
-            .resource_scope(|world, mut history: Mut<EditorHistory>| history.redo(world))
-            .unwrap();
+        world.resource_scope(|world, mut history: Mut<EditorHistory>| history.redo(world));
         assert_eq!(world.query::<&Note>().iter(world).count(), 4);
         assert!(ids
             .iter()
@@ -423,12 +419,8 @@ mod tests {
         assert!(from != b && to != b);
         assert_eq!(world.get::<Note>(from).unwrap().beat, Beat::from(9.0));
         assert_eq!(world.get::<Note>(to).unwrap().beat, Beat::from(12.0));
-        world
-            .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world))
-            .unwrap();
-        world
-            .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world))
-            .unwrap();
+        world.resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world));
+        world.resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world));
         assert_eq!(world.query::<&Note>().iter(world).count(), 3);
         assert_eq!(world.query::<&CurveNoteTrackTo>().iter(world).count(), 2);
     }

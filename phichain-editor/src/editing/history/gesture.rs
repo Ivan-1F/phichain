@@ -29,9 +29,6 @@ impl EditorHistory {
     pub fn cancel_gesture(&mut self, world: &mut World) {
         if let Some(gesture) = self.gesture.take() {
             let changes = gesture.pending.settle(world);
-            changes
-                .validate(world, false)
-                .expect("gesture references must remain valid");
             changes.apply(world, false);
         }
     }

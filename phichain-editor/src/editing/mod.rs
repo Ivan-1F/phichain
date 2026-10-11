@@ -48,13 +48,13 @@ impl Plugin for EditingPlugin {
 }
 
 fn undo_system(world: &mut World) -> Result {
-    world.resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world))?;
+    world.resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world));
 
     Ok(())
 }
 
 fn redo_system(world: &mut World) -> Result {
-    world.resource_scope(|world, mut history: Mut<EditorHistory>| history.redo(world))?;
+    world.resource_scope(|world, mut history: Mut<EditorHistory>| history.redo(world));
 
     Ok(())
 }

@@ -1,5 +1,4 @@
 use crate::id_index::IdIndex;
-use anyhow::ensure;
 use bevy::ecs::component::Immutable;
 use bevy::ecs::entity::EntityMapper;
 use bevy::ecs::reflect::{AppTypeRegistry, ReflectComponent};
@@ -299,30 +298,6 @@ struct ReplayMapper<'a> {
     entities: &'a HashMap<Uuid, Entity>,
 }
 
-struct ReferenceValidator<'a> {
-    references: &'a HashMap<Entity, Uuid>,
-    index: &'a IdIndex,
-    restored_existence: &'a HashMap<Uuid, bool>,
-    missing: bool,
-}
-
-impl EntityMapper for ReferenceValidator<'_> {
-    fn get_mapped(&mut self, entity: Entity) -> Entity {
-        let id = self.references[&entity];
-        let exists = self
-            .restored_existence
-            .get(&id)
-            .copied()
-            .unwrap_or_else(|| self.index.entity(id).is_some());
-        self.missing |= !exists;
-        entity
-    }
-
-    fn set_mapped(&mut self, _: Entity, _: Entity) {
-        unreachable!("component mapping must only visit references")
-    }
-}
-
 impl EntityMapper for ReplayMapper<'_> {
     fn get_mapped(&mut self, entity: Entity) -> Entity {
         self.entities[&self.references[&entity]]
@@ -335,60 +310,6 @@ impl EntityMapper for ReplayMapper<'_> {
 impl ChangeSet {
     pub fn is_empty(&self) -> bool {
         self.objects.is_empty()
-    }
-
-    // Validate before moving Record's cursor: returning Result from Edit alone
-    // would not stop the undo crate from advancing its history position.
-    pub fn validate(&self, world: &World, after: bool) -> anyhow::Result<()> {
-        let index = world.resource::<IdIndex>();
-        for object in &self.objects {
-            let expected = if after {
-                object.existed_before
-            } else {
-                object.exists_after
-            };
-            ensure!(
-                index.entity(object.id).is_some() == expected,
-                "document object existence diverged from history"
-            );
-        }
-        let restored_existence = self
-            .objects
-            .iter()
-            .map(|object| {
-                (
-                    object.id,
-                    if after {
-                        object.exists_after
-                    } else {
-                        object.existed_before
-                    },
-                )
-            })
-            .collect();
-        let mut validator = ReferenceValidator {
-            references: &self.references,
-            index,
-            restored_existence: &restored_existence,
-            missing: false,
-        };
-        // Validate references before applying changes to prevent partial restoration.
-        for object in &self.objects {
-            for change in &object.components {
-                let value = if after { &change.after } else { &change.before };
-                if let Some(value) = value {
-                    let descriptor = &world.resource::<Registry>().types[&change.ty];
-                    descriptor
-                        .component
-                        .map_entities(clone_value(value.as_ref()).as_mut(), &mut validator);
-                }
-            }
-        }
-        ensure!(
-            !validator.missing,
-            "history references a missing document object"
-        );
-        Ok(())
     }
 
     pub fn apply(&self, world: &mut World, after: bool) {

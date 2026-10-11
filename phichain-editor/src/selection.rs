@@ -187,13 +187,9 @@ mod tests {
             .unwrap();
         let created = world.resource::<IdIndex>().entity(id.uuid()).unwrap();
         world.resource_mut::<SelectedLine>().0 = created;
-        world
-            .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world))
-            .unwrap();
+        world.resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world));
         assert_eq!(world.resource::<SelectedLine>().0, original);
-        world
-            .resource_scope(|world, mut history: Mut<EditorHistory>| history.redo(world))
-            .unwrap();
+        world.resource_scope(|world, mut history: Mut<EditorHistory>| history.redo(world));
         assert_ne!(
             world.resource::<IdIndex>().entity(id.uuid()).unwrap(),
             created

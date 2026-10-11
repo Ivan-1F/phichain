@@ -253,12 +253,10 @@ mod tests {
         assert!(after.end_beat() > intermediate);
         assert!(!app.world().resource::<EditorHistory>().has_gesture());
         app.world_mut()
-            .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world))
-            .unwrap();
+            .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world));
         assert_eq!(app.world().get::<Note>(entity), Some(&original));
         app.world_mut()
-            .resource_scope(|world, mut history: Mut<EditorHistory>| history.redo(world))
-            .unwrap();
+            .resource_scope(|world, mut history: Mut<EditorHistory>| history.redo(world));
         assert_eq!(app.world().get::<Note>(entity), Some(&after));
 
         let rect = frame(&mut app, &ctx, entity, vec![]);
@@ -285,8 +283,7 @@ mod tests {
             vec![button(pos + egui::vec2(0.0, 900.0), false)],
         );
         app.world_mut()
-            .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world))
-            .unwrap();
+            .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world));
         assert_eq!(app.world().get::<Note>(entity), Some(&after));
     }
 }

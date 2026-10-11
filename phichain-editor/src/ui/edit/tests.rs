@@ -96,8 +96,7 @@ fn typed_values_preview_live_enter_commits_and_escape_restores() {
     frame(&mut app, &ctx, entity, vec![key(Key::Enter)], true);
     assert!(!app.world().resource::<EditorHistory>().has_gesture());
     app.world_mut()
-        .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world))
-        .unwrap();
+        .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world));
     assert_eq!(app.world().get::<Note>(entity).unwrap().x, 100.0);
     focus(&mut app, &ctx, entity);
     frame(
@@ -111,8 +110,7 @@ fn typed_values_preview_live_enter_commits_and_escape_restores() {
     assert_eq!(app.world().get::<Note>(entity).unwrap().x, 100.0);
     assert!(app.world().resource::<EditorHistory>().is_saved());
     app.world_mut()
-        .resource_scope(|world, mut history: Mut<EditorHistory>| history.redo(world))
-        .unwrap();
+        .resource_scope(|world, mut history: Mut<EditorHistory>| history.redo(world));
     assert_eq!(app.world().get::<Note>(entity).unwrap().x, 2005.0);
 }
 
@@ -155,12 +153,10 @@ fn dragging_previews_and_release_outside_commits_one_edit() {
     );
     assert!(!app.world().resource::<EditorHistory>().has_gesture());
     app.world_mut()
-        .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world))
-        .unwrap();
+        .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world));
     assert_eq!(app.world().get::<Note>(entity).unwrap().x, 100.0);
     app.world_mut()
-        .resource_scope(|world, mut history: Mut<EditorHistory>| history.redo(world))
-        .unwrap();
+        .resource_scope(|world, mut history: Mut<EditorHistory>| history.redo(world));
     assert_eq!(app.world().get::<Note>(entity).unwrap().x, value);
 }
 
@@ -178,8 +174,7 @@ fn hiding_the_input_commits_the_last_visible_value() {
     frame(&mut app, &ctx, entity, vec![], false);
     assert!(!app.world().resource::<EditorHistory>().has_gesture());
     app.world_mut()
-        .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world))
-        .unwrap();
+        .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world));
     assert_eq!(app.world().get::<Note>(entity).unwrap().x, 100.0);
 }
 
@@ -342,14 +337,12 @@ fn a_checkbox_keeps_the_same_frame_numeric_edit_and_has_its_own_history() {
     assert!(!note.above);
     assert!(!app.world().resource::<EditorHistory>().has_gesture());
     app.world_mut()
-        .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world))
-        .unwrap();
+        .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world));
     let note = app.world().get::<Note>(entity).unwrap();
     assert_eq!(note.x, 250.0);
     assert!(note.above);
     app.world_mut()
-        .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world))
-        .unwrap();
+        .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world));
     assert_eq!(app.world().get::<Note>(entity).unwrap().x, 100.0);
     assert!(app.world().resource::<EditorHistory>().is_saved());
 }
@@ -434,15 +427,13 @@ fn beat_controls_commit_independently_and_escape_only_cancels_the_active_input()
         phichain_chart::beat!(3, 1, 8)
     );
     app.world_mut()
-        .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world))
-        .unwrap();
+        .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world));
     assert_eq!(
         app.world().get::<Note>(entity).unwrap().beat,
         phichain_chart::beat!(3, 1, 4)
     );
     app.world_mut()
-        .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world))
-        .unwrap();
+        .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world));
     assert_eq!(app.world().get::<Note>(entity).unwrap().beat, original);
 }
 

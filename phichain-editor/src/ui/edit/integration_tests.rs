@@ -86,14 +86,12 @@ fn click(app: &mut App, ctx: &Context, pos: Pos2, draw: &mut impl FnMut(&mut Wor
 
 fn undo(app: &mut App) {
     app.world_mut()
-        .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world))
-        .unwrap();
+        .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world));
 }
 
 fn redo(app: &mut App) {
     app.world_mut()
-        .resource_scope(|world, mut history: Mut<EditorHistory>| history.redo(world))
-        .unwrap();
+        .resource_scope(|world, mut history: Mut<EditorHistory>| history.redo(world));
 }
 
 #[test]
