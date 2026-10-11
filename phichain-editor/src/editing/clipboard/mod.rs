@@ -81,7 +81,11 @@ fn copy_system(world: &mut World) -> Result {
             world
                 .get::<Note>(*entity)
                 .map(|note| note.beat)
-                .or_else(|| world.get::<LineEvent>(*entity).map(|event| event.start_beat))
+                .or_else(|| {
+                    world
+                        .get::<LineEvent>(*entity)
+                        .map(|event| event.start_beat)
+                })
         })
         .min();
     let mut counts = ObjectCounts::default();
@@ -304,8 +308,7 @@ mod tests {
                 |In((scene, line, delta)): In<(Arc<DynamicScene>, Entity, Beat)>,
                  mut edits: Edits| {
                     edits.once("paste", move |commands| {
-                        commands
-                            .queue(move |world: &mut World| paste(world, &scene, line, delta));
+                        commands.queue(move |world: &mut World| paste(world, &scene, line, delta));
                     });
                 },
                 (scene, line, delta),
