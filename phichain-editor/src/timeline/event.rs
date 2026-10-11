@@ -179,7 +179,7 @@ impl Timeline for EventTimeline {
         for entity in events.iter() {
             let (event, entity, selected, pending) = event_query.get(*entity).unwrap();
 
-            let rect = get_event_rect(&event);
+            let rect = get_event_rect(event);
 
             if rect.bottom() >= viewport.bottom() && rect.top() <= viewport.bottom() {
                 // in viewport, but start value outside bottom

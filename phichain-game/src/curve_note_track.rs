@@ -79,7 +79,7 @@ pub fn update_curve_note_track_system(
             continue;
         };
 
-        let notes = generate_notes(*from.0, *to.0, &track.options);
+        let notes = generate_notes(*from.0, *to.0, track.options);
 
         let update = match cache {
             None => {
