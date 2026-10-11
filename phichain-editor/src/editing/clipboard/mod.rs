@@ -17,7 +17,9 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::curve_note_track::CurveNoteTrackOptions;
 use phichain_chart::event::LineEvent;
 use phichain_chart::note::Note;
-use phichain_game::curve_note_track::{CurveNoteTrackFrom, CurveNoteTrackTo};
+use phichain_game::curve_note_track::{
+    CurveNoteTrackFrom, CurveNoteTrackTo, CurveNoteTracksFrom, CurveNoteTracksTo,
+};
 use phichain_game::event::EventOf;
 use phichain_game::{Derived, Pending};
 use std::sync::Arc;
@@ -57,28 +59,21 @@ fn copy_system(world: &mut World) -> Result {
         .query_filtered::<Entity, (With<Selected>, Without<Derived>, Without<Pending>)>()
         .iter(world)
         .filter(|entity| {
-            world.get::<Note>(*entity).is_some() || world.get::<LineEvent>(*entity).is_some()
+            world.get::<Note>(*entity).is_some()
+                || world.get::<LineEvent>(*entity).is_some()
+                || world.get::<CurveNoteTrackTo>(*entity).is_some()
         })
         .collect();
-    let tracks: Vec<_> = world
-        .query_filtered::<(
-            Entity,
-            &CurveNoteTrackFrom,
-            &CurveNoteTrackTo,
-            Has<Selected>,
-        ), Without<Pending>>()
+    let track_endpoints: Vec<(Entity, Entity)> = world
+        .query_filtered::<
+            (&CurveNoteTrackFrom, &CurveNoteTrackTo),
+            (With<Selected>, Without<Pending>),
+        >()
         .iter(world)
-        .map(|(entity, from, to, selected)| (entity, from.0, to.0, selected))
+        .map(|(from, to)| (from.0, to.0))
         .collect();
-    for (_, from, to, selected) in &tracks {
-        if *selected {
-            entities.extend([*from, *to]);
-        }
-    }
-    for (track, from, to, _) in tracks {
-        if entities.contains(&from) && entities.contains(&to) {
-            entities.insert(track);
-        }
+    for (from, to) in track_endpoints {
+        entities.extend([from, to]);
     }
     let first_beat = entities
         .iter()
@@ -86,11 +81,7 @@ fn copy_system(world: &mut World) -> Result {
             world
                 .get::<Note>(*entity)
                 .map(|note| note.beat)
-                .or_else(|| {
-                    world
-                        .get::<LineEvent>(*entity)
-                        .map(|event| event.start_beat)
-                })
+                .or_else(|| world.get::<LineEvent>(*entity).map(|event| event.start_beat))
         })
         .min();
     let mut counts = ObjectCounts::default();
@@ -120,13 +111,27 @@ fn copy_system(world: &mut World) -> Result {
 
 fn cut_system(world: &mut World) -> Result {
     copy_system(world)?;
-    let mut targets = Vec::new();
-    let mut counts = ObjectCounts::default();
-    for (entity, note, event, track) in world
-        .query_filtered::<(Entity, Has<Note>, Has<LineEvent>, Has<CurveNoteTrackTo>), With<Selected>>()
+    let targets: Vec<Entity> = world
+        .query_filtered::<Entity, (With<Selected>, Without<Derived>, Without<Pending>)>()
         .iter(world)
-    {
-        targets.push(entity);
+        .filter(|entity| {
+            world.get::<Note>(*entity).is_some()
+                || world.get::<LineEvent>(*entity).is_some()
+                || world.get::<CurveNoteTrackTo>(*entity).is_some()
+        })
+        .collect();
+    let endpoints: Vec<Entity> = world
+        .query_filtered::<
+            (&CurveNoteTrackFrom, &CurveNoteTrackTo),
+            (With<Selected>, Without<Pending>),
+        >()
+        .iter(world)
+        .flat_map(|(from, to)| [from.0, to.0])
+        .collect();
+    let mut counts = ObjectCounts::default();
+    let mut kinds = world.query::<(Has<Note>, Has<LineEvent>, Has<CurveNoteTrackTo>)>();
+    for entity in &targets {
+        let (note, event, track) = kinds.get(world, *entity)?;
         counts.notes += usize::from(note);
         counts.events += usize::from(event);
         counts.tracks += usize::from(track);
@@ -134,14 +139,29 @@ fn cut_system(world: &mut World) -> Result {
     let description = t!("history.cut", objects = counts.text()).into_owned();
     world
         .run_system_once_with(
-            |In((targets, description)): In<(Vec<Entity>, String)>, mut edits: Edits| {
+            |In((targets, endpoints, description)): In<(Vec<Entity>, Vec<Entity>, String)>,
+             mut edits: Edits| {
                 edits.once(description, move |commands| {
                     for entity in targets {
                         commands.entity(entity).try_despawn();
                     }
+                    // Endpoints that anchored nothing besides the cut tracks die
+                    // with them; shared endpoints stay and paste clones them
+                    commands.queue(move |world: &mut World| {
+                        for endpoint in endpoints {
+                            let Ok(entity) = world.get_entity_mut(endpoint) else {
+                                continue;
+                            };
+                            let orphaned = entity.get::<CurveNoteTracksFrom>().is_none()
+                                && entity.get::<CurveNoteTracksTo>().is_none();
+                            if orphaned {
+                                entity.despawn();
+                            }
+                        }
+                    });
                 });
             },
-            (targets, description),
+            (targets, endpoints, description),
         )
         .expect("Failed to cut selection");
     Ok(())
@@ -242,36 +262,69 @@ mod tests {
     use phichain_chart::id::NoteId;
     use phichain_chart::line::Line;
     use phichain_chart::note::NoteKind;
-    use phichain_game::curve_note_track::{CurveNoteTracksFrom, CurveNoteTracksTo};
 
-    #[test]
-    fn cut_then_paste_copies_internal_links_and_mints_ids_for_each_copy() {
+    fn fixture() -> App {
         let mut app = App::new();
         app.add_plugins((IdIndexPlugin, HistoryPlugin))
             .init_resource::<EditorClipboard>();
+        app
+    }
+
+    fn spawn_note(world: &mut World, line: Entity, beat: f32, selected: bool) -> Entity {
+        let note = Note::new(NoteKind::Tap, true, Beat::from(beat), 0.0, 1.0);
+        if selected {
+            world.spawn((note, ChildOf(line), Selected)).id()
+        } else {
+            world.spawn((note, ChildOf(line))).id()
+        }
+    }
+
+    fn spawn_track(
+        world: &mut World,
+        line: Entity,
+        from: Entity,
+        to: Entity,
+        selected: bool,
+    ) -> Entity {
+        let track = (
+            CurveNoteTrackFrom(from),
+            CurveNoteTrackTo(to),
+            ChildOf(line),
+        );
+        if selected {
+            world.spawn((track, Selected)).id()
+        } else {
+            world.spawn(track).id()
+        }
+    }
+
+    fn run_paste(world: &mut World, scene: Arc<DynamicScene>, line: Entity, delta: Beat) {
+        world
+            .run_system_once_with(
+                |In((scene, line, delta)): In<(Arc<DynamicScene>, Entity, Beat)>,
+                 mut edits: Edits| {
+                    edits.once("paste", move |commands| {
+                        commands
+                            .queue(move |world: &mut World| paste(world, &scene, line, delta));
+                    });
+                },
+                (scene, line, delta),
+            )
+            .unwrap();
+    }
+
+    #[test]
+    fn cutting_endpoints_does_not_carry_their_track() {
+        let mut app = fixture();
         let world = app.world_mut();
         let line = world.spawn(Line::default()).id();
-        let note = Note::new(NoteKind::Tap, true, Beat::ONE, 0.0, 1.0);
-        let from = world.spawn((note, ChildOf(line), Selected)).id();
-        let to = world
-            .spawn((
-                Note {
-                    beat: Beat::from(4.0),
-                    ..note
-                },
-                ChildOf(line),
-                Selected,
-            ))
-            .id();
+        let from = spawn_note(world, line, 1.0, true);
+        let to = spawn_note(world, line, 4.0, true);
         let old_ids: Vec<_> = [from, to]
             .into_iter()
             .map(|entity| *world.get::<NoteId>(entity).unwrap())
             .collect();
-        world.spawn((
-            CurveNoteTrackFrom(from),
-            CurveNoteTrackTo(to),
-            ChildOf(line),
-        ));
+        spawn_track(world, line, from, to, false);
         world.spawn((
             LineEvent {
                 kind: LineEventKind::X,
@@ -287,50 +340,16 @@ mod tests {
         assert_eq!(world.query::<&Note>().iter(world).count(), 0);
         assert_eq!(world.query::<&CurveNoteTrackTo>().iter(world).count(), 0);
         let clipboard = world.resource::<EditorClipboard>().scene.clone();
-        assert_eq!(clipboard.entities.len(), 4);
+        assert_eq!(clipboard.entities.len(), 3);
         let counts = &world.resource::<EditorClipboard>().counts;
-        assert_eq!((counts.notes, counts.events, counts.tracks), (2, 1, 1));
+        assert_eq!((counts.notes, counts.events, counts.tracks), (2, 1, 0));
         for delta in [Beat::from(8.0), Beat::from(16.0)] {
-            world
-                .run_system_once_with(
-                    |In((scene, line, delta)): In<(Arc<DynamicScene>, Entity, Beat)>,
-                     mut edits: Edits| {
-                        edits.once("paste", move |commands| {
-                            commands
-                                .queue(move |world: &mut World| paste(world, &scene, line, delta));
-                        });
-                    },
-                    (clipboard.clone(), line, delta),
-                )
-                .unwrap();
+            run_paste(world, clipboard.clone(), line, delta);
         }
         let ids: Vec<_> = world.query::<&NoteId>().iter(world).copied().collect();
         assert_eq!(ids.len(), 4);
         assert!(ids.iter().all(|id| !old_ids.contains(id)));
-        let tracks: Vec<_> = world
-            .query::<(Entity, &CurveNoteTrackFrom, &CurveNoteTrackTo)>()
-            .iter(world)
-            .map(|(entity, from, to)| (entity, from.0, to.0))
-            .collect();
-        assert_eq!(tracks.len(), 2);
-        for (track, from, to) in tracks {
-            assert!(world
-                .get::<CurveNoteTracksFrom>(from)
-                .unwrap()
-                .iter()
-                .any(|entity| entity == track));
-            assert!(world
-                .get::<CurveNoteTracksTo>(to)
-                .unwrap()
-                .iter()
-                .any(|entity| entity == track));
-            assert_eq!(world.get::<ChildOf>(from).unwrap().parent(), line);
-            assert_eq!(world.get::<ChildOf>(track).unwrap().parent(), line);
-            assert_eq!(
-                world.get::<Note>(to).unwrap().beat - world.get::<Note>(from).unwrap().beat,
-                Beat::from(3.0)
-            );
-        }
+        assert_eq!(world.query::<&CurveNoteTrackTo>().iter(world).count(), 0);
         world
             .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world))
             .unwrap();
@@ -343,14 +362,112 @@ mod tests {
             .iter()
             .all(|id| world.resource::<IdIndex>().entity(id.uuid()).is_some()));
 
-        let track = world
-            .query::<(Entity, &CurveNoteTrackTo)>()
+        // a selected track captures its endpoints
+        let notes: Vec<Entity> = world
+            .query_filtered::<Entity, With<Note>>()
             .iter(world)
-            .next()
-            .unwrap()
-            .0;
-        world.entity_mut(track).insert(Selected);
+            .take(2)
+            .collect();
+        world
+            .run_system_once_with(
+                |In((line, from, to)): In<(Entity, Entity, Entity)>, mut edits: Edits| {
+                    edits.once("create track", move |commands| {
+                        commands.spawn((
+                            CurveNoteTrackFrom(from),
+                            CurveNoteTrackTo(to),
+                            ChildOf(line),
+                            Selected,
+                        ));
+                    });
+                },
+                (line, notes[0], notes[1]),
+            )
+            .unwrap();
         copy_system(world).unwrap();
+        let counts = &world.resource::<EditorClipboard>().counts;
+        assert_eq!((counts.notes, counts.events, counts.tracks), (2, 0, 1));
+    }
+
+    #[test]
+    fn cutting_a_track_moves_the_exclusive_endpoint_and_keeps_the_shared_one() {
+        let mut app = fixture();
+        let world = app.world_mut();
+        let line = world.spawn(Line::default()).id();
+        let a = spawn_note(world, line, 1.0, false);
+        let b = spawn_note(world, line, 4.0, false);
+        let c = spawn_note(world, line, 8.0, false);
+        let ab = spawn_track(world, line, a, b, true);
+        let bc = spawn_track(world, line, b, c, false);
+        open_document(world);
+        cut_system(world).unwrap();
+        assert!(world.get_entity(a).is_err());
+        assert!(world.get_entity(ab).is_err());
+        assert!(world.get_entity(b).is_ok());
+        assert!(world.get_entity(bc).is_ok());
+        let counts = &world.resource::<EditorClipboard>().counts;
+        assert_eq!((counts.notes, counts.events, counts.tracks), (2, 0, 1));
+        let clipboard = world.resource::<EditorClipboard>().scene.clone();
+        run_paste(world, clipboard, line, Beat::from(8.0));
+        assert_eq!(world.query::<&Note>().iter(world).count(), 4);
+        let tracks: Vec<(Entity, Entity)> = world
+            .query::<(&CurveNoteTrackFrom, &CurveNoteTrackTo)>()
+            .iter(world)
+            .map(|(from, to)| (from.0, to.0))
+            .collect();
+        assert_eq!(tracks.len(), 2);
+        assert!(tracks.contains(&(b, c)));
+        let (from, to) = tracks.into_iter().find(|pair| *pair != (b, c)).unwrap();
+        assert!(from != b && to != b);
+        assert_eq!(world.get::<Note>(from).unwrap().beat, Beat::from(9.0));
+        assert_eq!(world.get::<Note>(to).unwrap().beat, Beat::from(12.0));
+        world
+            .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world))
+            .unwrap();
+        world
+            .resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world))
+            .unwrap();
+        assert_eq!(world.query::<&Note>().iter(world).count(), 3);
+        assert_eq!(world.query::<&CurveNoteTrackTo>().iter(world).count(), 2);
+    }
+
+    #[test]
+    fn cutting_an_endpoint_kills_the_track_but_does_not_carry_it() {
+        let mut app = fixture();
+        let world = app.world_mut();
+        let line = world.spawn(Line::default()).id();
+        let a = spawn_note(world, line, 1.0, true);
+        let b = spawn_note(world, line, 4.0, false);
+        spawn_track(world, line, a, b, false);
+        open_document(world);
+        cut_system(world).unwrap();
+        assert!(world.get_entity(a).is_err());
+        assert!(world.get_entity(b).is_ok());
+        assert_eq!(world.query::<&CurveNoteTrackTo>().iter(world).count(), 0);
+        let counts = &world.resource::<EditorClipboard>().counts;
+        assert_eq!((counts.notes, counts.events, counts.tracks), (1, 0, 0));
+        let clipboard = world.resource::<EditorClipboard>().scene.clone();
+        run_paste(world, clipboard, line, Beat::from(8.0));
+        assert_eq!(world.query::<&Note>().iter(world).count(), 2);
+        assert_eq!(world.query::<&CurveNoteTrackTo>().iter(world).count(), 0);
+    }
+
+    #[test]
+    fn cutting_a_track_with_two_shared_endpoints_removes_only_the_track() {
+        let mut app = fixture();
+        let world = app.world_mut();
+        let line = world.spawn(Line::default()).id();
+        let x = spawn_note(world, line, 0.0, false);
+        let a = spawn_note(world, line, 1.0, false);
+        let b = spawn_note(world, line, 4.0, false);
+        let c = spawn_note(world, line, 8.0, false);
+        spawn_track(world, line, x, a, false);
+        let ab = spawn_track(world, line, a, b, true);
+        spawn_track(world, line, b, c, false);
+        open_document(world);
+        cut_system(world).unwrap();
+        assert!(world.get_entity(ab).is_err());
+        assert_eq!(world.query::<&Note>().iter(world).count(), 4);
+        assert_eq!(world.query::<&CurveNoteTrackTo>().iter(world).count(), 2);
         let counts = &world.resource::<EditorClipboard>().counts;
         assert_eq!((counts.notes, counts.events, counts.tracks), (2, 0, 1));
     }
