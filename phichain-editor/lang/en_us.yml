@@ -1,3 +1,34 @@
+history:
+  object:
+    note: "%{count} note"
+    notes: "%{count} notes"
+    event: "%{count} event"
+    events: "%{count} events"
+    track: "%{count} curve track"
+    tracks: "%{count} curve tracks"
+    separator: ", "
+  edit_line: Edit line
+  edit_bpm_point: Edit BPM point
+  edit_offset: Edit offset
+  edit_meta: Edit chart information
+  mirror_notes: "Mirror %{count} notes"
+  edit_events: "Edit %{count} events"
+  delete: "Delete %{objects}"
+  move: "Move %{objects}"
+  paste: "Paste %{objects}"
+  cut: "Cut %{objects}"
+  edit_tracks: "Edit %{count} curve tracks"
+  create_events: "Create %{count} events"
+  create_line: "Create line"
+  move_line: "Move line"
+  delete_line: "Delete line"
+  create_track: "Create curve track"
+  create_bpm_point: "Add BPM point"
+  delete_bpm_point: "Delete BPM point"
+  create_notes: "Add %{count} note(s)"
+  edit_notes: "Modify %{count} note(s)"
+  delete_notes: "Delete %{count} note(s)"
+
 menu_bar:
   file:
     title: File
@@ -41,23 +72,19 @@ tab:
     title: Preview
   timeline:
     title: Timeline
+    curve_note_track:
+      creating: Creating curve note track
+      select_destination: Select an end note on the same line.
+      same_endpoint: The start and end cannot be the same note.
+      cancel: Cancel
     event:
       jump_to_event: Jump to this event
   inspector:
     title: Inspector
     curve_note_track:
       title:
-        pending: Pending Curve Note Track
         selected: Selected Curve Note Track
       start: Start Curve Note Track from Here
-      removed:
-        incomplete: 'A curve note track has been removed: missing origin or destination'
-        invalid: 'A curve note track has been removed: invalid origin or destination'
-        empty: 'A curve note track has been removed: does not contain any notes'
-      instructions:
-        select_destination: Please select the destination
-        select_origin: Please select the origin
-        select_origin_destination: Please select the origin and the destination
       density: Density
       kind: Kind
       curve: Curve
@@ -347,6 +374,8 @@ export:
     failed: 'Failed to export RPE chart: %{error}'
 
 game:
+  easing:
+    parameter: Parameter
   aspect_ratio:
     free: Free
   event:

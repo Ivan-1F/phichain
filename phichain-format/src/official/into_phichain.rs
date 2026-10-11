@@ -5,6 +5,7 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::event;
 use phichain_chart::event::{LineEvent, LineEventKind};
+use phichain_chart::id::Identified;
 use phichain_chart::note::{Note, NoteKind};
 use phichain_chart::offset::Offset;
 use phichain_chart::serialization::{PhichainChart, SerializedLine};
@@ -186,21 +187,16 @@ pub fn official_to_phichain(
             },
         );
 
-        let mut line = SerializedLine {
-            notes: line
-                .notes_above
-                .iter()
-                .map(|x| create_note(true, x))
-                .chain(line.notes_below.iter().map(|x| create_note(false, x)))
-                .collect(),
-            events,
+        let speed_events = events.speed().sorted();
 
-            ..Default::default()
-        };
+        let mut notes: Vec<_> = line
+            .notes_above
+            .iter()
+            .map(|x| create_note(true, x))
+            .chain(line.notes_below.iter().map(|x| create_note(false, x)))
+            .collect();
 
-        let speed_events = line.events.speed().sorted();
-
-        for note in &mut line.notes {
+        for note in &mut notes {
             if let NoteKind::Hold { .. } = note.kind {
                 let mut speed = 0.0;
                 for event in &speed_events {
@@ -217,6 +213,13 @@ pub fn official_to_phichain(
                 }
             }
         }
+
+        let line = SerializedLine {
+            notes: notes.into_iter().map(Identified::new).collect(),
+            events: events.into_iter().map(Identified::new).collect(),
+
+            ..Default::default()
+        };
 
         phichain.lines.push(line);
     }

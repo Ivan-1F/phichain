@@ -69,6 +69,7 @@ define_migrations! {
     3 => 4: migration_3_4::Migration3To4,
     4 => 5: migration_4_5::Migration4To5,
     5 => 6: migration_5_6::Migration5To6,
+    6 => 7: migration_6_7::Migration6To7,
 }
 
 fn get_format(chart: &Value) -> anyhow::Result<u64> {

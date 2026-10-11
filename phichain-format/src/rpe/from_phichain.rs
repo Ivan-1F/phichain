@@ -80,6 +80,7 @@ fn event_layer_from_line(line: &SerializedLine) -> RpeEventLayer {
     let mut event_layer = RpeEventLayer::default();
 
     for event in &line.events {
+        let event = &event.data;
         match event.kind {
             LineEventKind::Speed => {
                 event_layer.speed_events.push(RpeSpeedEvent {
@@ -136,12 +137,12 @@ fn push_line(line: &SerializedLine, parent_index: Option<usize>, target: &mut Ve
         father: parent_index.map(|i| i as i32).unwrap_or(-1),
         rotate_with_father: true,
         event_layers: vec![event_layer],
-        notes: line.notes.iter().map(note).collect(),
+        notes: line.notes.iter().map(|n| note(&n.data)).collect(),
         // does not include holds, ref: https://teamflos.github.io/phira-docs/chart-standard/chart-format/rpe/judgeLine.html
         num_of_notes: line
             .notes
             .iter()
-            .filter(|note| !note.kind.is_hold())
+            .filter(|note| !note.data.kind.is_hold())
             .count(),
 
         ..Default::default()

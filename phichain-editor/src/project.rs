@@ -68,7 +68,16 @@ impl Plugin for ProjectPlugin {
     }
 }
 
-fn save_project_system(
+fn save_project_system(world: &mut World) -> Result {
+    use bevy::ecs::system::RunSystemOnce;
+    world.resource_scope(|world, mut history: Mut<EditorHistory>| history.finish_gesture(world));
+    world
+        .run_system_once::<_, Result, _>(write_project_system)
+        .expect("save system parameters must be available")?;
+    Ok(())
+}
+
+fn write_project_system(
     project: Res<Project>,
     mut toasts: ResMut<ToastsStorage>,
     mut history: ResMut<EditorHistory>,
@@ -76,22 +85,19 @@ fn save_project_system(
     chart_params: SerializeChartParam,
     line_params: SerializeLineParam,
 ) -> Result {
-    let result: anyhow::Result<()> = {
+    let result = (|| -> anyhow::Result<()> {
         let chart = serialize_chart(chart_params, line_params);
         let chart_string = serde_json::to_string(&chart)?;
+        let meta_string = serde_json::to_string(&project.meta)?;
         std::fs::write(project.path.chart_path(), chart_string)?;
-        std::fs::write(
-            project.path.meta_path(),
-            serde_json::to_string(&project.meta).unwrap(),
-        )?;
-
+        std::fs::write(project.path.meta_path(), meta_string)?;
         Ok(())
-    };
+    })();
 
     match result {
         Ok(_) => {
             toasts.success(t!("project.save.succeed"));
-            history.0.set_saved();
+            history.set_saved();
         }
         Err(error) => {
             toasts.error(t!("project.save.failed", error = error));
@@ -191,6 +197,9 @@ fn project_loading_result_observer(
             });
 
             commands.insert_resource(data.project.clone());
+            commands.queue(crate::editing::bpm::load);
+            commands.queue(crate::editing::project_settings::load);
+            commands.queue(crate::editing::history::open_document);
         }
         Err(error) => {
             let message = match error {
@@ -242,6 +251,9 @@ fn unload_project_system(
     if !events.is_empty() {
         events.clear();
 
+        crate::editing::history::close_document(world);
+        crate::editing::project_settings::unload(world);
+
         // remove the project first to stop all systems
         world.remove_resource::<Project>();
 
@@ -284,6 +296,7 @@ fn unload_project_system(
         use phichain_chart::{bpm_list::BpmList, offset::Offset};
         world.remove_resource::<Offset>();
         world.remove_resource::<BpmList>();
+        crate::editing::bpm::unload(world);
         world.remove_resource::<SelectedLine>();
 
         // unload lines, notes and events
@@ -294,23 +307,6 @@ fn unload_project_system(
             // notes and events will be despawned as children
             world.entity_mut(entity).despawn();
         }
-
-        // despawn ghost entities created when despawning an entity with `keep_entity`
-        let to_remove = world
-            .query::<Entity>()
-            .iter(world)
-            .filter(|entity| {
-                world
-                    .inspect_entity(*entity)
-                    .is_ok_and(|x| x.collect::<Vec<_>>().is_empty())
-            })
-            .collect::<Vec<_>>();
-        for entity in to_remove {
-            world.entity_mut(entity).despawn();
-        }
-
-        // clear editor history
-        world.resource_mut::<EditorHistory>().0.clear();
 
         // reset editor timing
         use crate::timing::{ChartTime, Timing};

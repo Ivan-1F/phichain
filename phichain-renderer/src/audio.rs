@@ -100,6 +100,7 @@ struct NoteTimes {
 fn collect_notes(lines: &[SerializedLine], bpm: &BpmList, from: f32, to: f32, out: &mut NoteTimes) {
     for line in lines {
         for note in &line.notes {
+            let note = &note.data;
             let t = bpm.time_at(note.beat);
             if t < from || t >= to {
                 continue;
@@ -142,8 +143,10 @@ fn decode_pcm(bytes: &[u8]) -> Result<Vec<f32>> {
     }
     Ok(output
         .stdout
-        .chunks_exact(4)
-        .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]))
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|c| f32::from_le_bytes(*c))
         .collect())
 }
 

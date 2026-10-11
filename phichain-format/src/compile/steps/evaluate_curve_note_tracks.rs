@@ -1,14 +1,17 @@
 use phichain_chart::curve_note_track::generate_notes;
+use phichain_chart::id::Identified;
 use phichain_chart::serialization::{PhichainChart, SerializedLine};
 
 fn evaluate_line(line: &mut SerializedLine) {
     let original_notes = line.notes.clone();
     for track in &line.curve_note_tracks {
-        if let (Some(from), Some(to)) =
-            (original_notes.get(track.from), original_notes.get(track.to))
-        {
-            line.notes
-                .extend(generate_notes(*from, *to, &track.options));
+        let find = |id| original_notes.iter().find(|note| note.id == id);
+        if let (Some(from), Some(to)) = (find(track.from), find(track.to)) {
+            line.notes.extend(
+                generate_notes(from.data, to.data, &track.options)
+                    .into_iter()
+                    .map(Identified::new),
+            );
         }
     }
 
@@ -39,35 +42,37 @@ mod tests {
     use super::*;
     use phichain_chart::beat;
     use phichain_chart::curve_note_track::{CurveNoteTrack, CurveNoteTrackOptions};
+    use phichain_chart::id::{CurveNoteTrackId, Identified, LineId, NoteId};
     use phichain_chart::line::Line;
     use phichain_chart::note::{Note, NoteKind};
     use phichain_chart::serialization::SerializedLine;
 
-    /// Curve note tracks use indices into the original `notes` array.
+    /// Curve note tracks reference notes by id within the original `notes` snapshot.
     /// When track A generates new notes and appends them, the array grows.
-    /// Track B's indices (from=2, to=50) are out of bounds in the original
-    /// 2-element array and should be skipped. Without snapshotting the
+    /// Track B references unknown ids and should be skipped. Without snapshotting the
     /// original notes, track B would accidentally reference notes generated
     /// by track A, producing unwanted extra notes.
     #[test]
     fn later_track_should_not_reference_notes_generated_by_earlier_track() {
-        // 2 original notes at indices 0 and 1
+        // 2 original notes
         let notes = vec![
-            Note::new(NoteKind::Tap, true, beat!(0), 0.0, 1.0),
-            Note::new(NoteKind::Tap, true, beat!(4), 100.0, 1.0),
+            Identified::new(Note::new(NoteKind::Tap, true, beat!(0), 0.0, 1.0)),
+            Identified::new(Note::new(NoteKind::Tap, true, beat!(4), 100.0, 1.0)),
         ];
 
-        // Track A: from=0, to=1, valid, will generate notes and append them
-        // Track B: from=2, to=3, out of bounds in original notes, should be skipped
+        // Track A: references the two original notes, valid, will generate notes and append them
+        // Track B: references unknown ids, should be skipped
         let tracks = vec![
             CurveNoteTrack {
-                from: 0,
-                to: 1,
+                id: CurveNoteTrackId::new(),
+                from: notes[0].id,
+                to: notes[1].id,
                 options: CurveNoteTrackOptions::default(),
             },
             CurveNoteTrack {
-                from: 2,
-                to: 50,
+                id: CurveNoteTrackId::new(),
+                from: NoteId::new(),
+                to: NoteId::new(),
                 options: CurveNoteTrackOptions::default(),
             },
         ];
@@ -77,6 +82,7 @@ mod tests {
             line: Line {
                 name: "test".to_string(),
             },
+            id: LineId::new(),
             notes,
             events: vec![],
             children: vec![],
@@ -96,8 +102,8 @@ mod tests {
 
         assert_eq!(
             actual_count, expected_count,
-            "track B (from=2, to=50) should be skipped because those indices are out of bounds \
-             in the original notes, but got {} notes instead of {}",
+            "track B references unknown note ids and should be skipped, \
+             but got {} notes instead of {}",
             actual_count, expected_count,
         );
     }

@@ -2,11 +2,9 @@ use bevy::prelude::*;
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::note::{Note, NoteKind};
+use phichain_game::Pending;
 
-use crate::editing::command::note::CreateNote;
-use crate::editing::command::EditorCommand;
-use crate::editing::pending::Pending;
-use crate::editing::DoCommand;
+use crate::editing::history::Edits;
 use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
 use crate::identifier::{Identifier, IntoIdentifier};
 use crate::schedule::EditorSet;
@@ -70,9 +68,9 @@ fn create_note_system(
     window_query: Query<&Window>,
     bpm_list: Res<BpmList>,
 
-    mut event: MessageWriter<DoCommand>,
+    mut edits: Edits,
 
-    mut pending_note_query: Query<(&mut Note, Entity), With<Pending>>,
+    pending_note_query: Query<(&Note, Entity), With<Pending>>,
 ) -> Result {
     let Ok(window) = window_query.single() else {
         return Ok(());
@@ -118,10 +116,9 @@ fn create_note_system(
 
                 let note = Note::new(kind, true, beat, x * CANVAS_WIDTH, 1.0);
 
-                event.write(DoCommand(EditorCommand::CreateNote(CreateNote::new(
-                    line_entity,
-                    note,
-                ))));
+                edits.once(t!("history.create_notes", count = 1), move |commands| {
+                    commands.spawn((note, ChildOf(line_entity)));
+                });
             };
 
             if hotkey.just_pressed(CreateNoteHotkeys::PlaceTap) {
@@ -132,13 +129,15 @@ fn create_note_system(
                 create_note(NoteKind::Drag);
             }
 
-            if let Ok((mut pending_note, _)) = pending_note_query.single_mut() {
+            if let Ok((pending_note, entity)) = pending_note_query.single() {
+                let mut pending_note = *pending_note;
                 if let NoteKind::Hold { .. } = pending_note.kind {
                     let (x, beat) = calc_note_attrs();
                     pending_note.kind = NoteKind::Hold {
                         hold_beat: (beat - pending_note.beat).max(ctx.settings.minimum_beat()),
                     };
                     pending_note.x = x * CANVAS_WIDTH;
+                    commands.entity(entity).insert(pending_note);
                 }
             }
 
@@ -149,10 +148,17 @@ fn create_note_system(
             if hotkey.just_pressed(CreateNoteHotkeys::PlaceHold) {
                 if let Ok((pending_note, entity)) = pending_note_query.single() {
                     commands.entity(entity).despawn();
-                    event.write(DoCommand(EditorCommand::CreateNote(CreateNote::new(
-                        line_entity,
-                        *pending_note,
-                    ))));
+                    // Resolve the final cursor position here too: the preview's
+                    // queued replacement has not necessarily executed this frame.
+                    let (x, beat) = calc_note_attrs();
+                    let mut note = *pending_note;
+                    note.kind = NoteKind::Hold {
+                        hold_beat: (beat - note.beat).max(ctx.settings.minimum_beat()),
+                    };
+                    note.x = x * CANVAS_WIDTH;
+                    edits.once(t!("history.create_notes", count = 1), move |commands| {
+                        commands.spawn((note, ChildOf(line_entity)));
+                    });
                 } else {
                     let (x, beat) = calc_note_attrs();
                     commands.entity(line_entity).with_children(|parent| {
@@ -163,7 +169,7 @@ fn create_note_system(
                                 },
                                 true,
                                 beat,
-                                x,
+                                x * CANVAS_WIDTH,
                                 1.0,
                             ),
                             Pending,

@@ -1,8 +1,9 @@
-use bevy::prelude::{Component, Deref, Entity};
+use bevy::prelude::*;
 
-#[derive(Component, Debug)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Reflect)]
+#[reflect(Component, Clone, PartialEq, Debug)]
 #[relationship(relationship_target = Events)]
-pub struct EventOf(pub Entity);
+pub struct EventOf(#[entities] pub Entity);
 
 impl EventOf {
     /// The target entity of this event entity.

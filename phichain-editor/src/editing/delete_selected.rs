@@ -1,15 +1,12 @@
 use crate::action::ActionRegistrationExt;
-use crate::editing::command::curve_note_track::RemoveCurveNoteTrack;
-use crate::editing::command::event::RemoveEvent;
-use crate::editing::command::note::RemoveNote;
-use crate::editing::command::{CommandSequence, EditorCommand};
-use crate::editing::DoCommand;
+use crate::editing::description::ObjectCounts;
+use crate::editing::history::Edits;
 use crate::hotkey::Hotkey;
 use crate::selection::Selected;
 use bevy::prelude::*;
 use phichain_chart::event::LineEvent;
 use phichain_chart::note::Note;
-use phichain_game::curve_note_track::CurveNoteTrack;
+use phichain_game::curve_note_track::CurveNoteTrackTo;
 
 pub struct DeleteSelectedPlugin;
 
@@ -23,34 +20,27 @@ impl Plugin for DeleteSelectedPlugin {
     }
 }
 
-fn delete_selected_system(
-    mut set: ParamSet<(
-        Query<Entity, (With<Selected>, With<Note>)>,
-        Query<Entity, (With<Selected>, With<LineEvent>)>,
-        Query<Entity, (With<Selected>, With<CurveNoteTrack>)>,
-    )>,
-    mut events: MessageWriter<DoCommand>,
+pub(super) fn delete_selected_system(
+    selected: Query<(Entity, Has<Note>, Has<LineEvent>, Has<CurveNoteTrackTo>), With<Selected>>,
+    mut edits: Edits,
 ) -> Result {
-    let mut sequence = CommandSequence(vec![]);
-    for note in &set.p0() {
-        sequence
-            .0
-            .push(EditorCommand::RemoveNote(RemoveNote::new(note)));
+    let mut targets = Vec::new();
+    let mut counts = ObjectCounts::default();
+    for (entity, note, event, track) in &selected {
+        targets.push(entity);
+        counts.notes += usize::from(note);
+        counts.events += usize::from(event);
+        counts.tracks += usize::from(track);
     }
-    for event in &set.p1() {
-        sequence
-            .0
-            .push(EditorCommand::RemoveEvent(RemoveEvent::new(event)));
+    if !targets.is_empty() {
+        edits.once(
+            t!("history.delete", objects = counts.text()),
+            move |commands| {
+                for entity in targets {
+                    commands.entity(entity).try_despawn();
+                }
+            },
+        );
     }
-    for track in &set.p2() {
-        sequence.0.push(EditorCommand::RemoveCurveNoteTrack(
-            RemoveCurveNoteTrack::new(track),
-        ));
-    }
-
-    if !sequence.0.is_empty() {
-        events.write(DoCommand(EditorCommand::CommandSequence(sequence)));
-    }
-
     Ok(())
 }

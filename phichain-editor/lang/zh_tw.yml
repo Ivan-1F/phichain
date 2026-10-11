@@ -1,3 +1,34 @@
+history:
+  object:
+    note: "%{count} 個音符"
+    notes: "%{count} 個音符"
+    event: "%{count} 個事件"
+    events: "%{count} 個事件"
+    track: "%{count} 條曲線軌跡"
+    tracks: "%{count} 條曲線軌跡"
+    separator: "、"
+  edit_line: 修改判定線
+  edit_bpm_point: 修改 BPM 點
+  edit_offset: 修改偏移
+  edit_meta: 修改譜面資訊
+  mirror_notes: "鏡像 %{count} 個音符"
+  edit_events: "修改 %{count} 個事件"
+  delete: "刪除 %{objects}"
+  move: "移動 %{objects}"
+  paste: "貼上 %{objects}"
+  cut: "剪下 %{objects}"
+  edit_tracks: "修改 %{count} 條曲線軌跡"
+  create_events: "新增 %{count} 個事件"
+  create_line: "新增判定線"
+  move_line: "移動判定線"
+  delete_line: "刪除判定線"
+  create_track: "新增曲線軌跡"
+  create_bpm_point: "新增 BPM 點"
+  delete_bpm_point: "刪除 BPM 點"
+  create_notes: "新增 %{count} 個音符"
+  edit_notes: "修改 %{count} 個音符"
+  delete_notes: "刪除 %{count} 個音符"
+
 menu_bar:
   file:
     title: 檔案
@@ -41,23 +72,19 @@ tab:
     title: 預覽
   timeline:
     title: 時間線
+    curve_note_track:
+      creating: 正在建立曲線音符軌跡
+      select_destination: 請選擇同一判定線上的終點
+      same_endpoint: 起點和終點不能是同一個音符
+      cancel: 取消
     event:
       jump_to_event: 跳轉至該事件
   inspector:
     title: 檢查器
     curve_note_track:
       title:
-        pending: 正在新增的曲線音符軌跡
         selected: 選擇的曲線音符軌跡
       start: 從這裡開始新增曲線音符軌跡
-      removed:
-        incomplete: 一條曲線音符軌跡被移除：缺少起點或終點
-        invalid: 一條曲線音符軌跡被移除：起點或終點無效
-        empty: 一條曲線音符軌跡被移除：沒有包含任何音符
-      instructions:
-        select_destination: 請選擇終點
-        select_origin: 請選擇起點
-        select_origin_destination: 請選擇起點和終點
       density: 密度
       kind: 類型
       curve: 曲線
@@ -347,6 +374,8 @@ export:
     failed: 匯出為 RPE 時發生錯誤：%{error}
 
 game:
+  easing:
+    parameter: 參數
   aspect_ratio:
     free: 自由
   event:

@@ -67,11 +67,11 @@ impl ChartFormat for PhichainChart {
             F: Fn(f32) -> f32,
         {
             for note in &mut line.notes {
-                note.x = round(note.x);
+                note.data.x = round(note.data.x);
             }
 
             for event in &mut line.events {
-                event.value = match event.value {
+                event.data.value = match event.data.value {
                     LineEventValue::Constant { value: v } => {
                         LineEventValue::Constant { value: round(v) }
                     }
