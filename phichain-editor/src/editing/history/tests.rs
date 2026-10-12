@@ -2,7 +2,6 @@ use super::*;
 use crate::id_index::IdIndexPlugin;
 use crate::selection::{Selected, SelectedLine};
 use bevy::ecs::system::RunSystemOnce;
-use bevy::ecs::system::SystemState;
 use phichain_chart::beat::Beat;
 use phichain_chart::line::Line;
 use phichain_chart::note::NoteKind;
@@ -450,27 +449,6 @@ fn lifecycle_observer_commands_belong_to_the_edit_that_triggered_them() {
     assert_eq!(app.world().get::<Note>(entity).unwrap().x, 100.0);
     redo(&mut app);
     assert_eq!(app.world().get::<Note>(entity).unwrap().x, -100.0);
-}
-
-#[test]
-fn queued_edits_cannot_leak_into_a_reopened_project() {
-    let (mut app, line) = fixture();
-    let (entity, _) = create(&mut app, line);
-    let mut state = SystemState::<Edits>::new(app.world_mut());
-    state
-        .get_mut(app.world_mut())
-        .once("stale edit", move |commands| {
-            commands.entity(entity).insert(Note { x: 500.0, ..note() });
-        });
-    close_document(app.world_mut());
-    app.world_mut().entity_mut(line).despawn();
-    let line = app.world_mut().spawn(Line::default()).id();
-    let fresh = app.world_mut().spawn((note(), ChildOf(line))).id();
-    open_document(app.world_mut());
-    state.apply(app.world_mut());
-    assert_eq!(app.world().get::<Note>(fresh), Some(&note()));
-    assert!(app.world().resource::<EditorHistory>().is_saved());
-    assert_eq!(app.world().resource::<EditorHistory>().record.len(), 0);
 }
 
 #[test]

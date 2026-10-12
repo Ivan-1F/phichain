@@ -71,7 +71,6 @@ impl Plugin for HistoryPlugin {
 pub struct EditorHistory {
     record: Record<RecordedEdit>,
     current: Uuid,
-    epoch: Uuid,
     gesture: Option<ActiveGesture>,
 }
 
@@ -80,7 +79,6 @@ impl Default for EditorHistory {
         Self {
             record: Record::builder().limit(MAX_HISTORY_ENTRIES).build(),
             current: Uuid::new_v4(),
-            epoch: Uuid::new_v4(),
             gesture: None,
         }
     }
@@ -183,7 +181,6 @@ impl Edit for RecordedEdit {
 #[derive(SystemParam)]
 pub struct Edits<'w, 's> {
     commands: Commands<'w, 's>,
-    history: Res<'w, EditorHistory>,
 }
 
 impl Edits<'_, '_> {
@@ -204,12 +201,8 @@ impl Edits<'_, '_> {
     }
 
     fn queue(&mut self, edit: impl FnOnce(&mut World) + Send + 'static) {
-        let epoch = self.history.epoch;
         self.commands.queue(move |world: &mut World| {
-            // A queued UI action must not leak into another project.
-            if world.resource::<EditorHistory>().epoch == epoch
-                && world.resource::<Recorder>().enabled
-            {
+            if world.resource::<Recorder>().enabled {
                 edit(world);
             }
         });
