@@ -247,9 +247,6 @@ impl PendingChanges {
                 );
             }
             let exists_after = entity.is_some();
-            if !existed_before && !exists_after {
-                continue;
-            }
             if !existed_before {
                 before = None;
             }
