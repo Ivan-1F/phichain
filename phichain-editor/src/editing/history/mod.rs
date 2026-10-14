@@ -14,7 +14,8 @@ use gesture::{finish_unattended_gesture, ActiveGesture};
 #[cfg(test)]
 mod tests;
 
-use self::changes::{ChangeSet, Recorder, Registry};
+pub use self::changes::ChangeSet;
+use self::changes::{Recorder, Registry};
 use bevy::ecs::system::SystemParam;
 use bevy::ecs::world::CommandQueue;
 use bevy::prelude::*;
@@ -29,6 +30,7 @@ use phichain_chart::project::ProjectMeta;
 use phichain_game::curve_note_track::{CurveNoteTrackFrom, CurveNoteTrackTo};
 use phichain_game::event::EventOf;
 use phichain_game::line::LineOrder;
+use std::borrow::Cow;
 use std::fmt;
 use undo::{Edit, Record};
 use uuid::Uuid;
@@ -128,6 +130,12 @@ impl EditorHistory {
         self.current = self.record.redo(world).unwrap();
     }
 
+    /// Label of the edit the next undo would revert.
+    #[cfg(test)]
+    pub fn undo_label(&self) -> Option<String> {
+        self.record.undo_string()
+    }
+
     fn record_changes(&mut self, world: &mut World, description: String, changes: ChangeSet) {
         if changes.is_empty() {
             return;
@@ -186,12 +194,13 @@ pub struct Edits<'w, 's> {
 impl Edits<'_, '_> {
     /// Queue one user operation. Its commands and synchronous observer commands
     /// form one history entry; an operation with no document changes is discarded.
+    /// A closure description receives the recorded changes, so the label can
+    /// count what actually happened, including cascaded deletions.
     pub fn once(
         &mut self,
-        description: impl Into<String>,
+        description: impl IntoDescription + Send + 'static,
         edit: impl FnOnce(&mut Commands) + Send + 'static,
     ) {
-        let description = description.into();
         self.queue(move |world| {
             world.resource_scope(|world, mut history: Mut<EditorHistory>| {
                 history.finish_gesture(world)
@@ -209,13 +218,48 @@ impl Edits<'_, '_> {
     }
 }
 
-fn apply_edit(world: &mut World, description: String, edit: impl FnOnce(&mut Commands)) {
+/// A history entry description: either a static label or a closure that
+/// builds the label from the recorded changes.
+pub trait IntoDescription {
+    fn describe(self, changes: &ChangeSet) -> String;
+}
+
+impl IntoDescription for String {
+    fn describe(self, _: &ChangeSet) -> String {
+        self
+    }
+}
+
+impl IntoDescription for &str {
+    fn describe(self, _: &ChangeSet) -> String {
+        self.to_owned()
+    }
+}
+
+impl IntoDescription for Cow<'static, str> {
+    fn describe(self, _: &ChangeSet) -> String {
+        self.into_owned()
+    }
+}
+
+impl<F: FnOnce(&ChangeSet) -> String> IntoDescription for F {
+    fn describe(self, changes: &ChangeSet) -> String {
+        self(changes)
+    }
+}
+
+fn apply_edit(
+    world: &mut World,
+    description: impl IntoDescription,
+    edit: impl FnOnce(&mut Commands),
+) {
     // Flush unrelated work before opening the recording scope.
     world.flush();
     world.resource_mut::<Recorder>().begin();
     run_commands(world, edit);
     let pending = world.resource_mut::<Recorder>().finish();
     let changes = pending.settle(world);
+    let description = description.describe(&changes);
     world.resource_scope(|world, mut history: Mut<EditorHistory>| {
         history.record_changes(world, description, changes);
     });

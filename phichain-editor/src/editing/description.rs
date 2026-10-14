@@ -1,5 +1,5 @@
 #[derive(Default)]
-pub(super) struct ObjectCounts {
+pub(crate) struct ObjectCounts {
     pub notes: usize,
     pub events: usize,
     pub tracks: usize,

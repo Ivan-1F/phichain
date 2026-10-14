@@ -1,9 +1,13 @@
+use crate::editing::description::ObjectCounts;
 use crate::id_index::IdIndex;
 use bevy::ecs::component::Immutable;
 use bevy::ecs::entity::EntityMapper;
 use bevy::ecs::reflect::{AppTypeRegistry, ReflectComponent};
 use bevy::prelude::*;
 use bevy::reflect::{FromType, GetTypeRegistration, TypePath};
+use phichain_chart::event::LineEvent;
+use phichain_chart::note::Note;
+use phichain_game::curve_note_track::CurveNoteTrackTo;
 use phichain_game::{Derived, Pending};
 use std::any::TypeId;
 use std::collections::{HashMap, HashSet};
@@ -211,7 +215,7 @@ struct ObjectChange {
     components: Vec<ComponentChange>,
 }
 
-pub(super) struct ChangeSet {
+pub struct ChangeSet {
     objects: Vec<ObjectChange>,
     references: HashMap<Entity, Uuid>,
 }
@@ -305,11 +309,34 @@ impl EntityMapper for ReplayMapper<'_> {
 }
 
 impl ChangeSet {
-    pub fn is_empty(&self) -> bool {
+    pub(super) fn is_empty(&self) -> bool {
         self.objects.is_empty()
     }
 
-    pub fn apply(&self, world: &mut World, after: bool) {
+    /// Objects this edit created, classified for history labels.
+    pub fn created_counts(&self) -> ObjectCounts {
+        self.counts(|object| !object.existed_before && object.exists_after)
+    }
+
+    /// Objects this edit destroyed, classified for history labels. Cascaded
+    /// deletions are recorded like any other removal, so they are included.
+    pub fn destroyed_counts(&self) -> ObjectCounts {
+        self.counts(|object| object.existed_before && !object.exists_after)
+    }
+
+    fn counts(&self, predicate: impl Fn(&ObjectChange) -> bool) -> ObjectCounts {
+        let mut counts = ObjectCounts::default();
+        for object in self.objects.iter().filter(|object| predicate(object)) {
+            for change in &object.components {
+                counts.notes += usize::from(change.ty == TypeId::of::<Note>());
+                counts.events += usize::from(change.ty == TypeId::of::<LineEvent>());
+                counts.tracks += usize::from(change.ty == TypeId::of::<CurveNoteTrackTo>());
+            }
+        }
+        counts
+    }
+
+    pub(super) fn apply(&self, world: &mut World, after: bool) {
         world.resource_mut::<Recorder>().replaying = true;
         let index = world.resource::<IdIndex>();
         let mut entities: HashMap<_, _> = self

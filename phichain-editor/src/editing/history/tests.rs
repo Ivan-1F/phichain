@@ -25,7 +25,7 @@ fn note() -> Note {
 }
 
 fn create(app: &mut App, line: Entity) -> (Entity, NoteId) {
-    apply_edit(app.world_mut(), "create".into(), |commands| {
+    apply_edit(app.world_mut(), "create", |commands| {
         commands.spawn((note(), ChildOf(line)));
     });
     let (entity, id) = app
@@ -81,7 +81,7 @@ fn create_undo_redo_restores_identity_parent_and_required_components() {
 fn repeated_replacements_keep_the_first_value_and_redo_does_not_run_the_action() {
     let (mut app, line) = fixture();
     let (entity, _) = create(&mut app, line);
-    apply_edit(app.world_mut(), "edit".into(), |commands| {
+    apply_edit(app.world_mut(), "edit", |commands| {
         commands.entity(entity).insert(Note { x: 120.0, ..note() });
         commands.entity(entity).insert(Note {
             x: 150.0,
@@ -108,7 +108,7 @@ fn undo_delete_restores_an_unselected_note_and_preserves_current_selection() {
     open_document(app.world_mut());
     let id = NoteId::new();
     let other_id = NoteId::new();
-    apply_edit(app.world_mut(), "create notes".into(), |commands| {
+    apply_edit(app.world_mut(), "create notes", |commands| {
         commands.spawn((note(), id, ChildOf(line), Selected));
         commands.spawn((note(), other_id, ChildOf(other_line)));
     });
@@ -140,7 +140,7 @@ fn undo_delete_restores_an_unselected_note_and_preserves_current_selection() {
 fn empty_edits_preserve_redo_and_only_successful_changes_replace_the_tail() {
     let (mut app, line) = fixture();
     let (entity, _) = create(&mut app, line);
-    apply_edit(app.world_mut(), "edit".into(), |commands| {
+    apply_edit(app.world_mut(), "edit", |commands| {
         commands.entity(entity).insert(Note {
             above: false,
             ..note()
@@ -148,16 +148,16 @@ fn empty_edits_preserve_redo_and_only_successful_changes_replace_the_tail() {
     });
     let old_head = app.world().resource::<EditorHistory>().head();
     undo(&mut app);
-    apply_edit(app.world_mut(), "no change".into(), |commands| {
+    apply_edit(app.world_mut(), "no change", |commands| {
         commands.entity(entity).insert(note());
     });
     assert!(app.world().resource::<EditorHistory>().record.can_redo());
-    apply_edit(app.world_mut(), "create then delete".into(), |commands| {
+    apply_edit(app.world_mut(), "create then delete", |commands| {
         let temporary = commands.spawn((note(), ChildOf(line))).id();
         commands.entity(temporary).despawn();
     });
     assert!(app.world().resource::<EditorHistory>().record.can_redo());
-    apply_edit(app.world_mut(), "another edit".into(), |commands| {
+    apply_edit(app.world_mut(), "another edit", |commands| {
         commands.entity(entity).insert(Note { x: 200.0, ..note() });
     });
     let history = app.world().resource::<EditorHistory>();
@@ -219,7 +219,7 @@ fn bounded_history_and_saved_state_survive_eviction() {
     let (entity, _) = create(&mut app, line);
     app.world_mut().resource_mut::<EditorHistory>().set_saved();
     for x in [200.0, 300.0] {
-        apply_edit(app.world_mut(), "edit".into(), |commands| {
+        apply_edit(app.world_mut(), "edit", |commands| {
             commands.entity(entity).insert(Note { x, ..note() });
         });
     }
@@ -234,7 +234,7 @@ fn bounded_history_and_saved_state_survive_eviction() {
 #[test]
 fn batch_delete_is_one_entry_and_earlier_edits_follow_restored_entities() {
     let (mut app, line) = fixture();
-    apply_edit(app.world_mut(), "create two".into(), |commands| {
+    apply_edit(app.world_mut(), "create two", |commands| {
         commands.spawn((note(), ChildOf(line), Selected));
         commands.spawn((Note { x: 200.0, ..note() }, ChildOf(line), Selected));
     });
@@ -245,7 +245,7 @@ fn batch_delete_is_one_entry_and_earlier_edits_follow_restored_entities() {
         .map(|(entity, id)| (entity, *id))
         .collect();
     let (first, first_id) = originals[0];
-    apply_edit(app.world_mut(), "modify".into(), |commands| {
+    apply_edit(app.world_mut(), "modify", |commands| {
         commands.entity(first).insert(Note { x: 300.0, ..note() });
     });
     app.world_mut()
@@ -295,7 +295,7 @@ fn batch_delete_with_hold_rebuilds_render_children_on_undo() {
     };
     let hold_id = NoteId::new();
     let tap_id = NoteId::new();
-    apply_edit(app.world_mut(), "create tap and hold".into(), |commands| {
+    apply_edit(app.world_mut(), "create tap and hold", |commands| {
         commands.spawn((note(), tap_id, ChildOf(line), Selected));
         commands.spawn((hold, hold_id, ChildOf(line), Selected));
     });
@@ -440,7 +440,7 @@ fn lifecycle_observer_commands_belong_to_the_edit_that_triggered_them() {
         },
     );
     let (entity, _) = create(&mut app, line);
-    apply_edit(app.world_mut(), "mirror".into(), |commands| {
+    apply_edit(app.world_mut(), "mirror", |commands| {
         commands.entity(entity).insert(Mirror);
     });
     assert_eq!(app.world().get::<Note>(entity).unwrap().x, -100.0);
@@ -467,13 +467,9 @@ fn authored_data_cannot_change_outside_an_edit() {
 fn replacing_an_objects_identity_is_a_programming_error() {
     let (mut app, line) = fixture();
     let (entity, _) = create(&mut app, line);
-    apply_edit(
-        app.world_mut(),
-        "invalid identity change".into(),
-        |commands| {
-            commands.entity(entity).insert(NoteId::default());
-        },
-    );
+    apply_edit(app.world_mut(), "invalid identity change", |commands| {
+        commands.entity(entity).insert(NoteId::default());
+    });
 }
 
 #[test]
@@ -486,7 +482,7 @@ fn deleting_a_line_restores_its_events_tracks_and_sibling_order() {
     use phichain_game::serialization::{SerializeLine, SerializeLineParam};
     let (mut app, root) = fixture();
     let root_id = *app.world().get::<LineId>(root).unwrap();
-    apply_edit(app.world_mut(), "add children".into(), |commands| {
+    apply_edit(app.world_mut(), "add children", |commands| {
         for name in ["first", "second", "third"] {
             let child = commands
                 .spawn((Line { name: name.into() }, ChildOf(root)))
@@ -549,7 +545,7 @@ fn deleting_a_line_restores_its_events_tracks_and_sibling_order() {
         .find(|(_, line)| line.name == "second")
         .unwrap()
         .0;
-    apply_edit(app.world_mut(), "delete child".into(), |commands| {
+    apply_edit(app.world_mut(), "delete child", |commands| {
         commands.entity(second).despawn();
     });
     assert_eq!(
@@ -579,7 +575,7 @@ fn undoing_an_inserted_parent_keeps_the_original_line_and_events() {
     use phichain_game::event::Events;
     let (mut app, root) = fixture();
     let root_id = *app.world().get::<phichain_chart::id::LineId>(root).unwrap();
-    apply_edit(app.world_mut(), "insert parent".into(), |commands| {
+    apply_edit(app.world_mut(), "insert parent", |commands| {
         let parent = crate::editing::line::spawn_line(SerializedLine::default(), commands, None);
         commands.entity(root).insert(ChildOf(parent));
     });
@@ -618,7 +614,7 @@ fn bpm_history_restores_source_points_and_recomputes_timing() {
     crate::editing::bpm::load(app.world_mut());
     open_document(app.world_mut());
     let id = BpmPointId::new();
-    apply_edit(app.world_mut(), "add bpm".into(), |commands| {
+    apply_edit(app.world_mut(), "add bpm", |commands| {
         commands.spawn((id, BpmPoint::new(Beat::from(4.0), 240.0)));
     });
     assert_eq!(
@@ -636,7 +632,7 @@ fn bpm_history_restores_source_points_and_recomputes_timing() {
         .resource::<crate::id_index::IdIndex>()
         .entity(id.uuid())
         .unwrap();
-    apply_edit(app.world_mut(), "delete bpm".into(), |commands| {
+    apply_edit(app.world_mut(), "delete bpm", |commands| {
         commands.entity(entity).despawn();
     });
     assert_eq!(
@@ -748,7 +744,7 @@ fn cancelled_and_no_op_gestures_preserve_saved_state_and_redo() {
     let (mut app, line) = fixture();
     let (entity, _) = create(&mut app, line);
     app.world_mut().resource_mut::<EditorHistory>().set_saved();
-    apply_edit(app.world_mut(), "edit".into(), |commands| {
+    apply_edit(app.world_mut(), "edit", |commands| {
         commands.entity(entity).insert(Note { x: 200.0, ..note() });
     });
     undo(&mut app);

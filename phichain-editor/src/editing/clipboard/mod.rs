@@ -1,6 +1,5 @@
 use crate::action::ActionRegistrationExt;
-use crate::editing::description::ObjectCounts;
-use crate::editing::history::Edits;
+use crate::editing::history::{ChangeSet, Edits};
 use crate::hotkey::modifier::Modifier;
 use crate::hotkey::Hotkey;
 use crate::selection::{Selected, SelectedLine};
@@ -28,7 +27,6 @@ use std::sync::Arc;
 struct EditorClipboard {
     scene: Arc<DynamicScene>,
     first_beat: Option<Beat>,
-    counts: ObjectCounts,
 }
 
 pub struct ClipboardPlugin;
@@ -88,14 +86,6 @@ fn copy_system(world: &mut World) -> Result {
                 })
         })
         .min();
-    let mut counts = ObjectCounts::default();
-    let mut kinds = world.query::<(Has<Note>, Has<LineEvent>, Has<CurveNoteTrackTo>)>();
-    for entity in &entities {
-        let (note, event, track) = kinds.get(world, *entity)?;
-        counts.notes += usize::from(note);
-        counts.events += usize::from(event);
-        counts.tracks += usize::from(track);
-    }
     let scene = DynamicSceneBuilder::from_world(world)
         .deny_all()
         .allow_component::<Note>()
@@ -108,7 +98,6 @@ fn copy_system(world: &mut World) -> Result {
     *world.resource_mut::<EditorClipboard>() = EditorClipboard {
         scene: Arc::new(scene),
         first_beat,
-        counts,
     };
     Ok(())
 }
@@ -132,40 +121,35 @@ fn cut_system(world: &mut World) -> Result {
         .iter(world)
         .flat_map(|(from, to)| [from.0, to.0])
         .collect();
-    let mut counts = ObjectCounts::default();
-    let mut kinds = world.query::<(Has<Note>, Has<LineEvent>, Has<CurveNoteTrackTo>)>();
-    for entity in &targets {
-        let (note, event, track) = kinds.get(world, *entity)?;
-        counts.notes += usize::from(note);
-        counts.events += usize::from(event);
-        counts.tracks += usize::from(track);
-    }
-    let description = t!("history.cut", objects = counts.text()).into_owned();
     world
         .run_system_once_with(
-            |In((targets, endpoints, description)): In<(Vec<Entity>, Vec<Entity>, String)>,
-             mut edits: Edits| {
-                edits.once(description, move |commands| {
-                    for entity in targets {
-                        commands.entity(entity).try_despawn();
-                    }
-                    // Endpoints that anchored nothing besides the cut tracks die
-                    // with them; shared endpoints stay and paste clones them
-                    commands.queue(move |world: &mut World| {
-                        for endpoint in endpoints {
-                            let Ok(entity) = world.get_entity_mut(endpoint) else {
-                                continue;
-                            };
-                            let orphaned = entity.get::<CurveNoteTracksFrom>().is_none()
-                                && entity.get::<CurveNoteTracksTo>().is_none();
-                            if orphaned {
-                                entity.despawn();
-                            }
+            |In((targets, endpoints)): In<(Vec<Entity>, Vec<Entity>)>, mut edits: Edits| {
+                edits.once(
+                    |changes: &ChangeSet| {
+                        t!("history.cut", objects = changes.destroyed_counts().text()).into_owned()
+                    },
+                    move |commands| {
+                        for entity in targets {
+                            commands.entity(entity).try_despawn();
                         }
-                    });
-                });
+                        // Endpoints that anchored nothing besides the cut tracks die
+                        // with them; shared endpoints stay and paste clones them
+                        commands.queue(move |world: &mut World| {
+                            for endpoint in endpoints {
+                                let Ok(entity) = world.get_entity_mut(endpoint) else {
+                                    continue;
+                                };
+                                let orphaned = entity.get::<CurveNoteTracksFrom>().is_none()
+                                    && entity.get::<CurveNoteTracksTo>().is_none();
+                                if orphaned {
+                                    entity.despawn();
+                                }
+                            }
+                        });
+                    },
+                );
             },
-            (targets, endpoints, description),
+            (targets, endpoints),
         )
         .expect("Failed to cut selection");
     Ok(())
@@ -201,7 +185,9 @@ fn paste_system(
     let delta = beat - first;
     let scene = clipboard.scene.clone();
     edits.once(
-        t!("history.paste", objects = clipboard.counts.text()),
+        |changes: &ChangeSet| {
+            t!("history.paste", objects = changes.created_counts().text()).into_owned()
+        },
         move |commands| {
             commands.queue(move |world: &mut World| paste(world, &scene, line, delta));
         },
@@ -307,9 +293,16 @@ mod tests {
             .run_system_once_with(
                 |In((scene, line, delta)): In<(Arc<DynamicScene>, Entity, Beat)>,
                  mut edits: Edits| {
-                    edits.once("paste", move |commands| {
-                        commands.queue(move |world: &mut World| paste(world, &scene, line, delta));
-                    });
+                    edits.once(
+                        |changes: &ChangeSet| {
+                            t!("history.paste", objects = changes.created_counts().text())
+                                .into_owned()
+                        },
+                        move |commands| {
+                            commands
+                                .queue(move |world: &mut World| paste(world, &scene, line, delta));
+                        },
+                    );
                 },
                 (scene, line, delta),
             )
@@ -344,8 +337,10 @@ mod tests {
         assert_eq!(world.query::<&CurveNoteTrackTo>().iter(world).count(), 0);
         let clipboard = world.resource::<EditorClipboard>().scene.clone();
         assert_eq!(clipboard.entities.len(), 3);
-        let counts = &world.resource::<EditorClipboard>().counts;
-        assert_eq!((counts.notes, counts.events, counts.tracks), (2, 1, 0));
+        assert_eq!(
+            world.resource::<EditorHistory>().undo_label().as_deref(),
+            Some("Cut 2 notes, 1 event, 1 curve track")
+        );
         for delta in [Beat::from(8.0), Beat::from(16.0)] {
             run_paste(world, clipboard.clone(), line, delta);
         }
@@ -383,8 +378,12 @@ mod tests {
             )
             .unwrap();
         copy_system(world).unwrap();
-        let counts = &world.resource::<EditorClipboard>().counts;
-        assert_eq!((counts.notes, counts.events, counts.tracks), (2, 0, 1));
+        let clipboard = world.resource::<EditorClipboard>().scene.clone();
+        run_paste(world, clipboard, line, Beat::from(32.0));
+        assert_eq!(
+            world.resource::<EditorHistory>().undo_label().as_deref(),
+            Some("Paste 2 notes, 1 curve track")
+        );
     }
 
     #[test]
@@ -403,10 +402,16 @@ mod tests {
         assert!(world.get_entity(ab).is_err());
         assert!(world.get_entity(b).is_ok());
         assert!(world.get_entity(bc).is_ok());
-        let counts = &world.resource::<EditorClipboard>().counts;
-        assert_eq!((counts.notes, counts.events, counts.tracks), (2, 0, 1));
+        assert_eq!(
+            world.resource::<EditorHistory>().undo_label().as_deref(),
+            Some("Cut 1 note, 1 curve track")
+        );
         let clipboard = world.resource::<EditorClipboard>().scene.clone();
         run_paste(world, clipboard, line, Beat::from(8.0));
+        assert_eq!(
+            world.resource::<EditorHistory>().undo_label().as_deref(),
+            Some("Paste 2 notes, 1 curve track")
+        );
         assert_eq!(world.query::<&Note>().iter(world).count(), 4);
         let tracks: Vec<(Entity, Entity)> = world
             .query::<(&CurveNoteTrackFrom, &CurveNoteTrackTo)>()
@@ -438,10 +443,16 @@ mod tests {
         assert!(world.get_entity(a).is_err());
         assert!(world.get_entity(b).is_ok());
         assert_eq!(world.query::<&CurveNoteTrackTo>().iter(world).count(), 0);
-        let counts = &world.resource::<EditorClipboard>().counts;
-        assert_eq!((counts.notes, counts.events, counts.tracks), (1, 0, 0));
+        assert_eq!(
+            world.resource::<EditorHistory>().undo_label().as_deref(),
+            Some("Cut 1 note, 1 curve track")
+        );
         let clipboard = world.resource::<EditorClipboard>().scene.clone();
         run_paste(world, clipboard, line, Beat::from(8.0));
+        assert_eq!(
+            world.resource::<EditorHistory>().undo_label().as_deref(),
+            Some("Paste 1 note")
+        );
         assert_eq!(world.query::<&Note>().iter(world).count(), 2);
         assert_eq!(world.query::<&CurveNoteTrackTo>().iter(world).count(), 0);
     }
@@ -463,7 +474,15 @@ mod tests {
         assert!(world.get_entity(ab).is_err());
         assert_eq!(world.query::<&Note>().iter(world).count(), 4);
         assert_eq!(world.query::<&CurveNoteTrackTo>().iter(world).count(), 2);
-        let counts = &world.resource::<EditorClipboard>().counts;
-        assert_eq!((counts.notes, counts.events, counts.tracks), (2, 0, 1));
+        assert_eq!(
+            world.resource::<EditorHistory>().undo_label().as_deref(),
+            Some("Cut 1 curve track")
+        );
+        let clipboard = world.resource::<EditorClipboard>().scene.clone();
+        run_paste(world, clipboard, line, Beat::from(16.0));
+        assert_eq!(
+            world.resource::<EditorHistory>().undo_label().as_deref(),
+            Some("Paste 2 notes, 1 curve track")
+        );
     }
 }
