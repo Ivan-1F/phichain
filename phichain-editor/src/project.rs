@@ -209,6 +209,9 @@ fn project_loading_result_observer(
                 LoadProjectError::InvalidChart(error) => {
                     t!("error.load_project.invalid_chart", error = error)
                 }
+                LoadProjectError::DuplicateId(id) => {
+                    t!("error.load_project.duplicate_id", id = id)
+                }
                 LoadProjectError::MigrationFailed(error) => {
                     t!("error.load_project.migration_failed", error = error)
                 }

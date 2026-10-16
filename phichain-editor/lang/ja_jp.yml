@@ -327,6 +327,7 @@ error:
   load_project:
     cannot_open_chart: 'chart.json を開けません: %{error}'
     invalid_chart: '無効な chart.json です: %{error}'
+    duplicate_id: 'chart.json に重複したオブジェクト ID %{id} があります'
     migration_failed: 'マイグレーションに失敗しました: %{error}'
     cannot_load_audio: 'オーディオの読み込みに失敗しました: %{error}'
   load_audio:

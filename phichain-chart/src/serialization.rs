@@ -9,7 +9,10 @@ use crate::line::Line;
 use crate::migration::{migrate, CURRENT_FORMAT};
 use crate::note::Note;
 use crate::offset::Offset;
+use std::collections::HashSet;
+use std::iter::once;
 use thiserror::Error;
+use uuid::Uuid;
 
 #[derive(Debug, Error)]
 pub enum ParseChartError {
@@ -17,6 +20,8 @@ pub enum ParseChartError {
     InvalidChart(#[from] serde_json::Error),
     #[error("migration failed: {0}")]
     MigrationFailed(anyhow::Error),
+    #[error("duplicate object ID: {0}")]
+    DuplicateId(Uuid),
 }
 
 #[derive(Serialize, Deserialize)]
@@ -50,13 +55,36 @@ impl PhichainChart {
 
         let probe: FormatProbe = serde_json::from_str(json)?;
 
-        if probe.format == CURRENT_FORMAT {
-            Ok(serde_json::from_str(json)?)
+        let chart: Self = if probe.format == CURRENT_FORMAT {
+            serde_json::from_str(json)?
         } else {
             let value: serde_json::Value = serde_json::from_str(json)?;
             let migrated = migrate(&value).map_err(ParseChartError::MigrationFailed)?;
-            Ok(serde_json::from_value(migrated)?)
+            serde_json::from_value(migrated)?
+        };
+
+        chart.validate_unique_ids()?;
+        Ok(chart)
+    }
+
+    fn validate_unique_ids(&self) -> Result<(), ParseChartError> {
+        fn visit(lines: &[SerializedLine], seen: &mut HashSet<Uuid>) -> Result<(), ParseChartError> {
+            for line in lines {
+                for id in once(line.id.uuid())
+                    .chain(line.notes.iter().map(|note| note.id.uuid()))
+                    .chain(line.events.iter().map(|event| event.id.uuid()))
+                    .chain(line.curve_note_tracks.iter().map(|track| track.id.uuid()))
+                {
+                    if !seen.insert(id) {
+                        return Err(ParseChartError::DuplicateId(id));
+                    }
+                }
+                visit(&line.children, seen)?;
+            }
+            Ok(())
         }
+
+        visit(&self.lines, &mut HashSet::new())
     }
 }
 
@@ -188,6 +216,20 @@ mod tests {
         assert!(matches!(
             PhichainChart::from_json_str("not json"),
             Err(ParseChartError::InvalidChart(_))
+        ));
+    }
+
+    #[test]
+    fn test_from_json_str_rejects_duplicate_ids() {
+        let mut chart = PhichainChart::default();
+        let duplicate = chart.lines[0].clone();
+        let id = duplicate.id.uuid();
+        chart.lines.push(duplicate);
+
+        let json = serde_json::to_string(&chart).unwrap();
+        assert!(matches!(
+            PhichainChart::from_json_str(&json),
+            Err(ParseChartError::DuplicateId(found)) if found == id
         ));
     }
 }

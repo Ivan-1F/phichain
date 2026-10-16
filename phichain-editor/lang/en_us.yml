@@ -327,6 +327,7 @@ error:
   load_project:
     cannot_open_chart: 'Cannot open chart.json: %{error}'
     invalid_chart: 'Invalid chart.json: %{error}'
+    duplicate_id: 'Duplicate object ID %{id} in chart.json'
     migration_failed: 'Migration failed: %{error}'
     cannot_load_audio: 'Cannot load audio: %{error}'
   load_audio:

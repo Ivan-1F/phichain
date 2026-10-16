@@ -327,6 +327,7 @@ error:
   load_project:
     cannot_open_chart: 無法開啟 chart.json：%{error}
     invalid_chart: 無效的 chart.json：%{error}
+    duplicate_id: chart.json 中存在重複的物件 ID：%{id}
     migration_failed: 遷移失敗：%{error}
     cannot_load_audio: 無法載入音訊：%{error}
   load_audio:
