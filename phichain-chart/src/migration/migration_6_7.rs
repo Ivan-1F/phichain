@@ -1,4 +1,5 @@
 use crate::migration::{for_each_line_recursive, Migration};
+use anyhow::Context;
 use serde_json::{json, Value};
 use uuid::Uuid;
 
@@ -22,20 +23,26 @@ fn mint_id() -> Value {
 }
 
 fn migrate_line(line: &mut Value) -> anyhow::Result<()> {
-    line["id"] = mint_id();
+    let line = line.as_object_mut().context("line is not an object")?;
+    line.insert("id".into(), mint_id());
 
     let mut note_ids = Vec::new();
     if let Some(notes) = line.get_mut("notes").and_then(|v| v.as_array_mut()) {
         for note in notes {
             let id = mint_id();
             note_ids.push(id.clone());
-            note["id"] = id;
+            note.as_object_mut()
+                .context("note is not an object")?
+                .insert("id".into(), id);
         }
     }
 
     if let Some(events) = line.get_mut("events").and_then(|v| v.as_array_mut()) {
         for event in events {
-            event["id"] = mint_id();
+            event
+                .as_object_mut()
+                .context("event is not an object")?
+                .insert("id".into(), mint_id());
         }
     }
 
@@ -170,6 +177,20 @@ mod tests {
     fn test_format_is_set_to_7() {
         let chart = Migration6To7::migrate(&old_chart()).unwrap();
         assert_eq!(chart["format"], json!(7));
+    }
+
+    #[test]
+    fn test_corrupted_entries_error_instead_of_panic() {
+        let corrupt: &[fn(&mut Value)] = &[
+            |chart| chart["lines"][0] = json!("corrupted"),
+            |chart| chart["lines"][0]["notes"][0] = json!(42),
+            |chart| chart["lines"][0]["events"][0] = json!(null),
+        ];
+        for corrupt in corrupt {
+            let mut chart = old_chart();
+            corrupt(&mut chart);
+            assert!(Migration6To7::migrate(&chart).is_err());
+        }
     }
 
     #[test]
