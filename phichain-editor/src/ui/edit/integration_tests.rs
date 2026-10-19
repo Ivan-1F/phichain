@@ -94,11 +94,24 @@ fn redo(app: &mut App) {
         .resource_scope(|world, mut history: Mut<EditorHistory>| history.redo(world));
 }
 
-#[test]
-fn bpm_text_input_keeps_focus_when_the_point_changes_sort_order() {
+fn bpm_app() -> App {
     let mut app = app();
     app.add_plugins(crate::editing::bpm::BpmEditingPlugin)
-        .insert_resource(BpmList::default());
+        .insert_resource(BpmList::default())
+        .insert_resource(crate::timing::Timing::new())
+        .init_resource::<crate::timeline::settings::TimelineSettings>();
+    app
+}
+
+fn draw_bpm_tab(world: &mut World, ui: egui::Ui) {
+    world
+        .run_system_once_with(crate::tab::bpm_list::bpm_list_tab, ui)
+        .unwrap();
+}
+
+#[test]
+fn bpm_typed_values_are_walled_by_neighbors() {
+    let mut app = bpm_app();
     app.world_mut().spawn(BpmPoint::new(Beat::ZERO, 120.0));
     let entity = app
         .world_mut()
@@ -107,35 +120,247 @@ fn bpm_text_input_keeps_focus_when_the_point_changes_sort_order() {
     app.world_mut().spawn(BpmPoint::new(Beat::from(8.0), 180.0));
     open_document(app.world_mut());
     let ctx = Context::default();
-    let mut draw = |world: &mut World, ui| {
-        world
-            .run_system_once_with(crate::tab::bpm_list::bpm_list_tab, ui)
-            .unwrap();
-    };
+    let mut draw = draw_bpm_tab;
     let texts = frame(&mut app, &ctx, vec![], &mut draw);
     let pos = texts.iter().find(|(text, _)| text == "4").unwrap().1;
     click(&mut app, &ctx, pos, &mut draw);
-    frame(&mut app, &ctx, vec![Event::Text("9".into())], &mut draw);
-    assert_eq!(
-        app.world().get::<BpmPoint>(entity).unwrap().beat,
-        Beat::from(9.0)
-    );
-    frame(&mut app, &ctx, vec![Event::Text("0".into())], &mut draw);
-    assert_eq!(
-        app.world().get::<BpmPoint>(entity).unwrap().beat,
-        Beat::from(90.0)
-    );
+    // Inside the wall: the value commits.
+    frame(&mut app, &ctx, vec![Event::Text("6".into())], &mut draw);
     frame(&mut app, &ctx, vec![key(Key::Enter)], &mut draw);
     assert_eq!(
-        app.world().resource::<BpmList>().0.last().unwrap().beat,
-        Beat::from(90.0)
+        app.world().get::<BpmPoint>(entity).unwrap().beat,
+        Beat::from(6.0)
+    );
+    // Exactly the next point: discarded.
+    let texts = frame(&mut app, &ctx, vec![], &mut draw);
+    let pos = texts.iter().find(|(text, _)| text == "6").unwrap().1;
+    click(&mut app, &ctx, pos, &mut draw);
+    frame(&mut app, &ctx, vec![Event::Text("8".into())], &mut draw);
+    frame(&mut app, &ctx, vec![key(Key::Enter)], &mut draw);
+    assert_eq!(
+        app.world().get::<BpmPoint>(entity).unwrap().beat,
+        Beat::from(6.0)
+    );
+    // Beyond the next point: clamped to the wall and discarded.
+    let texts = frame(&mut app, &ctx, vec![], &mut draw);
+    let pos = texts.iter().find(|(text, _)| text == "6").unwrap().1;
+    click(&mut app, &ctx, pos, &mut draw);
+    frame(&mut app, &ctx, vec![Event::Text("9".into())], &mut draw);
+    frame(&mut app, &ctx, vec![key(Key::Enter)], &mut draw);
+    assert_eq!(
+        app.world().get::<BpmPoint>(entity).unwrap().beat,
+        Beat::from(6.0)
+    );
+    assert_eq!(
+        app.world()
+            .resource::<BpmList>()
+            .0
+            .iter()
+            .map(|point| point.beat)
+            .collect::<Vec<_>>(),
+        vec![Beat::ZERO, Beat::from(6.0), Beat::from(8.0)]
     );
     undo(&mut app);
     assert_eq!(
         app.world().get::<BpmPoint>(entity).unwrap().beat,
         Beat::from(4.0)
     );
-    assert_eq!(app.world().resource::<BpmList>().0[1].beat, Beat::from(4.0));
+    assert!(app.world().resource::<EditorHistory>().is_saved());
+}
+
+#[test]
+fn bpm_create_falls_back_after_the_last_point_when_the_playhead_beat_is_occupied() {
+    let mut app = bpm_app();
+    app.world_mut().spawn(BpmPoint::new(Beat::ZERO, 120.0));
+    app.world_mut().spawn(BpmPoint::new(Beat::from(4.0), 150.0));
+    app.world_mut().spawn(BpmPoint::new(Beat::from(8.0), 180.0));
+    open_document(app.world_mut());
+    let ctx = Context::default();
+    let mut draw = draw_bpm_tab;
+    let texts = frame(&mut app, &ctx, vec![], &mut draw);
+    let pos = texts
+        .iter()
+        .find(|(text, _)| text == "New BPM Point")
+        .unwrap()
+        .1;
+    click(&mut app, &ctx, pos, &mut draw);
+    // The playhead sits at beat 0, which is occupied by the zero point, so the
+    // new point falls back to one beat after the last point and inherits the
+    // tempo in effect there.
+    let mut query = app.world_mut().query::<&BpmPoint>();
+    let beats = query
+        .iter(app.world())
+        .map(|point| (point.beat, point.bpm))
+        .collect::<Vec<_>>();
+    assert!(beats.contains(&(Beat::from(9.0), 180.0)));
+}
+
+#[test]
+fn bpm_beat_edit_onto_an_occupied_beat_is_rejected() {
+    let mut app = bpm_app();
+    app.world_mut().spawn(BpmPoint::new(Beat::ZERO, 120.0));
+    let entity = app
+        .world_mut()
+        .spawn(BpmPoint::new(Beat::from(4.0), 150.0))
+        .id();
+    app.world_mut().spawn(BpmPoint::new(Beat::from(8.0), 180.0));
+    open_document(app.world_mut());
+    let ctx = Context::default();
+    let mut draw = draw_bpm_tab;
+    let texts = frame(&mut app, &ctx, vec![], &mut draw);
+    let pos = texts.iter().find(|(text, _)| text == "4").unwrap().1;
+    click(&mut app, &ctx, pos, &mut draw);
+    frame(&mut app, &ctx, vec![Event::Text("8".into())], &mut draw);
+    frame(&mut app, &ctx, vec![key(Key::Enter)], &mut draw);
+    frame(&mut app, &ctx, vec![], &mut draw);
+    assert_eq!(
+        app.world().get::<BpmPoint>(entity).unwrap().beat,
+        Beat::from(4.0)
+    );
+    assert!(app.world().resource::<EditorHistory>().is_saved());
+}
+
+#[test]
+fn bpm_whole_part_dragged_onto_the_occupied_zero_beat_is_rejected() {
+    let mut app = bpm_app();
+    app.world_mut().spawn(BpmPoint::new(Beat::ZERO, 120.0));
+    let entity = app
+        .world_mut()
+        .spawn(BpmPoint::new(Beat::ONE, 180.0))
+        .id();
+    open_document(app.world_mut());
+    let ctx = Context::default();
+    let mut draw = draw_bpm_tab;
+    let texts = frame(&mut app, &ctx, vec![], &mut draw);
+    // The whole-part DragValue of the second row: the first "1" drawn after
+    // the second "Beat" label.
+    let labels: Vec<_> = texts
+        .iter()
+        .enumerate()
+        .filter(|(_, (text, _))| text == "Beat")
+        .collect();
+    let pos = texts[labels[1].0 + 1..]
+        .iter()
+        .find(|(text, _)| text == "1")
+        .unwrap()
+        .1;
+    frame(
+        &mut app,
+        &ctx,
+        vec![Event::PointerMoved(pos), pointer(pos, true)],
+        &mut draw,
+    );
+    frame(
+        &mut app,
+        &ctx,
+        vec![Event::PointerMoved(pos + egui::vec2(-30.0, 0.0))],
+        &mut draw,
+    );
+    frame(
+        &mut app,
+        &ctx,
+        vec![Event::PointerMoved(pos + egui::vec2(-60.0, 0.0))],
+        &mut draw,
+    );
+    // The drag tries to reach the occupied zero beat and is rejected: the
+    // document keeps the last valid value instead of snapping to the removed
+    // clamp lower bound (1 / i32::MAX).
+    assert_eq!(
+        app.world().get::<BpmPoint>(entity).unwrap().beat,
+        Beat::ONE
+    );
+    frame(
+        &mut app,
+        &ctx,
+        vec![pointer(pos + egui::vec2(-60.0, 0.0), false)],
+        &mut draw,
+    );
+    assert_eq!(
+        app.world().get::<BpmPoint>(entity).unwrap().beat,
+        Beat::ONE
+    );
+    assert!(app.world().resource::<EditorHistory>().is_saved());
+}
+
+#[test]
+fn bpm_whole_part_drag_is_walled_before_the_next_point() {
+    let mut app = bpm_app();
+    app.world_mut().spawn(BpmPoint::new(Beat::ZERO, 120.0));
+    let entity = app
+        .world_mut()
+        .spawn(BpmPoint::new(Beat::from(4.0), 150.0))
+        .id();
+    app.world_mut().spawn(BpmPoint::new(Beat::from(8.0), 180.0));
+    open_document(app.world_mut());
+    let ctx = Context::default();
+    let mut draw = draw_bpm_tab;
+    let texts = frame(&mut app, &ctx, vec![], &mut draw);
+    // The whole-part DragValue of the middle row: the first "4" drawn after
+    // the second "Beat" label.
+    let labels: Vec<_> = texts
+        .iter()
+        .enumerate()
+        .filter(|(_, (text, _))| text == "Beat")
+        .collect();
+    let pos = texts[labels[1].0 + 1..]
+        .iter()
+        .find(|(text, _)| text == "4")
+        .unwrap()
+        .1;
+    frame(
+        &mut app,
+        &ctx,
+        vec![Event::PointerMoved(pos), pointer(pos, true)],
+        &mut draw,
+    );
+    // Whole-part drag speed is 1 beat per pixel. egui only reports drags past
+    // a 6px threshold, so the first move jumps against the wall at beat 8 and
+    // every step up to it must keep the document at beat 4.
+    for dx in [7.0, 6.0, 5.0, 4.0] {
+        frame(
+            &mut app,
+            &ctx,
+            vec![Event::PointerMoved(pos + egui::vec2(dx, 0.0))],
+            &mut draw,
+        );
+        assert_eq!(
+            app.world().get::<BpmPoint>(entity).unwrap().beat,
+            Beat::from(4.0)
+        );
+    }
+    // Dragging back down into the wall commits a value strictly inside it.
+    frame(
+        &mut app,
+        &ctx,
+        vec![Event::PointerMoved(pos + egui::vec2(2.0, 0.0))],
+        &mut draw,
+    );
+    let inside = app.world().get::<BpmPoint>(entity).unwrap().beat;
+    assert!(inside > Beat::from(4.0) && inside < Beat::from(8.0));
+    frame(
+        &mut app,
+        &ctx,
+        vec![pointer(pos + egui::vec2(2.0, 0.0), false)],
+        &mut draw,
+    );
+    assert_eq!(
+        app.world().get::<BpmPoint>(entity).unwrap().beat,
+        inside
+    );
+    assert_eq!(
+        app.world()
+            .resource::<BpmList>()
+            .0
+            .iter()
+            .map(|point| point.beat)
+            .collect::<Vec<_>>(),
+        vec![Beat::ZERO, inside, Beat::from(8.0)]
+    );
+    undo(&mut app);
+    assert_eq!(
+        app.world().get::<BpmPoint>(entity).unwrap().beat,
+        Beat::from(4.0)
+    );
     assert!(app.world().resource::<EditorHistory>().is_saved());
 }
 

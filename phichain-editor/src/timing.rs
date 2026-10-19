@@ -176,7 +176,7 @@ pub struct Timing {
 }
 
 impl Timing {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             start_time: 0.0,
             pause_time: Some(0.0),
