@@ -171,6 +171,10 @@ tab:
       move_to_root: Move to root
       add_parent: Add Parent
       add_child: Add Child
+  history:
+    title: History
+    empty: No edits yet
+    saved: Saved
   bpm_list:
     title: BPM List
     new: New BPM Point

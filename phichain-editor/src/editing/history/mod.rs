@@ -32,6 +32,7 @@ use phichain_game::event::EventOf;
 use phichain_game::line::LineOrder;
 use std::borrow::Cow;
 use std::fmt;
+use std::time::SystemTime;
 use undo::{Edit, Record};
 use uuid::Uuid;
 
@@ -151,6 +152,36 @@ impl EditorHistory {
         self.record.edit(world, entry);
         self.current = revision_after;
     }
+
+    pub fn entries(&self) -> impl Iterator<Item = HistoryEntry<'_>> {
+        let head = self.record.head();
+        self.record
+            .entries()
+            .enumerate()
+            .map(move |(index, entry)| HistoryEntry {
+                description: &entry.as_ref().description,
+                edited_at: entry.st_of_edit(),
+                applied: index < head,
+            })
+    }
+
+    /// Position of the current state as an entry count: this many entries are applied.
+    pub fn position(&self) -> usize {
+        self.record.head()
+    }
+
+    /// Position of the saved state as an entry count.
+    pub fn saved_position(&self) -> Option<usize> {
+        self.record.saved()
+    }
+}
+
+/// Read-only view of one recorded edit, for display.
+pub struct HistoryEntry<'a> {
+    pub description: &'a str,
+    pub edited_at: SystemTime,
+    /// False when the entry is on the redo branch (undone but re-appliable).
+    pub applied: bool,
 }
 
 struct RecordedEdit {

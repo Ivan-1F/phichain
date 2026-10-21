@@ -171,6 +171,10 @@ tab:
       move_to_root: 移動至根部
       add_parent: 新增父線
       add_child: 新增子線
+  history:
+    title: 歷史記錄
+    empty: 暫無編輯
+    saved: 已儲存
   bpm_list:
     title: BPM 列表
     new: 新增 BPM 點

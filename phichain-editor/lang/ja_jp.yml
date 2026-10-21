@@ -171,6 +171,10 @@ tab:
       move_to_root: ルートに移動
       add_parent: 親ラインを作成
       add_child: 子ラインを作成
+  history:
+    title: 履歴
+    empty: 編集はまだありません
+    saved: 保存済み
   bpm_list:
     title: BPMリスト
     new: 新規BPMポイント
