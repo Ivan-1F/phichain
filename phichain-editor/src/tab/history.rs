@@ -52,11 +52,7 @@ pub fn history_tab(In(mut ui): In<Ui>, history: Res<EditorHistory>, mut commands
 }
 
 /// A full-width row that jumps to a history state on click.
-fn clickable_row(
-    ui: &mut Ui,
-    current: bool,
-    add_contents: impl FnOnce(&mut Ui),
-) -> egui::Response {
+fn clickable_row(ui: &mut Ui, current: bool, add_contents: impl FnOnce(&mut Ui)) -> egui::Response {
     let (rect, response) = ui.allocate_exact_size(
         egui::vec2(ui.available_width(), ui.spacing().interact_size.y),
         Sense::click(),
@@ -88,12 +84,6 @@ fn clickable_row(
 }
 
 fn entry_row_contents(ui: &mut Ui, entry: &HistoryEntry) {
-    let time = chrono::DateTime::<chrono::Local>::from(entry.edited_at);
-    ui.label(
-        RichText::new(time.format("%H:%M:%S").to_string())
-            .monospace()
-            .weak(),
-    );
     let description = if entry.applied {
         RichText::new(entry.description)
     } else {

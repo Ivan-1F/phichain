@@ -32,7 +32,6 @@ use phichain_game::event::EventOf;
 use phichain_game::line::LineOrder;
 use std::borrow::Cow;
 use std::fmt;
-use std::time::SystemTime;
 use undo::{Edit, Record};
 use uuid::Uuid;
 
@@ -171,7 +170,6 @@ impl EditorHistory {
             .enumerate()
             .map(move |(index, entry)| HistoryEntry {
                 description: &entry.as_ref().description,
-                edited_at: entry.st_of_edit(),
                 applied: index < head,
             })
     }
@@ -190,7 +188,6 @@ impl EditorHistory {
 /// Read-only view of one recorded edit, for display.
 pub struct HistoryEntry<'a> {
     pub description: &'a str,
-    pub edited_at: SystemTime,
     /// False when the entry is on the redo branch (undone but re-appliable).
     pub applied: bool,
 }
