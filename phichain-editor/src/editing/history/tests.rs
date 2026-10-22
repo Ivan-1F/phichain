@@ -854,3 +854,82 @@ fn an_open_gesture_does_not_allow_unscoped_mutations() {
         .entity_mut(entity)
         .insert(Note { x: 99.0, ..note() });
 }
+
+fn go_to(app: &mut App, position: usize) {
+    app.world_mut()
+        .resource_scope(|world, mut history: Mut<EditorHistory>| {
+            history.go_to(world, position);
+        });
+}
+
+#[test]
+fn go_to_jumps_back_and_forth_without_truncating_entries() {
+    let (mut app, line) = fixture();
+    let (entity, id) = create(&mut app, line);
+    apply_edit(app.world_mut(), "edit a", |commands| {
+        commands.entity(entity).insert(Note { x: 200.0, ..note() });
+    });
+    apply_edit(app.world_mut(), "edit b", |commands| {
+        commands.entity(entity).insert(Note { x: 300.0, ..note() });
+    });
+
+    go_to(&mut app, 0);
+    let history = app.world().resource::<EditorHistory>();
+    assert_eq!(history.position(), 0);
+    assert_eq!(history.record.len(), 3);
+    assert!(app.world().get_entity(entity).is_err());
+
+    go_to(&mut app, 3);
+    let entity = entity_with_id(&mut app, id);
+    assert_eq!(app.world().get::<Note>(entity).unwrap().x, 300.0);
+    let history = app.world().resource::<EditorHistory>();
+    assert_eq!(history.position(), 3);
+    assert_eq!(history.record.len(), 3);
+}
+
+#[test]
+fn a_new_edit_after_go_to_truncates_the_redo_branch() {
+    let (mut app, line) = fixture();
+    let (entity, id) = create(&mut app, line);
+    apply_edit(app.world_mut(), "edit a", |commands| {
+        commands.entity(entity).insert(Note { x: 200.0, ..note() });
+    });
+    apply_edit(app.world_mut(), "edit b", |commands| {
+        commands.entity(entity).insert(Note { x: 300.0, ..note() });
+    });
+
+    go_to(&mut app, 1);
+    let entity = entity_with_id(&mut app, id);
+    apply_edit(app.world_mut(), "edit c", |commands| {
+        commands.entity(entity).insert(Note { x: 400.0, ..note() });
+    });
+
+    let history = app.world().resource::<EditorHistory>();
+    assert_eq!(history.position(), 2);
+    assert_eq!(history.record.len(), 2);
+
+    go_to(&mut app, 99);
+    assert_eq!(app.world().resource::<EditorHistory>().position(), 2);
+}
+
+#[test]
+fn go_to_during_a_gesture_cancels_the_gesture_without_jumping() {
+    let (mut app, line) = fixture();
+    let (entity, _) = create(&mut app, line);
+    apply_edit(app.world_mut(), "edit", |commands| {
+        commands.entity(entity).insert(Note { x: 200.0, ..note() });
+    });
+
+    let id = begin_gesture(&mut app);
+    drag_x(&mut app, id, entity, 300.0);
+    assert!(app.world().resource::<EditorHistory>().has_gesture());
+
+    go_to(&mut app, 1);
+    let history = app.world().resource::<EditorHistory>();
+    assert!(!history.has_gesture());
+    assert_eq!(history.position(), 2);
+    assert_eq!(app.world().get::<Note>(entity).unwrap().x, 200.0);
+
+    go_to(&mut app, 1);
+    assert_eq!(app.world().resource::<EditorHistory>().position(), 1);
+}

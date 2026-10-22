@@ -131,6 +131,17 @@ impl EditorHistory {
         self.current = self.record.redo(world).unwrap();
     }
 
+    /// Jump to the state with `position` entries applied, undoing or redoing as needed.
+    pub fn go_to(&mut self, world: &mut World, position: usize) {
+        if self.has_gesture() {
+            self.cancel_gesture(world);
+            return;
+        }
+        if let Some(current) = self.record.go_to(world, position).last() {
+            self.current = *current;
+        }
+    }
+
     /// Label of the edit the next undo would revert.
     #[cfg(test)]
     pub fn undo_label(&self) -> Option<String> {

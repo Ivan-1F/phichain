@@ -173,6 +173,7 @@ tab:
       add_child: Add Child
   history:
     title: History
+    open_project: Open Project
     empty: No edits yet
     saved: Saved
   bpm_list:

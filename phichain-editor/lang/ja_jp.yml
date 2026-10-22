@@ -173,6 +173,7 @@ tab:
       add_child: 子ラインを作成
   history:
     title: 履歴
+    open_project: プロジェクトを開く
     empty: 編集はまだありません
     saved: 保存済み
   bpm_list:

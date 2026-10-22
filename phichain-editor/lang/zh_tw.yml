@@ -173,6 +173,7 @@ tab:
       add_child: 新增子線
   history:
     title: 歷史記錄
+    open_project: 打開專案
     empty: 暫無編輯
     saved: 已儲存
   bpm_list:
