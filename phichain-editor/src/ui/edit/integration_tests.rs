@@ -224,10 +224,7 @@ fn bpm_beat_edit_onto_an_occupied_beat_is_rejected() {
 fn bpm_whole_part_dragged_onto_the_occupied_zero_beat_is_rejected() {
     let mut app = bpm_app();
     app.world_mut().spawn(BpmPoint::new(Beat::ZERO, 120.0));
-    let entity = app
-        .world_mut()
-        .spawn(BpmPoint::new(Beat::ONE, 180.0))
-        .id();
+    let entity = app.world_mut().spawn(BpmPoint::new(Beat::ONE, 180.0)).id();
     open_document(app.world_mut());
     let ctx = Context::default();
     let mut draw = draw_bpm_tab;
@@ -265,20 +262,14 @@ fn bpm_whole_part_dragged_onto_the_occupied_zero_beat_is_rejected() {
     // The drag tries to reach the occupied zero beat and is rejected: the
     // document keeps the last valid value instead of snapping to the removed
     // clamp lower bound (1 / i32::MAX).
-    assert_eq!(
-        app.world().get::<BpmPoint>(entity).unwrap().beat,
-        Beat::ONE
-    );
+    assert_eq!(app.world().get::<BpmPoint>(entity).unwrap().beat, Beat::ONE);
     frame(
         &mut app,
         &ctx,
         vec![pointer(pos + egui::vec2(-60.0, 0.0), false)],
         &mut draw,
     );
-    assert_eq!(
-        app.world().get::<BpmPoint>(entity).unwrap().beat,
-        Beat::ONE
-    );
+    assert_eq!(app.world().get::<BpmPoint>(entity).unwrap().beat, Beat::ONE);
     assert!(app.world().resource::<EditorHistory>().is_saved());
 }
 
@@ -343,10 +334,7 @@ fn bpm_whole_part_drag_is_walled_before_the_next_point() {
         vec![pointer(pos + egui::vec2(2.0, 0.0), false)],
         &mut draw,
     );
-    assert_eq!(
-        app.world().get::<BpmPoint>(entity).unwrap().beat,
-        inside
-    );
+    assert_eq!(app.world().get::<BpmPoint>(entity).unwrap().beat, inside);
     assert_eq!(
         app.world()
             .resource::<BpmList>()

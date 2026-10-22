@@ -68,7 +68,10 @@ impl PhichainChart {
     }
 
     fn validate_unique_ids(&self) -> Result<(), ParseChartError> {
-        fn visit(lines: &[SerializedLine], seen: &mut HashSet<Uuid>) -> Result<(), ParseChartError> {
+        fn visit(
+            lines: &[SerializedLine],
+            seen: &mut HashSet<Uuid>,
+        ) -> Result<(), ParseChartError> {
             for line in lines {
                 for id in once(line.id.uuid())
                     .chain(line.notes.iter().map(|note| note.id.uuid()))

@@ -72,8 +72,7 @@ pub fn bpm_list_tab(
         if ui.button(t!("tab.bpm_list.new")).clicked() {
             let (beat, bpm) = match points.last() {
                 Some((_, _, last)) => {
-                    let playhead =
-                        timeline_settings.attach(bpm_list.beat_at(timing.now()).value());
+                    let playhead = timeline_settings.attach(bpm_list.beat_at(timing.now()).value());
                     let beat = if points.iter().any(|(_, _, point)| point.beat == playhead) {
                         last.beat + Beat::ONE
                     } else {
