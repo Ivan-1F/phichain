@@ -5,13 +5,10 @@ use bevy::log::info;
 use hound::{SampleFormat, WavSpec, WavWriter};
 use phichain_assets::{builtin_respack_dir, load_respack, LoadedAudio};
 use phichain_chart::bpm_list::BpmList;
-use phichain_chart::migration::migrate;
 use phichain_chart::note::NoteKind;
 use phichain_chart::project::Project;
 use phichain_chart::serialization::{PhichainChart, SerializedLine};
 use rust_i18n::t;
-use serde_json::Value;
-use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
@@ -83,10 +80,8 @@ pub fn render_audio_track(
 }
 
 pub fn read_chart(project: &Project) -> Result<PhichainChart> {
-    let file = File::open(project.path.chart_path())?;
-    let raw: Value = serde_json::from_reader(file)?;
-    let migrated = migrate(&raw)?;
-    Ok(serde_json::from_value(migrated)?)
+    let json = std::fs::read_to_string(project.path.chart_path())?;
+    Ok(PhichainChart::from_json_str(&json)?)
 }
 
 #[derive(Default)]

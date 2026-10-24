@@ -2,7 +2,6 @@ mod compile;
 pub mod official;
 pub mod rpe;
 
-use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::convert::Infallible;
 
@@ -19,7 +18,7 @@ impl Default for CommonOutputOptions {
     }
 }
 
-pub trait ChartFormat: Serialize + DeserializeOwned {
+pub trait ChartFormat: Serialize + Sized {
     type InputOptions;
     type InputError;
 

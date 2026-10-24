@@ -171,7 +171,8 @@ mod tests {
             Some(CURRENT_FORMAT),
         );
 
-        let chart: PhichainChart = serde_json::from_value(migrated).unwrap();
+        let json = serde_json::to_string(&migrated).unwrap();
+        let chart = PhichainChart::from_json_str(&json).unwrap();
         assert_eq!(chart.lines.len(), 1);
         assert_eq!(chart.lines[0].notes.len(), 2);
         assert_eq!(chart.lines[0].events.len(), 2);

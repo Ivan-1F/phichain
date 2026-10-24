@@ -24,12 +24,31 @@ pub enum ParseChartError {
     DuplicateId(Uuid),
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize)]
 pub struct PhichainChart {
     pub format: u64,
     pub offset: Offset,
     pub bpm_list: BpmList,
     pub lines: Vec<SerializedLine>,
+}
+
+#[derive(Deserialize)]
+struct CurrentPhichainChart {
+    format: u64,
+    offset: Offset,
+    bpm_list: BpmList,
+    lines: Vec<SerializedLine>,
+}
+
+impl From<CurrentPhichainChart> for PhichainChart {
+    fn from(chart: CurrentPhichainChart) -> Self {
+        Self {
+            format: chart.format,
+            offset: chart.offset,
+            bpm_list: chart.bpm_list,
+            lines: chart.lines,
+        }
+    }
 }
 
 impl PhichainChart {
@@ -42,10 +61,10 @@ impl PhichainChart {
         }
     }
 
-    /// Parse a chart from JSON, migrating it to the latest format if necessary
+    /// Parse a complete chart from JSON, migrating it to the latest format and validating it.
     ///
     /// Charts already at the latest format are deserialized directly,
-    /// skipping the costly [`serde_json::Value`] intermediate representation
+    /// skipping the costly [`serde_json::Value`] intermediate representation.
     pub fn from_json_str(json: &str) -> Result<Self, ParseChartError> {
         #[derive(Deserialize)]
         struct FormatProbe {
@@ -56,11 +75,11 @@ impl PhichainChart {
         let probe: FormatProbe = serde_json::from_str(json)?;
 
         let chart: Self = if probe.format == CURRENT_FORMAT {
-            serde_json::from_str(json)?
+            serde_json::from_str::<CurrentPhichainChart>(json)?.into()
         } else {
             let value: serde_json::Value = serde_json::from_str(json)?;
             let migrated = migrate(&value).map_err(ParseChartError::MigrationFailed)?;
-            serde_json::from_value(migrated)?
+            serde_json::from_value::<CurrentPhichainChart>(migrated)?.into()
         };
 
         chart.validate_unique_ids()?;

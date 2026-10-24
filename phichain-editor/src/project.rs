@@ -423,9 +423,10 @@ mod tests {
 
         // Verify chart.json was created
         assert!(project_dir.join("chart.json").exists());
-        let chart: PhichainChart =
-            serde_json::from_str(&std::fs::read_to_string(project_dir.join("chart.json")).unwrap())
-                .unwrap();
+        let chart = PhichainChart::from_json_str(
+            &std::fs::read_to_string(project_dir.join("chart.json")).unwrap(),
+        )
+        .unwrap();
         assert_eq!(chart.lines.len(), 1);
 
         // Verify no illustration was created
