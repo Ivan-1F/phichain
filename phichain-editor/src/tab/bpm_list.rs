@@ -1,6 +1,6 @@
 use crate::editing::history::Edits;
 use crate::timeline::settings::TimelineSettings;
-use crate::timing::Timing;
+use crate::timing::ChartTime;
 use crate::ui::widgets::beat_value::BeatValue;
 use bevy::prelude::*;
 use egui::{ScrollArea, Ui};
@@ -12,7 +12,7 @@ pub fn bpm_list_tab(
     In(mut ui): In<Ui>,
     points: Query<(Entity, &BpmPointId, &BpmPoint)>,
     timeline_settings: Res<TimelineSettings>,
-    timing: Res<Timing>,
+    chart_time: Res<ChartTime>,
     bpm_list: Res<BpmList>,
     mut edits: Edits,
 ) {
@@ -72,8 +72,10 @@ pub fn bpm_list_tab(
         if ui.button(t!("tab.bpm_list.new")).clicked() {
             let (beat, bpm) = match points.last() {
                 Some((_, _, last)) => {
-                    let playhead = timeline_settings.attach(bpm_list.beat_at(timing.now()).value());
-                    let beat = if points.iter().any(|(_, _, point)| point.beat == playhead) {
+                    let playhead = timeline_settings.attach(bpm_list.beat_at(chart_time.0).value());
+                    let beat = if playhead < Beat::ZERO
+                        || points.iter().any(|(_, _, point)| point.beat == playhead)
+                    {
                         last.beat + Beat::ONE
                     } else {
                         playhead

@@ -98,7 +98,7 @@ fn bpm_app() -> App {
     let mut app = app();
     app.add_plugins(crate::editing::bpm::BpmEditingPlugin)
         .insert_resource(BpmList::default())
-        .insert_resource(crate::timing::Timing::new())
+        .insert_resource(crate::timing::ChartTime(0.0))
         .init_resource::<crate::timeline::settings::TimelineSettings>();
     app
 }
@@ -169,30 +169,73 @@ fn bpm_typed_values_are_walled_by_neighbors() {
 }
 
 #[test]
-fn bpm_create_falls_back_after_the_last_point_when_the_playhead_beat_is_occupied() {
-    let mut app = bpm_app();
-    app.world_mut().spawn(BpmPoint::new(Beat::ZERO, 120.0));
-    app.world_mut().spawn(BpmPoint::new(Beat::from(4.0), 150.0));
-    app.world_mut().spawn(BpmPoint::new(Beat::from(8.0), 180.0));
-    open_document(app.world_mut());
-    let ctx = Context::default();
-    let mut draw = draw_bpm_tab;
-    let texts = frame(&mut app, &ctx, vec![], &mut draw);
-    let pos = texts
-        .iter()
-        .find(|(text, _)| text == "New BPM Point")
-        .unwrap()
-        .1;
-    click(&mut app, &ctx, pos, &mut draw);
-    // The playhead sits at beat 0, which is occupied by the zero point, so the
-    // new point falls back to one beat after the last point and inherits the
-    // tempo in effect there.
-    let mut query = app.world_mut().query::<&BpmPoint>();
-    let beats = query
-        .iter(app.world())
-        .map(|point| (point.beat, point.bpm))
-        .collect::<Vec<_>>();
-    assert!(beats.contains(&(Beat::from(9.0), 180.0)));
+fn bpm_create_uses_the_chart_playhead_with_offset_and_grid_snapping() {
+    for (audio_time, offset_ms, expected_beat) in [
+        (3.0, 1000.0, 4.0),
+        (3.0, -1000.0, 8.0),
+        (3.08, 1000.0, 4.25),
+    ] {
+        let mut app = bpm_app();
+        app.world_mut().spawn(BpmPoint::new(Beat::ZERO, 120.0));
+        let mut timing = crate::timing::Timing::new();
+        timing.seek_to(audio_time);
+        app.insert_resource(timing);
+        // TimingPlugin supplies the offset-adjusted time shared by the timeline.
+        app.world_mut().resource_mut::<crate::timing::ChartTime>().0 =
+            audio_time - offset_ms / 1000.0;
+        open_document(app.world_mut());
+        let ctx = Context::default();
+        let mut draw = draw_bpm_tab;
+        let texts = frame(&mut app, &ctx, vec![], &mut draw);
+        let pos = texts
+            .iter()
+            .find(|(text, _)| text == "New BPM Point")
+            .unwrap()
+            .1;
+        click(&mut app, &ctx, pos, &mut draw);
+
+        assert_eq!(
+            app.world().resource::<BpmList>().0,
+            vec![
+                BpmPoint::new(Beat::ZERO, 120.0),
+                BpmPoint::new(Beat::from(expected_beat), 120.0),
+            ],
+            "audio time {audio_time}, offset {offset_ms} ms"
+        );
+    }
+}
+
+#[test]
+fn bpm_create_falls_back_after_the_last_point_when_the_playhead_is_before_zero_or_occupied() {
+    for chart_time in [-1.0, 0.0] {
+        let mut app = bpm_app();
+        app.world_mut().resource_mut::<crate::timing::ChartTime>().0 = chart_time;
+        app.world_mut().spawn(BpmPoint::new(Beat::ZERO, 120.0));
+        app.world_mut().spawn(BpmPoint::new(Beat::from(4.0), 150.0));
+        app.world_mut().spawn(BpmPoint::new(Beat::from(8.0), 180.0));
+        open_document(app.world_mut());
+        let ctx = Context::default();
+        let mut draw = draw_bpm_tab;
+        let texts = frame(&mut app, &ctx, vec![], &mut draw);
+        let pos = texts
+            .iter()
+            .find(|(text, _)| text == "New BPM Point")
+            .unwrap()
+            .1;
+        click(&mut app, &ctx, pos, &mut draw);
+        // Before beat 0 or on an existing point, append after the last point
+        // and inherit the tempo in effect there.
+        assert_eq!(
+            app.world().resource::<BpmList>().0,
+            vec![
+                BpmPoint::new(Beat::ZERO, 120.0),
+                BpmPoint::new(Beat::from(4.0), 150.0),
+                BpmPoint::new(Beat::from(8.0), 180.0),
+                BpmPoint::new(Beat::from(9.0), 180.0),
+            ],
+            "chart time {chart_time}"
+        );
+    }
 }
 
 #[test]
