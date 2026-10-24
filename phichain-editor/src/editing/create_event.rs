@@ -27,6 +27,16 @@ impl IntoIdentifier for CreateEventHotkeys {
     }
 }
 
+fn requested_event_value(hotkey: &HotkeyContext) -> Option<LineEventValue> {
+    if hotkey.just_pressed(CreateEventHotkeys::PlaceTransitionEvent) {
+        Some(LineEventValue::transition(0.0, 0.0, Easing::Linear))
+    } else if hotkey.just_pressed(CreateEventHotkeys::PlaceConstantEvent) {
+        Some(LineEventValue::constant(0.0))
+    } else {
+        None
+    }
+}
+
 pub struct CreateEventPlugin;
 
 impl Plugin for CreateEventPlugin {
@@ -108,12 +118,11 @@ fn create_event_system(
                 commands.entity(entity).insert(pending_event);
             }
 
-            if hotkey.just_pressed(CreateEventHotkeys::PlaceTransitionEvent)
-                || hotkey.just_pressed(CreateEventHotkeys::PlaceConstantEvent)
-            {
+            if let Some(value) = requested_event_value(&hotkey) {
                 if let Ok((pending_event, entity)) = pending_event_query.single() {
                     // inherit event's start & end value from neighbor events
                     let mut new_event = *pending_event;
+                    new_event.value = value;
                     let (track, beat) = calc_event_attrs();
                     new_event.kind = LineEventKind::try_from(track).expect("Unknown event track");
                     new_event.end_beat =
@@ -154,12 +163,6 @@ fn create_event_system(
                 } else {
                     let (track, beat) = calc_event_attrs();
                     let kind = LineEventKind::try_from(track).expect("Unknown event track");
-                    let value = if hotkey.just_pressed(CreateEventHotkeys::PlaceTransitionEvent) {
-                        LineEventValue::transition(0.0, 0.0, Easing::Linear)
-                    } else {
-                        // hotkey.just_pressed(CreateEventHotkeys::PlaceConstantEvent)
-                        LineEventValue::constant(0.0)
-                    };
                     commands.spawn((
                         LineEvent {
                             kind,
