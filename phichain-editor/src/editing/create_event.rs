@@ -31,18 +31,15 @@ pub struct CreateEventPlugin;
 
 impl Plugin for CreateEventPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            Update,
-            (create_event_system, remove_pending_event_on_esc_system).in_set(EditorSet::Edit),
-        )
-        .add_hotkey(
-            CreateEventHotkeys::PlaceTransitionEvent,
-            Hotkey::new(KeyCode::KeyR, vec![]),
-        )
-        .add_hotkey(
-            CreateEventHotkeys::PlaceConstantEvent,
-            Hotkey::new(KeyCode::KeyQ, vec![]),
-        );
+        app.add_systems(Update, create_event_system.in_set(EditorSet::Edit))
+            .add_hotkey(
+                CreateEventHotkeys::PlaceTransitionEvent,
+                Hotkey::new(KeyCode::KeyR, vec![]),
+            )
+            .add_hotkey(
+                CreateEventHotkeys::PlaceConstantEvent,
+                Hotkey::new(KeyCode::KeyQ, vec![]),
+            );
     }
 }
 
@@ -50,6 +47,7 @@ fn create_event_system(
     mut commands: Commands,
     ctx: TimelineContext,
     hotkey: HotkeyContext,
+    keyboard: Res<ButtonInput<KeyCode>>,
 
     selected_line: Res<SelectedLine>,
 
@@ -62,6 +60,14 @@ fn create_event_system(
 
     event_query: Query<(&LineEvent, &EventOf), Without<Pending>>,
 ) -> Result {
+    // Cancellation takes priority over preview updates and placement, even without a cursor.
+    if keyboard.just_pressed(KeyCode::Escape) {
+        for (_, entity) in &pending_event_query {
+            commands.entity(entity).despawn();
+        }
+        return Ok(());
+    }
+
     let Ok(window) = window_query.single() else {
         return Ok(());
     };
@@ -170,16 +176,4 @@ fn create_event_system(
     }
 
     Ok(())
-}
-
-fn remove_pending_event_on_esc_system(
-    mut commands: Commands,
-    keyboard: Res<ButtonInput<KeyCode>>,
-    query: Query<Entity, (With<Pending>, With<LineEvent>)>,
-) {
-    if keyboard.just_pressed(KeyCode::Escape) {
-        for entity in &query {
-            commands.entity(entity).despawn();
-        }
-    }
 }

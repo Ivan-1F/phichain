@@ -17,6 +17,8 @@ pub mod history;
 pub(crate) mod line;
 mod moving;
 pub(crate) mod project_settings;
+#[cfg(test)]
+mod tests;
 
 pub struct EditingPlugin;
 

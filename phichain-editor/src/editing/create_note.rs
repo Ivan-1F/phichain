@@ -35,26 +35,23 @@ pub struct CreateNotePlugin;
 
 impl Plugin for CreateNotePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            Update,
-            (create_note_system, remove_pending_note_on_esc_system).in_set(EditorSet::Edit),
-        )
-        .add_hotkey(
-            CreateNoteHotkeys::PlaceTap,
-            Hotkey::new(KeyCode::KeyQ, vec![]),
-        )
-        .add_hotkey(
-            CreateNoteHotkeys::PlaceDrag,
-            Hotkey::new(KeyCode::KeyW, vec![]),
-        )
-        .add_hotkey(
-            CreateNoteHotkeys::PlaceFlick,
-            Hotkey::new(KeyCode::KeyE, vec![]),
-        )
-        .add_hotkey(
-            CreateNoteHotkeys::PlaceHold,
-            Hotkey::new(KeyCode::KeyR, vec![]),
-        );
+        app.add_systems(Update, create_note_system.in_set(EditorSet::Edit))
+            .add_hotkey(
+                CreateNoteHotkeys::PlaceTap,
+                Hotkey::new(KeyCode::KeyQ, vec![]),
+            )
+            .add_hotkey(
+                CreateNoteHotkeys::PlaceDrag,
+                Hotkey::new(KeyCode::KeyW, vec![]),
+            )
+            .add_hotkey(
+                CreateNoteHotkeys::PlaceFlick,
+                Hotkey::new(KeyCode::KeyE, vec![]),
+            )
+            .add_hotkey(
+                CreateNoteHotkeys::PlaceHold,
+                Hotkey::new(KeyCode::KeyR, vec![]),
+            );
     }
 }
 
@@ -62,6 +59,7 @@ fn create_note_system(
     mut commands: Commands,
     ctx: TimelineContext,
     hotkey: HotkeyContext,
+    keyboard: Res<ButtonInput<KeyCode>>,
 
     selected_line: Res<SelectedLine>,
 
@@ -72,6 +70,14 @@ fn create_note_system(
 
     pending_note_query: Query<(&Note, Entity), With<Pending>>,
 ) -> Result {
+    // Cancellation takes priority over preview updates and placement, even without a cursor.
+    if keyboard.just_pressed(KeyCode::Escape) {
+        for (_, entity) in &pending_note_query {
+            commands.entity(entity).despawn();
+        }
+        return Ok(());
+    }
+
     let Ok(window) = window_query.single() else {
         return Ok(());
     };
@@ -181,16 +187,4 @@ fn create_note_system(
     }
 
     Ok(())
-}
-
-fn remove_pending_note_on_esc_system(
-    mut commands: Commands,
-    keyboard: Res<ButtonInput<KeyCode>>,
-    query: Query<Entity, (With<Pending>, With<Note>)>,
-) {
-    if keyboard.just_pressed(KeyCode::Escape) {
-        for entity in &query {
-            commands.entity(entity).despawn();
-        }
-    }
 }
