@@ -2,7 +2,6 @@ mod compile;
 pub mod official;
 pub mod rpe;
 
-use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::convert::Infallible;
 
@@ -19,7 +18,7 @@ impl Default for CommonOutputOptions {
     }
 }
 
-pub trait ChartFormat: Serialize + DeserializeOwned {
+pub trait ChartFormat: Serialize + Sized {
     type InputOptions;
     type InputError;
 
@@ -67,11 +66,11 @@ impl ChartFormat for PhichainChart {
             F: Fn(f32) -> f32,
         {
             for note in &mut line.notes {
-                note.x = round(note.x);
+                note.data.x = round(note.data.x);
             }
 
             for event in &mut line.events {
-                event.value = match event.value {
+                event.data.value = match event.data.value {
                     LineEventValue::Constant { value: v } => {
                         LineEventValue::Constant { value: round(v) }
                     }

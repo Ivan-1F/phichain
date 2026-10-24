@@ -23,18 +23,24 @@ pub fn query_ordered_lines(world: &mut World) -> Vec<Entity> {
 }
 
 fn add_line_and_descendants(world: &mut World, entity: Entity, ordered_lines: &mut Vec<Entity>) {
-    let mut line_query = world.query_filtered::<&Children, With<Line>>();
-    if let Ok(children) = line_query.get(world, entity) {
-        ordered_lines.push(entity);
-
-        let children_lines = children
-            .iter()
-            .filter(|&child| line_query.get(world, *child).is_ok())
-            .copied()
-            .collect::<Vec<_>>();
-
-        for child in children_lines {
-            add_line_and_descendants(world, child, ordered_lines);
-        }
+    ordered_lines.push(entity);
+    let mut query = world.query::<(&LineOrder, Option<&Children>)>();
+    let children = query
+        .get(world, entity)
+        .ok()
+        .and_then(|(_, children)| children);
+    let mut children: Vec<_> = children
+        .into_iter()
+        .flatten()
+        .filter_map(|child| {
+            query
+                .get(world, *child)
+                .ok()
+                .map(|(order, _)| (*child, *order))
+        })
+        .collect();
+    children.sort_by_key(|(_, order)| *order);
+    for (child, _) in children {
+        add_line_and_descendants(world, child, ordered_lines);
     }
 }

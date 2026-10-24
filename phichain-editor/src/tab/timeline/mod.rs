@@ -11,8 +11,8 @@ use crate::{spectrogram, timeline};
 use phichain_chart::note::Note;
 
 pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
-    let mut timeline_viewport = world.resource_mut::<TimelineViewport>();
     let clip_rect = ui.clip_rect();
+    let mut timeline_viewport = world.resource_mut::<TimelineViewport>();
     timeline_viewport.0 = Rect::from_corners(
         Vec2 {
             x: clip_rect.min.x,
@@ -73,7 +73,9 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
         .iter()
         .enumerate()
     {
-        item.timeline.ui(&mut ui, world, item.viewport);
+        ui.push_id(("timeline", index), |ui| {
+            item.timeline.ui(ui, world, item.viewport);
+        });
         timeline::common::timeline_badge_ui(&mut ui, world, item, index);
     }
 

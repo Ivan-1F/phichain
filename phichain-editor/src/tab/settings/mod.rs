@@ -37,7 +37,7 @@ impl SettingUi for &mut Ui {
         description: Option<impl Into<RichText>>,
         widget: impl FnOnce(&mut Ui) -> bool,
     ) -> bool {
-        let (_, right) = crate::ui::sides::Sides::new().show(
+        let (_, right) = egui::Sides::new().shrink_left().show(
             self,
             |ui| {
                 ui.vertical(|ui| {
