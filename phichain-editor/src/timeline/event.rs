@@ -1,7 +1,7 @@
-use crate::constants::{INDICATOR_POSITION, LANE_LINE_OPACITY, PENDING_OPACITY};
+use crate::constants::{INDICATOR_POSITION, PENDING_OPACITY};
 use crate::editing::history::Edits;
 use crate::selection::{Select, Selected, SelectedLine};
-use crate::timeline::{Timeline, TimelineContext};
+use crate::timeline::{Timeline, TimelineContext, LANE_LINE_OPACITY};
 use crate::timing::SeekTo;
 use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
 use bevy::ecs::system::SystemState;

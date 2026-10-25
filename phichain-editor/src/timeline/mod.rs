@@ -23,6 +23,9 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::line::Line;
 use phichain_game::audio::AudioDuration;
 
+/// Opacity of the vertical lane separator lines on timelines
+pub const LANE_LINE_OPACITY: f32 = 40.0 / 255.0;
+
 pub struct TimelinePlugin;
 
 impl Plugin for TimelinePlugin {
@@ -133,7 +136,7 @@ impl TimelineItem {
 }
 
 pub mod common {
-    use crate::constants::{BEAT_LINE_OPACITY, INDICATOR_POSITION};
+    use crate::constants::INDICATOR_POSITION;
     use crate::timeline::container::AllocatedTimeline;
     use crate::timeline::settings::TimelineSettings;
     use crate::timeline::Timeline;
@@ -142,6 +145,9 @@ pub mod common {
     use bevy::prelude::*;
     use egui::{epaint, Align2, Color32, FontId, Id, Sense, Ui};
     use phichain_chart::bpm_list::BpmList;
+
+    /// Opacity of the horizontal beat grid lines on timelines
+    const BEAT_LINE_OPACITY: f32 = 40.0 / 255.0;
 
     pub fn timeline_badge_ui(
         ui: &mut Ui,
@@ -217,11 +223,8 @@ pub mod common {
                 ),
                 egui::Vec2::new(ctx.viewport.0.width(), 2.0),
             );
-            ui.painter().rect_filled(
-                rect,
-                0.0,
-                Color32::WHITE.gamma_multiply(BEAT_LINE_OPACITY),
-            );
+            ui.painter()
+                .rect_filled(rect, 0.0, Color32::WHITE.gamma_multiply(BEAT_LINE_OPACITY));
             ui.painter().text(
                 rect.left_top() + egui::Vec2::new(4.0, 0.0),
                 Align2::LEFT_BOTTOM,
@@ -242,11 +245,8 @@ pub mod common {
                 ),
                 egui::Vec2::new(ctx.viewport.0.width(), 0.5),
             );
-            ui.painter().rect_filled(
-                rect,
-                0.0,
-                Color32::WHITE.gamma_multiply(BEAT_LINE_OPACITY),
-            );
+            ui.painter()
+                .rect_filled(rect, 0.0, Color32::WHITE.gamma_multiply(BEAT_LINE_OPACITY));
             let numer = index as u32;
             let denom = ctx.settings.density;
             ui.painter().text(

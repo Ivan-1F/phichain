@@ -1,9 +1,9 @@
-use crate::constants::{INDICATOR_POSITION, LANE_LINE_OPACITY, PENDING_OPACITY};
+use crate::constants::{INDICATOR_POSITION, PENDING_OPACITY};
 use crate::editing::history::Edits;
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::selection::{Select, Selected, SelectedLine};
 use crate::tab::timeline::TimelineFilter;
-use crate::timeline::{Timeline, TimelineContext};
+use crate::timeline::{Timeline, TimelineContext, LANE_LINE_OPACITY};
 use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
 use crate::ui::widgets::easing::EasingGraph;
 use bevy::ecs::system::SystemState;

@@ -1,4 +1,3 @@
-use crate::constants::DRAG_SELECTION_OPACITY;
 use crate::selection::Select;
 use crate::timeline::{Timeline, TimelineContext};
 use crate::utils::convert::BevyEguiConvert;
@@ -6,6 +5,9 @@ use bevy::app::App;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use egui::{Color32, Sense, Stroke, StrokeKind, Ui};
+
+/// Fill opacity of the drag-selection marquee on timelines
+const DRAG_SELECTION_OPACITY: f32 = 0.2;
 
 /// Represents the drag-selection on the timeline
 #[derive(Resource, Debug, Default)]
