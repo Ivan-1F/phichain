@@ -218,7 +218,7 @@ fn convert(args: Args, meta: &mut ConvertTelemetry) -> Result<(), ConvertError> 
 
     let input_chart = match from {
         Format::Official => Chart::Official(serde_json::from_str(&input)?),
-        Format::Phichain => Chart::Phichain(serde_json::from_str(&input)?),
+        Format::Phichain => Chart::Phichain(PhichainChart::from_json_str(&input)?),
         Format::Rpe => Chart::Rpe(serde_json::from_str(&input)?),
     };
 

@@ -23,6 +23,9 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::line::Line;
 use phichain_game::audio::AudioDuration;
 
+/// Opacity of the vertical lane separator lines on timelines
+pub const LANE_LINE_OPACITY: f32 = 40.0 / 255.0;
+
 pub struct TimelinePlugin;
 
 impl Plugin for TimelinePlugin {
@@ -98,10 +101,6 @@ impl TimelineContext<'_> {
     pub fn y_to_beat_f32(&self, y: f32) -> f32 {
         self.bpm_list.beat_at_f32(self.y_to_time(y))
     }
-
-    pub fn beat_f32_to_y(&self, beat: f32) -> f32 {
-        self.beat_to_y(Beat::from(beat))
-    }
 }
 
 #[enum_dispatch(TimelineItem)]
@@ -146,6 +145,9 @@ pub mod common {
     use bevy::prelude::*;
     use egui::{epaint, Align2, Color32, FontId, Id, Sense, Ui};
     use phichain_chart::bpm_list::BpmList;
+
+    /// Opacity of the horizontal beat grid lines on timelines
+    const BEAT_LINE_OPACITY: f32 = 40.0 / 255.0;
 
     pub fn timeline_badge_ui(
         ui: &mut Ui,
@@ -221,11 +223,8 @@ pub mod common {
                 ),
                 egui::Vec2::new(ctx.viewport.0.width(), 2.0),
             );
-            ui.painter().rect_filled(
-                rect,
-                0.0,
-                Color32::from_rgba_unmultiplied(255, 255, 255, 40),
-            );
+            ui.painter()
+                .rect_filled(rect, 0.0, Color32::WHITE.gamma_multiply(BEAT_LINE_OPACITY));
             ui.painter().text(
                 rect.left_top() + egui::Vec2::new(4.0, 0.0),
                 Align2::LEFT_BOTTOM,
@@ -246,11 +245,8 @@ pub mod common {
                 ),
                 egui::Vec2::new(ctx.viewport.0.width(), 0.5),
             );
-            ui.painter().rect_filled(
-                rect,
-                0.0,
-                Color32::from_rgba_unmultiplied(255, 255, 255, 40),
-            );
+            ui.painter()
+                .rect_filled(rect, 0.0, Color32::WHITE.gamma_multiply(BEAT_LINE_OPACITY));
             let numer = index as u32;
             let denom = ctx.settings.density;
             ui.painter().text(
@@ -333,7 +329,7 @@ fn clean_dangle_timelines_observer(
     remove: On<Remove, Line>,
     mut timeline_settings: ResMut<TimelineSettings>,
 ) {
-    if let Some(index) =
+    while let Some(index) =
         timeline_settings
             .container
             .timelines

@@ -138,7 +138,7 @@ fn action_panel_ui_system(
                 ui.scope_builder(UiBuilder::new().sense(Sense::click()), |ui| {
                     egui::Frame::new()
                         .fill(if selected {
-                            egui::Color32::from_rgba_unmultiplied(64, 94, 168, 100)
+                            egui::Color32::from_rgb(64, 94, 168).gamma_multiply(100.0 / 255.0)
                         } else {
                             egui::Color32::TRANSPARENT
                         })

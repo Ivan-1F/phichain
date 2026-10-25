@@ -139,7 +139,7 @@ fn respack_row_ui(ui: &mut Ui, cached: &Cached, selected: bool) -> bool {
     button_frame(ui, selected, |ui, text_color| {
         ui.set_width(ui.available_width());
 
-        let description_color = text_color.linear_multiply(0.7);
+        let description_color = text_color.gamma_multiply(0.7);
         let description = if entry.meta.description.is_empty() {
             RichText::new(t!("tab.settings.category.respack.no_description"))
                 .italics()

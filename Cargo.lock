@@ -6190,6 +6190,7 @@ dependencies = [
  "rand 0.9.1",
  "serde_json",
  "thiserror 2.0.17",
+ "uuid",
 ]
 
 [[package]]

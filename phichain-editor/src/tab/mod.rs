@@ -2,6 +2,7 @@ mod action_panel;
 pub mod bpm_list;
 pub mod chart_basic_setting;
 pub mod game;
+pub mod history;
 pub mod inspector;
 pub mod line_list;
 pub mod quick_action;
@@ -14,6 +15,7 @@ use crate::tab::action_panel::ActionPanelPlugin;
 use crate::tab::bpm_list::bpm_list_tab;
 use crate::tab::chart_basic_setting::chart_basic_setting_tab;
 use crate::tab::game::game_tab;
+use crate::tab::history::history_tab;
 use crate::tab::inspector::{inspector_ui_system, InspectorPlugin};
 use crate::tab::line_list::line_list_tab;
 use crate::tab::settings::settings_tab;
@@ -63,6 +65,7 @@ pub enum EditorTab {
     ChartBasicSetting,
     LineList,
     BpmList,
+    History,
     Settings,
 }
 
@@ -76,6 +79,7 @@ impl IntoIdentifier for EditorTab {
             EditorTab::ChartBasicSetting => "chart_basic_setting".into(),
             EditorTab::LineList => "line_list".into(),
             EditorTab::BpmList => "bpm_list".into(),
+            EditorTab::History => "history".into(),
             EditorTab::Settings => "settings".into(),
         }
     }
@@ -93,6 +97,7 @@ impl Plugin for TabPlugin {
             .register_tab(EditorTab::ChartBasicSetting, chart_basic_setting_tab)
             .register_tab(EditorTab::BpmList, bpm_list_tab)
             .register_tab(EditorTab::LineList, line_list_tab)
+            .register_tab(EditorTab::History, history_tab)
             .register_tab(EditorTab::Settings, settings_tab)
             // TODO: move this upper
             .add_plugins(InspectorPlugin)

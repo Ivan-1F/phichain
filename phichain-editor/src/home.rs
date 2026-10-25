@@ -274,7 +274,7 @@ fn ui_system(world: &mut World) {
             for (index, recent_project) in recent_projects.0.iter().rev().enumerate() {
                 let response = button_frame(ui, false, |ui, text_color| {
                     ui.set_width(ui.available_width());
-                    let muted = text_color.linear_multiply(0.7);
+                    let muted = text_color.gamma_multiply(0.7);
                     ui.horizontal(|ui| {
                         ui.label(RichText::new(&recent_project.name).color(text_color));
                         ui.add_space(ui.available_width() - 10.0);

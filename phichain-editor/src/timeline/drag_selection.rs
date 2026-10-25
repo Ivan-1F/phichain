@@ -6,6 +6,9 @@ use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use egui::{Color32, Sense, Stroke, StrokeKind, Ui};
 
+/// Fill opacity of the drag-selection marquee on timelines
+const DRAG_SELECTION_OPACITY: f32 = 0.2;
+
 /// Represents the drag-selection on the timeline
 #[derive(Resource, Debug, Default)]
 pub struct TimelineDragSelection(pub Option<(egui::Vec2, egui::Vec2)>);
@@ -57,7 +60,7 @@ pub fn timeline_drag_selection(ui: &mut Ui, world: &mut World) -> Result {
                 egui::Pos2::new(now_x, now_y),
             ),
             0.0,
-            Color32::from_rgba_unmultiplied(255, 255, 255, 20),
+            Color32::WHITE.gamma_multiply(DRAG_SELECTION_OPACITY),
             Stroke::NONE,
             StrokeKind::Middle,
         );

@@ -1,5 +1,8 @@
 use crate::beat::Beat;
 use crate::easing::{Easing, Tween};
+use crate::id::{EventId, HasId};
+#[cfg(feature = "bevy")]
+use bevy::ecs::reflect::ReflectComponent;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
@@ -13,6 +16,8 @@ pub enum Boundary {
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, IntoPrimitive, TryFromPrimitive,
 )]
+#[cfg_attr(feature = "bevy", derive(bevy::prelude::Reflect))]
+#[cfg_attr(feature = "bevy", reflect(Clone, PartialEq, Debug))]
 #[serde(rename_all = "snake_case")]
 #[repr(u8)]
 pub enum LineEventKind {
@@ -46,6 +51,8 @@ impl LineEventKind {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "bevy", derive(bevy::prelude::Reflect))]
+#[cfg_attr(feature = "bevy", reflect(Clone, PartialEq, Debug))]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum LineEventValue {
     Transition {
@@ -115,6 +122,27 @@ impl LineEventValue {
         }
     }
 
+    pub fn start_mut(&mut self) -> &mut f32 {
+        match self {
+            Self::Transition { start, .. } => start,
+            Self::Constant { value } => value,
+        }
+    }
+
+    pub fn end_mut(&mut self) -> &mut f32 {
+        match self {
+            Self::Transition { end, .. } => end,
+            Self::Constant { value } => value,
+        }
+    }
+
+    pub fn easing_mut(&mut self) -> Option<&mut Easing> {
+        match self {
+            Self::Transition { easing, .. } => Some(easing),
+            Self::Constant { .. } => None,
+        }
+    }
+
     pub fn direction(&self) -> Direction {
         let start = self.start();
         let end = self.end();
@@ -152,11 +180,19 @@ impl LineEventValue {
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(bevy::prelude::Component))]
+#[cfg_attr(feature = "bevy", component(immutable))]
+#[cfg_attr(feature = "bevy", require(EventId))]
+#[cfg_attr(feature = "bevy", derive(bevy::prelude::Reflect))]
+#[cfg_attr(feature = "bevy", reflect(Component, Clone, PartialEq, Debug))]
 pub struct LineEvent {
     pub kind: LineEventKind,
     pub start_beat: Beat,
     pub end_beat: Beat,
     pub value: LineEventValue,
+}
+
+impl HasId for LineEvent {
+    type Id = EventId;
 }
 
 impl PartialOrd for LineEvent {
@@ -192,12 +228,13 @@ impl PartialOrd for EventEvaluationResult {
 ///
 /// [`Inherited`] compares as less than [`Affecting`]
 ///
-/// Two [`Affecting`] compare based on their contained values, two [`Inherited`] compare based on their `from` values
+/// Two [`Affecting`] compare based on their contained values. Two [`Inherited`]
+/// compare by `from`, then by value when they end at the same beat.
 ///
 /// In other words:
 ///
 /// - [`Unaffected`] < [`Inherited`] < [`Affecting`]
-/// - Two [`Affecting`] compare based on their contained values, two [`Inherited`] compare based on their `from` values
+/// - Two [`Affecting`] compare by value; two [`Inherited`] compare by `from`, then value
 ///
 /// ```rust
 /// # use phichain_chart::beat;
@@ -207,6 +244,9 @@ impl PartialOrd for EventEvaluationResult {
 /// assert!(R::Inherited { from: beat!(0), value: 200.0 } < R::Affecting(10.0));
 /// assert!(R::Inherited { from: beat!(0), value: 200.0 } < R::Inherited { from: beat!(2), value: 10.0 });
 /// assert!(R::Affecting(5.0) < R::Affecting(10.0));
+/// let a = R::Inherited { from: beat!(2), value: 5.0 };
+/// let b = R::Inherited { from: beat!(2), value: 10.0 };
+/// assert_eq!((&a).max(&b), (&b).max(&a));
 /// ```
 ///
 /// [`Unaffected`]: EventEvaluationResult::Unaffected
@@ -222,9 +262,9 @@ impl Ord for EventEvaluationResult {
             (_, EventEvaluationResult::Unaffected) => Ordering::Greater,
 
             (
-                EventEvaluationResult::Inherited { from: a, .. },
-                EventEvaluationResult::Inherited { from: b, .. },
-            ) => a.cmp(b),
+                EventEvaluationResult::Inherited { from: a, value: av },
+                EventEvaluationResult::Inherited { from: b, value: bv },
+            ) => a.cmp(b).then_with(|| av.total_cmp(bv)),
             (EventEvaluationResult::Affecting(a), EventEvaluationResult::Affecting(b)) => {
                 a.total_cmp(b)
             }
@@ -268,7 +308,11 @@ impl LineEvent {
         match self.value {
             LineEventValue::Transition { start, end, easing } => {
                 if beat >= start_beat && beat <= end_beat {
-                    let percent = (beat - start_beat) / (end_beat - start_beat);
+                    let percent = if start_beat == end_beat {
+                        1.0
+                    } else {
+                        (beat - start_beat) / (end_beat - start_beat)
+                    };
                     EventEvaluationResult::Affecting(start.ease_to(end, percent, easing))
                 } else if beat > end_beat {
                     EventEvaluationResult::Inherited {

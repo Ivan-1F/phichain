@@ -1,15 +1,8 @@
 use crate::action::ActionRegistrationExt;
-use crate::editing::command::curve_note_track::RemoveCurveNoteTrack;
-use crate::editing::command::event::RemoveEvent;
-use crate::editing::command::note::RemoveNote;
-use crate::editing::command::{CommandSequence, EditorCommand};
-use crate::editing::DoCommand;
+use crate::editing::history::{ChangeSet, Edits};
 use crate::hotkey::Hotkey;
 use crate::selection::Selected;
 use bevy::prelude::*;
-use phichain_chart::event::LineEvent;
-use phichain_chart::note::Note;
-use phichain_game::curve_note_track::CurveNoteTrack;
 
 pub struct DeleteSelectedPlugin;
 
@@ -23,34 +16,70 @@ impl Plugin for DeleteSelectedPlugin {
     }
 }
 
-fn delete_selected_system(
-    mut set: ParamSet<(
-        Query<Entity, (With<Selected>, With<Note>)>,
-        Query<Entity, (With<Selected>, With<LineEvent>)>,
-        Query<Entity, (With<Selected>, With<CurveNoteTrack>)>,
-    )>,
-    mut events: MessageWriter<DoCommand>,
+pub(super) fn delete_selected_system(
+    selected: Query<Entity, With<Selected>>,
+    mut edits: Edits,
 ) -> Result {
-    let mut sequence = CommandSequence(vec![]);
-    for note in &set.p0() {
-        sequence
-            .0
-            .push(EditorCommand::RemoveNote(RemoveNote::new(note)));
+    let targets: Vec<Entity> = selected.iter().collect();
+    if !targets.is_empty() {
+        edits.once(
+            |changes: &ChangeSet| {
+                t!(
+                    "history.delete",
+                    objects = changes.destroyed_counts().text()
+                )
+                .into_owned()
+            },
+            move |commands| {
+                for entity in targets {
+                    commands.entity(entity).try_despawn();
+                }
+            },
+        );
     }
-    for event in &set.p1() {
-        sequence
-            .0
-            .push(EditorCommand::RemoveEvent(RemoveEvent::new(event)));
-    }
-    for track in &set.p2() {
-        sequence.0.push(EditorCommand::RemoveCurveNoteTrack(
-            RemoveCurveNoteTrack::new(track),
-        ));
-    }
-
-    if !sequence.0.is_empty() {
-        events.write(DoCommand(EditorCommand::CommandSequence(sequence)));
-    }
-
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::editing::history::{open_document, EditorHistory, HistoryPlugin};
+    use crate::id_index::IdIndexPlugin;
+    use bevy::ecs::system::RunSystemOnce;
+    use phichain_chart::beat::Beat;
+    use phichain_chart::line::Line;
+    use phichain_chart::note::{Note, NoteKind};
+    use phichain_game::curve_note_track::{CurveNoteTrackFrom, CurveNoteTrackTo};
+
+    #[test]
+    fn deleting_a_note_counts_the_track_it_cascades_to() {
+        let mut app = App::new();
+        app.add_plugins((IdIndexPlugin, HistoryPlugin));
+        let world = app.world_mut();
+        let line = world.spawn(Line::default()).id();
+        let note = Note::new(NoteKind::Tap, true, Beat::from(1.0), 0.0, 1.0);
+        let a = world.spawn((note, ChildOf(line), Selected)).id();
+        let b = world.spawn((note, ChildOf(line))).id();
+        let track = world
+            .spawn((CurveNoteTrackFrom(a), CurveNoteTrackTo(b), ChildOf(line)))
+            .id();
+        open_document(world);
+
+        world
+            .run_system_once::<_, Result, _>(delete_selected_system)
+            .unwrap()
+            .unwrap();
+        assert!(world.get_entity(a).is_err());
+        assert!(world.get_entity(track).is_err());
+        assert!(world.get_entity(b).is_ok());
+        assert_eq!(
+            world.resource::<EditorHistory>().undo_label().as_deref(),
+            Some("Delete 1 note, 1 curve track")
+        );
+
+        world.resource_scope(|world, mut history: Mut<EditorHistory>| history.undo(world));
+        assert!(world.get_entity(a).is_err());
+        assert_eq!(world.query::<&Note>().iter(world).count(), 2);
+        assert_eq!(world.query::<&CurveNoteTrackTo>().iter(world).count(), 1);
+    }
 }

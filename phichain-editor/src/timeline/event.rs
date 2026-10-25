@@ -1,10 +1,7 @@
-use crate::constants::INDICATOR_POSITION;
-use crate::editing::command::event::EditEvent;
-use crate::editing::command::EditorCommand;
-use crate::editing::pending::Pending;
-use crate::editing::DoCommand;
+use crate::constants::{INDICATOR_POSITION, PENDING_OPACITY};
+use crate::editing::history::Edits;
 use crate::selection::{Select, Selected, SelectedLine};
-use crate::timeline::{Timeline, TimelineContext};
+use crate::timeline::{Timeline, TimelineContext, LANE_LINE_OPACITY};
 use crate::timing::SeekTo;
 use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
 use bevy::ecs::system::SystemState;
@@ -14,6 +11,7 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use phichain_chart::line::Line;
 use phichain_game::event::{EventOf, Events};
+use phichain_game::Pending;
 use std::iter;
 
 #[derive(Debug, Clone)]
@@ -119,7 +117,7 @@ impl Timeline for EventTimeline {
                     egui::Vec2::new(2.0, viewport.height()),
                 ),
                 0.0,
-                Color32::from_rgba_unmultiplied(255, 255, 255, 40),
+                Color32::WHITE.gamma_multiply(LANE_LINE_OPACITY),
             );
         }
 
@@ -127,23 +125,16 @@ impl Timeline for EventTimeline {
 
         let mut state: SystemState<(
             TimelineContext,
-            Query<(&mut LineEvent, Entity, Option<&Selected>, Option<&Pending>)>,
+            Query<(&LineEvent, Entity, Option<&Selected>, Option<&Pending>)>,
             Query<&Events>,
             Res<BpmList>,
             MessageWriter<Select>,
-            MessageWriter<DoCommand>,
             MessageWriter<SeekTo>,
+            Edits,
         )> = SystemState::new(world);
 
-        let (
-            ctx,
-            mut event_query,
-            events_query,
-            bpm_list,
-            mut select_events,
-            mut event_writer,
-            mut seek_to,
-        ) = state.get_mut(world);
+        let (ctx, event_query, events_query, bpm_list, mut select_events, mut seek_to, mut edits) =
+            state.get_mut(world);
 
         let track_width = viewport.width() / 5.0;
         let event_width = track_width / 2.0;
@@ -186,9 +177,9 @@ impl Timeline for EventTimeline {
         let viewport_margin = 100.0;
 
         for entity in events.iter() {
-            let (mut event, entity, selected, pending) = event_query.get_mut(*entity).unwrap();
+            let (event, entity, selected, pending) = event_query.get(*entity).unwrap();
 
-            let rect = get_event_rect(&event);
+            let rect = get_event_rect(event);
 
             if rect.bottom() >= viewport.bottom() && rect.top() <= viewport.bottom() {
                 // in viewport, but start value outside bottom
@@ -239,7 +230,7 @@ impl Timeline for EventTimeline {
             };
 
             if pending.is_some() {
-                color = Color32::from_rgba_unmultiplied(color.r(), color.g(), color.b(), 20);
+                color = color.gamma_multiply(PENDING_OPACITY);
             }
 
             let response = ui.allocate_rect(rect, Sense::click());
@@ -254,14 +245,6 @@ impl Timeline for EventTimeline {
                     Stroke::new(2.0_f32, color.gamma_multiply(1.2)),
                     StrokeKind::Middle,
                 );
-
-                if let Some(drag) =
-                    BeatRangeDragZone::new(rect, "event-drag", &ctx, &mut *event).show(ui)
-                {
-                    event_writer.write(DoCommand(EditorCommand::EditEvent(EditEvent::new(
-                        entity, drag.from, drag.to,
-                    ))));
-                }
 
                 ui.painter().text(
                     if end_outside_bottom.contains(&Some(entity)) {
@@ -291,6 +274,14 @@ impl Timeline for EventTimeline {
                     FontId::default(),
                     Color32::DARK_GREEN,
                 );
+            }
+
+            if pending.is_none() {
+                edits
+                    .component(entity, event, t!("history.edit_events", count = 1))
+                    .edit(ui, "event_range", |ui, event| {
+                        ui.add(BeatRangeDragZone::new(rect, &ctx, event));
+                    });
             }
 
             if response.clicked() {
@@ -373,6 +364,7 @@ impl Timeline for EventTimeline {
             );
         }
         ui.style_mut().interaction.selectable_labels = true;
+        state.apply(world);
     }
 
     fn on_drag_selection(&self, world: &mut World, viewport: Rect, selection: Rect) -> Vec<Entity> {

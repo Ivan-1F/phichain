@@ -136,9 +136,13 @@ Charter: {}
     Ok(zip_path)
 }
 
+fn read_project_chart(project: &Project) -> anyhow::Result<PhichainChart> {
+    let json = fs::read_to_string(project.path.chart_path())?;
+    Ok(PhichainChart::from_json_str(&json)?)
+}
+
 fn export_official(path: &Path, project: &Project) -> anyhow::Result<PathBuf> {
-    let chart_file = fs::File::open(project.path.chart_path())?;
-    let chart: PhichainChart = serde_json::from_reader(chart_file)?;
+    let chart = read_project_chart(project)?;
     let official = OfficialChart::from_phichain(chart, &OfficialOutputOptions::default())?;
 
     export(path, project, &serde_json::to_string(&official)?)
@@ -164,8 +168,7 @@ fn export_official_observer(
 }
 
 fn export_rpe(path: &Path, project: &Project) -> anyhow::Result<PathBuf> {
-    let chart_file = fs::File::open(project.path.chart_path())?;
-    let chart: PhichainChart = serde_json::from_reader(chart_file)?;
+    let chart = read_project_chart(project)?;
     let rpe = RpeChart::from_phichain(chart, &())?;
 
     export(path, project, &serde_json::to_string(&rpe)?)
@@ -187,5 +190,56 @@ fn export_rpe_observer(
         Err(error) => {
             toasts.error(t!("export.rpe.failed", error = error));
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::project::{ProjectMeta, ProjectPath};
+    use tempfile::TempDir;
+
+    const V6_CHART: &str = r#"{
+      "format": 6,
+      "offset": 0.0,
+      "bpm_list": [
+        { "beat": [0, 0, 1], "bpm": 120.0, "time": 0.0 }
+      ],
+      "lines": [
+        {
+          "name": "line",
+          "notes": [
+            { "kind": "tap", "above": true, "beat": [0, 0, 1], "x": 0.0, "speed": 1.0 },
+            { "kind": "tap", "above": true, "beat": [1, 0, 1], "x": 100.0, "speed": 1.0 }
+          ],
+          "events": [],
+          "children": [],
+          "curve_note_tracks": [
+            { "from": 0, "to": 1, "kind": "drag", "density": 16, "curve": { "type": "linear" } }
+          ]
+        }
+      ]
+    }"#;
+
+    #[test]
+    fn export_official_reads_v6_project_without_resaving() {
+        let temp = TempDir::new().unwrap();
+        let project_dir = temp.path().join("project");
+        let export_dir = temp.path().join("export");
+        fs::create_dir_all(&project_dir).unwrap();
+        fs::create_dir_all(&export_dir).unwrap();
+        fs::write(project_dir.join("chart.json"), V6_CHART).unwrap();
+        let project = Project {
+            path: ProjectPath(project_dir),
+            meta: ProjectMeta::default(),
+            id: uuid::Uuid::new_v4(),
+        };
+
+        let zip_path = export_official(&export_dir, &project).unwrap();
+
+        let mut archive = zip::ZipArchive::new(fs::File::open(zip_path).unwrap()).unwrap();
+        let chart = archive.by_name("chart.json").unwrap();
+        let chart: OfficialChart = serde_json::from_reader(chart).unwrap();
+        assert_eq!(chart.lines.len(), 1);
     }
 }
