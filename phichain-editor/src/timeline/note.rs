@@ -1,4 +1,4 @@
-use crate::constants::INDICATOR_POSITION;
+use crate::constants::{INDICATOR_POSITION, LANE_LINE_OPACITY, PENDING_OPACITY};
 use crate::editing::history::Edits;
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::selection::{Select, Selected, SelectedLine};
@@ -213,7 +213,7 @@ impl Timeline for NoteTimeline {
                 let mut tint = $tint;
 
                 if $fake {
-                    tint = Color32::from_rgba_unmultiplied(tint.r(), tint.g(), tint.b(), 20);
+                    tint = tint.gamma_multiply(PENDING_OPACITY);
                 }
 
                 let rect = Rect::from_center_size(center, size);
@@ -249,8 +249,7 @@ impl Timeline for NoteTimeline {
                     if selected_query.get(curve_note.unwrap().0).is_ok() {
                         Color32::LIGHT_GREEN
                     } else {
-                        let [r, g, b, a] = bevy::color::palettes::css::WHITE.with_alpha(100.0 / 255.0).to_u8_array();
-                        Color32::from_rgba_unmultiplied(r, g, b, a)
+                        Color32::WHITE.gamma_multiply(100.0 / 255.0)
                     }
                 } else {
                     Color32::WHITE
@@ -319,9 +318,9 @@ impl Timeline for NoteTimeline {
                 ),
                 0.0,
                 if percent == 0.5 {
-                    Color32::from_rgba_unmultiplied(0, 255, 0, 40)
+                    Color32::GREEN.gamma_multiply(LANE_LINE_OPACITY)
                 } else {
-                    Color32::from_rgba_unmultiplied(255, 255, 255, 40)
+                    Color32::WHITE.gamma_multiply(LANE_LINE_OPACITY)
                 },
             );
         }

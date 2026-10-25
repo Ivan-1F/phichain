@@ -133,7 +133,7 @@ impl TimelineItem {
 }
 
 pub mod common {
-    use crate::constants::INDICATOR_POSITION;
+    use crate::constants::{BEAT_LINE_OPACITY, INDICATOR_POSITION};
     use crate::timeline::container::AllocatedTimeline;
     use crate::timeline::settings::TimelineSettings;
     use crate::timeline::Timeline;
@@ -220,7 +220,7 @@ pub mod common {
             ui.painter().rect_filled(
                 rect,
                 0.0,
-                Color32::from_rgba_unmultiplied(255, 255, 255, 40),
+                Color32::WHITE.gamma_multiply(BEAT_LINE_OPACITY),
             );
             ui.painter().text(
                 rect.left_top() + egui::Vec2::new(4.0, 0.0),
@@ -245,7 +245,7 @@ pub mod common {
             ui.painter().rect_filled(
                 rect,
                 0.0,
-                Color32::from_rgba_unmultiplied(255, 255, 255, 40),
+                Color32::WHITE.gamma_multiply(BEAT_LINE_OPACITY),
             );
             let numer = index as u32;
             let denom = ctx.settings.density;

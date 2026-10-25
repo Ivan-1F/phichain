@@ -1,3 +1,4 @@
+use crate::constants::PENDING_OPACITY;
 use crate::project::project_loaded;
 use crate::selection::{Selected, SelectedLine};
 use crate::settings::{EditorSettings, ShowLineAnchorOption};
@@ -53,7 +54,7 @@ fn update_note_tint_system(
             bevy::color::palettes::css::WHITE
         };
         let alpha = if pending.is_some() {
-            40.0 / 255.0
+            PENDING_OPACITY
         } else if curve_note.is_some() {
             100.0 / 255.0
         } else {

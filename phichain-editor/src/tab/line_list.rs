@@ -369,12 +369,7 @@ impl<'w, 's> LineList<'w, 's> {
                                     response.rect.center_bottom(),
                                 ),
                                 0.0,
-                                Color32::from_rgba_unmultiplied(
-                                    255,
-                                    255,
-                                    255,
-                                    (opacity.0 * 255.0).round() as u8,
-                                ),
+                                Color32::WHITE.gamma_multiply(opacity.0.clamp(0.0, 1.0)),
                             );
                             painter.rect_filled(
                                 egui::Rect::from_min_max(

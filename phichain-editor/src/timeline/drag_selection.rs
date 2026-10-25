@@ -1,3 +1,4 @@
+use crate::constants::DRAG_SELECTION_OPACITY;
 use crate::selection::Select;
 use crate::timeline::{Timeline, TimelineContext};
 use crate::utils::convert::BevyEguiConvert;
@@ -57,7 +58,7 @@ pub fn timeline_drag_selection(ui: &mut Ui, world: &mut World) -> Result {
                 egui::Pos2::new(now_x, now_y),
             ),
             0.0,
-            Color32::from_rgba_unmultiplied(255, 255, 255, 20),
+            Color32::WHITE.gamma_multiply(DRAG_SELECTION_OPACITY),
             Stroke::NONE,
             StrokeKind::Middle,
         );

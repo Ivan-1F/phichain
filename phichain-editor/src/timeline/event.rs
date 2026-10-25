@@ -1,4 +1,4 @@
-use crate::constants::INDICATOR_POSITION;
+use crate::constants::{INDICATOR_POSITION, LANE_LINE_OPACITY, PENDING_OPACITY};
 use crate::editing::history::Edits;
 use crate::selection::{Select, Selected, SelectedLine};
 use crate::timeline::{Timeline, TimelineContext};
@@ -117,7 +117,7 @@ impl Timeline for EventTimeline {
                     egui::Vec2::new(2.0, viewport.height()),
                 ),
                 0.0,
-                Color32::from_rgba_unmultiplied(255, 255, 255, 40),
+                Color32::WHITE.gamma_multiply(LANE_LINE_OPACITY),
             );
         }
 
@@ -230,7 +230,7 @@ impl Timeline for EventTimeline {
             };
 
             if pending.is_some() {
-                color = Color32::from_rgba_unmultiplied(color.r(), color.g(), color.b(), 20);
+                color = color.gamma_multiply(PENDING_OPACITY);
             }
 
             let response = ui.allocate_rect(rect, Sense::click());
