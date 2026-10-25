@@ -53,10 +53,12 @@ fn update_note_tint_system(
         } else {
             bevy::color::palettes::css::WHITE
         };
+        // The timelines apply opacity in gamma space through egui; sprite blending is
+        // linear, so decode the perceptual value with the sRGB transfer function
         let alpha = if pending.is_some() {
-            PENDING_OPACITY
+            Srgba::gamma_function(PENDING_OPACITY)
         } else if curve_note.is_some() {
-            100.0 / 255.0
+            Srgba::gamma_function(100.0 / 255.0)
         } else {
             1.0
         };
