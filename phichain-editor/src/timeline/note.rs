@@ -1,9 +1,10 @@
 use crate::constants::{INDICATOR_POSITION, PENDING_OPACITY};
 use crate::editing::history::Edits;
 use crate::notification::{ToastsExt, ToastsStorage};
-use crate::selection::{Select, Selected, SelectedLine};
+use crate::selection::{Select, Selected};
 use crate::tab::timeline::TimelineFilter;
-use crate::timeline::{Timeline, TimelineContext, LANE_LINE_OPACITY};
+use crate::timeline::target::TimelineOf;
+use crate::timeline::{TimelineContext, TimelineKind, LANE_LINE_OPACITY};
 use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
 use crate::ui::widgets::easing::EasingGraph;
 use bevy::ecs::system::SystemState;
@@ -22,26 +23,8 @@ use phichain_game::highlight::Highlighted;
 use phichain_game::Pending;
 use std::cmp::Ordering;
 
-#[derive(Debug, Clone)]
-pub struct NoteTimeline(pub Option<Entity>);
-
-impl NoteTimeline {
-    pub fn new(line: Entity) -> Self {
-        Self(Some(line))
-    }
-
-    pub fn new_binding() -> Self {
-        Self(None)
-    }
-
-    pub fn line_entity(&self, world: &mut World) -> Entity {
-        self.line_entity_from_fallback(world.resource::<SelectedLine>().0)
-    }
-
-    pub fn line_entity_from_fallback(&self, fallback: Entity) -> Entity {
-        self.0.unwrap_or(fallback)
-    }
-}
+#[derive(Component, Debug, Clone, Copy)]
+pub struct NoteTimeline;
 
 fn pending_curve_note_track_ui(
     ui: &mut Ui,
@@ -102,10 +85,8 @@ fn pending_curve_note_track_ui(
     }
 }
 
-impl Timeline for NoteTimeline {
-    fn ui(&self, ui: &mut Ui, world: &mut World, viewport: Rect) {
-        let line_entity = self.line_entity(world);
-
+impl TimelineKind for NoteTimeline {
+    fn ui(&self, ui: &mut Ui, world: &mut World, line_entity: Entity, viewport: Rect) {
         pending_curve_note_track_ui(ui, world, viewport, line_entity);
 
         let mut state: SystemState<(
@@ -364,9 +345,13 @@ impl Timeline for NoteTimeline {
         state.apply(world);
     }
 
-    fn on_drag_selection(&self, world: &mut World, viewport: Rect, selection: Rect) -> Vec<Entity> {
-        let line_entity = self.line_entity(world);
-
+    fn on_drag_selection(
+        &self,
+        world: &mut World,
+        line_entity: Entity,
+        viewport: Rect,
+        selection: Rect,
+    ) -> Vec<Entity> {
         let x_range = selection.x_range();
         let time_range = selection.y_range();
 
@@ -386,17 +371,17 @@ impl Timeline for NoteTimeline {
             .collect()
     }
 
-    fn name(&self, world: &World) -> String {
-        match self.0 {
+    fn name(&self, world: &World, timeline: Entity) -> String {
+        match world.get::<TimelineOf>(timeline) {
             None => format!(
                 "{} {}",
                 egui_phosphor::regular::MUSIC_NOTE,
                 t!("tab.timeline_setting.timelines.binding")
             ),
-            Some(entity) => format!(
+            Some(of) => format!(
                 "{} {}",
                 egui_phosphor::regular::MUSIC_NOTE,
-                world.get::<Line>(entity).unwrap().name
+                world.get::<Line>(of.0).unwrap().name
             ),
         }
     }

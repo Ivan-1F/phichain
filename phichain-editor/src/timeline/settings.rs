@@ -1,5 +1,4 @@
 use crate::tab::timeline::NoteSideFilter;
-use crate::timeline::container::TimelineContainer;
 use bevy::prelude::Resource;
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
@@ -10,8 +9,6 @@ pub struct TimelineSettings {
     pub zoom: f32,
     pub density: u32,
     pub lanes: u32,
-
-    pub container: TimelineContainer,
 
     pub note_side_filter: NoteSideFilter,
 
@@ -25,8 +22,6 @@ impl Default for TimelineSettings {
             zoom: 2.0,
             density: 4,
             lanes: 11,
-
-            container: TimelineContainer::default(),
 
             note_side_filter: NoteSideFilter::default(),
 

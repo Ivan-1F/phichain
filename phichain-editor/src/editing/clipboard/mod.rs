@@ -2,7 +2,8 @@ use crate::action::ActionRegistrationExt;
 use crate::editing::history::{ChangeSet, Edits};
 use crate::hotkey::modifier::Modifier;
 use crate::hotkey::Hotkey;
-use crate::selection::{Selected, SelectedLine};
+use crate::selection::Selected;
+use crate::timeline::container::TimelineLayout;
 use crate::timeline::TimelineContext;
 use crate::utils::convert::BevyEguiConvert;
 use bevy::ecs::entity::{EntityHashMap, EntityHashSet};
@@ -158,7 +159,7 @@ fn cut_system(world: &mut World) -> Result {
 fn paste_system(
     clipboard: Res<EditorClipboard>,
     window: Single<&Window>,
-    selected_line: Res<SelectedLine>,
+    layout: TimelineLayout,
     ctx: TimelineContext,
     bpm_list: Res<BpmList>,
     mut edits: Edits,
@@ -169,16 +170,14 @@ fn paste_system(
     if !ctx.viewport.0.contains(cursor) {
         return Ok(());
     }
-    let timeline = ctx
-        .settings
-        .container
+    let line = layout
         .allocate(ctx.viewport.0.into_egui())
         .into_iter()
-        .find(|item| item.viewport.x_range().contains(cursor.x));
-    let Some(timeline) = timeline else {
+        .find(|item| item.viewport.x_range().contains(cursor.x))
+        .and_then(|item| item.target);
+    let Some(line) = line else {
         return Ok(());
     };
-    let line = timeline.timeline.line_entity().unwrap_or(selected_line.0);
     let beat = ctx
         .settings
         .attach(bpm_list.beat_at(ctx.y_to_time(cursor.y)).value());

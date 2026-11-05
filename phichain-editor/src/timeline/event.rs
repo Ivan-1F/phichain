@@ -1,11 +1,12 @@
 use crate::constants::{INDICATOR_POSITION, PENDING_OPACITY};
 use crate::editing::history::Edits;
-use crate::selection::{Select, Selected, SelectedLine};
-use crate::timeline::{Timeline, TimelineContext, LANE_LINE_OPACITY};
+use crate::selection::{Select, Selected};
+use crate::timeline::target::TimelineOf;
+use crate::timeline::{TimelineContext, TimelineKind, LANE_LINE_OPACITY};
 use crate::timing::SeekTo;
 use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
 use bevy::ecs::system::SystemState;
-use bevy::prelude::{Entity, MessageWriter, Query, Res, World};
+use bevy::prelude::{Component, Entity, MessageWriter, Query, Res, World};
 use egui::{Align2, Color32, FontId, Rect, Sense, Stroke, StrokeKind, Ui};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
@@ -14,26 +15,8 @@ use phichain_game::event::{EventOf, Events};
 use phichain_game::Pending;
 use std::iter;
 
-#[derive(Debug, Clone)]
-pub struct EventTimeline(pub Option<Entity>);
-
-impl EventTimeline {
-    pub fn new(line: Entity) -> Self {
-        Self(Some(line))
-    }
-
-    pub fn new_binding() -> Self {
-        Self(None)
-    }
-
-    pub fn line_entity(&self, world: &mut World) -> Entity {
-        self.line_entity_from_fallback(world.resource::<SelectedLine>().0)
-    }
-
-    pub fn line_entity_from_fallback(&self, fallback: Entity) -> Entity {
-        self.0.unwrap_or(fallback)
-    }
-}
+#[derive(Component, Debug, Clone, Copy)]
+pub struct EventTimeline;
 
 #[derive(Debug, Clone)]
 struct EventTrackData<T> {
@@ -99,8 +82,8 @@ impl<T: PartialEq> EventTrackData<T> {
     }
 }
 
-impl Timeline for EventTimeline {
-    fn ui(&self, ui: &mut Ui, world: &mut World, viewport: Rect) {
+impl TimelineKind for EventTimeline {
+    fn ui(&self, ui: &mut Ui, world: &mut World, line_entity: Entity, viewport: Rect) {
         // lane
         // [0.2, 0.4, 0.6, 0.8]
         let lane_percents = iter::repeat_n(0.0, 5 - 1)
@@ -120,8 +103,6 @@ impl Timeline for EventTimeline {
                 Color32::WHITE.gamma_multiply(LANE_LINE_OPACITY),
             );
         }
-
-        let line_entity = self.line_entity(world);
 
         let mut state: SystemState<(
             TimelineContext,
@@ -367,9 +348,13 @@ impl Timeline for EventTimeline {
         state.apply(world);
     }
 
-    fn on_drag_selection(&self, world: &mut World, viewport: Rect, selection: Rect) -> Vec<Entity> {
-        let line_entity = self.line_entity(world);
-
+    fn on_drag_selection(
+        &self,
+        world: &mut World,
+        line_entity: Entity,
+        viewport: Rect,
+        selection: Rect,
+    ) -> Vec<Entity> {
         let x_range = selection.x_range();
         let time_range = selection.y_range();
 
@@ -391,17 +376,17 @@ impl Timeline for EventTimeline {
             .collect()
     }
 
-    fn name(&self, world: &World) -> String {
-        match self.0 {
+    fn name(&self, world: &World, timeline: Entity) -> String {
+        match world.get::<TimelineOf>(timeline) {
             None => format!(
                 "{} {}",
                 egui_phosphor::regular::DIAMOND,
                 t!("tab.timeline_setting.timelines.binding")
             ),
-            Some(entity) => format!(
+            Some(of) => format!(
                 "{} {}",
                 egui_phosphor::regular::DIAMOND,
-                world.get::<Line>(entity).unwrap().name
+                world.get::<Line>(of.0).unwrap().name
             ),
         }
     }

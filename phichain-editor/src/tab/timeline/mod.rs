@@ -3,8 +3,9 @@ use bevy_persistent::Persistent;
 use egui::Ui;
 
 use crate::settings::EditorSettings;
+use crate::timeline::container::allocate_timelines;
 use crate::timeline::settings::TimelineSettings;
-use crate::timeline::Timeline;
+use crate::timeline::timeline_kind;
 use crate::timing::{Pause, Paused, Seek};
 use crate::utils::convert::BevyEguiConvert;
 use crate::{spectrogram, timeline};
@@ -63,20 +64,18 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
 
     // TODO bevy-0.16: make timeline_tab return Result and handle error using ? operator when register_tab supports systems returning Result
     let _ = timeline::drag_selection::timeline_drag_selection(&mut ui, world);
-    let viewport = world.resource::<TimelineViewport>();
-    let timeline_settings = world.resource::<TimelineSettings>();
+    let viewport = world.resource::<TimelineViewport>().0;
 
-    let timelines = timeline_settings.container.clone();
-
-    for (index, item) in timelines
-        .allocate(viewport.0.into_egui())
-        .iter()
+    for (index, item) in allocate_timelines(world, viewport.into_egui())
+        .into_iter()
         .enumerate()
     {
-        ui.push_id(("timeline", index), |ui| {
-            item.timeline.ui(ui, world, item.viewport);
-        });
-        timeline::common::timeline_badge_ui(&mut ui, world, item, index);
+        if let (Some(kind), Some(line)) = (timeline_kind(world, item.timeline), item.target) {
+            ui.push_id(("timeline", index), |ui| {
+                kind.ui(ui, world, line, item.viewport);
+            });
+        }
+        timeline::common::timeline_badge_ui(&mut ui, world, item.timeline, item.viewport, index);
     }
 
     timeline::common::beat_line_ui(&mut ui, world);

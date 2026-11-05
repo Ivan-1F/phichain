@@ -727,7 +727,7 @@ fn event_inspector_switches_mode_immediately_and_keeps_separate_edits() {
 
 #[test]
 fn event_timeline_applies_handle_edits_and_undo_restores_the_range() {
-    use crate::timeline::{Timeline, TimelineContext};
+    use crate::timeline::{TimelineContext, TimelineKind};
     use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
     let mut app = app();
     timeline_resources(&mut app);
@@ -757,9 +757,10 @@ fn event_timeline_applies_handle_edits_and_undo_restores_the_range() {
     let pos = egui::pos2(60.0, y + 2.0);
     let end = egui::pos2(60.0, target_y + 2.0);
     let mut draw = |world: &mut World, mut ui: egui::Ui| {
-        crate::timeline::event::EventTimeline::new(line).ui(
+        crate::timeline::event::EventTimeline.ui(
             &mut ui,
             world,
+            line,
             Rect::from_min_size(Pos2::ZERO, egui::vec2(600.0, 800.0)),
         );
     };

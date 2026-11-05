@@ -4,13 +4,15 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::note::{Note, NoteKind};
 use phichain_game::Pending;
 
+use crate::constants::CANVAS_WIDTH;
 use crate::editing::history::Edits;
 use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
 use crate::identifier::{Identifier, IntoIdentifier};
 use crate::schedule::EditorSet;
-use crate::timeline::{TimelineContext, TimelineItem};
+use crate::timeline::container::TimelineLayout;
+use crate::timeline::note::NoteTimeline;
+use crate::timeline::TimelineContext;
 use crate::utils::convert::BevyEguiConvert;
-use crate::{constants::CANVAS_WIDTH, selection::SelectedLine};
 
 #[allow(clippy::enum_variant_names)]
 enum CreateNoteHotkeys {
@@ -61,7 +63,8 @@ fn create_note_system(
     hotkey: HotkeyContext,
     keyboard: Res<ButtonInput<KeyCode>>,
 
-    selected_line: Res<SelectedLine>,
+    layout: TimelineLayout,
+    note_timelines: Query<(), With<NoteTimeline>>,
 
     window_query: Query<&Window>,
     bpm_list: Res<BpmList>,
@@ -87,10 +90,13 @@ fn create_note_system(
 
     let rect = ctx.viewport.0.into_egui();
 
-    for item in &ctx.settings.container.allocate(rect) {
-        if let TimelineItem::Note(timeline) = &item.timeline {
+    for item in layout
+        .allocate(rect)
+        .into_iter()
+        .filter(|item| note_timelines.contains(item.timeline))
+    {
+        if let Some(line_entity) = item.target {
             let viewport = item.viewport;
-            let line_entity = timeline.line_entity_from_fallback(selected_line.0);
 
             if !viewport.contains(cursor_position.into_egui().to_pos2()) {
                 continue;

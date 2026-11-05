@@ -7,8 +7,9 @@ use crate::editing::history::Edits;
 use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
 use crate::identifier::{Identifier, IntoIdentifier};
 use crate::schedule::EditorSet;
-use crate::selection::SelectedLine;
-use crate::timeline::{TimelineContext, TimelineItem};
+use crate::timeline::container::TimelineLayout;
+use crate::timeline::event::EventTimeline;
+use crate::timeline::TimelineContext;
 use crate::utils::convert::BevyEguiConvert;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use phichain_game::event::EventOf;
@@ -59,7 +60,8 @@ fn create_event_system(
     hotkey: HotkeyContext,
     keyboard: Res<ButtonInput<KeyCode>>,
 
-    selected_line: Res<SelectedLine>,
+    layout: TimelineLayout,
+    event_timelines: Query<(), With<EventTimeline>>,
 
     window_query: Query<&Window>,
     bpm_list: Res<BpmList>,
@@ -87,10 +89,13 @@ fn create_event_system(
 
     let rect = ctx.viewport.0.into_egui();
 
-    for item in &ctx.settings.container.allocate(rect) {
-        if let TimelineItem::Event(timeline) = &item.timeline {
+    for item in layout
+        .allocate(rect)
+        .into_iter()
+        .filter(|item| event_timelines.contains(item.timeline))
+    {
+        if let Some(line_entity) = item.target {
             let viewport = item.viewport;
-            let line_entity = timeline.line_entity_from_fallback(selected_line.0);
 
             if !viewport.contains(cursor_position.into_egui().to_pos2()) {
                 continue;

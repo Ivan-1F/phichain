@@ -3,9 +3,11 @@ pub mod drag_selection;
 pub mod event;
 pub mod note;
 pub mod settings;
+pub mod target;
 
 use crate::constants::{BASE_ZOOM, INDICATOR_POSITION};
 use crate::tab::timeline::TimelineViewport;
+use crate::timeline::container::{fill_removed_timeline_observer, spawn_timeline_container};
 use crate::timeline::drag_selection::TimelineDragSelectionPlugin;
 use crate::timeline::event::EventTimeline;
 use crate::timeline::note::NoteTimeline;
@@ -16,11 +18,9 @@ use bevy::ecs::system::SystemParam;
 use bevy::math::Vec2;
 use bevy::prelude::*;
 use egui::{Rect, Ui};
-use enum_dispatch::enum_dispatch;
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
-use phichain_chart::line::Line;
 use phichain_game::audio::AudioDuration;
 
 /// Opacity of the vertical lane separator lines on timelines
@@ -36,7 +36,8 @@ impl Plugin for TimelinePlugin {
                 Vec2::ZERO,
             )))
             .insert_resource(TimelineSettings::default())
-            .add_observer(clean_dangle_timelines_observer);
+            .add_systems(Startup, spawn_timeline_container)
+            .add_observer(fill_removed_timeline_observer);
     }
 }
 
@@ -103,9 +104,9 @@ impl TimelineContext<'_> {
     }
 }
 
-#[enum_dispatch(TimelineItem)]
-pub trait Timeline {
-    fn ui(&self, ui: &mut Ui, world: &mut World, viewport: Rect);
+/// Behavior of a kind of timeline, implemented by its marker component
+pub trait TimelineKind {
+    fn ui(&self, ui: &mut Ui, world: &mut World, line: Entity, viewport: Rect);
 
     /// Handle drag selection on the timeline
     ///
@@ -114,33 +115,36 @@ pub trait Timeline {
     /// The selection will be cropped to fit the timeline, which means the x of the left-top corner of the timeline will be 0
     ///
     /// The return value of this function will be a vector contains all entities that are selected
-    fn on_drag_selection(&self, world: &mut World, viewport: Rect, selection: Rect) -> Vec<Entity>;
+    fn on_drag_selection(
+        &self,
+        world: &mut World,
+        line: Entity,
+        viewport: Rect,
+        selection: Rect,
+    ) -> Vec<Entity>;
 
-    fn name(&self, world: &World) -> String;
+    fn name(&self, world: &World, timeline: Entity) -> String;
 }
 
-#[enum_dispatch]
-#[derive(Debug, Clone)]
-pub enum TimelineItem {
-    Note(NoteTimeline),
-    Event(EventTimeline),
-}
-
-impl TimelineItem {
-    pub fn line_entity(&self) -> Option<Entity> {
-        match self {
-            TimelineItem::Note(timeline) => timeline.0,
-            TimelineItem::Event(timeline) => timeline.0,
-        }
+/// The [`TimelineKind`] of the given timeline
+pub fn timeline_kind(world: &World, timeline: Entity) -> Option<&'static dyn TimelineKind> {
+    let timeline = world.get_entity(timeline).ok()?;
+    if timeline.contains::<NoteTimeline>() {
+        Some(&NoteTimeline)
+    } else if timeline.contains::<EventTimeline>() {
+        Some(&EventTimeline)
+    } else {
+        None
     }
 }
 
 pub mod common {
     use crate::constants::INDICATOR_POSITION;
-    use crate::timeline::container::AllocatedTimeline;
-    use crate::timeline::settings::TimelineSettings;
-    use crate::timeline::Timeline;
-    use crate::timeline::TimelineContext;
+    use crate::tab::timeline::TimelineViewport;
+    use crate::timeline::container::{
+        offset_timeline, ordered_timelines, swap_timelines, Timeline,
+    };
+    use crate::timeline::{timeline_kind, TimelineContext};
     use bevy::ecs::system::SystemState;
     use bevy::prelude::*;
     use egui::{epaint, Align2, Color32, FontId, Id, Sense, Ui};
@@ -152,20 +156,24 @@ pub mod common {
     pub fn timeline_badge_ui(
         ui: &mut Ui,
         world: &mut World,
-        item: &AllocatedTimeline,
+        timeline: Entity,
+        viewport: egui::Rect,
         index: usize,
     ) {
         let mut swap = None;
 
-        let name = item.timeline.name(world);
+        let Some(name) = timeline_kind(world, timeline).map(|kind| kind.name(world, timeline))
+        else {
+            return;
+        };
         let galley =
             ui.painter()
                 .layout_no_wrap(name.clone(), Default::default(), Default::default());
 
         let badge_rect = egui::Rect::from_center_size(
             egui::Pos2::new(
-                item.viewport.center().x,
-                item.viewport.top() + item.viewport.height() * 0.1,
+                viewport.center().x,
+                viewport.top() + viewport.height() * 0.1,
             ),
             galley.size(),
         );
@@ -191,7 +199,7 @@ pub mod common {
         });
 
         // dropzone
-        let response = ui.allocate_rect(item.viewport, Sense::hover());
+        let response = ui.allocate_rect(viewport, Sense::hover());
         if let Some(dragged_payload) = response.dnd_release_payload::<usize>() {
             swap = Some((*dragged_payload, index));
         }
@@ -199,7 +207,7 @@ pub mod common {
         if let Some(hovered_payload) = response.dnd_hover_payload::<usize>() {
             if *hovered_payload != index {
                 ui.painter().rect_filled(
-                    item.viewport,
+                    viewport,
                     0.0,
                     egui_dock::Style::default().overlay.selection_color,
                 );
@@ -207,8 +215,7 @@ pub mod common {
         }
 
         if let Some((from, to)) = swap {
-            let mut timeline_settings = world.resource_mut::<TimelineSettings>();
-            timeline_settings.container.swap(from, to);
+            swap_timelines(world, from, to);
         }
     }
 
@@ -260,18 +267,16 @@ pub mod common {
     }
 
     pub fn separator_ui(ui: &mut Ui, world: &mut World) {
-        let mut state: SystemState<TimelineContext> = SystemState::new(world);
-        let mut ctx = state.get_mut(world);
+        let viewport = world.resource::<TimelineViewport>().0;
 
-        let timelines = ctx.settings.container.timelines.clone();
-
-        for (index, timeline) in timelines.iter().enumerate() {
+        for (index, timeline) in ordered_timelines(world).into_iter().enumerate() {
+            let fraction = world.get::<Timeline>(timeline).unwrap().fraction;
             let rect = egui::Rect::from_center_size(
                 egui::Pos2::new(
-                    ctx.viewport.0.min.x + timeline.fraction * ctx.viewport.0.width(),
-                    ctx.viewport.0.center().y,
+                    viewport.min.x + fraction * viewport.width(),
+                    viewport.center().y,
                 ),
-                egui::Vec2::new(2.0, ctx.viewport.0.height()),
+                egui::Vec2::new(2.0, viewport.height()),
             );
             ui.painter().rect_filled(rect, 0.0, Color32::WHITE);
 
@@ -280,9 +285,8 @@ pub mod common {
                 .on_hover_cursor(egui::CursorIcon::ResizeHorizontal);
             if response.dragged() {
                 let delta_x = response.drag_delta().x;
-                let delta_percent = delta_x / ctx.viewport.0.width();
-                // TODO: make ManagedTimeline a handle so we can use `timeline.offset(delta_percent)`
-                ctx.settings.container.offset_timeline(index, delta_percent);
+                let delta_percent = delta_x / viewport.width();
+                offset_timeline(world, index, delta_percent);
             }
         }
     }
@@ -322,24 +326,5 @@ pub mod common {
                 Color32::WHITE,
             );
         }
-    }
-}
-
-fn clean_dangle_timelines_observer(
-    remove: On<Remove, Line>,
-    mut timeline_settings: ResMut<TimelineSettings>,
-) {
-    while let Some(index) =
-        timeline_settings
-            .container
-            .timelines
-            .iter()
-            .position(|x| match &x.timeline {
-                TimelineItem::Note(timeline) => timeline.0 == Some(remove.entity),
-                TimelineItem::Event(timeline) => timeline.0 == Some(remove.entity),
-            })
-    {
-        info!("Removed timeline due to removal of line");
-        timeline_settings.container.remove(index);
     }
 }
