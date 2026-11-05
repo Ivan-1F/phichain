@@ -168,10 +168,10 @@ pub fn timeline_setting_tab(In(mut ui): In<Ui>, world: &mut World) {
             world.despawn(delete);
         }
         if let Some(move_up) = move_up {
-            swap_timelines(world, move_up - 1, move_up);
+            swap_timelines(world, timelines[move_up - 1], timelines[move_up]);
         }
         if let Some(move_down) = move_down {
-            swap_timelines(world, move_down, move_down + 1);
+            swap_timelines(world, timelines[move_down], timelines[move_down + 1]);
         }
     }
 }

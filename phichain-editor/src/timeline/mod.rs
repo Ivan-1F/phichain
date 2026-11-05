@@ -140,7 +140,6 @@ pub mod common {
         world: &mut World,
         timeline: Entity,
         viewport: egui::Rect,
-        index: usize,
     ) {
         let mut swap = None;
 
@@ -160,7 +159,7 @@ pub mod common {
         let visuals = ui.style().visuals.widgets.inactive;
 
         ui.put(badge_rect, |ui: &mut Ui| {
-            ui.dnd_drag_source(Id::new(&name).with(index), index, |ui| {
+            ui.dnd_drag_source(Id::new(("timeline_badge", timeline)), timeline, |ui| {
                 ui.painter().rect(
                     badge_rect,
                     visuals.corner_radius,
@@ -179,12 +178,12 @@ pub mod common {
 
         // dropzone
         let response = ui.allocate_rect(viewport, Sense::hover());
-        if let Some(dragged_payload) = response.dnd_release_payload::<usize>() {
-            swap = Some((*dragged_payload, index));
+        if let Some(dragged_payload) = response.dnd_release_payload::<Entity>() {
+            swap = Some((*dragged_payload, timeline));
         }
 
-        if let Some(hovered_payload) = response.dnd_hover_payload::<usize>() {
-            if *hovered_payload != index {
+        if let Some(hovered_payload) = response.dnd_hover_payload::<Entity>() {
+            if *hovered_payload != timeline {
                 ui.painter().rect_filled(
                     viewport,
                     0.0,

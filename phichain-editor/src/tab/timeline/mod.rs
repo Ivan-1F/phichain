@@ -62,9 +62,15 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
         }
     }
 
+    // background
+    timeline::common::beat_line_ui(&mut ui, world);
+    timeline::common::bpm_change_ui(&mut ui, world);
     // TODO bevy-0.16: make timeline_tab return Result and handle error using ? operator when register_tab supports systems returning Result
     let _ = timeline::drag_selection::timeline_drag_selection(&mut ui, world);
-    for (index, item) in allocated_timelines(world).into_iter().enumerate() {
+
+    // content
+    let timelines = allocated_timelines(world);
+    for item in &timelines {
         let mut child = ui.new_child(
             egui::UiBuilder::new()
                 .max_rect(item.viewport)
@@ -72,13 +78,15 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
         );
         child.set_clip_rect(item.viewport.intersect(ui.clip_rect()));
         timeline_ui(world, child, item.timeline);
-        timeline::common::timeline_badge_ui(&mut ui, world, item.timeline, item.viewport, index);
     }
 
-    timeline::common::beat_line_ui(&mut ui, world);
+    // overlay
     timeline::common::indicator_ui(&mut ui, world);
+    for item in &timelines {
+        timeline::common::timeline_badge_ui(&mut ui, world, item.timeline, item.viewport);
+    }
     timeline::common::separator_ui(&mut ui, world);
-    timeline::common::bpm_change_ui(&mut ui, world);
+    timeline::drag_selection::drag_selection_marquee_ui(&mut ui, world);
 }
 
 #[derive(Resource, Debug)]

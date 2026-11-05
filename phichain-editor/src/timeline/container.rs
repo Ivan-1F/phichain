@@ -172,13 +172,14 @@ pub fn push_timeline(world: &mut World, kind: impl Bundle, target: Option<Entity
 }
 
 /// Swap two timelines, each keeping its width
-pub fn swap_timelines(world: &mut World, a: usize, b: usize) {
+pub fn swap_timelines(world: &mut World, a: Entity, b: Entity) {
     let Some(mut contained) =
         container(world).and_then(|container| world.get_mut::<ContainedTimelines>(container))
     else {
         return;
     };
-    if a < contained.len() && b < contained.len() {
+    let position = |timeline| contained.iter().position(|entity| entity == timeline);
+    if let (Some(a), Some(b)) = (position(a), position(b)) {
         contained.swap(a, b);
     }
 }
@@ -284,7 +285,7 @@ mod tests {
         let mut world = world_with_container();
         let before = ordered_timelines(&mut world);
 
-        swap_timelines(&mut world, 0, 1);
+        swap_timelines(&mut world, before[0], before[1]);
 
         assert_eq!(ordered_timelines(&mut world), vec![before[1], before[0]]);
         assert_eq!(edges(&mut world), vec![(0.0, 100.0), (100.0, 300.0)]);

@@ -51,23 +51,6 @@ pub fn timeline_drag_selection(ui: &mut Ui, world: &mut World) -> Result {
         selection.0 = Some((selection.0.unwrap().0, egui::Vec2::new(x, time)));
     }
 
-    if let Some((start, now)) = selection.0 {
-        let start_x = viewport.min.x + start.x;
-        let start_y = ctx.time_to_y(start.y);
-        let now_x = viewport.min.x + now.x;
-        let now_y = ctx.time_to_y(now.y);
-        ui.painter().rect(
-            egui::Rect::from_two_pos(
-                egui::Pos2::new(start_x, start_y),
-                egui::Pos2::new(now_x, now_y),
-            ),
-            0.0,
-            Color32::WHITE.gamma_multiply(DRAG_SELECTION_OPACITY),
-            Stroke::NONE,
-            StrokeKind::Middle,
-        );
-    }
-
     if response.drag_stopped() {
         if let Some((from, to)) = selection.0.take() {
             let selection_rect = egui::Rect::from_two_pos(from.to_pos2(), to.to_pos2())
@@ -94,4 +77,29 @@ pub fn timeline_drag_selection(ui: &mut Ui, world: &mut World) -> Result {
     }
 
     Ok(())
+}
+
+/// Draw the drag-selection marquee, above the timelines
+pub fn drag_selection_marquee_ui(ui: &mut Ui, world: &mut World) {
+    let mut state: SystemState<(TimelineContext, Res<TimelineDragSelection>)> =
+        SystemState::new(world);
+    let (ctx, selection) = state.get_mut(world);
+    let viewport = ctx.viewport.0;
+
+    if let Some((start, now)) = selection.0 {
+        let start_x = viewport.min.x + start.x;
+        let start_y = ctx.time_to_y(start.y);
+        let now_x = viewport.min.x + now.x;
+        let now_y = ctx.time_to_y(now.y);
+        ui.painter().rect(
+            egui::Rect::from_two_pos(
+                egui::Pos2::new(start_x, start_y),
+                egui::Pos2::new(now_x, now_y),
+            ),
+            0.0,
+            Color32::WHITE.gamma_multiply(DRAG_SELECTION_OPACITY),
+            Stroke::NONE,
+            StrokeKind::Middle,
+        );
+    }
 }
