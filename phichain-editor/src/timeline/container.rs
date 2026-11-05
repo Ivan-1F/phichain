@@ -24,13 +24,14 @@ impl ContainedTimelines {
     }
 }
 
+/// Minimum share of the whole timeline viewport a timeline can be resized to
+const MIN_TIMELINE_SHARE: f32 = 0.05;
+
 /// A timeline on the timeline tab
 #[derive(Component, Debug)]
 pub struct Timeline {
-    /// Position of the right edge, as a fraction of the whole timeline viewport
-    ///
-    /// Fractions are ascending from left to right, the last one is always 1.0
-    pub fraction: f32,
+    /// Relative width, the viewport is split in proportion to the widths of all timelines
+    pub width: f32,
 }
 
 /// A timeline with the entity it shows and its allocated viewport
@@ -54,20 +55,24 @@ impl TimelineLayout<'_, '_> {
         let Ok(contained) = self.container.single() else {
             return vec![];
         };
-        let mut left = viewport.left();
-        contained
+        let widths: Vec<_> = contained
             .iter()
-            .filter_map(|timeline| {
-                let fraction = self.timelines.get(timeline).ok()?.fraction;
+            .filter_map(|timeline| Some((timeline, self.timelines.get(timeline).ok()?.width)))
+            .collect();
+        let total: f32 = widths.iter().map(|(_, width)| width).sum();
+        let mut left = viewport.left();
+        widths
+            .into_iter()
+            .map(|(timeline, width)| {
                 let mut allocated = viewport;
                 allocated.set_left(left);
-                allocated.set_right(viewport.left() + fraction * viewport.width());
+                allocated.set_right(left + width / total * viewport.width());
                 left = allocated.right();
-                Some(AllocatedTimeline {
+                AllocatedTimeline {
                     timeline,
                     target: self.targets.get(timeline),
                     viewport: allocated,
-                })
+                }
             })
             .collect()
     }
@@ -99,93 +104,68 @@ pub fn spawn_timeline_container(world: &mut World) {
     world.spawn((
         NoteTimeline,
         FollowSelectedLine,
-        Timeline {
-            fraction: 2.0 / 3.0,
-        },
+        Timeline { width: 2.0 },
         InContainer(container),
     ));
     world.spawn((
         EventTimeline,
         FollowSelectedLine,
-        Timeline { fraction: 1.0 },
+        Timeline { width: 1.0 },
         InContainer(container),
     ));
 }
 
 /// Push a new timeline showing the given target to the right of the container
 ///
-/// A `None` target makes the timeline follow the selected line
+/// The new timeline takes the average width of the existing ones.
+/// A `None` target makes the timeline follow the selected line.
 pub fn push_timeline(world: &mut World, kind: impl Bundle, target: Option<Entity>) {
     let Some(container) = container(world) else {
         return;
     };
-    for mut timeline in world.query::<&mut Timeline>().iter_mut(world) {
-        timeline.fraction /= 1.2;
-    }
-    let mut timeline = world.spawn((kind, Timeline { fraction: 1.0 }, InContainer(container)));
+    let widths: Vec<f32> = world
+        .query::<&Timeline>()
+        .iter(world)
+        .map(|timeline| timeline.width)
+        .collect();
+    let width = if widths.is_empty() {
+        1.0
+    } else {
+        widths.iter().sum::<f32>() / widths.len() as f32
+    };
+    let mut timeline = world.spawn((kind, Timeline { width }, InContainer(container)));
     match target {
         Some(target) => timeline.insert(TimelineOf(target)),
         None => timeline.insert(FollowSelectedLine),
     };
 }
 
-/// Swap two timelines as well as their fractions
+/// Swap two timelines, each keeping its width
 pub fn swap_timelines(world: &mut World, a: usize, b: usize) {
-    let timelines = ordered_timelines(world);
-    let (Some(&a_entity), Some(&b_entity)) = (timelines.get(a), timelines.get(b)) else {
-        return;
-    };
-    let a_fraction = world.get::<Timeline>(a_entity).unwrap().fraction;
-    let b_fraction = world.get::<Timeline>(b_entity).unwrap().fraction;
-    world.get_mut::<Timeline>(a_entity).unwrap().fraction = b_fraction;
-    world.get_mut::<Timeline>(b_entity).unwrap().fraction = a_fraction;
-    if let Some(container) = container(world) {
-        world
-            .get_mut::<ContainedTimelines>(container)
-            .unwrap()
-            .swap(a, b);
-    }
-}
-
-/// Offset the fraction of a timeline at the given index by some delta
-pub fn offset_timeline(world: &mut World, index: usize, by: f32) {
-    let timelines = ordered_timelines(world);
-    let fraction_at = |index: Option<usize>| {
-        index
-            .and_then(|index| timelines.get(index))
-            .and_then(|entity| world.get::<Timeline>(*entity))
-            .map(|timeline| timeline.fraction)
-    };
-    let last = fraction_at(index.checked_sub(1));
-    let next = fraction_at(Some(index + 1));
-    let Some(mut timeline) = timelines
-        .get(index)
-        .and_then(|entity| world.get_mut::<Timeline>(*entity))
+    let Some(mut contained) =
+        container(world).and_then(|container| world.get_mut::<ContainedTimelines>(container))
     else {
         return;
     };
-
-    let new_fraction = timeline.fraction + by;
-    timeline.fraction = new_fraction
-        .max(last.unwrap_or(0.0) + 0.05)
-        .min(next.map(|x| x - 0.05).unwrap_or(1.0));
+    if a < contained.len() && b < contained.len() {
+        contained.swap(a, b);
+    }
 }
 
-/// Let the last remaining timeline fill the space left by a removed timeline
-pub(super) fn fill_removed_timeline_observer(
-    remove: On<Remove, Timeline>,
-    containers: Query<&ContainedTimelines>,
-    mut timelines: Query<&mut Timeline>,
-) {
-    for contained in &containers {
-        let last = contained
-            .iter()
-            .rev()
-            .find(|entity| *entity != remove.entity);
-        if let Some(mut timeline) = last.and_then(|entity| timelines.get_mut(entity).ok()) {
-            timeline.fraction = 1.0;
-        }
-    }
+/// Move the separator between the timeline at `index` and the next one
+///
+/// `by` is a fraction of the whole timeline viewport
+pub fn move_separator(world: &mut World, index: usize, by: f32) {
+    let timelines = ordered_timelines(world);
+    let (Some(&left), Some(&right)) = (timelines.get(index), timelines.get(index + 1)) else {
+        return;
+    };
+    let width = |entity: Entity| world.get::<Timeline>(entity).unwrap().width;
+    let total: f32 = timelines.iter().map(|entity| width(*entity)).sum();
+    let min = MIN_TIMELINE_SHARE * total;
+    let delta = (by * total).max(min - width(left)).min(width(right) - min);
+    world.get_mut::<Timeline>(left).unwrap().width += delta;
+    world.get_mut::<Timeline>(right).unwrap().width -= delta;
 }
 
 #[cfg(test)]
@@ -195,20 +175,43 @@ mod tests {
 
     fn world_with_container() -> World {
         let mut world = World::new();
-        world.add_observer(fill_removed_timeline_observer);
         spawn_timeline_container(&mut world);
         world
     }
 
-    fn fractions(world: &mut World) -> Vec<f32> {
+    fn widths(world: &mut World) -> Vec<f32> {
         ordered_timelines(world)
             .into_iter()
-            .map(|timeline| world.get::<Timeline>(timeline).unwrap().fraction)
+            .map(|timeline| world.get::<Timeline>(timeline).unwrap().width)
             .collect()
     }
 
+    fn edges(world: &mut World) -> Vec<(f32, f32)> {
+        let viewport = Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(300.0, 100.0));
+        allocate_timelines(world, viewport)
+            .into_iter()
+            .map(|item| (item.viewport.left(), item.viewport.right()))
+            .collect()
+    }
+
+    fn assert_approx(actual: Vec<f32>, expected: Vec<f32>) {
+        assert_eq!(actual.len(), expected.len());
+        for (actual, expected) in actual.iter().zip(&expected) {
+            assert!(
+                (actual - expected).abs() < 1e-4,
+                "{actual:?} != {expected:?}"
+            );
+        }
+    }
+
     #[test]
-    fn despawning_the_target_line_removes_its_timeline_and_fills_the_space() {
+    fn allocates_in_proportion_to_widths() {
+        let mut world = world_with_container();
+        assert_eq!(edges(&mut world), vec![(0.0, 200.0), (200.0, 300.0)]);
+    }
+
+    #[test]
+    fn despawning_the_target_line_removes_its_timeline() {
         let mut world = world_with_container();
         let line = world.spawn(Line::default()).id();
         push_timeline(&mut world, NoteTimeline, Some(line));
@@ -218,19 +221,39 @@ mod tests {
         world.despawn(line);
 
         assert!(world.get_entity(fixed).is_err());
-        assert_eq!(fractions(&mut world), vec![2.0 / 3.0 / 1.2, 1.0]);
+        assert_eq!(edges(&mut world), vec![(0.0, 200.0), (200.0, 300.0)]);
     }
 
     #[test]
-    fn swapping_timelines_keeps_fractions_in_place() {
+    fn a_pushed_timeline_takes_the_average_width() {
+        let mut world = world_with_container();
+        push_timeline(&mut world, EventTimeline, None);
+        assert_eq!(widths(&mut world), vec![2.0, 1.0, 1.5]);
+    }
+
+    #[test]
+    fn swapped_timelines_keep_their_widths() {
         let mut world = world_with_container();
         let before = ordered_timelines(&mut world);
 
         swap_timelines(&mut world, 0, 1);
 
-        let after = ordered_timelines(&mut world);
-        assert_eq!(after, vec![before[1], before[0]]);
-        assert!(world.get::<EventTimeline>(after[0]).is_some());
-        assert_eq!(fractions(&mut world), vec![2.0 / 3.0, 1.0]);
+        assert_eq!(ordered_timelines(&mut world), vec![before[1], before[0]]);
+        assert_eq!(edges(&mut world), vec![(0.0, 100.0), (100.0, 300.0)]);
+    }
+
+    #[test]
+    fn moving_a_separator_only_resizes_its_neighbors() {
+        let mut world = world_with_container();
+        push_timeline(&mut world, EventTimeline, None);
+
+        move_separator(&mut world, 0, 0.1);
+        assert_approx(widths(&mut world), vec![2.45, 0.55, 1.5]);
+
+        move_separator(&mut world, 0, -1.0);
+        assert_approx(widths(&mut world), vec![0.225, 2.775, 1.5]);
+
+        move_separator(&mut world, 1, 1.0);
+        assert_approx(widths(&mut world), vec![0.225, 4.05, 0.225]);
     }
 }

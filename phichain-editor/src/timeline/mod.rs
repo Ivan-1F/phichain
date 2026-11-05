@@ -7,7 +7,7 @@ pub mod target;
 
 use crate::constants::{BASE_ZOOM, INDICATOR_POSITION};
 use crate::tab::timeline::TimelineViewport;
-use crate::timeline::container::{fill_removed_timeline_observer, spawn_timeline_container};
+use crate::timeline::container::spawn_timeline_container;
 use crate::timeline::drag_selection::TimelineDragSelectionPlugin;
 use crate::timeline::event::EventTimeline;
 use crate::timeline::note::NoteTimeline;
@@ -36,8 +36,7 @@ impl Plugin for TimelinePlugin {
                 Vec2::ZERO,
             )))
             .insert_resource(TimelineSettings::default())
-            .add_systems(Startup, spawn_timeline_container)
-            .add_observer(fill_removed_timeline_observer);
+            .add_systems(Startup, spawn_timeline_container);
     }
 }
 
@@ -141,10 +140,9 @@ pub fn timeline_kind(world: &World, timeline: Entity) -> Option<&'static dyn Tim
 pub mod common {
     use crate::constants::INDICATOR_POSITION;
     use crate::tab::timeline::TimelineViewport;
-    use crate::timeline::container::{
-        offset_timeline, ordered_timelines, swap_timelines, Timeline,
-    };
+    use crate::timeline::container::{allocate_timelines, move_separator, swap_timelines};
     use crate::timeline::{timeline_kind, TimelineContext};
+    use crate::utils::convert::BevyEguiConvert;
     use bevy::ecs::system::SystemState;
     use bevy::prelude::*;
     use egui::{epaint, Align2, Color32, FontId, Id, Sense, Ui};
@@ -267,15 +265,13 @@ pub mod common {
     }
 
     pub fn separator_ui(ui: &mut Ui, world: &mut World) {
-        let viewport = world.resource::<TimelineViewport>().0;
+        let viewport = world.resource::<TimelineViewport>().0.into_egui();
+        let timelines = allocate_timelines(world, viewport);
 
-        for (index, timeline) in ordered_timelines(world).into_iter().enumerate() {
-            let fraction = world.get::<Timeline>(timeline).unwrap().fraction;
+        let separators = timelines.len().saturating_sub(1);
+        for (index, item) in timelines.iter().enumerate().take(separators) {
             let rect = egui::Rect::from_center_size(
-                egui::Pos2::new(
-                    viewport.min.x + fraction * viewport.width(),
-                    viewport.center().y,
-                ),
+                egui::Pos2::new(item.viewport.right(), viewport.center().y),
                 egui::Vec2::new(2.0, viewport.height()),
             );
             ui.painter().rect_filled(rect, 0.0, Color32::WHITE);
@@ -286,7 +282,7 @@ pub mod common {
             if response.dragged() {
                 let delta_x = response.drag_delta().x;
                 let delta_percent = delta_x / viewport.width();
-                offset_timeline(world, index, delta_percent);
+                move_separator(world, index, delta_percent);
             }
         }
     }
