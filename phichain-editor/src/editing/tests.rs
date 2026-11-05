@@ -6,7 +6,7 @@ use crate::id_index::IdIndexPlugin;
 use crate::misc::WorkingDirectory;
 use crate::selection::SelectedLine;
 use crate::tab::timeline::TimelineViewport;
-use crate::timeline::container::spawn_timeline_container;
+use crate::timeline::container::{layout_timelines, spawn_timeline_container};
 use crate::timeline::settings::TimelineSettings;
 use crate::timing::ChartTime;
 use bevy::prelude::*;
@@ -47,6 +47,7 @@ fn editing_test_app() -> (App, Entity) {
             .set(id, hotkey);
     }
     spawn_timeline_container(app.world_mut());
+    layout_timelines(app.world_mut());
     let line = app.world_mut().spawn(Line::default()).id();
     app.insert_resource(SelectedLine(line));
     (app, line)

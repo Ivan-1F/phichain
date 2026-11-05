@@ -1,6 +1,8 @@
+use crate::tab::timeline::TimelineViewport;
 use crate::timeline::event::EventTimeline;
 use crate::timeline::note::NoteTimeline;
 use crate::timeline::target::{FollowSelectedLine, TimelineOf, TimelineTargets};
+use crate::utils::convert::BevyEguiConvert;
 use bevy::ecs::system::{SystemParam, SystemState};
 use bevy::prelude::*;
 use egui::Rect;
@@ -29,9 +31,20 @@ const MIN_TIMELINE_SHARE: f32 = 0.05;
 
 /// A timeline on the timeline tab
 #[derive(Component, Debug)]
+#[require(TimelineRect)]
 pub struct Timeline {
     /// Relative width, the viewport is split in proportion to the widths of all timelines
     pub width: f32,
+}
+
+/// Viewport of a timeline from the last [`layout_timelines`]
+#[derive(Component, Debug, Clone, Copy)]
+pub struct TimelineRect(pub Rect);
+
+impl Default for TimelineRect {
+    fn default() -> Self {
+        Self(Rect::NOTHING)
+    }
 }
 
 /// A timeline with the entity it shows and its allocated viewport
@@ -45,43 +58,61 @@ pub struct AllocatedTimeline {
 #[derive(SystemParam)]
 pub struct TimelineLayout<'w, 's> {
     container: Query<'w, 's, &'static ContainedTimelines, With<TimelineContainer>>,
-    timelines: Query<'w, 's, &'static Timeline>,
+    rects: Query<'w, 's, &'static TimelineRect>,
     targets: TimelineTargets<'w, 's>,
 }
 
 impl TimelineLayout<'_, '_> {
-    /// Allocate all the timelines in the given viewport
-    pub fn allocate(&self, viewport: Rect) -> Vec<AllocatedTimeline> {
-        let Ok(contained) = self.container.single() else {
-            return vec![];
-        };
-        let widths: Vec<_> = contained
-            .iter()
-            .filter_map(|timeline| Some((timeline, self.timelines.get(timeline).ok()?.width)))
-            .collect();
-        let total: f32 = widths.iter().map(|(_, width)| width).sum();
-        let mut left = viewport.left();
-        widths
+    /// All the timelines from left to right
+    pub fn timelines(&self) -> impl Iterator<Item = AllocatedTimeline> + '_ {
+        self.container
+            .single()
             .into_iter()
-            .map(|(timeline, width)| {
-                let mut allocated = viewport;
-                allocated.set_left(left);
-                allocated.set_right(left + width / total * viewport.width());
-                left = allocated.right();
-                AllocatedTimeline {
+            .flat_map(|contained| contained.iter())
+            .filter_map(|timeline| {
+                Some(AllocatedTimeline {
                     timeline,
                     target: self.targets.get(timeline),
-                    viewport: allocated,
-                }
+                    viewport: self.rects.get(timeline).ok()?.0,
+                })
             })
-            .collect()
+    }
+
+    /// The timeline under the given position
+    pub fn at(&self, pos: egui::Pos2) -> Option<AllocatedTimeline> {
+        self.timelines().find(|item| item.viewport.contains(pos))
     }
 }
 
-/// Allocate all the timelines in the given viewport
-pub fn allocate_timelines(world: &mut World, viewport: Rect) -> Vec<AllocatedTimeline> {
+/// All the timelines from left to right
+pub fn allocated_timelines(world: &mut World) -> Vec<AllocatedTimeline> {
     let mut state: SystemState<TimelineLayout> = SystemState::new(world);
-    state.get(world).allocate(viewport)
+    state.get(world).timelines().collect()
+}
+
+/// Split the timeline viewport between all the timelines in proportion to their widths
+pub fn layout_timelines(world: &mut World) {
+    let viewport = world.resource::<TimelineViewport>().0.into_egui();
+    let timelines = ordered_timelines(world);
+    let total: f32 = timelines
+        .iter()
+        .filter_map(|timeline| world.get::<Timeline>(*timeline))
+        .map(|timeline| timeline.width)
+        .sum();
+    let mut left = viewport.left();
+    for timeline in timelines {
+        let Some(width) = world
+            .get::<Timeline>(timeline)
+            .map(|timeline| timeline.width)
+        else {
+            continue;
+        };
+        let mut rect = viewport;
+        rect.set_left(left);
+        rect.set_right(left + width / total * viewport.width());
+        left = rect.right();
+        world.entity_mut(timeline).insert(TimelineRect(rect));
+    }
 }
 
 fn container(world: &mut World) -> Option<Entity> {
@@ -175,6 +206,9 @@ mod tests {
 
     fn world_with_container() -> World {
         let mut world = World::new();
+        world.insert_resource(TimelineViewport(bevy::math::Rect::new(
+            0.0, 0.0, 300.0, 100.0,
+        )));
         spawn_timeline_container(&mut world);
         world
     }
@@ -187,8 +221,8 @@ mod tests {
     }
 
     fn edges(world: &mut World) -> Vec<(f32, f32)> {
-        let viewport = Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(300.0, 100.0));
-        allocate_timelines(world, viewport)
+        layout_timelines(world);
+        allocated_timelines(world)
             .into_iter()
             .map(|item| (item.viewport.left(), item.viewport.right()))
             .collect()
@@ -208,6 +242,20 @@ mod tests {
     fn allocates_in_proportion_to_widths() {
         let mut world = world_with_container();
         assert_eq!(edges(&mut world), vec![(0.0, 200.0), (200.0, 300.0)]);
+    }
+
+    #[test]
+    fn finds_the_timeline_under_a_position() {
+        let mut world = world_with_container();
+        layout_timelines(&mut world);
+        let timelines = ordered_timelines(&mut world);
+        let mut state: SystemState<TimelineLayout> = SystemState::new(&mut world);
+        let layout = state.get(&world);
+
+        let at = |x: f32| layout.at(egui::pos2(x, 50.0)).map(|item| item.timeline);
+        assert_eq!(at(50.0), Some(timelines[0]));
+        assert_eq!(at(250.0), Some(timelines[1]));
+        assert_eq!(at(400.0), None);
     }
 
     #[test]

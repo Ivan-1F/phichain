@@ -167,13 +167,8 @@ fn paste_system(
     let (Some(first), Some(cursor)) = (clipboard.first_beat, window.cursor_position()) else {
         return Ok(());
     };
-    if !ctx.viewport.0.contains(cursor) {
-        return Ok(());
-    }
     let line = layout
-        .allocate(ctx.viewport.0.into_egui())
-        .into_iter()
-        .find(|item| item.viewport.x_range().contains(cursor.x))
+        .at(cursor.into_egui().to_pos2())
         .and_then(|item| item.target);
     let Some(line) = line else {
         return Ok(());

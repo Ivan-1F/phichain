@@ -3,11 +3,10 @@ use bevy_persistent::Persistent;
 use egui::Ui;
 
 use crate::settings::EditorSettings;
-use crate::timeline::container::allocate_timelines;
+use crate::timeline::container::{allocated_timelines, layout_timelines};
 use crate::timeline::settings::TimelineSettings;
 use crate::timeline::timeline_kind;
 use crate::timing::{Pause, Paused, Seek};
-use crate::utils::convert::BevyEguiConvert;
 use crate::{spectrogram, timeline};
 use phichain_chart::note::Note;
 
@@ -24,6 +23,7 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
             y: clip_rect.max.y,
         },
     );
+    layout_timelines(world);
 
     // draw spectrogram background after viewport is updated
     spectrogram::draw(ui.painter(), world);
@@ -64,12 +64,7 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
 
     // TODO bevy-0.16: make timeline_tab return Result and handle error using ? operator when register_tab supports systems returning Result
     let _ = timeline::drag_selection::timeline_drag_selection(&mut ui, world);
-    let viewport = world.resource::<TimelineViewport>().0;
-
-    for (index, item) in allocate_timelines(world, viewport.into_egui())
-        .into_iter()
-        .enumerate()
-    {
+    for (index, item) in allocated_timelines(world).into_iter().enumerate() {
         if let (Some(kind), Some(line)) = (timeline_kind(world, item.timeline), item.target) {
             ui.push_id(("timeline", index), |ui| {
                 kind.ui(ui, world, line, item.viewport);

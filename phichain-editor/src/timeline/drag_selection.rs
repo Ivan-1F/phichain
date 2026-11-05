@@ -1,5 +1,5 @@
 use crate::selection::Select;
-use crate::timeline::container::allocate_timelines;
+use crate::timeline::container::allocated_timelines;
 use crate::timeline::{timeline_kind, TimelineContext};
 use crate::utils::convert::BevyEguiConvert;
 use bevy::app::App;
@@ -73,9 +73,8 @@ pub fn timeline_drag_selection(ui: &mut Ui, world: &mut World) -> Result {
                 .translate(egui::Vec2::new(ctx.viewport.0.min.x, 0.0));
             // ignore too small selections. e.g. click on a note
             if selection_rect.area() >= 0.001 {
-                let viewport = ctx.viewport.0.into_egui();
                 let mut all = vec![];
-                for item in allocate_timelines(world, viewport) {
+                for item in allocated_timelines(world) {
                     let (Some(kind), Some(line)) =
                         (timeline_kind(world, item.timeline), item.target)
                     else {

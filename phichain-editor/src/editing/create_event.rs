@@ -87,99 +87,91 @@ fn create_event_system(
         return Ok(());
     };
 
-    let rect = ctx.viewport.0.into_egui();
-
-    for item in layout
-        .allocate(rect)
-        .into_iter()
+    let Some(item) = layout
+        .at(cursor_position.into_egui().to_pos2())
         .filter(|item| event_timelines.contains(item.timeline))
-    {
-        if let Some(line_entity) = item.target {
-            let viewport = item.viewport;
+    else {
+        return Ok(());
+    };
+    let Some(line_entity) = item.target else {
+        return Ok(());
+    };
+    let viewport = item.viewport;
 
-            if !viewport.contains(cursor_position.into_egui().to_pos2()) {
-                continue;
-            }
+    let calc_event_attrs = || {
+        let time = ctx.y_to_time(cursor_position.y);
+        let beat = bpm_list.beat_at(time).value();
+        let beat = ctx.settings.attach(beat);
 
-            let calc_event_attrs = || {
-                let time = ctx.y_to_time(cursor_position.y);
-                let beat = bpm_list.beat_at(time).value();
-                let beat = ctx.settings.attach(beat);
-
-                let track = (((cursor_position.x - viewport.min.x) / (viewport.width() / 5.0))
-                    .floor() as u8
-                    + 1)
+        let track =
+            (((cursor_position.x - viewport.min.x) / (viewport.width() / 5.0)).floor() as u8 + 1)
                 .min(5);
 
-                (track, beat)
-            };
+        (track, beat)
+    };
 
-            if let Ok((pending_event, entity)) = pending_event_query.single() {
-                let mut pending_event = *pending_event;
-                let (track, beat) = calc_event_attrs();
-                pending_event.end_beat =
-                    beat.max(pending_event.start_beat + ctx.settings.minimum_beat());
-                pending_event.kind = LineEventKind::try_from(track).expect("Unknown event track");
-                commands.entity(entity).insert(pending_event);
-            }
+    if let Ok((pending_event, entity)) = pending_event_query.single() {
+        let mut pending_event = *pending_event;
+        let (track, beat) = calc_event_attrs();
+        pending_event.end_beat = beat.max(pending_event.start_beat + ctx.settings.minimum_beat());
+        pending_event.kind = LineEventKind::try_from(track).expect("Unknown event track");
+        commands.entity(entity).insert(pending_event);
+    }
 
-            if let Some(value) = requested_event_value(&hotkey) {
-                if let Ok((pending_event, entity)) = pending_event_query.single() {
-                    // inherit event's start & end value from neighbor events
-                    let mut new_event = *pending_event;
-                    new_event.value = value;
-                    let (track, beat) = calc_event_attrs();
-                    new_event.kind = LineEventKind::try_from(track).expect("Unknown event track");
-                    new_event.end_beat =
-                        beat.max(new_event.start_beat + ctx.settings.minimum_beat());
-                    let events: Vec<_> = event_query
-                        .iter()
-                        .filter(|(event, parent)| {
-                            event.kind == new_event.kind && parent.target() == line_entity
-                        })
-                        .map(|(event, _)| event)
-                        .collect();
-                    if let Some(last_event) = events
-                        .iter()
-                        .filter(|event| event.end_beat <= new_event.start_beat)
-                        .max_by(|a, b| {
-                            a.end_beat
-                                .cmp(&b.end_beat)
-                                .then_with(|| a.value.end().total_cmp(&b.value.end()))
-                        })
-                    {
-                        *new_event.value.start_mut() = last_event.value.end();
-                    }
-                    if let Some(next_event) = events
-                        .iter()
-                        .filter(|event| event.start_beat >= new_event.end_beat)
-                        .min_by(|a, b| {
-                            a.start_beat
-                                .cmp(&b.start_beat)
-                                .then_with(|| b.value.start().total_cmp(&a.value.start()))
-                        })
-                    {
-                        *new_event.value.end_mut() = next_event.value.start();
-                    }
-                    commands.entity(entity).despawn();
-                    edits.once(t!("history.create_events", count = 1), move |commands| {
-                        commands.spawn((new_event, EventOf(line_entity)));
-                    });
-                } else {
-                    let (track, beat) = calc_event_attrs();
-                    let kind = LineEventKind::try_from(track).expect("Unknown event track");
-                    commands.spawn((
-                        LineEvent {
-                            kind,
-                            value,
-                            start_beat: beat,
-                            end_beat: beat + ctx.settings.minimum_beat(),
-                        },
-                        Pending,
-                        EventOf(line_entity),
-                    ));
-                }
+    if let Some(value) = requested_event_value(&hotkey) {
+        if let Ok((pending_event, entity)) = pending_event_query.single() {
+            // inherit event's start & end value from neighbor events
+            let mut new_event = *pending_event;
+            new_event.value = value;
+            let (track, beat) = calc_event_attrs();
+            new_event.kind = LineEventKind::try_from(track).expect("Unknown event track");
+            new_event.end_beat = beat.max(new_event.start_beat + ctx.settings.minimum_beat());
+            let events: Vec<_> = event_query
+                .iter()
+                .filter(|(event, parent)| {
+                    event.kind == new_event.kind && parent.target() == line_entity
+                })
+                .map(|(event, _)| event)
+                .collect();
+            if let Some(last_event) = events
+                .iter()
+                .filter(|event| event.end_beat <= new_event.start_beat)
+                .max_by(|a, b| {
+                    a.end_beat
+                        .cmp(&b.end_beat)
+                        .then_with(|| a.value.end().total_cmp(&b.value.end()))
+                })
+            {
+                *new_event.value.start_mut() = last_event.value.end();
             }
+            if let Some(next_event) = events
+                .iter()
+                .filter(|event| event.start_beat >= new_event.end_beat)
+                .min_by(|a, b| {
+                    a.start_beat
+                        .cmp(&b.start_beat)
+                        .then_with(|| b.value.start().total_cmp(&a.value.start()))
+                })
+            {
+                *new_event.value.end_mut() = next_event.value.start();
+            }
+            commands.entity(entity).despawn();
+            edits.once(t!("history.create_events", count = 1), move |commands| {
+                commands.spawn((new_event, EventOf(line_entity)));
+            });
+        } else {
+            let (track, beat) = calc_event_attrs();
+            let kind = LineEventKind::try_from(track).expect("Unknown event track");
+            commands.spawn((
+                LineEvent {
+                    kind,
+                    value,
+                    start_beat: beat,
+                    end_beat: beat + ctx.settings.minimum_beat(),
+                },
+                Pending,
+                EventOf(line_entity),
+            ));
         }
     }
 

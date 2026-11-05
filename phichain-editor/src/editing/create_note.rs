@@ -88,107 +88,102 @@ fn create_note_system(
         return Ok(());
     };
 
-    let rect = ctx.viewport.0.into_egui();
-
-    for item in layout
-        .allocate(rect)
-        .into_iter()
+    let Some(item) = layout
+        .at(cursor_position.into_egui().to_pos2())
         .filter(|item| note_timelines.contains(item.timeline))
-    {
-        if let Some(line_entity) = item.target {
-            let viewport = item.viewport;
+    else {
+        return Ok(());
+    };
+    let Some(line_entity) = item.target else {
+        return Ok(());
+    };
+    let viewport = item.viewport;
 
-            if !viewport.contains(cursor_position.into_egui().to_pos2()) {
-                continue;
-            }
+    let calc_note_attrs = || {
+        let time = ctx.y_to_time(cursor_position.y);
+        let beat = bpm_list.beat_at(time).value();
+        let beat = ctx.settings.attach(beat);
 
-            let calc_note_attrs = || {
-                let time = ctx.y_to_time(cursor_position.y);
-                let beat = bpm_list.beat_at(time).value();
-                let beat = ctx.settings.attach(beat);
+        let x = (cursor_position.x - viewport.min.x) / viewport.width();
 
-                let x = (cursor_position.x - viewport.min.x) / viewport.width();
+        let lane_percents = ctx.settings.lane_percents();
 
-                let lane_percents = ctx.settings.lane_percents();
+        let x = lane_percents
+            .iter()
+            .map(|p| (p, (p - x).abs()))
+            .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+            .unwrap()
+            .0;
 
-                let x = lane_percents
-                    .iter()
-                    .map(|p| (p, (p - x).abs()))
-                    .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
-                    .unwrap()
-                    .0;
+        let x = x - 0.5;
 
-                let x = x - 0.5;
+        (x, beat)
+    };
 
-                (x, beat)
+    let mut create_note = |kind: NoteKind| {
+        let (x, beat) = calc_note_attrs();
+
+        let note = Note::new(kind, true, beat, x * CANVAS_WIDTH, 1.0);
+
+        edits.once(t!("history.create_notes", count = 1), move |commands| {
+            commands.spawn((note, ChildOf(line_entity)));
+        });
+    };
+
+    if hotkey.just_pressed(CreateNoteHotkeys::PlaceTap) {
+        create_note(NoteKind::Tap);
+    }
+
+    if hotkey.just_pressed(CreateNoteHotkeys::PlaceDrag) {
+        create_note(NoteKind::Drag);
+    }
+
+    if let Ok((pending_note, entity)) = pending_note_query.single() {
+        let mut pending_note = *pending_note;
+        if let NoteKind::Hold { .. } = pending_note.kind {
+            let (x, beat) = calc_note_attrs();
+            pending_note.kind = NoteKind::Hold {
+                hold_beat: (beat - pending_note.beat).max(ctx.settings.minimum_beat()),
             };
+            pending_note.x = x * CANVAS_WIDTH;
+            commands.entity(entity).insert(pending_note);
+        }
+    }
 
-            let mut create_note = |kind: NoteKind| {
-                let (x, beat) = calc_note_attrs();
+    if hotkey.just_pressed(CreateNoteHotkeys::PlaceFlick) {
+        create_note(NoteKind::Flick);
+    }
 
-                let note = Note::new(kind, true, beat, x * CANVAS_WIDTH, 1.0);
-
-                edits.once(t!("history.create_notes", count = 1), move |commands| {
-                    commands.spawn((note, ChildOf(line_entity)));
-                });
+    if hotkey.just_pressed(CreateNoteHotkeys::PlaceHold) {
+        if let Ok((pending_note, entity)) = pending_note_query.single() {
+            commands.entity(entity).despawn();
+            // Resolve the final cursor position here too: the preview's
+            // queued replacement has not necessarily executed this frame.
+            let (x, beat) = calc_note_attrs();
+            let mut note = *pending_note;
+            note.kind = NoteKind::Hold {
+                hold_beat: (beat - note.beat).max(ctx.settings.minimum_beat()),
             };
-
-            if hotkey.just_pressed(CreateNoteHotkeys::PlaceTap) {
-                create_note(NoteKind::Tap);
-            }
-
-            if hotkey.just_pressed(CreateNoteHotkeys::PlaceDrag) {
-                create_note(NoteKind::Drag);
-            }
-
-            if let Ok((pending_note, entity)) = pending_note_query.single() {
-                let mut pending_note = *pending_note;
-                if let NoteKind::Hold { .. } = pending_note.kind {
-                    let (x, beat) = calc_note_attrs();
-                    pending_note.kind = NoteKind::Hold {
-                        hold_beat: (beat - pending_note.beat).max(ctx.settings.minimum_beat()),
-                    };
-                    pending_note.x = x * CANVAS_WIDTH;
-                    commands.entity(entity).insert(pending_note);
-                }
-            }
-
-            if hotkey.just_pressed(CreateNoteHotkeys::PlaceFlick) {
-                create_note(NoteKind::Flick);
-            }
-
-            if hotkey.just_pressed(CreateNoteHotkeys::PlaceHold) {
-                if let Ok((pending_note, entity)) = pending_note_query.single() {
-                    commands.entity(entity).despawn();
-                    // Resolve the final cursor position here too: the preview's
-                    // queued replacement has not necessarily executed this frame.
-                    let (x, beat) = calc_note_attrs();
-                    let mut note = *pending_note;
-                    note.kind = NoteKind::Hold {
-                        hold_beat: (beat - note.beat).max(ctx.settings.minimum_beat()),
-                    };
-                    note.x = x * CANVAS_WIDTH;
-                    edits.once(t!("history.create_notes", count = 1), move |commands| {
-                        commands.spawn((note, ChildOf(line_entity)));
-                    });
-                } else {
-                    let (x, beat) = calc_note_attrs();
-                    commands.entity(line_entity).with_children(|parent| {
-                        parent.spawn((
-                            Note::new(
-                                NoteKind::Hold {
-                                    hold_beat: Beat::ONE,
-                                },
-                                true,
-                                beat,
-                                x * CANVAS_WIDTH,
-                                1.0,
-                            ),
-                            Pending,
-                        ));
-                    });
-                }
-            }
+            note.x = x * CANVAS_WIDTH;
+            edits.once(t!("history.create_notes", count = 1), move |commands| {
+                commands.spawn((note, ChildOf(line_entity)));
+            });
+        } else {
+            let (x, beat) = calc_note_attrs();
+            commands.entity(line_entity).with_children(|parent| {
+                parent.spawn((
+                    Note::new(
+                        NoteKind::Hold {
+                            hold_beat: Beat::ONE,
+                        },
+                        true,
+                        beat,
+                        x * CANVAS_WIDTH,
+                        1.0,
+                    ),
+                    Pending,
+                ));
+            });
         }
     }
 
