@@ -102,7 +102,8 @@ pub fn note_timeline_ui(
         Option<&Pending>,
     )>,
     selected_query: Query<&Selected>,
-    track_query: Query<(CurveNoteTrack, &ChildOf, Entity)>,
+    track_query: Query<(CurveNoteTrack, Entity)>,
+    children_query: Query<&Children>,
     bpm_list: Res<BpmList>,
     (assets, dimensions, images, textures): (
         Res<phichain_assets::EguiImageAssets>,
@@ -136,9 +137,29 @@ pub fn note_timeline_ui(
         &mut commands,
     );
 
+    let line_children = children_query.get(line_entity).ok();
+    let children = || {
+        line_children
+            .into_iter()
+            .flat_map(|children| children.iter())
+    };
+
+    let viewport_margin = 100.0;
+    let is_visible = |note: &Note| {
+        let bottom = ctx.time_to_y(bpm_list.time_at(note.beat));
+        let top = match note.kind {
+            NoteKind::Hold { hold_beat } => ctx.time_to_y(bpm_list.time_at(note.beat + hold_beat)),
+            _ => bottom,
+        };
+        top <= viewport.bottom() + viewport_margin && bottom >= viewport.top() - viewport_margin
+    };
+
     // TODO: optimize
     // make sure hold is rendered below other note
-    let mut notes: Vec<_> = note_query.iter().collect();
+    let mut notes: Vec<_> = children()
+        .filter_map(|child| note_query.get(child).ok())
+        .filter(|(note, ..)| is_visible(note))
+        .collect();
     notes.sort_by(|a, b| {
         let a_is_hold = a.0.kind.is_hold();
         let b_is_hold = b.0.kind.is_hold();
@@ -214,11 +235,8 @@ pub fn note_timeline_ui(
         }};
     }
 
-    for (note, child_of, entity, highlighted, selected, curve_note, pending) in notes {
+    for (note, _, entity, highlighted, selected, curve_note, pending) in notes {
         if !ctx.settings.note_side_filter.filter(*note) {
-            continue;
-        }
-        if child_of.parent() != line_entity {
             continue;
         }
 
@@ -308,11 +326,7 @@ pub fn note_timeline_ui(
         );
     }
 
-    for (track, child_of, entity) in &track_query {
-        if child_of.parent() != line_entity {
-            continue;
-        }
-
+    for (track, entity) in children().filter_map(|child| track_query.get(child).ok()) {
         if let (Ok(from), Ok(to)) = (
             note_query.get(track.from.0).map(|x| x.0),
             note_query.get(track.to.0).map(|x| x.0),
@@ -350,7 +364,8 @@ pub fn note_timeline_drag_selection(
     In((timeline, selection)): In<(Entity, Rect)>,
     targets: TimelineTargets,
     rects: Query<&TimelineRect>,
-    note_query: Query<(&Note, &ChildOf, Entity)>,
+    children_query: Query<&Children>,
+    note_query: Query<(&Note, Entity)>,
     bpm_list: Res<BpmList>,
 ) -> Vec<Entity> {
     let (Some(line_entity), Ok(TimelineRect(viewport))) =
@@ -361,15 +376,19 @@ pub fn note_timeline_drag_selection(
     let x_range = selection.x_range();
     let time_range = selection.y_range();
 
-    note_query
+    let Ok(children) = children_query.get(line_entity) else {
+        return vec![];
+    };
+
+    children
         .iter()
-        .filter(|x| x.1.parent() == line_entity)
+        .filter_map(|child| note_query.get(child).ok())
         .filter(|x| {
             let note = x.0;
             x_range.contains((note.x / CANVAS_WIDTH + 0.5) * viewport.width())
                 && time_range.contains(bpm_list.time_at(note.beat))
         })
-        .map(|x| x.2)
+        .map(|x| x.1)
         .collect()
 }
 
@@ -384,4 +403,44 @@ pub fn note_timeline_name(
         &timeline_of,
         &lines,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::selection::SelectedLine;
+    use crate::timeline::target::FollowSelectedLine;
+    use bevy::ecs::system::RunSystemOnce;
+    use phichain_chart::beat::Beat;
+
+    #[test]
+    fn drag_selection_only_selects_notes_of_the_target_line() {
+        let mut world = World::new();
+        world.init_resource::<BpmList>();
+        let line = world.spawn(Line::default()).id();
+        let other = world.spawn(Line::default()).id();
+        world.insert_resource(SelectedLine(other));
+        let note = |beat: f32| Note::new(NoteKind::Tap, true, Beat::from(beat), 0.0, 1.0);
+        let inside = world.spawn((note(1.0), ChildOf(line))).id();
+        world.spawn((note(10.0), ChildOf(line)));
+        let on_other = world.spawn((note(1.0), ChildOf(other))).id();
+        let viewport = Rect::from_min_size(Pos2::ZERO, egui::vec2(100.0, 100.0));
+        let fixed = world
+            .spawn((NoteTimeline, TimelineOf(line), TimelineRect(viewport)))
+            .id();
+        let follow = world
+            .spawn((NoteTimeline, FollowSelectedLine, TimelineRect(viewport)))
+            .id();
+        let selection = Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(100.0, 1.0));
+
+        let selected = world
+            .run_system_once_with(note_timeline_drag_selection, (fixed, selection))
+            .unwrap();
+        assert_eq!(selected, vec![inside]);
+
+        let selected = world
+            .run_system_once_with(note_timeline_drag_selection, (follow, selection))
+            .unwrap();
+        assert_eq!(selected, vec![on_other]);
+    }
 }
