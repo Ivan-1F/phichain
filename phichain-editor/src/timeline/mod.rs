@@ -1,6 +1,7 @@
 pub mod container;
 pub mod drag_selection;
 pub mod event;
+pub mod kind;
 pub mod note;
 pub mod settings;
 pub mod target;
@@ -9,15 +10,19 @@ use crate::constants::{BASE_ZOOM, INDICATOR_POSITION};
 use crate::tab::timeline::TimelineViewport;
 use crate::timeline::container::spawn_timeline_container;
 use crate::timeline::drag_selection::TimelineDragSelectionPlugin;
-use crate::timeline::event::EventTimeline;
-use crate::timeline::note::NoteTimeline;
+use crate::timeline::event::{
+    event_timeline_drag_selection, event_timeline_name, event_timeline_ui, EventTimeline,
+};
+use crate::timeline::kind::TimelineKindRegistrationExt;
+use crate::timeline::note::{
+    note_timeline_drag_selection, note_timeline_name, note_timeline_ui, NoteTimeline,
+};
 use crate::timeline::settings::TimelineSettings;
 use crate::timing::ChartTime;
 use bevy::app::{App, Plugin};
 use bevy::ecs::system::SystemParam;
 use bevy::math::Vec2;
 use bevy::prelude::*;
-use egui::Rect;
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
@@ -36,7 +41,19 @@ impl Plugin for TimelinePlugin {
                 Vec2::ZERO,
             )))
             .insert_resource(TimelineSettings::default())
-            .add_systems(Startup, spawn_timeline_container);
+            .add_systems(Startup, spawn_timeline_container)
+            .add_timeline_kind(
+                NoteTimeline,
+                note_timeline_ui,
+                note_timeline_drag_selection,
+                note_timeline_name,
+            )
+            .add_timeline_kind(
+                EventTimeline,
+                event_timeline_ui,
+                event_timeline_drag_selection,
+                event_timeline_name,
+            );
     }
 }
 
@@ -103,43 +120,12 @@ impl TimelineContext<'_> {
     }
 }
 
-/// Behavior of a kind of timeline, implemented by its marker component
-pub trait TimelineKind {
-    /// Handle drag selection on the timeline
-    ///
-    /// The selection param will be a rect where x represents the x value and y represents the time
-    ///
-    /// The selection will be cropped to fit the timeline, which means the x of the left-top corner of the timeline will be 0
-    ///
-    /// The return value of this function will be a vector contains all entities that are selected
-    fn on_drag_selection(
-        &self,
-        world: &mut World,
-        line: Entity,
-        viewport: Rect,
-        selection: Rect,
-    ) -> Vec<Entity>;
-
-    fn name(&self, world: &World, timeline: Entity) -> String;
-}
-
-/// The [`TimelineKind`] of the given timeline
-pub fn timeline_kind(world: &World, timeline: Entity) -> Option<&'static dyn TimelineKind> {
-    let timeline = world.get_entity(timeline).ok()?;
-    if timeline.contains::<NoteTimeline>() {
-        Some(&NoteTimeline)
-    } else if timeline.contains::<EventTimeline>() {
-        Some(&EventTimeline)
-    } else {
-        None
-    }
-}
-
 pub mod common {
     use crate::constants::INDICATOR_POSITION;
     use crate::tab::timeline::TimelineViewport;
     use crate::timeline::container::{allocated_timelines, move_separator, swap_timelines};
-    use crate::timeline::{timeline_kind, TimelineContext};
+    use crate::timeline::kind::timeline_name;
+    use crate::timeline::TimelineContext;
     use crate::utils::convert::BevyEguiConvert;
     use bevy::ecs::system::SystemState;
     use bevy::prelude::*;
@@ -158,10 +144,7 @@ pub mod common {
     ) {
         let mut swap = None;
 
-        let Some(name) = timeline_kind(world, timeline).map(|kind| kind.name(world, timeline))
-        else {
-            return;
-        };
+        let name = timeline_name(world, timeline);
         let galley =
             ui.painter()
                 .layout_no_wrap(name.clone(), Default::default(), Default::default());

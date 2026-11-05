@@ -4,8 +4,7 @@ use egui::Ui;
 
 use crate::settings::EditorSettings;
 use crate::timeline::container::{allocated_timelines, layout_timelines};
-use crate::timeline::event::EventTimeline;
-use crate::timeline::note::{note_timeline_ui, NoteTimeline};
+use crate::timeline::kind::timeline_ui;
 use crate::timeline::settings::TimelineSettings;
 use crate::timing::{Pause, Paused, Seek};
 use crate::{spectrogram, timeline};
@@ -72,17 +71,7 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
                 .id_salt(item.timeline),
         );
         child.set_clip_rect(item.viewport.intersect(ui.clip_rect()));
-        if world.entity(item.timeline).contains::<NoteTimeline>() {
-            if let Err(error) =
-                world.run_system_cached_with(note_timeline_ui, (child, item.timeline))
-            {
-                error!("Failed to draw note timeline: {error}");
-            }
-        } else if let Some(line) = item.target {
-            if world.entity(item.timeline).contains::<EventTimeline>() {
-                EventTimeline.ui(&mut child, world, line, item.viewport);
-            }
-        }
+        timeline_ui(world, child, item.timeline);
         timeline::common::timeline_badge_ui(&mut ui, world, item.timeline, item.viewport, index);
     }
 

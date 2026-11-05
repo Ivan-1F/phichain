@@ -756,13 +756,24 @@ fn event_timeline_applies_handle_edits_and_undo_restores_the_range() {
     let target_y = timeline.beat_to_y(Beat::from(4.0));
     let pos = egui::pos2(60.0, y + 2.0);
     let end = egui::pos2(60.0, target_y + 2.0);
+    let event_timeline = app
+        .world_mut()
+        .spawn((
+            crate::timeline::event::EventTimeline,
+            crate::timeline::target::TimelineOf(line),
+        ))
+        .id();
     let mut draw = |world: &mut World, mut ui: egui::Ui| {
-        crate::timeline::event::EventTimeline.ui(
-            &mut ui,
-            world,
-            line,
-            Rect::from_min_size(Pos2::ZERO, egui::vec2(600.0, 800.0)),
+        let ui = ui.new_child(
+            egui::UiBuilder::new()
+                .max_rect(Rect::from_min_size(Pos2::ZERO, egui::vec2(600.0, 800.0))),
         );
+        world
+            .run_system_cached_with(
+                crate::timeline::event::event_timeline_ui,
+                (ui, event_timeline),
+            )
+            .unwrap();
     };
     frame(&mut app, &ctx, vec![], &mut draw);
     frame(

@@ -3,11 +3,12 @@ use crate::editing::history::Edits;
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::selection::{Select, Selected};
 use crate::tab::timeline::TimelineFilter;
+use crate::timeline::container::TimelineRect;
+use crate::timeline::kind::target_name;
 use crate::timeline::target::{TimelineOf, TimelineTargets};
-use crate::timeline::{TimelineContext, TimelineKind, LANE_LINE_OPACITY};
+use crate::timeline::{TimelineContext, LANE_LINE_OPACITY};
 use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
 use crate::ui::widgets::easing::EasingGraph;
-use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use bevy_egui::EguiUserTextures;
 use egui::{Color32, Pos2, Rect, Sense, Ui};
@@ -345,45 +346,42 @@ pub fn note_timeline_ui(
     }
 }
 
-impl TimelineKind for NoteTimeline {
-    fn on_drag_selection(
-        &self,
-        world: &mut World,
-        line_entity: Entity,
-        viewport: Rect,
-        selection: Rect,
-    ) -> Vec<Entity> {
-        let x_range = selection.x_range();
-        let time_range = selection.y_range();
+pub fn note_timeline_drag_selection(
+    In((timeline, selection)): In<(Entity, Rect)>,
+    targets: TimelineTargets,
+    rects: Query<&TimelineRect>,
+    note_query: Query<(&Note, &ChildOf, Entity)>,
+    bpm_list: Res<BpmList>,
+) -> Vec<Entity> {
+    let (Some(line_entity), Ok(TimelineRect(viewport))) =
+        (targets.get(timeline), rects.get(timeline))
+    else {
+        return vec![];
+    };
+    let x_range = selection.x_range();
+    let time_range = selection.y_range();
 
-        let mut state: SystemState<(Query<(&Note, &ChildOf, Entity)>, Res<BpmList>)> =
-            SystemState::new(world);
-        let (note_query, bpm_list) = state.get_mut(world);
+    note_query
+        .iter()
+        .filter(|x| x.1.parent() == line_entity)
+        .filter(|x| {
+            let note = x.0;
+            x_range.contains((note.x / CANVAS_WIDTH + 0.5) * viewport.width())
+                && time_range.contains(bpm_list.time_at(note.beat))
+        })
+        .map(|x| x.2)
+        .collect()
+}
 
-        note_query
-            .iter()
-            .filter(|x| x.1.parent() == line_entity)
-            .filter(|x| {
-                let note = x.0;
-                x_range.contains((note.x / CANVAS_WIDTH + 0.5) * viewport.width())
-                    && time_range.contains(bpm_list.time_at(note.beat))
-            })
-            .map(|x| x.2)
-            .collect()
-    }
-
-    fn name(&self, world: &World, timeline: Entity) -> String {
-        match world.get::<TimelineOf>(timeline) {
-            None => format!(
-                "{} {}",
-                egui_phosphor::regular::MUSIC_NOTE,
-                t!("tab.timeline_setting.timelines.binding")
-            ),
-            Some(of) => format!(
-                "{} {}",
-                egui_phosphor::regular::MUSIC_NOTE,
-                world.get::<Line>(of.0).unwrap().name
-            ),
-        }
-    }
+pub fn note_timeline_name(
+    In(timeline): In<Entity>,
+    timeline_of: Query<&TimelineOf>,
+    lines: Query<&Line>,
+) -> String {
+    target_name(
+        egui_phosphor::regular::MUSIC_NOTE,
+        timeline,
+        &timeline_of,
+        &lines,
+    )
 }

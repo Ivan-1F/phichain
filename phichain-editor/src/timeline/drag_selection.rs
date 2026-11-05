@@ -1,6 +1,7 @@
 use crate::selection::Select;
 use crate::timeline::container::allocated_timelines;
-use crate::timeline::{timeline_kind, TimelineContext};
+use crate::timeline::kind::timeline_selection;
+use crate::timeline::TimelineContext;
 use crate::utils::convert::BevyEguiConvert;
 use bevy::app::App;
 use bevy::ecs::system::SystemState;
@@ -75,18 +76,12 @@ pub fn timeline_drag_selection(ui: &mut Ui, world: &mut World) -> Result {
             if selection_rect.area() >= 0.001 {
                 let mut all = vec![];
                 for item in allocated_timelines(world) {
-                    let (Some(kind), Some(line)) =
-                        (timeline_kind(world, item.timeline), item.target)
-                    else {
-                        continue;
-                    };
                     let rect =
                         selection_rect.with_min_x(selection_rect.min.x.max(item.viewport.left()));
                     let rect = rect.with_max_x(rect.max.x.min(item.viewport.right()));
-                    let selected = kind.on_drag_selection(
+                    let selected = timeline_selection(
                         world,
-                        line,
-                        item.viewport,
+                        item.timeline,
                         rect.translate(egui::Vec2::new(-item.viewport.left(), 0.0)),
                     );
                     all.extend(selected);

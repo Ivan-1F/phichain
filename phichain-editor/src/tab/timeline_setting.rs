@@ -1,8 +1,8 @@
 use crate::timeline::container::{ordered_timelines, push_timeline, swap_timelines};
 use crate::timeline::event::EventTimeline;
+use crate::timeline::kind::timeline_name;
 use crate::timeline::note::NoteTimeline;
 use crate::timeline::settings::TimelineSettings;
-use crate::timeline::timeline_kind;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use egui::{RichText, Ui};
@@ -143,9 +143,7 @@ pub fn timeline_setting_tab(In(mut ui): In<Ui>, world: &mut World) {
         let mut move_down = None;
 
         for (index, timeline) in timelines.iter().enumerate() {
-            let Some(kind) = timeline_kind(world, *timeline) else {
-                continue;
-            };
+            let name = timeline_name(world, *timeline);
             ui.horizontal(|ui| {
                 ui.horizontal(|ui| {
                     if ui.button(" × ").clicked() {
@@ -161,7 +159,7 @@ pub fn timeline_setting_tab(In(mut ui): In<Ui>, world: &mut World) {
                             move_down.replace(index);
                         }
                     });
-                    ui.label(kind.name(world, *timeline));
+                    ui.label(name);
                 });
             });
         }
