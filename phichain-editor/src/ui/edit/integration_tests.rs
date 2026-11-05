@@ -727,7 +727,7 @@ fn event_inspector_switches_mode_immediately_and_keeps_separate_edits() {
 
 #[test]
 fn event_timeline_applies_handle_edits_and_undo_restores_the_range() {
-    use crate::timeline::{TimelineContext, TimelineKind};
+    use crate::timeline::TimelineContext;
     use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
     let mut app = app();
     timeline_resources(&mut app);

@@ -3,7 +3,7 @@ use crate::editing::history::Edits;
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::selection::{Select, Selected};
 use crate::tab::timeline::TimelineFilter;
-use crate::timeline::target::TimelineOf;
+use crate::timeline::target::{TimelineOf, TimelineTargets};
 use crate::timeline::{TimelineContext, TimelineKind, LANE_LINE_OPACITY};
 use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
 use crate::ui::widgets::easing::EasingGraph;
@@ -26,20 +26,22 @@ use std::cmp::Ordering;
 #[derive(Component, Debug, Clone, Copy)]
 pub struct NoteTimeline;
 
+type PendingTrackPreviews<'w, 's> =
+    Query<'w, 's, (Entity, &'static ChildOf), (With<Pending>, With<CurveNoteTrackFrom>)>;
+
 fn pending_curve_note_track_ui(
-    ui: &mut Ui,
-    world: &mut World,
+    ui: &Ui,
     viewport: Rect,
     line_entity: Entity,
+    previews: &PendingTrackPreviews,
+    keyboard: &ButtonInput<KeyCode>,
+    commands: &mut Commands,
 ) {
-    let preview = world
-        .query_filtered::<(Entity, &ChildOf), (With<Pending>, With<CurveNoteTrackFrom>)>()
-        .iter(world)
+    let preview = previews
+        .iter()
         .find_map(|(entity, parent)| (parent.parent() == line_entity).then_some(entity));
     if let Some(preview) = preview {
-        let escape = world
-            .resource::<ButtonInput<KeyCode>>()
-            .just_pressed(KeyCode::Escape);
+        let escape = keyboard.just_pressed(KeyCode::Escape);
         let cancel = escape
             || egui::Area::new(ui.id().with("pending_curve_note_track"))
                 .order(egui::Order::Foreground)
@@ -80,271 +82,270 @@ fn pending_curve_note_track_ui(
                 })
                 .inner;
         if cancel {
-            world.despawn(preview);
+            commands.entity(preview).despawn();
+        }
+    }
+}
+
+pub fn note_timeline_ui(
+    In((mut ui, timeline)): In<(Ui, Entity)>,
+    targets: TimelineTargets,
+    ctx: TimelineContext,
+    note_query: Query<(
+        &Note,
+        &ChildOf,
+        Entity,
+        Option<&Highlighted>,
+        Option<&Selected>,
+        Option<&CurveNote>,
+        Option<&Pending>,
+    )>,
+    selected_query: Query<&Selected>,
+    track_query: Query<(CurveNoteTrack, &ChildOf, Entity)>,
+    bpm_list: Res<BpmList>,
+    (assets, dimensions, images, textures): (
+        Res<phichain_assets::EguiImageAssets>,
+        Res<phichain_assets::RespackDimensions>,
+        Res<Assets<Image>>,
+        Res<EguiUserTextures>,
+    ),
+    mut select_events: MessageWriter<Select>,
+    mut commands: Commands,
+    mut edits: Edits,
+    mut toasts: ResMut<ToastsStorage>,
+    pending_tracks: Query<
+        (Entity, &CurveNoteTrackFrom, &CurveNoteTrackOptions),
+        (With<Pending>, Without<CurveNoteTrackTo>),
+    >,
+    pending_previews: PendingTrackPreviews,
+    keyboard: Res<ButtonInput<KeyCode>>,
+) {
+    let Some(line_entity) = targets.get(timeline) else {
+        return;
+    };
+    let viewport = ui.max_rect();
+    let ui = &mut ui;
+
+    pending_curve_note_track_ui(
+        ui,
+        viewport,
+        line_entity,
+        &pending_previews,
+        &keyboard,
+        &mut commands,
+    );
+
+    // TODO: optimize
+    // make sure hold is rendered below other note
+    let mut notes: Vec<_> = note_query.iter().collect();
+    notes.sort_by(|a, b| {
+        let a_is_hold = a.0.kind.is_hold();
+        let b_is_hold = b.0.kind.is_hold();
+        if a_is_hold && b_is_hold {
+            Ordering::Equal
+        } else if a_is_hold && !b_is_hold {
+            Ordering::Less
+        } else {
+            Ordering::Greater
+        }
+    });
+
+    macro_rules! render_note {
+        (note: $note:expr, highlighted: $highlighted:expr, fake: $fake:expr, tint: $tint:expr) => {{
+            let note = $note;
+
+            let x = viewport.min.x + (note.x / CANVAS_WIDTH + 0.5) * viewport.width();
+            let y = ctx.time_to_y(bpm_list.time_at(note.beat));
+
+            let get_asset = |handle: &Handle<Image>| {
+                (
+                    images.get(handle).unwrap().size(),
+                    textures.image_id(handle).unwrap(),
+                )
+            };
+
+            let handle = match (note.kind, $highlighted) {
+                (NoteKind::Tap, true) => &assets.tap_highlight,
+                (NoteKind::Drag, true) => &assets.drag_highlight,
+                (NoteKind::Hold { .. }, true) => &assets.hold_highlight,
+                (NoteKind::Flick, true) => &assets.flick_highlight,
+                (NoteKind::Tap, false) => &assets.tap,
+                (NoteKind::Drag, false) => &assets.drag,
+                (NoteKind::Hold { .. }, false) => &assets.hold,
+                (NoteKind::Flick, false) => &assets.flick,
+            };
+
+            let (size, image) = get_asset(handle);
+
+            let unit =
+                phichain_game::scale::texel_unit(viewport.width(), dimensions.note_width, 1.0);
+            let size = match note.kind {
+                NoteKind::Hold { hold_beat } => egui::Vec2::new(
+                    size.x as f32 * unit,
+                    y - ctx.time_to_y(bpm_list.time_at(note.beat + hold_beat)),
+                ),
+                _ => egui::Vec2::new(size.x as f32 * unit, size.y as f32 * unit),
+            };
+
+            let center = match note.kind {
+                NoteKind::Hold { hold_beat: _ } => egui::Pos2::new(x, y - size.y / 2.0),
+                _ => egui::Pos2::new(x, y),
+            };
+
+            let mut tint = $tint;
+
+            if $fake {
+                tint = tint.gamma_multiply(PENDING_OPACITY);
+            }
+
+            let rect = Rect::from_center_size(center, size);
+
+            let response = ui.put(
+                rect,
+                egui::Image::new((image, size))
+                    .maintain_aspect_ratio(false)
+                    .fit_to_exact_size(size)
+                    .tint(tint)
+                    .sense(Sense::click()),
+            );
+
+            (response, rect)
+        }};
+    }
+
+    for (note, child_of, entity, highlighted, selected, curve_note, pending) in notes {
+        if !ctx.settings.note_side_filter.filter(*note) {
+            continue;
+        }
+        if child_of.parent() != line_entity {
+            continue;
+        }
+
+        let (response, rect) = render_note!(
+            note: &note,
+            highlighted: highlighted.is_some(),
+            fake: pending.is_some(),
+            tint: if selected.is_some() {
+                Color32::LIGHT_GREEN
+            } else if curve_note.is_some() {
+                if selected_query.get(curve_note.unwrap().0).is_ok() {
+                    Color32::LIGHT_GREEN
+                } else {
+                    Color32::WHITE.gamma_multiply(100.0 / 255.0)
+                }
+            } else {
+                Color32::WHITE
+            }
+        );
+
+        if note.kind.is_hold() && curve_note.is_none() && pending.is_none() {
+            edits
+                .component(entity, note, t!("history.edit_notes", count = 1))
+                .edit(ui, "hold_range", |ui, note| {
+                    ui.add(BeatRangeDragZone::new(rect, &ctx, note));
+                });
+        }
+
+        if curve_note.is_none() && pending.is_none() {
+            response.context_menu(|ui| {
+                if ui
+                    .button(t!("tab.inspector.curve_note_track.start"))
+                    .clicked()
+                {
+                    for (preview, _, _) in &pending_tracks {
+                        commands.entity(preview).despawn();
+                    }
+                    commands.spawn((CurveNoteTrackFrom(entity), ChildOf(line_entity), Pending));
+                    ui.close();
+                }
+            });
+        }
+        if response.clicked() {
+            if curve_note.is_none() && pending.is_none() {
+                if let Ok((preview, from, options)) = pending_tracks.single() {
+                    let from = from.0;
+                    if from == entity {
+                        toasts.info(t!("tab.timeline.curve_note_track.same_endpoint"));
+                        continue;
+                    }
+                    let options = options.clone();
+                    let line = note_query.get(from).unwrap().1.parent();
+                    if line != line_entity {
+                        continue;
+                    }
+                    commands.entity(preview).despawn();
+                    edits.once(t!("history.create_track"), move |commands| {
+                        commands.spawn((
+                            options,
+                            CurveNoteTrackFrom(from),
+                            CurveNoteTrackTo(entity),
+                            ChildOf(line),
+                        ));
+                    });
+                    continue;
+                }
+            }
+            select_events.write(Select(vec![entity]));
+        }
+    }
+
+    for percent in ctx.settings.lane_percents() {
+        ui.painter().rect_filled(
+            Rect::from_center_size(
+                Pos2::new(
+                    viewport.min.x + viewport.width() * percent,
+                    viewport.center().y,
+                ),
+                egui::Vec2::new(2.0, viewport.height()),
+            ),
+            0.0,
+            if percent == 0.5 {
+                Color32::GREEN.gamma_multiply(LANE_LINE_OPACITY)
+            } else {
+                Color32::WHITE.gamma_multiply(LANE_LINE_OPACITY)
+            },
+        );
+    }
+
+    for (track, child_of, entity) in &track_query {
+        if child_of.parent() != line_entity {
+            continue;
+        }
+
+        if let (Ok(from), Ok(to)) = (
+            note_query.get(track.from.0).map(|x| x.0),
+            note_query.get(track.to.0).map(|x| x.0),
+        ) {
+            let (from, to) = if from.beat < to.beat {
+                (from, to)
+            } else {
+                (to, from)
+            };
+
+            let from_x = viewport.min.x + (from.x / CANVAS_WIDTH + 0.5) * viewport.width();
+            let from_y = ctx.time_to_y(bpm_list.time_at(from.beat));
+            let to_x = viewport.min.x + (to.x / CANVAS_WIDTH + 0.5) * viewport.width();
+            let to_y = ctx.time_to_y(bpm_list.time_at(to.beat));
+            let rect = Rect::from_two_pos(Pos2::new(from_x, from_y), Pos2::new(to_x, to_y));
+            edits
+                .component(entity, track.options, t!("history.edit_tracks", count = 1))
+                .edit(ui, "track_curve", |ui, options| {
+                    ui.add(
+                        EasingGraph::new(&mut options.curve)
+                            .rect(rect)
+                            .inverse(true)
+                            .mirror(from.x > to.x)
+                            .color(match selected_query.get(entity) {
+                                Ok(_) => Color32::LIGHT_GREEN,
+                                Err(_) => Color32::WHITE,
+                            }),
+                    );
+                });
         }
     }
 }
 
 impl TimelineKind for NoteTimeline {
-    fn ui(&self, ui: &mut Ui, world: &mut World, line_entity: Entity, viewport: Rect) {
-        pending_curve_note_track_ui(ui, world, viewport, line_entity);
-
-        let mut state: SystemState<(
-            TimelineContext,
-            Query<(
-                &Note,
-                &ChildOf,
-                Entity,
-                Option<&Highlighted>,
-                Option<&Selected>,
-                Option<&CurveNote>,
-                Option<&Pending>,
-            )>,
-            Query<&Selected>,
-            Query<(CurveNoteTrack, &ChildOf, Entity)>,
-            Res<BpmList>,
-            Res<phichain_assets::EguiImageAssets>,
-            Res<phichain_assets::RespackDimensions>,
-            Res<Assets<Image>>,
-            Res<EguiUserTextures>,
-            MessageWriter<Select>,
-            Commands,
-            Edits,
-            ResMut<ToastsStorage>,
-            Query<
-                (Entity, &CurveNoteTrackFrom, &CurveNoteTrackOptions),
-                (With<Pending>, Without<CurveNoteTrackTo>),
-            >,
-        )> = SystemState::new(world);
-
-        let (
-            ctx,
-            note_query,
-            selected_query,
-            track_query,
-            bpm_list,
-            assets,
-            dimensions,
-            images,
-            textures,
-            mut select_events,
-            mut commands,
-            mut edits,
-            mut toasts,
-            pending_tracks,
-        ) = state.get_mut(world);
-
-        // TODO: optimize
-        // make sure hold is rendered below other note
-        let mut notes: Vec<_> = note_query.iter().collect();
-        notes.sort_by(|a, b| {
-            let a_is_hold = a.0.kind.is_hold();
-            let b_is_hold = b.0.kind.is_hold();
-            if a_is_hold && b_is_hold {
-                Ordering::Equal
-            } else if a_is_hold && !b_is_hold {
-                Ordering::Less
-            } else {
-                Ordering::Greater
-            }
-        });
-
-        macro_rules! render_note {
-            (note: $note:expr, highlighted: $highlighted:expr, fake: $fake:expr, tint: $tint:expr) => {{
-                let note = $note;
-
-                let x = viewport.min.x + (note.x / CANVAS_WIDTH + 0.5) * viewport.width();
-                let y = ctx.time_to_y(bpm_list.time_at(note.beat));
-
-                let get_asset = |handle: &Handle<Image>| {
-                    (
-                        images.get(handle).unwrap().size(),
-                        textures.image_id(handle).unwrap(),
-                    )
-                };
-
-                let handle = match (note.kind, $highlighted) {
-                    (NoteKind::Tap, true) => &assets.tap_highlight,
-                    (NoteKind::Drag, true) => &assets.drag_highlight,
-                    (NoteKind::Hold { .. }, true) => &assets.hold_highlight,
-                    (NoteKind::Flick, true) => &assets.flick_highlight,
-                    (NoteKind::Tap, false) => &assets.tap,
-                    (NoteKind::Drag, false) => &assets.drag,
-                    (NoteKind::Hold { .. }, false) => &assets.hold,
-                    (NoteKind::Flick, false) => &assets.flick,
-                };
-
-                let (size, image) = get_asset(handle);
-
-                let unit =
-                    phichain_game::scale::texel_unit(viewport.width(), dimensions.note_width, 1.0);
-                let size = match note.kind {
-                    NoteKind::Hold { hold_beat } => egui::Vec2::new(
-                        size.x as f32 * unit,
-                        y - ctx.time_to_y(bpm_list.time_at(note.beat + hold_beat)),
-                    ),
-                    _ => egui::Vec2::new(size.x as f32 * unit, size.y as f32 * unit),
-                };
-
-                let center = match note.kind {
-                    NoteKind::Hold { hold_beat: _ } => egui::Pos2::new(x, y - size.y / 2.0),
-                    _ => egui::Pos2::new(x, y),
-                };
-
-                let mut tint = $tint;
-
-                if $fake {
-                    tint = tint.gamma_multiply(PENDING_OPACITY);
-                }
-
-                let rect = Rect::from_center_size(center, size);
-
-                let response = ui.put(
-                    rect,
-                    egui::Image::new((image, size))
-                        .maintain_aspect_ratio(false)
-                        .fit_to_exact_size(size)
-                        .tint(tint)
-                        .sense(Sense::click()),
-                );
-
-                (response, rect)
-            }};
-        }
-
-        for (note, child_of, entity, highlighted, selected, curve_note, pending) in notes {
-            if !ctx.settings.note_side_filter.filter(*note) {
-                continue;
-            }
-            if child_of.parent() != line_entity {
-                continue;
-            }
-
-            let (response, rect) = render_note!(
-                note: &note,
-                highlighted: highlighted.is_some(),
-                fake: pending.is_some(),
-                tint: if selected.is_some() {
-                    Color32::LIGHT_GREEN
-                } else if curve_note.is_some() {
-                    if selected_query.get(curve_note.unwrap().0).is_ok() {
-                        Color32::LIGHT_GREEN
-                    } else {
-                        Color32::WHITE.gamma_multiply(100.0 / 255.0)
-                    }
-                } else {
-                    Color32::WHITE
-                }
-            );
-
-            if note.kind.is_hold() && curve_note.is_none() && pending.is_none() {
-                edits
-                    .component(entity, note, t!("history.edit_notes", count = 1))
-                    .edit(ui, "hold_range", |ui, note| {
-                        ui.add(BeatRangeDragZone::new(rect, &ctx, note));
-                    });
-            }
-
-            if curve_note.is_none() && pending.is_none() {
-                response.context_menu(|ui| {
-                    if ui
-                        .button(t!("tab.inspector.curve_note_track.start"))
-                        .clicked()
-                    {
-                        for (preview, _, _) in &pending_tracks {
-                            commands.entity(preview).despawn();
-                        }
-                        commands.spawn((CurveNoteTrackFrom(entity), ChildOf(line_entity), Pending));
-                        ui.close();
-                    }
-                });
-            }
-            if response.clicked() {
-                if curve_note.is_none() && pending.is_none() {
-                    if let Ok((preview, from, options)) = pending_tracks.single() {
-                        let from = from.0;
-                        if from == entity {
-                            toasts.info(t!("tab.timeline.curve_note_track.same_endpoint"));
-                            continue;
-                        }
-                        let options = options.clone();
-                        let line = note_query.get(from).unwrap().1.parent();
-                        if line != line_entity {
-                            continue;
-                        }
-                        commands.entity(preview).despawn();
-                        edits.once(t!("history.create_track"), move |commands| {
-                            commands.spawn((
-                                options,
-                                CurveNoteTrackFrom(from),
-                                CurveNoteTrackTo(entity),
-                                ChildOf(line),
-                            ));
-                        });
-                        continue;
-                    }
-                }
-                select_events.write(Select(vec![entity]));
-            }
-        }
-
-        for percent in ctx.settings.lane_percents() {
-            ui.painter().rect_filled(
-                Rect::from_center_size(
-                    Pos2::new(
-                        viewport.min.x + viewport.width() * percent,
-                        viewport.center().y,
-                    ),
-                    egui::Vec2::new(2.0, viewport.height()),
-                ),
-                0.0,
-                if percent == 0.5 {
-                    Color32::GREEN.gamma_multiply(LANE_LINE_OPACITY)
-                } else {
-                    Color32::WHITE.gamma_multiply(LANE_LINE_OPACITY)
-                },
-            );
-        }
-
-        for (track, child_of, entity) in &track_query {
-            if child_of.parent() != line_entity {
-                continue;
-            }
-
-            if let (Ok(from), Ok(to)) = (
-                note_query.get(track.from.0).map(|x| x.0),
-                note_query.get(track.to.0).map(|x| x.0),
-            ) {
-                let (from, to) = if from.beat < to.beat {
-                    (from, to)
-                } else {
-                    (to, from)
-                };
-
-                let from_x = viewport.min.x + (from.x / CANVAS_WIDTH + 0.5) * viewport.width();
-                let from_y = ctx.time_to_y(bpm_list.time_at(from.beat));
-                let to_x = viewport.min.x + (to.x / CANVAS_WIDTH + 0.5) * viewport.width();
-                let to_y = ctx.time_to_y(bpm_list.time_at(to.beat));
-                let rect = Rect::from_two_pos(Pos2::new(from_x, from_y), Pos2::new(to_x, to_y));
-                edits
-                    .component(entity, track.options, t!("history.edit_tracks", count = 1))
-                    .edit(ui, "track_curve", |ui, options| {
-                        ui.add(
-                            EasingGraph::new(&mut options.curve)
-                                .rect(rect)
-                                .inverse(true)
-                                .mirror(from.x > to.x)
-                                .color(match selected_query.get(entity) {
-                                    Ok(_) => Color32::LIGHT_GREEN,
-                                    Err(_) => Color32::WHITE,
-                                }),
-                        );
-                    });
-            }
-        }
-        state.apply(world);
-    }
-
     fn on_drag_selection(
         &self,
         world: &mut World,

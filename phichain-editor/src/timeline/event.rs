@@ -82,8 +82,8 @@ impl<T: PartialEq> EventTrackData<T> {
     }
 }
 
-impl TimelineKind for EventTimeline {
-    fn ui(&self, ui: &mut Ui, world: &mut World, line_entity: Entity, viewport: Rect) {
+impl EventTimeline {
+    pub fn ui(&self, ui: &mut Ui, world: &mut World, line_entity: Entity, viewport: Rect) {
         // lane
         // [0.2, 0.4, 0.6, 0.8]
         let lane_percents = iter::repeat_n(0.0, 5 - 1)
@@ -347,7 +347,9 @@ impl TimelineKind for EventTimeline {
         ui.style_mut().interaction.selectable_labels = true;
         state.apply(world);
     }
+}
 
+impl TimelineKind for EventTimeline {
     fn on_drag_selection(
         &self,
         world: &mut World,

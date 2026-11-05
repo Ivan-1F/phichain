@@ -4,8 +4,9 @@ use egui::Ui;
 
 use crate::settings::EditorSettings;
 use crate::timeline::container::{allocated_timelines, layout_timelines};
+use crate::timeline::event::EventTimeline;
+use crate::timeline::note::{note_timeline_ui, NoteTimeline};
 use crate::timeline::settings::TimelineSettings;
-use crate::timeline::timeline_kind;
 use crate::timing::{Pause, Paused, Seek};
 use crate::{spectrogram, timeline};
 use phichain_chart::note::Note;
@@ -65,10 +66,22 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
     // TODO bevy-0.16: make timeline_tab return Result and handle error using ? operator when register_tab supports systems returning Result
     let _ = timeline::drag_selection::timeline_drag_selection(&mut ui, world);
     for (index, item) in allocated_timelines(world).into_iter().enumerate() {
-        if let (Some(kind), Some(line)) = (timeline_kind(world, item.timeline), item.target) {
-            ui.push_id(("timeline", index), |ui| {
-                kind.ui(ui, world, line, item.viewport);
-            });
+        let mut child = ui.new_child(
+            egui::UiBuilder::new()
+                .max_rect(item.viewport)
+                .id_salt(item.timeline),
+        );
+        child.set_clip_rect(item.viewport.intersect(ui.clip_rect()));
+        if world.entity(item.timeline).contains::<NoteTimeline>() {
+            if let Err(error) =
+                world.run_system_cached_with(note_timeline_ui, (child, item.timeline))
+            {
+                error!("Failed to draw note timeline: {error}");
+            }
+        } else if let Some(line) = item.target {
+            if world.entity(item.timeline).contains::<EventTimeline>() {
+                EventTimeline.ui(&mut child, world, line, item.viewport);
+            }
         }
         timeline::common::timeline_badge_ui(&mut ui, world, item.timeline, item.viewport, index);
     }

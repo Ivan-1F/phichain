@@ -17,7 +17,7 @@ use bevy::app::{App, Plugin};
 use bevy::ecs::system::SystemParam;
 use bevy::math::Vec2;
 use bevy::prelude::*;
-use egui::{Rect, Ui};
+use egui::Rect;
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
@@ -105,8 +105,6 @@ impl TimelineContext<'_> {
 
 /// Behavior of a kind of timeline, implemented by its marker component
 pub trait TimelineKind {
-    fn ui(&self, ui: &mut Ui, world: &mut World, line: Entity, viewport: Rect);
-
     /// Handle drag selection on the timeline
     ///
     /// The selection param will be a rect where x represents the x value and y represents the time
