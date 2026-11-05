@@ -9,6 +9,7 @@ use crate::identifier::{Identifier, IntoIdentifier};
 use crate::schedule::EditorSet;
 use crate::timeline::container::TimelineLayout;
 use crate::timeline::event::EventTimeline;
+use crate::timeline::pending::PendingOf;
 use crate::timeline::TimelineContext;
 use crate::utils::convert::BevyEguiConvert;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
@@ -68,13 +69,13 @@ fn create_event_system(
 
     mut edits: Edits,
 
-    pending_event_query: Query<(&LineEvent, Entity), With<Pending>>,
+    pending_event_query: Query<(&LineEvent, Entity, Option<&PendingOf>), With<Pending>>,
 
     event_query: Query<(&LineEvent, &EventOf), Without<Pending>>,
 ) -> Result {
     // Cancellation takes priority over preview updates and placement, even without a cursor.
     if keyboard.just_pressed(KeyCode::Escape) {
-        for (_, entity) in &pending_event_query {
+        for (_, entity, _) in &pending_event_query {
             commands.entity(entity).despawn();
         }
         return Ok(());
@@ -110,7 +111,11 @@ fn create_event_system(
         (track, beat)
     };
 
-    if let Ok((pending_event, entity)) = pending_event_query.single() {
+    if let Some((pending_event, entity, _)) = pending_event_query
+        .single()
+        .ok()
+        .filter(|(_, _, owner)| owner.is_some_and(|owner| owner.0 == item.timeline))
+    {
         let mut pending_event = *pending_event;
         let (track, beat) = calc_event_attrs();
         pending_event.end_beat = beat.max(pending_event.start_beat + ctx.settings.minimum_beat());
@@ -119,7 +124,7 @@ fn create_event_system(
     }
 
     if let Some(value) = requested_event_value(&hotkey) {
-        if let Ok((pending_event, entity)) = pending_event_query.single() {
+        if let Ok((pending_event, entity, _)) = pending_event_query.single() {
             // inherit event's start & end value from neighbor events
             let mut new_event = *pending_event;
             new_event.value = value;
@@ -170,6 +175,7 @@ fn create_event_system(
                     end_beat: beat + ctx.settings.minimum_beat(),
                 },
                 Pending,
+                PendingOf(item.timeline),
                 EventOf(line_entity),
             ));
         }

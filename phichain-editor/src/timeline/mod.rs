@@ -3,6 +3,7 @@ pub mod drag_selection;
 pub mod event;
 pub mod kind;
 pub mod note;
+pub mod pending;
 pub mod settings;
 pub mod target;
 

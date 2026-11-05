@@ -3,6 +3,7 @@ use crate::editing::history::Edits;
 use crate::selection::{Select, Selected};
 use crate::timeline::container::TimelineRect;
 use crate::timeline::kind::target_name;
+use crate::timeline::pending::PendingOf;
 use crate::timeline::target::{TimelineOf, TimelineTargets};
 use crate::timeline::{TimelineContext, LANE_LINE_OPACITY};
 use crate::timing::SeekTo;
@@ -87,7 +88,13 @@ pub fn event_timeline_ui(
     In((mut ui, timeline)): In<(Ui, Entity)>,
     targets: TimelineTargets,
     ctx: TimelineContext,
-    event_query: Query<(&LineEvent, Entity, Option<&Selected>, Option<&Pending>)>,
+    event_query: Query<(
+        &LineEvent,
+        Entity,
+        Option<&Selected>,
+        Option<&Pending>,
+        Option<&PendingOf>,
+    )>,
     events_query: Query<&Events>,
     bpm_list: Res<BpmList>,
     mut select_events: MessageWriter<Select>,
@@ -161,7 +168,10 @@ pub fn event_timeline_ui(
     let viewport_margin = 100.0;
 
     for entity in events.iter() {
-        let (event, entity, selected, pending) = event_query.get(*entity).unwrap();
+        let (event, entity, selected, pending, pending_of) = event_query.get(*entity).unwrap();
+        if pending_of.is_some_and(|owner| owner.0 != timeline) {
+            continue;
+        }
 
         let rect = get_event_rect(event);
 

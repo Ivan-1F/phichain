@@ -6,7 +6,11 @@ use crate::id_index::IdIndexPlugin;
 use crate::misc::WorkingDirectory;
 use crate::selection::SelectedLine;
 use crate::tab::timeline::TimelineViewport;
-use crate::timeline::container::{layout_timelines, spawn_timeline_container};
+use crate::timeline::container::{
+    layout_timelines, ordered_timelines, push_timeline, spawn_timeline_container,
+};
+use crate::timeline::note::NoteTimeline;
+use crate::timeline::pending::PendingOf;
 use crate::timeline::settings::TimelineSettings;
 use crate::timing::ChartTime;
 use bevy::prelude::*;
@@ -216,4 +220,46 @@ fn escape_cancels_outside_the_timeline_or_without_a_cursor_or_window() {
     ] {
         assert_escape_cancels(window, None, true);
     }
+}
+
+#[test]
+fn pending_hold_follows_the_cursor_only_on_its_owner_timeline() {
+    let (mut app, _) = editing_test_app();
+    // note 0..400, event 400..600, note 600..900
+    push_timeline(app.world_mut(), NoteTimeline, None);
+    layout_timelines(app.world_mut());
+    let owner = ordered_timelines(app.world_mut())[0];
+    let window = app
+        .world_mut()
+        .spawn(window_at(Vec2::new(200.0, 300.0)))
+        .id();
+    open_document(app.world_mut());
+
+    let move_cursor_and_update = |app: &mut App, position: Vec2| {
+        let world = app.world_mut();
+        world
+            .get_mut::<Window>(window)
+            .unwrap()
+            .set_cursor_position(Some(position));
+        world.resource_mut::<ButtonInput<KeyCode>>().reset_all();
+        app.update();
+        let world = app.world_mut();
+        let (note, pending_of) = world
+            .query_filtered::<(&Note, &PendingOf), With<Pending>>()
+            .single(world)
+            .unwrap();
+        assert_eq!(pending_of.0, owner);
+        *note
+    };
+
+    app.world_mut()
+        .resource_mut::<ButtonInput<KeyCode>>()
+        .press(KeyCode::KeyR);
+    app.update();
+    let placed = move_cursor_and_update(&mut app, Vec2::new(200.0, 300.0));
+    let extended = move_cursor_and_update(&mut app, Vec2::new(200.0, 100.0));
+    assert!(extended.hold_beat().unwrap() > placed.hold_beat().unwrap());
+
+    let frozen = move_cursor_and_update(&mut app, Vec2::new(750.0, 50.0));
+    assert_eq!(frozen, extended);
 }

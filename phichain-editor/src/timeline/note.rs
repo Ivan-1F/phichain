@@ -5,6 +5,7 @@ use crate::selection::{Select, Selected};
 use crate::tab::timeline::TimelineFilter;
 use crate::timeline::container::TimelineRect;
 use crate::timeline::kind::target_name;
+use crate::timeline::pending::PendingOf;
 use crate::timeline::target::{TimelineOf, TimelineTargets};
 use crate::timeline::{TimelineContext, LANE_LINE_OPACITY};
 use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
@@ -28,19 +29,19 @@ use std::cmp::Ordering;
 pub struct NoteTimeline;
 
 type PendingTrackPreviews<'w, 's> =
-    Query<'w, 's, (Entity, &'static ChildOf), (With<Pending>, With<CurveNoteTrackFrom>)>;
+    Query<'w, 's, (Entity, &'static PendingOf), (With<Pending>, With<CurveNoteTrackFrom>)>;
 
 fn pending_curve_note_track_ui(
     ui: &Ui,
     viewport: Rect,
-    line_entity: Entity,
+    timeline: Entity,
     previews: &PendingTrackPreviews,
     keyboard: &ButtonInput<KeyCode>,
     commands: &mut Commands,
 ) {
     let preview = previews
         .iter()
-        .find_map(|(entity, parent)| (parent.parent() == line_entity).then_some(entity));
+        .find_map(|(entity, owner)| (owner.0 == timeline).then_some(entity));
     if let Some(preview) = preview {
         let escape = keyboard.just_pressed(KeyCode::Escape);
         let cancel = escape
@@ -100,6 +101,7 @@ pub fn note_timeline_ui(
         Option<&Selected>,
         Option<&CurveNote>,
         Option<&Pending>,
+        Option<&PendingOf>,
     )>,
     selected_query: Query<&Selected>,
     track_query: Query<(CurveNoteTrack, Entity)>,
@@ -131,7 +133,7 @@ pub fn note_timeline_ui(
     pending_curve_note_track_ui(
         ui,
         viewport,
-        line_entity,
+        timeline,
         &pending_previews,
         &keyboard,
         &mut commands,
@@ -235,8 +237,11 @@ pub fn note_timeline_ui(
         }};
     }
 
-    for (note, _, entity, highlighted, selected, curve_note, pending) in notes {
+    for (note, _, entity, highlighted, selected, curve_note, pending, pending_of) in notes {
         if !ctx.settings.note_side_filter.filter(*note) {
+            continue;
+        }
+        if pending_of.is_some_and(|owner| owner.0 != timeline) {
             continue;
         }
 
@@ -274,7 +279,12 @@ pub fn note_timeline_ui(
                     for (preview, _, _) in &pending_tracks {
                         commands.entity(preview).despawn();
                     }
-                    commands.spawn((CurveNoteTrackFrom(entity), ChildOf(line_entity), Pending));
+                    commands.spawn((
+                        CurveNoteTrackFrom(entity),
+                        ChildOf(line_entity),
+                        Pending,
+                        PendingOf(timeline),
+                    ));
                     ui.close();
                 }
             });

@@ -11,6 +11,7 @@ use crate::identifier::{Identifier, IntoIdentifier};
 use crate::schedule::EditorSet;
 use crate::timeline::container::TimelineLayout;
 use crate::timeline::note::NoteTimeline;
+use crate::timeline::pending::PendingOf;
 use crate::timeline::TimelineContext;
 use crate::utils::convert::BevyEguiConvert;
 
@@ -71,11 +72,11 @@ fn create_note_system(
 
     mut edits: Edits,
 
-    pending_note_query: Query<(&Note, Entity), With<Pending>>,
+    pending_note_query: Query<(&Note, Entity, Option<&PendingOf>), With<Pending>>,
 ) -> Result {
     // Cancellation takes priority over preview updates and placement, even without a cursor.
     if keyboard.just_pressed(KeyCode::Escape) {
-        for (_, entity) in &pending_note_query {
+        for (_, entity, _) in &pending_note_query {
             commands.entity(entity).despawn();
         }
         return Ok(());
@@ -138,7 +139,11 @@ fn create_note_system(
         create_note(NoteKind::Drag);
     }
 
-    if let Ok((pending_note, entity)) = pending_note_query.single() {
+    if let Some((pending_note, entity, _)) = pending_note_query
+        .single()
+        .ok()
+        .filter(|(_, _, owner)| owner.is_some_and(|owner| owner.0 == item.timeline))
+    {
         let mut pending_note = *pending_note;
         if let NoteKind::Hold { .. } = pending_note.kind {
             let (x, beat) = calc_note_attrs();
@@ -155,7 +160,7 @@ fn create_note_system(
     }
 
     if hotkey.just_pressed(CreateNoteHotkeys::PlaceHold) {
-        if let Ok((pending_note, entity)) = pending_note_query.single() {
+        if let Ok((pending_note, entity, _)) = pending_note_query.single() {
             commands.entity(entity).despawn();
             // Resolve the final cursor position here too: the preview's
             // queued replacement has not necessarily executed this frame.
@@ -182,6 +187,7 @@ fn create_note_system(
                         1.0,
                     ),
                     Pending,
+                    PendingOf(item.timeline),
                 ));
             });
         }
