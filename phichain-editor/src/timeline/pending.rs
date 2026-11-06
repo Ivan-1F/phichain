@@ -1,5 +1,6 @@
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::schedule::EditorSet;
+use crate::timeline::pending_status::PendingStatus;
 use crate::timeline::target::TimelineTargets;
 use bevy::ecs::system::SystemParam;
 use bevy::input::common_conditions::input_just_pressed;
@@ -50,14 +51,19 @@ impl ActivePending<'_, '_> {
 }
 
 /// Start a pending object on the timeline `owner`, replacing the existing one
-pub fn spawn_pending(commands: &mut Commands, owner: Entity, bundle: impl Bundle) {
+pub fn spawn_pending(
+    commands: &mut Commands,
+    owner: Entity,
+    status: PendingStatus,
+    bundle: impl Bundle,
+) {
     commands.queue(move |world: &mut World| {
         if cancel_pending(world) {
             if let Some(mut toasts) = world.get_resource_mut::<ToastsStorage>() {
                 toasts.info(t!("tab.timeline.pending.cancelled"));
             }
         }
-        world.spawn((bundle, PendingOf(owner)));
+        world.spawn((bundle, PendingOf(owner), status));
     });
 }
 

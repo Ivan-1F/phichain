@@ -3,6 +3,7 @@ use crate::notification::{ToastsExt, ToastsStorage};
 use crate::schedule::EditorSet;
 use crate::timeline::click::TimelineClick;
 use crate::timeline::pending::{spawn_pending, ActivePending};
+use crate::timeline::pending_status::{PendingHint, PendingStatus};
 use bevy::prelude::*;
 use phichain_chart::curve_note_track::CurveNoteTrackOptions;
 use phichain_chart::note::Note;
@@ -27,6 +28,10 @@ pub fn start_curve_note_track(
     spawn_pending(
         commands,
         timeline,
+        PendingStatus {
+            title: t!("tab.timeline.pending.curve_note_track").into(),
+            hints: vec![PendingHint::text(t!("tab.timeline.pending.pick_end"))],
+        },
         (CurveNoteTrackFrom(from), ChildOf(line)),
     );
 }

@@ -73,12 +73,19 @@ tab:
   timeline:
     title: タイムライン
     curve_note_track:
-      creating: カーブノーツトラックを作成中
-      select_destination: 同じ判定線上の終点ノーツを選択してください
       same_endpoint: 始点と終点に同じノーツは指定できません
-      cancel: キャンセル
     pending:
       cancelled: 未完了の作成をキャンセルしました
+      hold: "Hold を配置中"
+      event: "イベントを配置中"
+      curve_note_track: "カーブノーツトラックを作成中"
+      confirm: "確定"
+      constant: "定数イベントとして確定"
+      transition: "トランジションイベントとして確定"
+      pick_end: "同じ判定線上の終点ノーツをクリック"
+      cancel: "キャンセル"
+      paused: "%{title}（一時停止中）"
+      resume: "判定線 %{line} に戻ると再開します"
     event:
       jump_to_event: このイベントにジャンプ
   inspector:

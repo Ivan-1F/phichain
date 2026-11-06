@@ -11,6 +11,7 @@ use crate::schedule::EditorSet;
 use crate::timeline::container::TimelineLayout;
 use crate::timeline::note::NoteTimeline;
 use crate::timeline::pending::{spawn_pending, ActivePending};
+use crate::timeline::pending_status::{PendingHint, PendingStatus};
 use crate::timeline::TimelineContext;
 use crate::utils::convert::BevyEguiConvert;
 
@@ -167,9 +168,17 @@ fn create_note_system(
             });
         } else {
             let (x, beat) = calc_note_attrs();
+            let status = PendingStatus {
+                title: t!("tab.timeline.pending.hold").into(),
+                hints: vec![PendingHint::key(
+                    hotkey.label(CreateNoteHotkeys::PlaceHold),
+                    t!("tab.timeline.pending.confirm"),
+                )],
+            };
             spawn_pending(
                 &mut commands,
                 item.timeline,
+                status,
                 (
                     Note::new(
                         NoteKind::Hold {

@@ -1,4 +1,4 @@
-use crate::constants::{INDICATOR_POSITION, PENDING_OPACITY};
+use crate::constants::PENDING_OPACITY;
 use crate::editing::create_curve_note_track::start_curve_note_track;
 use crate::editing::history::Edits;
 use crate::selection::Selected;
@@ -18,68 +18,12 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::CANVAS_WIDTH;
 use phichain_chart::line::Line;
 use phichain_chart::note::{Note, NoteKind};
-use phichain_game::curve_note_track::{CurveNote, CurveNoteTrack, CurveNoteTrackFrom};
+use phichain_game::curve_note_track::{CurveNote, CurveNoteTrack};
 use phichain_game::highlight::Highlighted;
 use std::cmp::Ordering;
 
 #[derive(Component, Debug, Clone, Copy)]
 pub struct NoteTimeline;
-
-type PendingTrackPreviews<'w, 's> =
-    Query<'w, 's, (Entity, &'static PendingOf), With<CurveNoteTrackFrom>>;
-
-fn pending_curve_note_track_ui(
-    ui: &Ui,
-    viewport: Rect,
-    timeline: Entity,
-    previews: &PendingTrackPreviews,
-    commands: &mut Commands,
-) {
-    let preview = previews
-        .iter()
-        .find_map(|(entity, owner)| (owner.0 == timeline).then_some(entity));
-    if let Some(preview) = preview {
-        let cancel = egui::Area::new(ui.id().with("pending_curve_note_track"))
-            .order(egui::Order::Foreground)
-            .pivot(egui::Align2::CENTER_CENTER)
-            .fixed_pos(egui::pos2(
-                viewport.center().x,
-                viewport.top() + viewport.height() * (INDICATOR_POSITION + 1.0) / 2.0,
-            ))
-            .constrain_to(viewport)
-            .show(ui.ctx(), |ui| {
-                ui.set_width((viewport.width() - 16.0).clamp(0.0, 280.0));
-                for font in ui.style_mut().text_styles.values_mut() {
-                    font.size *= 0.9;
-                }
-                ui.spacing_mut().interact_size.y *= 0.9;
-                egui::Frame::popup(ui.style())
-                    .inner_margin(egui::Margin::symmetric(10, 6))
-                    .show(ui, |ui| {
-                        let (_, cancel) = egui::Sides::new().shrink_left().wrap().show(
-                            ui,
-                            |ui| {
-                                ui.strong(t!("tab.timeline.curve_note_track.creating"));
-                            },
-                            |ui| {
-                                ui.add(
-                                    egui::Button::new(t!("tab.timeline.curve_note_track.cancel"))
-                                        .frame(false),
-                                )
-                                .on_hover_text("Esc")
-                            },
-                        );
-                        ui.small(t!("tab.timeline.curve_note_track.select_destination"));
-                        cancel.clicked()
-                    })
-                    .inner
-            })
-            .inner;
-        if cancel {
-            commands.entity(preview).despawn();
-        }
-    }
-}
 
 pub fn note_timeline_ui(
     In((mut ui, timeline)): In<(Ui, Entity)>,
@@ -106,15 +50,12 @@ pub fn note_timeline_ui(
     mut clicks: MessageWriter<TimelineClick>,
     mut commands: Commands,
     mut edits: Edits,
-    pending_previews: PendingTrackPreviews,
 ) {
     let Some(line_entity) = targets.get(timeline) else {
         return;
     };
     let viewport = ui.max_rect();
     let ui = &mut ui;
-
-    pending_curve_note_track_ui(ui, viewport, timeline, &pending_previews, &mut commands);
 
     let line_children = children_query.get(line_entity).ok();
     let children = || {

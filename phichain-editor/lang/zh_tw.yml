@@ -73,12 +73,19 @@ tab:
   timeline:
     title: 時間線
     curve_note_track:
-      creating: 正在建立曲線音符軌跡
-      select_destination: 請選擇同一判定線上的終點
       same_endpoint: 起點和終點不能是同一個音符
-      cancel: 取消
     pending:
       cancelled: 已取消未完成的建立
+      hold: "正在放置 Hold"
+      event: "正在放置事件"
+      curve_note_track: "正在建立曲線音符軌跡"
+      confirm: "確認"
+      constant: "確認為常數事件"
+      transition: "確認為漸變事件"
+      pick_end: "點擊同一判定線上的終點"
+      cancel: "取消"
+      paused: "%{title}（已暫停）"
+      resume: "切回判定線 %{line} 以繼續"
     event:
       jump_to_event: 跳轉至該事件
   inspector:

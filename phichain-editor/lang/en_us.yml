@@ -73,12 +73,19 @@ tab:
   timeline:
     title: Timeline
     curve_note_track:
-      creating: Creating curve note track
-      select_destination: Select an end note on the same line.
       same_endpoint: The start and end cannot be the same note.
-      cancel: Cancel
     pending:
       cancelled: Cancelled the unfinished creation
+      hold: "Placing Hold"
+      event: "Placing Event"
+      curve_note_track: "Creating Curve Note Track"
+      confirm: "Confirm"
+      constant: "Confirm as constant event"
+      transition: "Confirm as transition event"
+      pick_end: "Click an end note on the same line"
+      cancel: "Cancel"
+      paused: "%{title} (paused)"
+      resume: "Switch back to %{line} to continue"
     event:
       jump_to_event: Jump to this event
   inspector:

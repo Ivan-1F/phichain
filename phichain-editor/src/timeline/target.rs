@@ -38,17 +38,17 @@ impl TimelineTargets<'_, '_> {
         None
     }
 
+    /// The entity a note, event or curve note track is placed on
+    pub fn placement(&self, entity: Entity) -> Option<Entity> {
+        let (child_of, event_of) = self.placements.get(entity).ok()?;
+        child_of
+            .map(ChildOf::parent)
+            .or(event_of.map(|event_of| event_of.0))
+    }
+
     /// Whether the timeline shows the entity, which is placed on its current target
     pub fn displays(&self, timeline: Entity, entity: Entity) -> bool {
-        let placement = self
-            .placements
-            .get(entity)
-            .ok()
-            .and_then(|(child_of, event_of)| {
-                child_of
-                    .map(ChildOf::parent)
-                    .or(event_of.map(|event_of| event_of.0))
-            });
-        placement.is_some_and(|placement| self.get(timeline) == Some(placement))
+        self.placement(entity)
+            .is_some_and(|placement| self.get(timeline) == Some(placement))
     }
 }

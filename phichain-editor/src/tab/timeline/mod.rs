@@ -5,6 +5,7 @@ use egui::Ui;
 use crate::settings::EditorSettings;
 use crate::timeline::container::{allocated_timelines, layout_timelines};
 use crate::timeline::kind::timeline_ui;
+use crate::timeline::pending_status::pending_status_ui;
 use crate::timeline::settings::TimelineSettings;
 use crate::timing::{Pause, Paused, Seek};
 use crate::{spectrogram, timeline};
@@ -85,6 +86,7 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
     for item in &timelines {
         timeline::common::timeline_badge_ui(&mut ui, world, item.timeline, item.viewport);
     }
+    pending_status_ui(&mut ui, world);
     timeline::common::separator_ui(&mut ui, world);
     timeline::drag_selection::drag_selection_marquee_ui(&mut ui, world);
 }

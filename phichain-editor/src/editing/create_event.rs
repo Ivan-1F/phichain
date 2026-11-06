@@ -10,6 +10,7 @@ use crate::schedule::EditorSet;
 use crate::timeline::container::TimelineLayout;
 use crate::timeline::event::EventTimeline;
 use crate::timeline::pending::{spawn_pending, ActivePending};
+use crate::timeline::pending_status::{PendingHint, PendingStatus};
 use crate::timeline::TimelineContext;
 use crate::utils::convert::BevyEguiConvert;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
@@ -161,9 +162,23 @@ fn create_event_system(
         } else {
             let (track, beat) = calc_event_attrs();
             let kind = LineEventKind::try_from(track).expect("Unknown event track");
+            let status = PendingStatus {
+                title: t!("tab.timeline.pending.event").into(),
+                hints: vec![
+                    PendingHint::key(
+                        hotkey.label(CreateEventHotkeys::PlaceConstantEvent),
+                        t!("tab.timeline.pending.constant"),
+                    ),
+                    PendingHint::key(
+                        hotkey.label(CreateEventHotkeys::PlaceTransitionEvent),
+                        t!("tab.timeline.pending.transition"),
+                    ),
+                ],
+            };
             spawn_pending(
                 &mut commands,
                 item.timeline,
+                status,
                 (
                     LineEvent {
                         kind,

@@ -5,6 +5,7 @@ pub mod event;
 pub mod kind;
 pub mod note;
 pub mod pending;
+pub mod pending_status;
 pub mod settings;
 pub mod target;
 
