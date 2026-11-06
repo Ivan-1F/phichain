@@ -58,6 +58,21 @@ pub fn cancel_pending(world: &mut World, cancellation: Cancellation) {
     cancel(world, pending, cancellation);
 }
 
+/// Cancels the pending object unless it belongs to the timeline an operation starts on
+pub struct CancelPendingNotOwnedBy(pub Option<Entity>);
+
+impl Command for CancelPendingNotOwnedBy {
+    fn apply(self, world: &mut World) {
+        let mut pending = world.query::<(Entity, &PendingOf)>();
+        let stale = pending
+            .iter(world)
+            .filter(|(_, owner)| Some(owner.0) != self.0)
+            .map(|(entity, _)| entity)
+            .collect();
+        cancel(world, stale, Cancellation::Implicit);
+    }
+}
+
 fn cancel(world: &mut World, pending: Vec<Entity>, cancellation: Cancellation) {
     if pending.is_empty() {
         return;

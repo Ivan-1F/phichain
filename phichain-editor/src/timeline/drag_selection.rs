@@ -1,6 +1,7 @@
 use crate::selection::Select;
-use crate::timeline::container::allocated_timelines;
+use crate::timeline::container::{allocated_timelines, TimelineLayout};
 use crate::timeline::kind::timeline_selection;
+use crate::timeline::pending::CancelPendingNotOwnedBy;
 use crate::timeline::TimelineContext;
 use crate::utils::convert::BevyEguiConvert;
 use bevy::app::App;
@@ -28,8 +29,9 @@ pub fn timeline_drag_selection(ui: &mut Ui, world: &mut World) -> Result {
         TimelineContext,
         ResMut<TimelineDragSelection>,
         Query<&Window>,
+        TimelineLayout,
     )> = SystemState::new(world);
-    let (ctx, mut selection, window_query) = state.get_mut(world);
+    let (ctx, mut selection, window_query, layout) = state.get_mut(world);
     let viewport = ctx.viewport.0;
     let window = window_query.single()?;
     let Some(cursor_position) = window.cursor_position() else {
@@ -41,9 +43,14 @@ pub fn timeline_drag_selection(ui: &mut Ui, world: &mut World) -> Result {
     let calculate_x = || cursor_position.x - viewport.min.x;
     let calculate_time = || ctx.y_to_time(cursor_position.y);
 
+    let mut cancel = None;
     if response.drag_started() {
         let (x, time) = (calculate_x(), calculate_time());
         selection.0 = Some((egui::Vec2::new(x, time), egui::Vec2::new(x, time)));
+        let timeline = layout
+            .at(cursor_position.into_egui().to_pos2())
+            .map(|item| item.timeline);
+        cancel = Some(CancelPendingNotOwnedBy(timeline));
     }
 
     if response.dragged() {
@@ -74,6 +81,10 @@ pub fn timeline_drag_selection(ui: &mut Ui, world: &mut World) -> Result {
                 select_events.write(Select(all));
             }
         }
+    }
+
+    if let Some(cancel) = cancel {
+        cancel.apply(world);
     }
 
     Ok(())

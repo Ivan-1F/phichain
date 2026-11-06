@@ -2,7 +2,6 @@ use bevy::prelude::*;
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::note::{Note, NoteKind};
-use phichain_game::Pending;
 
 use crate::constants::CANVAS_WIDTH;
 use crate::editing::history::Edits;
@@ -11,7 +10,7 @@ use crate::identifier::{Identifier, IntoIdentifier};
 use crate::schedule::EditorSet;
 use crate::timeline::container::TimelineLayout;
 use crate::timeline::note::NoteTimeline;
-use crate::timeline::pending::{spawn_pending, PendingOf};
+use crate::timeline::pending::{spawn_pending, CancelPendingNotOwnedBy, PendingOf};
 use crate::timeline::TimelineContext;
 use crate::utils::convert::BevyEguiConvert;
 
@@ -71,7 +70,7 @@ fn create_note_system(
 
     mut edits: Edits,
 
-    pending_note_query: Query<(&Note, Entity, Option<&PendingOf>), With<Pending>>,
+    pending_note_query: Query<(&Note, Entity, &PendingOf)>,
 ) -> Result {
     let Ok(window) = window_query.single() else {
         return Ok(());
@@ -90,6 +89,22 @@ fn create_note_system(
         return Ok(());
     };
     let viewport = item.viewport;
+
+    let placing = [
+        CreateNoteHotkeys::PlaceTap,
+        CreateNoteHotkeys::PlaceDrag,
+        CreateNoteHotkeys::PlaceFlick,
+        CreateNoteHotkeys::PlaceHold,
+    ]
+    .into_iter()
+    .any(|placement| hotkey.just_pressed(placement));
+    if placing {
+        commands.queue(CancelPendingNotOwnedBy(Some(item.timeline)));
+    }
+    let pending_note = pending_note_query
+        .single()
+        .ok()
+        .filter(|(_, _, owner)| owner.0 == item.timeline);
 
     let calc_note_attrs = || {
         let time = ctx.y_to_time(cursor_position.y);
@@ -130,11 +145,7 @@ fn create_note_system(
         create_note(NoteKind::Drag);
     }
 
-    if let Some((pending_note, entity, _)) = pending_note_query
-        .single()
-        .ok()
-        .filter(|(_, _, owner)| owner.is_some_and(|owner| owner.0 == item.timeline))
-    {
+    if let Some((pending_note, entity, _)) = pending_note {
         let mut pending_note = *pending_note;
         if let NoteKind::Hold { .. } = pending_note.kind {
             let (x, beat) = calc_note_attrs();
@@ -151,7 +162,7 @@ fn create_note_system(
     }
 
     if hotkey.just_pressed(CreateNoteHotkeys::PlaceHold) {
-        if let Ok((pending_note, entity, _)) = pending_note_query.single() {
+        if let Some((pending_note, entity, _)) = pending_note {
             commands.entity(entity).despawn();
             // Resolve the final cursor position here too: the preview's
             // queued replacement has not necessarily executed this frame.

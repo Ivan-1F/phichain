@@ -1,6 +1,6 @@
 use crate::schedule::EditorSet;
 use crate::selection::{handle_select_event, Select};
-use crate::timeline::pending::TimelinePending;
+use crate::timeline::pending::{CancelPendingNotOwnedBy, TimelinePending};
 use bevy::prelude::*;
 
 /// An object drawn on a timeline was clicked
@@ -16,10 +16,19 @@ impl Plugin for TimelineClickPlugin {
     fn build(&self, app: &mut App) {
         app.add_message::<TimelineClick>().add_systems(
             Update,
-            select_clicked
-                .in_set(EditorSet::Edit)
-                .before(handle_select_event),
+            (
+                cancel_pending_on_click.in_set(EditorSet::Edit),
+                select_clicked
+                    .in_set(EditorSet::Edit)
+                    .before(handle_select_event),
+            ),
         );
+    }
+}
+
+fn cancel_pending_on_click(mut clicks: MessageReader<TimelineClick>, mut commands: Commands) {
+    for click in clicks.read() {
+        commands.queue(CancelPendingNotOwnedBy(Some(click.timeline)));
     }
 }
 
@@ -72,5 +81,30 @@ mod tests {
             })
             .unwrap();
         assert_eq!(selections, vec![vec![entity]]);
+    }
+
+    #[test]
+    fn clicking_another_timeline_cancels_the_pending_object() {
+        let mut app = App::new();
+        app.add_plugins(TimelineClickPlugin).add_message::<Select>();
+        let world = app.world_mut();
+        let owner = world.spawn_empty().id();
+        let other = world.spawn_empty().id();
+        let pending = world.spawn(PendingOf(owner)).id();
+        let entity = world.spawn_empty().id();
+
+        app.world_mut().write_message(TimelineClick {
+            timeline: owner,
+            entity,
+        });
+        app.update();
+        assert!(app.world().get_entity(pending).is_ok());
+
+        app.world_mut().write_message(TimelineClick {
+            timeline: other,
+            entity,
+        });
+        app.update();
+        assert!(app.world().get_entity(pending).is_err());
     }
 }

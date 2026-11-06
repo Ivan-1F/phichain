@@ -4,6 +4,7 @@ use crate::hotkey::modifier::Modifier;
 use crate::hotkey::Hotkey;
 use crate::selection::Selected;
 use crate::timeline::container::TimelineLayout;
+use crate::timeline::pending::CancelPendingNotOwnedBy;
 use crate::timeline::TimelineContext;
 use crate::utils::convert::BevyEguiConvert;
 use bevy::ecs::entity::{EntityHashMap, EntityHashSet};
@@ -157,6 +158,7 @@ fn cut_system(world: &mut World) -> Result {
 }
 
 fn paste_system(
+    mut commands: Commands,
     clipboard: Res<EditorClipboard>,
     window: Single<&Window>,
     layout: TimelineLayout,
@@ -167,12 +169,13 @@ fn paste_system(
     let (Some(first), Some(cursor)) = (clipboard.first_beat, window.cursor_position()) else {
         return Ok(());
     };
-    let line = layout
+    let Some((timeline, line)) = layout
         .at(cursor.into_egui().to_pos2())
-        .and_then(|item| item.target);
-    let Some(line) = line else {
+        .and_then(|item| Some((item.timeline, item.target?)))
+    else {
         return Ok(());
     };
+    commands.queue(CancelPendingNotOwnedBy(Some(timeline)));
     let beat = ctx
         .settings
         .attach(bpm_list.beat_at(ctx.y_to_time(cursor.y)).value());
@@ -280,6 +283,59 @@ mod tests {
         } else {
             world.spawn(track).id()
         }
+    }
+
+    #[test]
+    fn pasting_on_another_timeline_cancels_the_pending_object() {
+        use crate::selection::SelectedLine;
+        use crate::tab::timeline::TimelineViewport;
+        use crate::timeline::container::{
+            layout_timelines, ordered_timelines, spawn_timeline_container,
+        };
+        use crate::timeline::pending::PendingOf;
+        use crate::timeline::settings::TimelineSettings;
+        use crate::timing::ChartTime;
+        use phichain_game::audio::AudioDuration;
+
+        let mut app = fixture();
+        app.init_resource::<BpmList>()
+            .init_resource::<TimelineSettings>()
+            .insert_resource(ChartTime(0.0))
+            .insert_resource(AudioDuration(std::time::Duration::from_secs(60)))
+            .insert_resource(TimelineViewport(Rect::from_corners(
+                Vec2::ZERO,
+                Vec2::new(900.0, 600.0),
+            )));
+        let world = app.world_mut();
+        spawn_timeline_container(world);
+        layout_timelines(world);
+        let event_timeline = ordered_timelines(world)[1];
+        let line = world.spawn(Line::default()).id();
+        world.insert_resource(SelectedLine(line));
+        spawn_note(world, line, 0.0, true);
+        copy_system(world).unwrap();
+        let note = Note::new(NoteKind::Tap, true, Beat::ONE, 0.0, 1.0);
+        let pending = world
+            .spawn((note, PendingOf(event_timeline), ChildOf(line)))
+            .id();
+        let mut window = Window::default();
+        window.set_cursor_position(Some(Vec2::new(300.0, 300.0)));
+        world.spawn(window);
+        open_document(world);
+
+        world
+            .run_system_once::<_, Result, _>(paste_system)
+            .unwrap()
+            .unwrap();
+
+        assert!(world.get_entity(pending).is_err());
+        assert_eq!(
+            world
+                .query_filtered::<(), (With<Note>, Without<Pending>)>()
+                .iter(world)
+                .count(),
+            2
+        );
     }
 
     fn run_paste(world: &mut World, scene: Arc<DynamicScene>, line: Entity, delta: Beat) {

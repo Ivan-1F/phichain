@@ -9,6 +9,7 @@ use crate::tab::timeline::TimelineViewport;
 use crate::timeline::container::{
     layout_timelines, ordered_timelines, push_timeline, spawn_timeline_container,
 };
+use crate::timeline::event::EventTimeline;
 use crate::timeline::note::NoteTimeline;
 use crate::timeline::pending::{PendingOf, PendingPlugin};
 use crate::timeline::settings::TimelineSettings;
@@ -336,4 +337,61 @@ fn switching_the_selected_line_cancels_pending_objects_of_following_timelines() 
     app.world_mut().resource_mut::<SelectedLine>().0 = line;
     app.update();
     assert_eq!(pending_owners(app.world_mut()), vec![fixed]);
+}
+
+fn press_at(app: &mut App, window: Entity, position: Vec2, key: KeyCode) {
+    let world = app.world_mut();
+    world
+        .get_mut::<Window>(window)
+        .unwrap()
+        .set_cursor_position(Some(position));
+    let mut keyboard = world.resource_mut::<ButtonInput<KeyCode>>();
+    keyboard.reset_all();
+    keyboard.press(key);
+    app.update();
+}
+
+#[test]
+fn placing_notes_on_another_timeline_cancels_the_pending_hold() {
+    let (mut app, _) = editing_test_app();
+    // note 0..400, event 400..600, note 600..900
+    push_timeline(app.world_mut(), NoteTimeline, None);
+    layout_timelines(app.world_mut());
+    let timelines = ordered_timelines(app.world_mut());
+    let window = app.world_mut().spawn(window_at(Vec2::ZERO)).id();
+    open_document(app.world_mut());
+
+    press_at(&mut app, window, Vec2::new(200.0, 300.0), KeyCode::KeyR);
+    press_at(&mut app, window, Vec2::new(750.0, 300.0), KeyCode::KeyR);
+    let world = app.world_mut();
+    assert_eq!(pending_owners(world), vec![timelines[2]]);
+    assert_eq!(world.resource::<EditorHistory>().entries().count(), 0);
+
+    press_at(&mut app, window, Vec2::new(200.0, 300.0), KeyCode::KeyQ);
+    let world = app.world_mut();
+    assert!(pending_owners(world).is_empty());
+    let notes: Vec<_> = world
+        .query::<&Note>()
+        .iter(world)
+        .map(|note| note.kind)
+        .collect();
+    assert_eq!(notes, vec![NoteKind::Tap]);
+}
+
+#[test]
+fn placing_events_on_another_timeline_cancels_the_pending_event() {
+    let (mut app, _) = editing_test_app();
+    // note 0..400, event 400..600, event 600..900
+    push_timeline(app.world_mut(), EventTimeline, None);
+    layout_timelines(app.world_mut());
+    let timelines = ordered_timelines(app.world_mut());
+    let window = app.world_mut().spawn(window_at(Vec2::ZERO)).id();
+    open_document(app.world_mut());
+
+    press_at(&mut app, window, Vec2::new(500.0, 300.0), KeyCode::KeyR);
+    press_at(&mut app, window, Vec2::new(750.0, 300.0), KeyCode::KeyQ);
+    let world = app.world_mut();
+    assert_eq!(pending_owners(world), vec![timelines[2]]);
+    assert_eq!(world.query::<&LineEvent>().iter(world).count(), 1);
+    assert_eq!(world.resource::<EditorHistory>().entries().count(), 0);
 }
