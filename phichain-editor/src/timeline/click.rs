@@ -63,12 +63,11 @@ mod tests {
     }
 
     #[test]
-    fn clicks_select_unless_a_pending_object_is_active_on_the_timeline() {
+    fn clicks_select_unless_the_timeline_owns_a_pending_object() {
         let mut app = App::new();
         app.add_plugins(TimelineClickPlugin).add_message::<Select>();
         let world = app.world_mut();
         let line = world.spawn_empty().id();
-        let other_line = world.spawn_empty().id();
         world.insert_resource(SelectedLine(line));
         let owner = world.spawn(FollowSelectedLine).id();
         let free = world.spawn(FollowSelectedLine).id();
@@ -77,8 +76,5 @@ mod tests {
 
         assert!(click(&mut app, owner, entity).is_empty());
         assert_eq!(click(&mut app, free, entity), vec![vec![entity]]);
-
-        app.world_mut().resource_mut::<SelectedLine>().0 = other_line;
-        assert_eq!(click(&mut app, owner, entity), vec![vec![entity]]);
     }
 }

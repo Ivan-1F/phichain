@@ -39,7 +39,7 @@ impl TimelineTargets<'_, '_> {
     }
 
     /// The entity a note, event or curve note track is placed on
-    pub fn placement(&self, entity: Entity) -> Option<Entity> {
+    fn placement(&self, entity: Entity) -> Option<Entity> {
         let (child_of, event_of) = self.placements.get(entity).ok()?;
         child_of
             .map(ChildOf::parent)

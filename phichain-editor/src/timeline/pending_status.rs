@@ -1,10 +1,8 @@
 use crate::timeline::container::TimelineRect;
 use crate::timeline::pending::PendingOf;
-use crate::timeline::target::TimelineTargets;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use egui::{RichText, Ui};
-use phichain_chart::line::Line;
 
 const CARD_MAX_WIDTH: f32 = 280.0;
 const CARD_MARGIN: f32 = 12.0;
@@ -44,10 +42,8 @@ pub fn pending_status_ui(ui: &mut Ui, world: &mut World) {
     let mut state: SystemState<(
         Query<(Entity, &PendingOf, &PendingStatus)>,
         Query<&TimelineRect>,
-        TimelineTargets,
-        Query<&Line>,
     )> = SystemState::new(world);
-    let (pending, rects, targets, lines) = state.get(world);
+    let (pending, rects) = state.get(world);
     let Some((entity, owner, status)) = pending.iter().next() else {
         return;
     };
@@ -57,22 +53,10 @@ pub fn pending_status_ui(ui: &mut Ui, world: &mut World) {
     if !viewport.is_positive() {
         return;
     }
-    // The owner has switched to another line, so the pending object waits for it to come back
-    let paused = (!targets.displays(owner.0, entity)).then(|| {
-        targets
-            .placement(entity)
-            .and_then(|line| lines.get(line).ok())
-            .map(|line| line.name.clone())
-            .unwrap_or_default()
-    });
     let status = status.clone();
     let owner = owner.0;
 
-    let visuals = ui.visuals();
-    let outline = match paused {
-        Some(_) => egui::Stroke::new(1.0_f32, visuals.weak_text_color()),
-        None => egui::Stroke::new(1.5_f32, visuals.selection.bg_fill),
-    };
+    let outline = egui::Stroke::new(1.5_f32, ui.visuals().selection.bg_fill);
     ui.painter()
         .rect_stroke(viewport, 0.0, outline, egui::StrokeKind::Inside);
 
@@ -89,7 +73,7 @@ pub fn pending_status_ui(ui: &mut Ui, world: &mut World) {
             egui::Frame::popup(ui.style())
                 .show(ui, |ui| {
                     ui.set_width(width);
-                    status_ui(ui, &status, paused.as_deref())
+                    status_ui(ui, &status)
                 })
                 .inner
         })
@@ -100,15 +84,11 @@ pub fn pending_status_ui(ui: &mut Ui, world: &mut World) {
 }
 
 /// Returns whether the cancel button is clicked
-fn status_ui(ui: &mut Ui, status: &PendingStatus, paused: Option<&str>) -> bool {
+fn status_ui(ui: &mut Ui, status: &PendingStatus) -> bool {
     let (_, cancel) = egui::Sides::new().shrink_left().show(
         ui,
         |ui| {
-            let title = match paused {
-                Some(_) => t!("tab.timeline.pending.paused", title = status.title).into(),
-                None => status.title.clone(),
-            };
-            ui.add(egui::Label::new(RichText::new(title).strong()).truncate());
+            ui.add(egui::Label::new(RichText::new(&status.title).strong()).truncate());
         },
         |ui| {
             ui.button(t!("tab.timeline.pending.cancel"))
@@ -117,18 +97,13 @@ fn status_ui(ui: &mut Ui, status: &PendingStatus, paused: Option<&str>) -> bool 
         },
     );
 
-    ui.horizontal_wrapped(|ui| match paused {
-        Some(line) => {
-            ui.label(t!("tab.timeline.pending.resume", line = line));
-        }
-        None => {
-            for hint in &status.hints {
-                if let Some(key) = &hint.key {
-                    ui.label(RichText::new(key).strong());
-                }
-                ui.label(&hint.action);
-                ui.add_space(8.0);
+    ui.horizontal_wrapped(|ui| {
+        for hint in &status.hints {
+            if let Some(key) = &hint.key {
+                ui.label(RichText::new(key).strong());
             }
+            ui.label(&hint.action);
+            ui.add_space(8.0);
         }
     });
 

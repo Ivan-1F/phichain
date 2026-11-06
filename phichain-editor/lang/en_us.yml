@@ -84,8 +84,6 @@ tab:
       transition: "Confirm as transition event"
       pick_end: "Click an end note on the same line"
       cancel: "Cancel"
-      paused: "%{title} (paused)"
-      resume: "Switch back to %{line} to continue"
     event:
       jump_to_event: Jump to this event
   inspector:

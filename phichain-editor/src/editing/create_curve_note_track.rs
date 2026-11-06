@@ -96,8 +96,6 @@ mod tests {
         owner: Entity,
         from: Entity,
         to: Entity,
-        other_line: Entity,
-        other_note: Entity,
     }
 
     fn fixture() -> Fixture {
@@ -110,8 +108,6 @@ mod tests {
         let note = |beat: f32| Note::new(NoteKind::Tap, true, Beat::from(beat), 0.0, 1.0);
         let from = world.spawn((note(0.0), ChildOf(line))).id();
         let to = world.spawn((note(1.0), ChildOf(line))).id();
-        let other_line = world.spawn(Line::default()).id();
-        let other_note = world.spawn((note(1.0), ChildOf(other_line))).id();
         let owner = world.spawn(FollowSelectedLine).id();
         world.insert_resource(SelectedLine(line));
         open_document(world);
@@ -126,8 +122,6 @@ mod tests {
             owner,
             from,
             to,
-            other_line,
-            other_note,
         }
     }
 
@@ -184,17 +178,6 @@ mod tests {
         let other = fixture.app.world_mut().spawn_empty().id();
         click(&mut fixture.app, other, fixture.to);
         click(&mut fixture.app, fixture.owner, fixture.from);
-
-        let world = fixture.app.world_mut();
-        assert_eq!(pending_tracks(world).len(), 1);
-        assert!(tracks(world).is_empty());
-    }
-
-    #[test]
-    fn clicks_while_the_owner_shows_another_line_keep_the_track_pending() {
-        let mut fixture = fixture();
-        fixture.app.world_mut().resource_mut::<SelectedLine>().0 = fixture.other_line;
-        click(&mut fixture.app, fixture.owner, fixture.other_note);
 
         let world = fixture.app.world_mut();
         assert_eq!(pending_tracks(world).len(), 1);

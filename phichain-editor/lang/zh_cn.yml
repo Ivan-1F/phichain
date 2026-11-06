@@ -84,8 +84,6 @@ tab:
       transition: "确认为过渡事件"
       pick_end: "点击同一判定线上的终点"
       cancel: "取消"
-      paused: "%{title}（已暂停）"
-      resume: "切回判定线 %{line} 以继续"
     event:
       jump_to_event: 跳转至该事件
   inspector:

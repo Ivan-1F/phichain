@@ -84,8 +84,6 @@ tab:
       transition: "確認為漸變事件"
       pick_end: "點擊同一判定線上的終點"
       cancel: "取消"
-      paused: "%{title}（已暫停）"
-      resume: "切回判定線 %{line} 以繼續"
     event:
       jump_to_event: 跳轉至該事件
   inspector:

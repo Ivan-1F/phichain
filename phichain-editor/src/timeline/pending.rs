@@ -28,7 +28,12 @@ impl Plugin for PendingPlugin {
         )
         .add_systems(
             Update,
-            cancel_pending_on_escape.run_if(input_just_pressed(KeyCode::Escape)),
+            (
+                cancel_pending_on_escape.run_if(input_just_pressed(KeyCode::Escape)),
+                cancel_undisplayed_pending
+                    .run_if(any_with_component::<PendingOf>)
+                    .before(EditorSet::Edit),
+            ),
         );
     }
 }
@@ -36,17 +41,13 @@ impl Plugin for PendingPlugin {
 /// The pending object the user can interact with on a timeline
 #[derive(SystemParam)]
 pub struct ActivePending<'w, 's> {
-    pending: Query<'w, 's, (Entity, &'static PendingOf)>,
-    targets: TimelineTargets<'w, 's>,
+    pending: Query<'w, 's, &'static TimelinePending>,
 }
 
 impl ActivePending<'_, '_> {
-    /// The pending object owned by the timeline and placed on what it shows
+    /// The pending object owned by the timeline
     pub fn on(&self, timeline: Entity) -> Option<Entity> {
-        self.pending
-            .iter()
-            .find(|(entity, owner)| owner.0 == timeline && self.targets.displays(timeline, *entity))
-            .map(|(entity, _)| entity)
+        self.pending.get(timeline).ok()?.first().copied()
     }
 }
 
@@ -60,11 +61,34 @@ pub fn spawn_pending(
     commands.queue(move |world: &mut World| {
         if cancel_pending(world) {
             if let Some(mut toasts) = world.get_resource_mut::<ToastsStorage>() {
-                toasts.info(t!("tab.timeline.pending.cancelled"));
+                notify_cancelled(&mut toasts);
             }
         }
         world.spawn((bundle, PendingOf(owner), status));
     });
+}
+
+/// A pending object only exists in its view, where its owner shows it
+fn cancel_undisplayed_pending(
+    mut commands: Commands,
+    pending: Query<(Entity, &PendingOf)>,
+    targets: TimelineTargets,
+    toasts: Option<ResMut<ToastsStorage>>,
+) {
+    let mut cancelled = false;
+    for (entity, owner) in &pending {
+        if !targets.displays(owner.0, entity) {
+            commands.entity(entity).despawn();
+            cancelled = true;
+        }
+    }
+    if let (true, Some(mut toasts)) = (cancelled, toasts) {
+        notify_cancelled(&mut toasts);
+    }
+}
+
+fn notify_cancelled(toasts: &mut ToastsStorage) {
+    toasts.info(t!("tab.timeline.pending.cancelled"));
 }
 
 fn cancel_pending_on_escape(world: &mut World) {

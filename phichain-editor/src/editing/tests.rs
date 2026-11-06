@@ -13,6 +13,7 @@ use crate::timeline::event::EventTimeline;
 use crate::timeline::note::NoteTimeline;
 use crate::timeline::pending::{PendingOf, PendingPlugin};
 use crate::timeline::settings::TimelineSettings;
+use crate::timeline::target::TimelineOf;
 use crate::timing::ChartTime;
 use bevy::prelude::*;
 use phichain_chart::beat::Beat;
@@ -313,30 +314,25 @@ fn starting_a_pending_object_replaces_the_existing_one() {
 }
 
 #[test]
-fn a_pending_hold_freezes_while_its_follow_timeline_shows_another_line() {
+fn switching_the_line_of_a_follow_timeline_cancels_its_pending_object() {
     let (mut app, line) = editing_test_app();
+    let follow = ordered_timelines(app.world_mut())[0];
+    let fixed = app.world_mut().spawn(TimelineOf(line)).id();
     let other_line = app.world_mut().spawn(Line::default()).id();
-    let window = app.world_mut().spawn(window_at(Vec2::ZERO)).id();
-    open_document(app.world_mut());
-    let pending_note = |app: &mut App| {
-        let world = app.world_mut();
-        *world
-            .query_filtered::<&Note, With<PendingOf>>()
-            .single(world)
-            .unwrap()
-    };
-
-    press_at(&mut app, window, Vec2::new(200.0, 300.0), KeyCode::KeyR);
-    press_at(&mut app, window, Vec2::new(200.0, 300.0), KeyCode::KeyA);
-    let placed = pending_note(&mut app);
+    let note = Note::new(NoteKind::Tap, true, Beat::ZERO, 0.0, 1.0);
+    app.world_mut()
+        .spawn((note, PendingOf(follow), ChildOf(line)));
+    app.update();
+    assert_eq!(pending_owners(app.world_mut()), vec![follow]);
 
     app.world_mut().resource_mut::<SelectedLine>().0 = other_line;
-    press_at(&mut app, window, Vec2::new(200.0, 100.0), KeyCode::KeyA);
-    assert_eq!(pending_note(&mut app), placed);
+    app.update();
+    assert!(pending_owners(app.world_mut()).is_empty());
 
-    app.world_mut().resource_mut::<SelectedLine>().0 = line;
-    press_at(&mut app, window, Vec2::new(200.0, 100.0), KeyCode::KeyA);
-    assert!(pending_note(&mut app).hold_beat() > placed.hold_beat());
+    app.world_mut()
+        .spawn((note, PendingOf(fixed), ChildOf(line)));
+    app.update();
+    assert_eq!(pending_owners(app.world_mut()), vec![fixed]);
 }
 
 fn press_at(app: &mut App, window: Entity, position: Vec2, key: KeyCode) {

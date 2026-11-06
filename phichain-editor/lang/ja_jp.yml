@@ -84,8 +84,6 @@ tab:
       transition: "トランジションイベントとして確定"
       pick_end: "同じ判定線上の終点ノーツをクリック"
       cancel: "キャンセル"
-      paused: "%{title}（一時停止中）"
-      resume: "判定線 %{line} に戻ると再開します"
     event:
       jump_to_event: このイベントにジャンプ
   inspector:
