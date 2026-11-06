@@ -11,7 +11,7 @@ use crate::identifier::{Identifier, IntoIdentifier};
 use crate::schedule::EditorSet;
 use crate::timeline::container::TimelineLayout;
 use crate::timeline::note::NoteTimeline;
-use crate::timeline::pending::PendingOf;
+use crate::timeline::pending::{spawn_pending, PendingOf};
 use crate::timeline::TimelineContext;
 use crate::utils::convert::BevyEguiConvert;
 
@@ -62,7 +62,6 @@ fn create_note_system(
     mut commands: Commands,
     ctx: TimelineContext,
     hotkey: HotkeyContext,
-    keyboard: Res<ButtonInput<KeyCode>>,
 
     layout: TimelineLayout,
     note_timelines: Query<(), With<NoteTimeline>>,
@@ -74,14 +73,6 @@ fn create_note_system(
 
     pending_note_query: Query<(&Note, Entity, Option<&PendingOf>), With<Pending>>,
 ) -> Result {
-    // Cancellation takes priority over preview updates and placement, even without a cursor.
-    if keyboard.just_pressed(KeyCode::Escape) {
-        for (_, entity, _) in &pending_note_query {
-            commands.entity(entity).despawn();
-        }
-        return Ok(());
-    }
-
     let Ok(window) = window_query.single() else {
         return Ok(());
     };
@@ -175,8 +166,10 @@ fn create_note_system(
             });
         } else {
             let (x, beat) = calc_note_attrs();
-            commands.entity(line_entity).with_children(|parent| {
-                parent.spawn((
+            spawn_pending(
+                &mut commands,
+                item.timeline,
+                (
                     Note::new(
                         NoteKind::Hold {
                             hold_beat: Beat::ONE,
@@ -186,10 +179,9 @@ fn create_note_system(
                         x * CANVAS_WIDTH,
                         1.0,
                     ),
-                    Pending,
-                    PendingOf(item.timeline),
-                ));
-            });
+                    ChildOf(line_entity),
+                ),
+            );
         }
     }
 

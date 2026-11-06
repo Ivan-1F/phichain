@@ -5,7 +5,7 @@ use crate::selection::{Select, Selected};
 use crate::tab::timeline::TimelineFilter;
 use crate::timeline::container::TimelineRect;
 use crate::timeline::kind::target_name;
-use crate::timeline::pending::PendingOf;
+use crate::timeline::pending::{spawn_pending, PendingOf};
 use crate::timeline::target::{TimelineOf, TimelineTargets};
 use crate::timeline::{TimelineContext, LANE_LINE_OPACITY};
 use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
@@ -36,53 +36,48 @@ fn pending_curve_note_track_ui(
     viewport: Rect,
     timeline: Entity,
     previews: &PendingTrackPreviews,
-    keyboard: &ButtonInput<KeyCode>,
     commands: &mut Commands,
 ) {
     let preview = previews
         .iter()
         .find_map(|(entity, owner)| (owner.0 == timeline).then_some(entity));
     if let Some(preview) = preview {
-        let escape = keyboard.just_pressed(KeyCode::Escape);
-        let cancel = escape
-            || egui::Area::new(ui.id().with("pending_curve_note_track"))
-                .order(egui::Order::Foreground)
-                .pivot(egui::Align2::CENTER_CENTER)
-                .fixed_pos(egui::pos2(
-                    viewport.center().x,
-                    viewport.top() + viewport.height() * (INDICATOR_POSITION + 1.0) / 2.0,
-                ))
-                .constrain_to(viewport)
-                .show(ui.ctx(), |ui| {
-                    ui.set_width((viewport.width() - 16.0).clamp(0.0, 280.0));
-                    for font in ui.style_mut().text_styles.values_mut() {
-                        font.size *= 0.9;
-                    }
-                    ui.spacing_mut().interact_size.y *= 0.9;
-                    egui::Frame::popup(ui.style())
-                        .inner_margin(egui::Margin::symmetric(10, 6))
-                        .show(ui, |ui| {
-                            let (_, cancel) = egui::Sides::new().shrink_left().wrap().show(
-                                ui,
-                                |ui| {
-                                    ui.strong(t!("tab.timeline.curve_note_track.creating"));
-                                },
-                                |ui| {
-                                    ui.add(
-                                        egui::Button::new(t!(
-                                            "tab.timeline.curve_note_track.cancel"
-                                        ))
+        let cancel = egui::Area::new(ui.id().with("pending_curve_note_track"))
+            .order(egui::Order::Foreground)
+            .pivot(egui::Align2::CENTER_CENTER)
+            .fixed_pos(egui::pos2(
+                viewport.center().x,
+                viewport.top() + viewport.height() * (INDICATOR_POSITION + 1.0) / 2.0,
+            ))
+            .constrain_to(viewport)
+            .show(ui.ctx(), |ui| {
+                ui.set_width((viewport.width() - 16.0).clamp(0.0, 280.0));
+                for font in ui.style_mut().text_styles.values_mut() {
+                    font.size *= 0.9;
+                }
+                ui.spacing_mut().interact_size.y *= 0.9;
+                egui::Frame::popup(ui.style())
+                    .inner_margin(egui::Margin::symmetric(10, 6))
+                    .show(ui, |ui| {
+                        let (_, cancel) = egui::Sides::new().shrink_left().wrap().show(
+                            ui,
+                            |ui| {
+                                ui.strong(t!("tab.timeline.curve_note_track.creating"));
+                            },
+                            |ui| {
+                                ui.add(
+                                    egui::Button::new(t!("tab.timeline.curve_note_track.cancel"))
                                         .frame(false),
-                                    )
-                                    .on_hover_text("Esc")
-                                },
-                            );
-                            ui.small(t!("tab.timeline.curve_note_track.select_destination"));
-                            cancel.clicked()
-                        })
-                        .inner
-                })
-                .inner;
+                                )
+                                .on_hover_text("Esc")
+                            },
+                        );
+                        ui.small(t!("tab.timeline.curve_note_track.select_destination"));
+                        cancel.clicked()
+                    })
+                    .inner
+            })
+            .inner;
         if cancel {
             commands.entity(preview).despawn();
         }
@@ -122,7 +117,6 @@ pub fn note_timeline_ui(
         (With<Pending>, Without<CurveNoteTrackTo>),
     >,
     pending_previews: PendingTrackPreviews,
-    keyboard: Res<ButtonInput<KeyCode>>,
 ) {
     let Some(line_entity) = targets.get(timeline) else {
         return;
@@ -130,14 +124,7 @@ pub fn note_timeline_ui(
     let viewport = ui.max_rect();
     let ui = &mut ui;
 
-    pending_curve_note_track_ui(
-        ui,
-        viewport,
-        timeline,
-        &pending_previews,
-        &keyboard,
-        &mut commands,
-    );
+    pending_curve_note_track_ui(ui, viewport, timeline, &pending_previews, &mut commands);
 
     let line_children = children_query.get(line_entity).ok();
     let children = || {
@@ -276,15 +263,11 @@ pub fn note_timeline_ui(
                     .button(t!("tab.inspector.curve_note_track.start"))
                     .clicked()
                 {
-                    for (preview, _, _) in &pending_tracks {
-                        commands.entity(preview).despawn();
-                    }
-                    commands.spawn((
-                        CurveNoteTrackFrom(entity),
-                        ChildOf(line_entity),
-                        Pending,
-                        PendingOf(timeline),
-                    ));
+                    spawn_pending(
+                        &mut commands,
+                        timeline,
+                        (CurveNoteTrackFrom(entity), ChildOf(line_entity)),
+                    );
                     ui.close();
                 }
             });

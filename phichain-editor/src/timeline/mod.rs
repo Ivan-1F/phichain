@@ -18,6 +18,7 @@ use crate::timeline::kind::TimelineKindRegistrationExt;
 use crate::timeline::note::{
     note_timeline_drag_selection, note_timeline_name, note_timeline_ui, NoteTimeline,
 };
+use crate::timeline::pending::PendingPlugin;
 use crate::timeline::settings::TimelineSettings;
 use crate::timing::ChartTime;
 use bevy::app::{App, Plugin};
@@ -36,7 +37,7 @@ pub struct TimelinePlugin;
 
 impl Plugin for TimelinePlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(TimelineDragSelectionPlugin)
+        app.add_plugins((TimelineDragSelectionPlugin, PendingPlugin))
             .insert_resource(TimelineViewport(bevy::math::Rect::from_corners(
                 Vec2::ZERO,
                 Vec2::ZERO,

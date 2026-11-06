@@ -77,6 +77,8 @@ tab:
       select_destination: 請選擇同一判定線上的終點
       same_endpoint: 起點和終點不能是同一個音符
       cancel: 取消
+    pending:
+      cancelled: 已取消未完成的建立
     event:
       jump_to_event: 跳轉至該事件
   inspector:

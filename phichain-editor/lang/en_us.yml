@@ -77,6 +77,8 @@ tab:
       select_destination: Select an end note on the same line.
       same_endpoint: The start and end cannot be the same note.
       cancel: Cancel
+    pending:
+      cancelled: Cancelled the unfinished creation
     event:
       jump_to_event: Jump to this event
   inspector:

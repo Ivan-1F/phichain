@@ -9,7 +9,7 @@ use crate::identifier::{Identifier, IntoIdentifier};
 use crate::schedule::EditorSet;
 use crate::timeline::container::TimelineLayout;
 use crate::timeline::event::EventTimeline;
-use crate::timeline::pending::PendingOf;
+use crate::timeline::pending::{spawn_pending, PendingOf};
 use crate::timeline::TimelineContext;
 use crate::utils::convert::BevyEguiConvert;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
@@ -59,7 +59,6 @@ fn create_event_system(
     mut commands: Commands,
     ctx: TimelineContext,
     hotkey: HotkeyContext,
-    keyboard: Res<ButtonInput<KeyCode>>,
 
     layout: TimelineLayout,
     event_timelines: Query<(), With<EventTimeline>>,
@@ -73,14 +72,6 @@ fn create_event_system(
 
     event_query: Query<(&LineEvent, &EventOf), Without<Pending>>,
 ) -> Result {
-    // Cancellation takes priority over preview updates and placement, even without a cursor.
-    if keyboard.just_pressed(KeyCode::Escape) {
-        for (_, entity, _) in &pending_event_query {
-            commands.entity(entity).despawn();
-        }
-        return Ok(());
-    }
-
     let Ok(window) = window_query.single() else {
         return Ok(());
     };
@@ -167,17 +158,19 @@ fn create_event_system(
         } else {
             let (track, beat) = calc_event_attrs();
             let kind = LineEventKind::try_from(track).expect("Unknown event track");
-            commands.spawn((
-                LineEvent {
-                    kind,
-                    value,
-                    start_beat: beat,
-                    end_beat: beat + ctx.settings.minimum_beat(),
-                },
-                Pending,
-                PendingOf(item.timeline),
-                EventOf(line_entity),
-            ));
+            spawn_pending(
+                &mut commands,
+                item.timeline,
+                (
+                    LineEvent {
+                        kind,
+                        value,
+                        start_beat: beat,
+                        end_beat: beat + ctx.settings.minimum_beat(),
+                    },
+                    EventOf(line_entity),
+                ),
+            );
         }
     }
 

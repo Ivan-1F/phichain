@@ -10,8 +10,9 @@ use crate::timeline::container::{
     layout_timelines, ordered_timelines, push_timeline, spawn_timeline_container,
 };
 use crate::timeline::note::NoteTimeline;
-use crate::timeline::pending::PendingOf;
+use crate::timeline::pending::{PendingOf, PendingPlugin};
 use crate::timeline::settings::TimelineSettings;
+use crate::timeline::target::TimelineOf;
 use crate::timing::ChartTime;
 use bevy::prelude::*;
 use phichain_chart::beat::Beat;
@@ -43,6 +44,7 @@ fn editing_test_app() -> (App, Entity) {
             HistoryPlugin,
             CreateNotePlugin,
             CreateEventPlugin,
+            PendingPlugin,
         ));
     let defaults = app.world().resource::<HotkeyRegistry>().0.clone();
     for (id, hotkey) in defaults {
@@ -77,8 +79,11 @@ fn assert_escape_cancels(window: Option<Window>, placement_key: Option<KeyCode>,
     let saved_note = app.world_mut().spawn((note, ChildOf(line))).id();
     let saved_event = app.world_mut().spawn((event, EventOf(line))).id();
     if pending {
-        app.world_mut().spawn((note, Pending, ChildOf(line)));
-        app.world_mut().spawn((event, Pending, EventOf(line)));
+        let timelines = ordered_timelines(app.world_mut());
+        app.world_mut()
+            .spawn((note, Pending, PendingOf(timelines[0]), ChildOf(line)));
+        app.world_mut()
+            .spawn((event, Pending, PendingOf(timelines[1]), EventOf(line)));
     }
     if let Some(window) = window {
         app.world_mut().spawn(window);
@@ -262,4 +267,73 @@ fn pending_hold_follows_the_cursor_only_on_its_owner_timeline() {
 
     let frozen = move_cursor_and_update(&mut app, Vec2::new(750.0, 50.0));
     assert_eq!(frozen, extended);
+}
+
+fn pending_owners(world: &mut World) -> Vec<Entity> {
+    world
+        .query_filtered::<&PendingOf, With<Pending>>()
+        .iter(world)
+        .map(|owner| owner.0)
+        .collect()
+}
+
+#[test]
+fn starting_a_pending_object_replaces_the_existing_one() {
+    let (mut app, _) = editing_test_app();
+    let timelines = ordered_timelines(app.world_mut());
+    let window = app
+        .world_mut()
+        .spawn(window_at(Vec2::new(200.0, 300.0)))
+        .id();
+    open_document(app.world_mut());
+
+    app.world_mut()
+        .resource_mut::<ButtonInput<KeyCode>>()
+        .press(KeyCode::KeyR);
+    app.update();
+    assert_eq!(pending_owners(app.world_mut()), vec![timelines[0]]);
+
+    let world = app.world_mut();
+    world
+        .get_mut::<Window>(window)
+        .unwrap()
+        .set_cursor_position(Some(Vec2::new(750.0, 300.0)));
+    let mut keyboard = world.resource_mut::<ButtonInput<KeyCode>>();
+    keyboard.reset_all();
+    keyboard.press(KeyCode::KeyQ);
+    app.update();
+
+    let world = app.world_mut();
+    assert_eq!(pending_owners(world), vec![timelines[1]]);
+    assert_eq!(
+        world
+            .query_filtered::<(), (With<Note>, With<Pending>)>()
+            .iter(world)
+            .count(),
+        0
+    );
+    assert_eq!(world.resource::<EditorHistory>().entries().count(), 0);
+}
+
+#[test]
+fn switching_the_selected_line_cancels_pending_objects_of_following_timelines() {
+    let (mut app, line) = editing_test_app();
+    let follow = ordered_timelines(app.world_mut())[0];
+    let fixed = app.world_mut().spawn(TimelineOf(line)).id();
+    let other_line = app.world_mut().spawn(Line::default()).id();
+    let note = Note::new(NoteKind::Tap, true, Beat::ZERO, 0.0, 1.0);
+    app.world_mut()
+        .spawn((note, Pending, PendingOf(follow), ChildOf(line)));
+    app.update();
+    assert_eq!(pending_owners(app.world_mut()), vec![follow]);
+
+    app.world_mut().resource_mut::<SelectedLine>().0 = other_line;
+    app.update();
+    assert!(pending_owners(app.world_mut()).is_empty());
+
+    app.world_mut()
+        .spawn((note, Pending, PendingOf(fixed), ChildOf(line)));
+    app.world_mut().resource_mut::<SelectedLine>().0 = line;
+    app.update();
+    assert_eq!(pending_owners(app.world_mut()), vec![fixed]);
 }

@@ -77,6 +77,8 @@ tab:
       select_destination: 同じ判定線上の終点ノーツを選択してください
       same_endpoint: 始点と終点に同じノーツは指定できません
       cancel: キャンセル
+    pending:
+      cancelled: 未完了の作成をキャンセルしました
     event:
       jump_to_event: このイベントにジャンプ
   inspector:
