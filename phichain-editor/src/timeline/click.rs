@@ -1,6 +1,6 @@
 use crate::schedule::EditorSet;
 use crate::selection::{handle_select_event, Select};
-use crate::timeline::pending::ActivePending;
+use crate::timeline::pending::TimelinePending;
 use bevy::prelude::*;
 
 /// An object drawn on a timeline was clicked
@@ -23,14 +23,18 @@ impl Plugin for TimelineClickPlugin {
     }
 }
 
-/// Clicks on a timeline belong to the pending object active on it
+/// Clicks on a timeline belong to its pending object
 fn select_clicked(
     mut clicks: MessageReader<TimelineClick>,
     mut select: MessageWriter<Select>,
-    active_pending: ActivePending,
+    timeline_pending: Query<&TimelinePending>,
 ) {
     for click in clicks.read() {
-        if active_pending.on(click.timeline).is_some() {
+        let pending = timeline_pending
+            .get(click.timeline)
+            .ok()
+            .and_then(TimelinePending::entity);
+        if pending.is_some() {
             continue;
         }
         select.write(Select(vec![click.entity]));

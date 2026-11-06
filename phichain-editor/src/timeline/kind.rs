@@ -1,9 +1,7 @@
-use crate::timeline::target::TimelineOf;
 use bevy::ecs::component::ComponentId;
 use bevy::ecs::system::SystemId;
 use bevy::prelude::*;
 use egui::{Rect, Ui};
-use phichain_chart::line::Line;
 
 /// Systems implementing a kind of timeline, identified by its marker component
 #[derive(Debug, Clone, Copy)]
@@ -96,23 +94,6 @@ pub fn timeline_name(world: &mut World, timeline: Entity) -> String {
             error!("Failed to get timeline name: {error}");
             String::new()
         })
-}
-
-/// Name of a timeline prefixed by its icon: the name of its fixed line, or a binding label when following the selected line
-pub fn target_name(
-    icon: &str,
-    timeline: Entity,
-    timeline_of: &Query<&TimelineOf>,
-    lines: &Query<&Line>,
-) -> String {
-    let name = match timeline_of.get(timeline) {
-        Ok(of) => lines
-            .get(of.0)
-            .map(|line| line.name.clone())
-            .unwrap_or_default(),
-        Err(_) => t!("tab.timeline_setting.timelines.binding").into_owned(),
-    };
-    format!("{icon} {name}")
 }
 
 #[cfg(test)]

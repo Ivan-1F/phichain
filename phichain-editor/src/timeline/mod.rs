@@ -123,7 +123,7 @@ impl TimelineContext<'_> {
 pub mod common {
     use crate::constants::INDICATOR_POSITION;
     use crate::tab::timeline::TimelineViewport;
-    use crate::timeline::container::{allocated_timelines, move_separator, swap_timelines};
+    use crate::timeline::container::{laid_out_timelines, move_separator, swap_timelines};
     use crate::timeline::kind::timeline_name;
     use crate::timeline::TimelineContext;
     use crate::utils::convert::BevyEguiConvert;
@@ -246,7 +246,7 @@ pub mod common {
 
     pub fn separator_ui(ui: &mut Ui, world: &mut World) {
         let viewport = world.resource::<TimelineViewport>().0.into_egui();
-        let timelines = allocated_timelines(world);
+        let timelines = laid_out_timelines(world);
 
         let separators = timelines.len().saturating_sub(1);
         for (index, item) in timelines.iter().enumerate().take(separators) {

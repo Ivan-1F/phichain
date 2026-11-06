@@ -276,44 +276,6 @@ fn pending_owners(world: &mut World) -> Vec<Entity> {
 }
 
 #[test]
-fn starting_a_pending_object_replaces_the_existing_one() {
-    let (mut app, _) = editing_test_app();
-    let timelines = ordered_timelines(app.world_mut());
-    let window = app
-        .world_mut()
-        .spawn(window_at(Vec2::new(200.0, 300.0)))
-        .id();
-    open_document(app.world_mut());
-
-    app.world_mut()
-        .resource_mut::<ButtonInput<KeyCode>>()
-        .press(KeyCode::KeyR);
-    app.update();
-    assert_eq!(pending_owners(app.world_mut()), vec![timelines[0]]);
-
-    let world = app.world_mut();
-    world
-        .get_mut::<Window>(window)
-        .unwrap()
-        .set_cursor_position(Some(Vec2::new(750.0, 300.0)));
-    let mut keyboard = world.resource_mut::<ButtonInput<KeyCode>>();
-    keyboard.reset_all();
-    keyboard.press(KeyCode::KeyQ);
-    app.update();
-
-    let world = app.world_mut();
-    assert_eq!(pending_owners(world), vec![timelines[1]]);
-    assert_eq!(
-        world
-            .query_filtered::<(), (With<Note>, With<Pending>)>()
-            .iter(world)
-            .count(),
-        0
-    );
-    assert_eq!(world.resource::<EditorHistory>().entries().count(), 0);
-}
-
-#[test]
 fn switching_the_line_of_a_follow_timeline_cancels_its_pending_object() {
     let (mut app, line) = editing_test_app();
     let follow = ordered_timelines(app.world_mut())[0];

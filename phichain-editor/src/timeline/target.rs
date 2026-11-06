@@ -1,6 +1,7 @@
 use crate::selection::SelectedLine;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
+use phichain_chart::line::Line;
 use phichain_game::event::EventOf;
 
 /// The entity a timeline shows, fixed regardless of the selected line
@@ -51,4 +52,21 @@ impl TimelineTargets<'_, '_> {
         self.placement(entity)
             .is_some_and(|placement| self.get(timeline) == Some(placement))
     }
+}
+
+/// Name of a timeline prefixed by its icon: the name of its fixed line, or a binding label when following the selected line
+pub fn target_name(
+    icon: &str,
+    timeline: Entity,
+    timeline_of: &Query<&TimelineOf>,
+    lines: &Query<&Line>,
+) -> String {
+    let name = match timeline_of.get(timeline) {
+        Ok(of) => lines
+            .get(of.0)
+            .map(|line| line.name.clone())
+            .unwrap_or_default(),
+        Err(_) => t!("tab.timeline_setting.timelines.binding").into_owned(),
+    };
+    format!("{icon} {name}")
 }

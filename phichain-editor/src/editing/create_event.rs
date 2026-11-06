@@ -9,7 +9,7 @@ use crate::identifier::{Identifier, IntoIdentifier};
 use crate::schedule::EditorSet;
 use crate::timeline::container::TimelineLayout;
 use crate::timeline::event::EventTimeline;
-use crate::timeline::pending::{spawn_pending, ActivePending};
+use crate::timeline::pending::{spawn_pending, TimelinePending};
 use crate::timeline::pending_status::{PendingHint, PendingStatus};
 use crate::timeline::TimelineContext;
 use crate::utils::convert::BevyEguiConvert;
@@ -69,7 +69,7 @@ fn create_event_system(
 
     mut edits: Edits,
 
-    active_pending: ActivePending,
+    timeline_pending: Query<&TimelinePending>,
     events: Query<&LineEvent>,
 
     event_query: Query<(&LineEvent, &EventOf), Without<Pending>>,
@@ -93,8 +93,10 @@ fn create_event_system(
     let viewport = item.viewport;
 
     let requested_value = requested_event_value(&hotkey);
-    let pending_event = active_pending
-        .on(item.timeline)
+    let pending_event = timeline_pending
+        .get(item.timeline)
+        .ok()
+        .and_then(TimelinePending::entity)
         .and_then(|entity| Some((events.get(entity).ok()?, entity)));
 
     let calc_event_attrs = || {

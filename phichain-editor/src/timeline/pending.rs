@@ -2,7 +2,6 @@ use crate::notification::{ToastsExt, ToastsStorage};
 use crate::schedule::EditorSet;
 use crate::timeline::pending_status::PendingStatus;
 use crate::timeline::target::TimelineTargets;
-use bevy::ecs::system::SystemParam;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
 use phichain_game::Pending;
@@ -13,9 +12,16 @@ use phichain_game::Pending;
 #[require(Pending)]
 pub struct PendingOf(pub Entity);
 
-#[derive(Component, Deref, Debug)]
+#[derive(Component, Debug)]
 #[relationship_target(relationship = PendingOf, linked_spawn)]
 pub struct TimelinePending(Vec<Entity>);
+
+impl TimelinePending {
+    /// The pending object on the timeline, there is at most one
+    pub fn entity(&self) -> Option<Entity> {
+        self.0.first().copied()
+    }
+}
 
 pub struct PendingPlugin;
 
@@ -35,19 +41,6 @@ impl Plugin for PendingPlugin {
                     .before(EditorSet::Edit),
             ),
         );
-    }
-}
-
-/// The pending object the user can interact with on a timeline
-#[derive(SystemParam)]
-pub struct ActivePending<'w, 's> {
-    pending: Query<'w, 's, &'static TimelinePending>,
-}
-
-impl ActivePending<'_, '_> {
-    /// The pending object owned by the timeline
-    pub fn on(&self, timeline: Entity) -> Option<Entity> {
-        self.pending.get(timeline).ok()?.first().copied()
     }
 }
 

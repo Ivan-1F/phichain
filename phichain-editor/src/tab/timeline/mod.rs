@@ -3,7 +3,7 @@ use bevy_persistent::Persistent;
 use egui::Ui;
 
 use crate::settings::EditorSettings;
-use crate::timeline::container::{allocated_timelines, layout_timelines};
+use crate::timeline::container::{laid_out_timelines, layout_timelines};
 use crate::timeline::kind::timeline_ui;
 use crate::timeline::pending_status::pending_status_ui;
 use crate::timeline::settings::TimelineSettings;
@@ -70,7 +70,7 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
     let _ = timeline::drag_selection::timeline_drag_selection(&mut ui, world);
 
     // content
-    let timelines = allocated_timelines(world);
+    let timelines = laid_out_timelines(world);
     for item in &timelines {
         let mut child = ui.new_child(
             egui::UiBuilder::new()

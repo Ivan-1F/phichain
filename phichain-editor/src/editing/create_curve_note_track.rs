@@ -2,7 +2,7 @@ use crate::editing::history::Edits;
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::schedule::EditorSet;
 use crate::timeline::click::TimelineClick;
-use crate::timeline::pending::{spawn_pending, ActivePending};
+use crate::timeline::pending::{spawn_pending, TimelinePending};
 use crate::timeline::pending_status::{PendingHint, PendingStatus};
 use bevy::prelude::*;
 use phichain_chart::curve_note_track::CurveNoteTrackOptions;
@@ -41,13 +41,15 @@ fn complete_curve_note_track(
     mut clicks: MessageReader<TimelineClick>,
     mut edits: Edits,
     mut toasts: ResMut<ToastsStorage>,
-    active_pending: ActivePending,
+    timeline_pending: Query<&TimelinePending>,
     tracks: Query<(&CurveNoteTrackFrom, &CurveNoteTrackOptions)>,
     notes: Query<&ChildOf, (With<Note>, Without<CurveNote>, Without<Pending>)>,
 ) {
     for click in clicks.read() {
-        let Some((preview, (from, options))) = active_pending
-            .on(click.timeline)
+        let Some((preview, (from, options))) = timeline_pending
+            .get(click.timeline)
+            .ok()
+            .and_then(TimelinePending::entity)
             .and_then(|preview| Some((preview, tracks.get(preview).ok()?)))
         else {
             continue;
