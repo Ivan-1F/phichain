@@ -9,6 +9,7 @@ use bevy::prelude::*;
 
 pub(crate) mod bpm;
 mod clipboard;
+pub(crate) mod create_curve_note_track;
 mod create_event;
 mod create_note;
 mod delete_selected;
@@ -27,6 +28,7 @@ impl Plugin for EditingPlugin {
         app.add_plugins(HistoryPlugin)
             .add_plugins(DeleteSelectedPlugin)
             .add_plugins(CreateNotePlugin)
+            .add_plugins(create_curve_note_track::CreateCurveNoteTrackPlugin)
             .add_plugins(ClipboardPlugin)
             .add_plugins(create_event::CreateEventPlugin)
             .add_plugins(moving::MovingPlugin)

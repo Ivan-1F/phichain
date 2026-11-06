@@ -731,7 +731,7 @@ fn event_timeline_applies_handle_edits_and_undo_restores_the_range() {
     use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
     let mut app = app();
     timeline_resources(&mut app);
-    app.add_message::<crate::selection::Select>()
+    app.add_message::<crate::timeline::click::TimelineClick>()
         .add_message::<crate::timing::SeekTo>();
     let line = app
         .world_mut()

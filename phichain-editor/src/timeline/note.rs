@@ -1,11 +1,12 @@
 use crate::constants::{INDICATOR_POSITION, PENDING_OPACITY};
+use crate::editing::create_curve_note_track::start_curve_note_track;
 use crate::editing::history::Edits;
-use crate::notification::{ToastsExt, ToastsStorage};
-use crate::selection::{Select, Selected};
+use crate::selection::Selected;
 use crate::tab::timeline::TimelineFilter;
+use crate::timeline::click::TimelineClick;
 use crate::timeline::container::TimelineRect;
 use crate::timeline::kind::target_name;
-use crate::timeline::pending::{spawn_pending, PendingOf};
+use crate::timeline::pending::PendingOf;
 use crate::timeline::target::{TimelineOf, TimelineTargets};
 use crate::timeline::{TimelineContext, LANE_LINE_OPACITY};
 use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
@@ -15,12 +16,9 @@ use bevy_egui::EguiUserTextures;
 use egui::{Color32, Pos2, Rect, Sense, Ui};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::CANVAS_WIDTH;
-use phichain_chart::curve_note_track::CurveNoteTrackOptions;
 use phichain_chart::line::Line;
 use phichain_chart::note::{Note, NoteKind};
-use phichain_game::curve_note_track::{
-    CurveNote, CurveNoteTrack, CurveNoteTrackFrom, CurveNoteTrackTo,
-};
+use phichain_game::curve_note_track::{CurveNote, CurveNoteTrack, CurveNoteTrackFrom};
 use phichain_game::highlight::Highlighted;
 use phichain_game::Pending;
 use std::cmp::Ordering;
@@ -90,7 +88,6 @@ pub fn note_timeline_ui(
     ctx: TimelineContext,
     note_query: Query<(
         &Note,
-        &ChildOf,
         Entity,
         Option<&Highlighted>,
         Option<&Selected>,
@@ -108,14 +105,9 @@ pub fn note_timeline_ui(
         Res<Assets<Image>>,
         Res<EguiUserTextures>,
     ),
-    mut select_events: MessageWriter<Select>,
+    mut clicks: MessageWriter<TimelineClick>,
     mut commands: Commands,
     mut edits: Edits,
-    mut toasts: ResMut<ToastsStorage>,
-    pending_tracks: Query<
-        (Entity, &CurveNoteTrackFrom, &CurveNoteTrackOptions),
-        (With<Pending>, Without<CurveNoteTrackTo>),
-    >,
     pending_previews: PendingTrackPreviews,
 ) {
     let Some(line_entity) = targets.get(timeline) else {
@@ -224,7 +216,7 @@ pub fn note_timeline_ui(
         }};
     }
 
-    for (note, _, entity, highlighted, selected, curve_note, pending, pending_of) in notes {
+    for (note, entity, highlighted, selected, curve_note, pending, pending_of) in notes {
         if !ctx.settings.note_side_filter.filter(*note) {
             continue;
         }
@@ -263,41 +255,13 @@ pub fn note_timeline_ui(
                     .button(t!("tab.inspector.curve_note_track.start"))
                     .clicked()
                 {
-                    spawn_pending(
-                        &mut commands,
-                        timeline,
-                        (CurveNoteTrackFrom(entity), ChildOf(line_entity)),
-                    );
+                    start_curve_note_track(&mut commands, timeline, entity, line_entity);
                     ui.close();
                 }
             });
         }
         if response.clicked() {
-            if curve_note.is_none() && pending.is_none() {
-                if let Ok((preview, from, options)) = pending_tracks.single() {
-                    let from = from.0;
-                    if from == entity {
-                        toasts.info(t!("tab.timeline.curve_note_track.same_endpoint"));
-                        continue;
-                    }
-                    let options = options.clone();
-                    let line = note_query.get(from).unwrap().1.parent();
-                    if line != line_entity {
-                        continue;
-                    }
-                    commands.entity(preview).despawn();
-                    edits.once(t!("history.create_track"), move |commands| {
-                        commands.spawn((
-                            options,
-                            CurveNoteTrackFrom(from),
-                            CurveNoteTrackTo(entity),
-                            ChildOf(line),
-                        ));
-                    });
-                    continue;
-                }
-            }
-            select_events.write(Select(vec![entity]));
+            clicks.write(TimelineClick { timeline, entity });
         }
     }
 

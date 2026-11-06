@@ -1,3 +1,4 @@
+pub mod click;
 pub mod container;
 pub mod drag_selection;
 pub mod event;
@@ -9,6 +10,7 @@ pub mod target;
 
 use crate::constants::{BASE_ZOOM, INDICATOR_POSITION};
 use crate::tab::timeline::TimelineViewport;
+use crate::timeline::click::TimelineClickPlugin;
 use crate::timeline::container::spawn_timeline_container;
 use crate::timeline::drag_selection::TimelineDragSelectionPlugin;
 use crate::timeline::event::{
@@ -37,25 +39,29 @@ pub struct TimelinePlugin;
 
 impl Plugin for TimelinePlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((TimelineDragSelectionPlugin, PendingPlugin))
-            .insert_resource(TimelineViewport(bevy::math::Rect::from_corners(
-                Vec2::ZERO,
-                Vec2::ZERO,
-            )))
-            .insert_resource(TimelineSettings::default())
-            .add_systems(Startup, spawn_timeline_container)
-            .add_timeline_kind(
-                NoteTimeline,
-                note_timeline_ui,
-                note_timeline_drag_selection,
-                note_timeline_name,
-            )
-            .add_timeline_kind(
-                EventTimeline,
-                event_timeline_ui,
-                event_timeline_drag_selection,
-                event_timeline_name,
-            );
+        app.add_plugins((
+            TimelineDragSelectionPlugin,
+            TimelineClickPlugin,
+            PendingPlugin,
+        ))
+        .insert_resource(TimelineViewport(bevy::math::Rect::from_corners(
+            Vec2::ZERO,
+            Vec2::ZERO,
+        )))
+        .insert_resource(TimelineSettings::default())
+        .add_systems(Startup, spawn_timeline_container)
+        .add_timeline_kind(
+            NoteTimeline,
+            note_timeline_ui,
+            note_timeline_drag_selection,
+            note_timeline_name,
+        )
+        .add_timeline_kind(
+            EventTimeline,
+            event_timeline_ui,
+            event_timeline_drag_selection,
+            event_timeline_name,
+        );
     }
 }
 

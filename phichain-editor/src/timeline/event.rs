@@ -1,6 +1,7 @@
 use crate::constants::{INDICATOR_POSITION, PENDING_OPACITY};
 use crate::editing::history::Edits;
-use crate::selection::{Select, Selected};
+use crate::selection::Selected;
+use crate::timeline::click::TimelineClick;
 use crate::timeline::container::TimelineRect;
 use crate::timeline::kind::target_name;
 use crate::timeline::pending::PendingOf;
@@ -97,7 +98,7 @@ pub fn event_timeline_ui(
     )>,
     events_query: Query<&Events>,
     bpm_list: Res<BpmList>,
-    mut select_events: MessageWriter<Select>,
+    mut clicks: MessageWriter<TimelineClick>,
     mut seek_to: MessageWriter<SeekTo>,
     mut edits: Edits,
 ) {
@@ -279,7 +280,7 @@ pub fn event_timeline_ui(
         }
 
         if response.clicked() {
-            select_events.write(Select(vec![entity]));
+            clicks.write(TimelineClick { timeline, entity });
         }
     }
 

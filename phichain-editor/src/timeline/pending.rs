@@ -9,6 +9,7 @@ use phichain_game::Pending;
 /// The timeline a [`Pending`] object is being placed on
 #[derive(Component, Debug)]
 #[relationship(relationship_target = TimelinePending)]
+#[require(Pending)]
 pub struct PendingOf(pub Entity);
 
 #[derive(Component, Deref, Debug)]
@@ -45,7 +46,7 @@ impl Plugin for PendingPlugin {
 pub fn spawn_pending(commands: &mut Commands, owner: Entity, bundle: impl Bundle) {
     commands.queue(move |world: &mut World| {
         cancel_pending(world, Cancellation::Implicit);
-        world.spawn((bundle, Pending, PendingOf(owner)));
+        world.spawn((bundle, PendingOf(owner)));
     });
 }
 
