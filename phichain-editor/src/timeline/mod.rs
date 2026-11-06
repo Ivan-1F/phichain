@@ -66,20 +66,11 @@ impl Plugin for TimelinePlugin {
     }
 }
 
-// TODO: make all resources mutable
 /// Resources and context to work with timelines
-///
-/// This [`SystemParam`] conflicts with all mutable resources it contains (https://bevyengine.org/learn/errors/b0002/):
-///
-/// - [`TimelineSettings`]
-///
-/// So it is impossible to have both [`TimelineContext`] and [`Res<TimelineSettings>`] (or [`ResMut<TimelineSettings>`]) params of a system
-///
-/// Instead, access the required resources directly from [`TimelineContext`]: `ctx.timeline_settings`
 #[derive(SystemParam)]
 pub struct TimelineContext<'w> {
     bpm_list: Res<'w, BpmList>,
-    pub settings: ResMut<'w, TimelineSettings>,
+    pub settings: Res<'w, TimelineSettings>,
     current_time: Res<'w, ChartTime>,
     pub viewport: Res<'w, TimelineViewport>,
 
