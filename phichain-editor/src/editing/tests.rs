@@ -13,7 +13,6 @@ use crate::timeline::event::EventTimeline;
 use crate::timeline::note::NoteTimeline;
 use crate::timeline::pending::{PendingOf, PendingPlugin};
 use crate::timeline::settings::TimelineSettings;
-use crate::timeline::target::TimelineOf;
 use crate::timing::ChartTime;
 use bevy::prelude::*;
 use phichain_chart::beat::Beat;
@@ -314,26 +313,30 @@ fn starting_a_pending_object_replaces_the_existing_one() {
 }
 
 #[test]
-fn switching_the_selected_line_cancels_pending_objects_of_following_timelines() {
+fn a_pending_hold_freezes_while_its_follow_timeline_shows_another_line() {
     let (mut app, line) = editing_test_app();
-    let follow = ordered_timelines(app.world_mut())[0];
-    let fixed = app.world_mut().spawn(TimelineOf(line)).id();
     let other_line = app.world_mut().spawn(Line::default()).id();
-    let note = Note::new(NoteKind::Tap, true, Beat::ZERO, 0.0, 1.0);
-    app.world_mut()
-        .spawn((note, Pending, PendingOf(follow), ChildOf(line)));
-    app.update();
-    assert_eq!(pending_owners(app.world_mut()), vec![follow]);
+    let window = app.world_mut().spawn(window_at(Vec2::ZERO)).id();
+    open_document(app.world_mut());
+    let pending_note = |app: &mut App| {
+        let world = app.world_mut();
+        *world
+            .query_filtered::<&Note, With<PendingOf>>()
+            .single(world)
+            .unwrap()
+    };
+
+    press_at(&mut app, window, Vec2::new(200.0, 300.0), KeyCode::KeyR);
+    press_at(&mut app, window, Vec2::new(200.0, 300.0), KeyCode::KeyA);
+    let placed = pending_note(&mut app);
 
     app.world_mut().resource_mut::<SelectedLine>().0 = other_line;
-    app.update();
-    assert!(pending_owners(app.world_mut()).is_empty());
+    press_at(&mut app, window, Vec2::new(200.0, 100.0), KeyCode::KeyA);
+    assert_eq!(pending_note(&mut app), placed);
 
-    app.world_mut()
-        .spawn((note, Pending, PendingOf(fixed), ChildOf(line)));
     app.world_mut().resource_mut::<SelectedLine>().0 = line;
-    app.update();
-    assert_eq!(pending_owners(app.world_mut()), vec![fixed]);
+    press_at(&mut app, window, Vec2::new(200.0, 100.0), KeyCode::KeyA);
+    assert!(pending_note(&mut app).hold_beat() > placed.hold_beat());
 }
 
 fn press_at(app: &mut App, window: Entity, position: Vec2, key: KeyCode) {
@@ -349,7 +352,7 @@ fn press_at(app: &mut App, window: Entity, position: Vec2, key: KeyCode) {
 }
 
 #[test]
-fn placing_notes_on_another_timeline_cancels_the_pending_hold() {
+fn placing_notes_elsewhere_keeps_the_pending_hold_until_the_hold_key_replaces_it() {
     let (mut app, _) = editing_test_app();
     // note 0..400, event 400..600, note 600..900
     push_timeline(app.world_mut(), NoteTimeline, None);
@@ -359,24 +362,24 @@ fn placing_notes_on_another_timeline_cancels_the_pending_hold() {
     open_document(app.world_mut());
 
     press_at(&mut app, window, Vec2::new(200.0, 300.0), KeyCode::KeyR);
-    press_at(&mut app, window, Vec2::new(750.0, 300.0), KeyCode::KeyR);
+    press_at(&mut app, window, Vec2::new(750.0, 300.0), KeyCode::KeyQ);
     let world = app.world_mut();
-    assert_eq!(pending_owners(world), vec![timelines[2]]);
-    assert_eq!(world.resource::<EditorHistory>().entries().count(), 0);
-
-    press_at(&mut app, window, Vec2::new(200.0, 300.0), KeyCode::KeyQ);
-    let world = app.world_mut();
-    assert!(pending_owners(world).is_empty());
+    assert_eq!(pending_owners(world), vec![timelines[0]]);
     let notes: Vec<_> = world
-        .query::<&Note>()
+        .query_filtered::<&Note, Without<Pending>>()
         .iter(world)
         .map(|note| note.kind)
         .collect();
     assert_eq!(notes, vec![NoteKind::Tap]);
+
+    press_at(&mut app, window, Vec2::new(750.0, 300.0), KeyCode::KeyR);
+    let world = app.world_mut();
+    assert_eq!(pending_owners(world), vec![timelines[2]]);
+    assert_eq!(world.resource::<EditorHistory>().entries().count(), 1);
 }
 
 #[test]
-fn placing_events_on_another_timeline_cancels_the_pending_event() {
+fn placing_events_on_another_timeline_replaces_the_pending_event() {
     let (mut app, _) = editing_test_app();
     // note 0..400, event 400..600, event 600..900
     push_timeline(app.world_mut(), EventTimeline, None);

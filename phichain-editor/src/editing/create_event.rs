@@ -9,7 +9,7 @@ use crate::identifier::{Identifier, IntoIdentifier};
 use crate::schedule::EditorSet;
 use crate::timeline::container::TimelineLayout;
 use crate::timeline::event::EventTimeline;
-use crate::timeline::pending::{spawn_pending, CancelPendingNotOwnedBy, PendingOf};
+use crate::timeline::pending::{spawn_pending, ActivePending};
 use crate::timeline::TimelineContext;
 use crate::utils::convert::BevyEguiConvert;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
@@ -68,7 +68,8 @@ fn create_event_system(
 
     mut edits: Edits,
 
-    pending_event_query: Query<(&LineEvent, Entity, &PendingOf)>,
+    active_pending: ActivePending,
+    events: Query<&LineEvent>,
 
     event_query: Query<(&LineEvent, &EventOf), Without<Pending>>,
 ) -> Result {
@@ -91,13 +92,9 @@ fn create_event_system(
     let viewport = item.viewport;
 
     let requested_value = requested_event_value(&hotkey);
-    if requested_value.is_some() {
-        commands.queue(CancelPendingNotOwnedBy(Some(item.timeline)));
-    }
-    let pending_event = pending_event_query
-        .single()
-        .ok()
-        .filter(|(_, _, owner)| owner.0 == item.timeline);
+    let pending_event = active_pending
+        .on(item.timeline)
+        .and_then(|entity| Some((events.get(entity).ok()?, entity)));
 
     let calc_event_attrs = || {
         let time = ctx.y_to_time(cursor_position.y);
@@ -111,16 +108,17 @@ fn create_event_system(
         (track, beat)
     };
 
-    if let Some((pending_event, entity, _)) = pending_event {
+    if let Some((pending_event, entity)) = pending_event {
         let mut pending_event = *pending_event;
         let (track, beat) = calc_event_attrs();
         pending_event.end_beat = beat.max(pending_event.start_beat + ctx.settings.minimum_beat());
         pending_event.kind = LineEventKind::try_from(track).expect("Unknown event track");
-        commands.entity(entity).insert(pending_event);
+        // The preview may be despawned by a cascade applied before this command
+        commands.entity(entity).try_insert(pending_event);
     }
 
     if let Some(value) = requested_value {
-        if let Some((pending_event, entity, _)) = pending_event {
+        if let Some((pending_event, entity)) = pending_event {
             // inherit event's start & end value from neighbor events
             let mut new_event = *pending_event;
             new_event.value = value;

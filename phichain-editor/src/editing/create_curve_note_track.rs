@@ -2,7 +2,7 @@ use crate::editing::history::Edits;
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::schedule::EditorSet;
 use crate::timeline::click::TimelineClick;
-use crate::timeline::pending::{spawn_pending, PendingOf};
+use crate::timeline::pending::{spawn_pending, ActivePending};
 use bevy::prelude::*;
 use phichain_chart::curve_note_track::CurveNoteTrackOptions;
 use phichain_chart::note::Note;
@@ -31,29 +31,19 @@ pub fn start_curve_note_track(
     );
 }
 
-type PendingTracks<'w, 's> = Query<
-    'w,
-    's,
-    (
-        Entity,
-        &'static CurveNoteTrackFrom,
-        &'static CurveNoteTrackOptions,
-        &'static PendingOf,
-    ),
-    Without<CurveNoteTrackTo>,
->;
-
 fn complete_curve_note_track(
     mut commands: Commands,
     mut clicks: MessageReader<TimelineClick>,
     mut edits: Edits,
     mut toasts: ResMut<ToastsStorage>,
-    pending: PendingTracks,
+    active_pending: ActivePending,
+    tracks: Query<(&CurveNoteTrackFrom, &CurveNoteTrackOptions)>,
     notes: Query<&ChildOf, (With<Note>, Without<CurveNote>, Without<Pending>)>,
 ) {
     for click in clicks.read() {
-        let Some((preview, from, options, _)) =
-            pending.iter().find(|(.., owner)| owner.0 == click.timeline)
+        let Some((preview, (from, options))) = active_pending
+            .on(click.timeline)
+            .and_then(|preview| Some((preview, tracks.get(preview).ok()?)))
         else {
             continue;
         };
@@ -87,6 +77,9 @@ mod tests {
     use super::*;
     use crate::editing::history::{open_document, EditorHistory, HistoryPlugin};
     use crate::id_index::IdIndexPlugin;
+    use crate::selection::SelectedLine;
+    use crate::timeline::pending::PendingOf;
+    use crate::timeline::target::FollowSelectedLine;
     use bevy::ecs::system::RunSystemOnce;
     use phichain_chart::beat::Beat;
     use phichain_chart::line::Line;
@@ -98,6 +91,8 @@ mod tests {
         owner: Entity,
         from: Entity,
         to: Entity,
+        other_line: Entity,
+        other_note: Entity,
     }
 
     fn fixture() -> Fixture {
@@ -110,7 +105,10 @@ mod tests {
         let note = |beat: f32| Note::new(NoteKind::Tap, true, Beat::from(beat), 0.0, 1.0);
         let from = world.spawn((note(0.0), ChildOf(line))).id();
         let to = world.spawn((note(1.0), ChildOf(line))).id();
-        let owner = world.spawn_empty().id();
+        let other_line = world.spawn(Line::default()).id();
+        let other_note = world.spawn((note(1.0), ChildOf(other_line))).id();
+        let owner = world.spawn(FollowSelectedLine).id();
+        world.insert_resource(SelectedLine(line));
         open_document(world);
         world
             .run_system_once(move |mut commands: Commands| {
@@ -123,6 +121,8 @@ mod tests {
             owner,
             from,
             to,
+            other_line,
+            other_note,
         }
     }
 
@@ -179,6 +179,17 @@ mod tests {
         let other = fixture.app.world_mut().spawn_empty().id();
         click(&mut fixture.app, other, fixture.to);
         click(&mut fixture.app, fixture.owner, fixture.from);
+
+        let world = fixture.app.world_mut();
+        assert_eq!(pending_tracks(world).len(), 1);
+        assert!(tracks(world).is_empty());
+    }
+
+    #[test]
+    fn clicks_while_the_owner_shows_another_line_keep_the_track_pending() {
+        let mut fixture = fixture();
+        fixture.app.world_mut().resource_mut::<SelectedLine>().0 = fixture.other_line;
+        click(&mut fixture.app, fixture.owner, fixture.other_note);
 
         let world = fixture.app.world_mut();
         assert_eq!(pending_tracks(world).len(), 1);

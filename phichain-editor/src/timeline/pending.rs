@@ -1,7 +1,7 @@
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::schedule::EditorSet;
-use crate::selection::SelectedLine;
-use crate::timeline::target::FollowSelectedLine;
+use crate::timeline::target::TimelineTargets;
+use bevy::ecs::system::SystemParam;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
 use phichain_game::Pending;
@@ -16,13 +16,6 @@ pub struct PendingOf(pub Entity);
 #[relationship_target(relationship = PendingOf, linked_spawn)]
 pub struct TimelinePending(Vec<Entity>);
 
-/// Whether the user cancelled a pending object themselves, implicit cancellations are notified
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Cancellation {
-    Explicit,
-    Implicit,
-}
-
 pub struct PendingPlugin;
 
 impl Plugin for PendingPlugin {
@@ -34,75 +27,52 @@ impl Plugin for PendingPlugin {
         )
         .add_systems(
             Update,
-            (
-                cancel_pending_on_escape.run_if(input_just_pressed(KeyCode::Escape)),
-                cancel_pending_on_line_switch,
-            ),
+            cancel_pending_on_escape.run_if(input_just_pressed(KeyCode::Escape)),
         );
+    }
+}
+
+/// The pending object the user can interact with on a timeline
+#[derive(SystemParam)]
+pub struct ActivePending<'w, 's> {
+    pending: Query<'w, 's, (Entity, &'static PendingOf)>,
+    targets: TimelineTargets<'w, 's>,
+}
+
+impl ActivePending<'_, '_> {
+    /// The pending object owned by the timeline and placed on what it shows
+    pub fn on(&self, timeline: Entity) -> Option<Entity> {
+        self.pending
+            .iter()
+            .find(|(entity, owner)| owner.0 == timeline && self.targets.displays(timeline, *entity))
+            .map(|(entity, _)| entity)
     }
 }
 
 /// Start a pending object on the timeline `owner`, replacing the existing one
 pub fn spawn_pending(commands: &mut Commands, owner: Entity, bundle: impl Bundle) {
     commands.queue(move |world: &mut World| {
-        cancel_pending(world, Cancellation::Implicit);
+        if cancel_pending(world) {
+            if let Some(mut toasts) = world.get_resource_mut::<ToastsStorage>() {
+                toasts.info(t!("tab.timeline.pending.cancelled"));
+            }
+        }
         world.spawn((bundle, PendingOf(owner)));
     });
 }
 
-pub fn cancel_pending(world: &mut World, cancellation: Cancellation) {
-    let pending = world
+fn cancel_pending_on_escape(world: &mut World) {
+    cancel_pending(world);
+}
+
+/// Despawn the pending object, returning whether there was one
+fn cancel_pending(world: &mut World) -> bool {
+    let pending: Vec<_> = world
         .query_filtered::<Entity, With<PendingOf>>()
         .iter(world)
         .collect();
-    cancel(world, pending, cancellation);
-}
-
-/// Cancels the pending object unless it belongs to the timeline an operation starts on
-pub struct CancelPendingNotOwnedBy(pub Option<Entity>);
-
-impl Command for CancelPendingNotOwnedBy {
-    fn apply(self, world: &mut World) {
-        let mut pending = world.query::<(Entity, &PendingOf)>();
-        let stale = pending
-            .iter(world)
-            .filter(|(_, owner)| Some(owner.0) != self.0)
-            .map(|(entity, _)| entity)
-            .collect();
-        cancel(world, stale, Cancellation::Implicit);
-    }
-}
-
-fn cancel(world: &mut World, pending: Vec<Entity>, cancellation: Cancellation) {
-    if pending.is_empty() {
-        return;
-    }
-    for entity in pending {
+    for &entity in &pending {
         world.despawn(entity);
     }
-    if cancellation == Cancellation::Implicit {
-        if let Some(mut toasts) = world.get_resource_mut::<ToastsStorage>() {
-            toasts.info(t!("tab.timeline.pending.cancelled"));
-        }
-    }
-}
-
-fn cancel_pending_on_escape(world: &mut World) {
-    cancel_pending(world, Cancellation::Explicit);
-}
-
-fn cancel_pending_on_line_switch(world: &mut World, mut last: Local<Option<Entity>>) {
-    let selected = world.get_resource::<SelectedLine>().map(|line| line.0);
-    let switched = last.is_some() && selected.is_some() && *last != selected;
-    *last = selected;
-    if !switched {
-        return;
-    }
-    let mut pending = world.query::<(Entity, &PendingOf)>();
-    let stale = pending
-        .iter(world)
-        .filter(|(_, owner)| world.get::<FollowSelectedLine>(owner.0).is_some())
-        .map(|(entity, _)| entity)
-        .collect();
-    cancel(world, stale, Cancellation::Implicit);
+    !pending.is_empty()
 }

@@ -1,6 +1,7 @@
 use crate::selection::SelectedLine;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
+use phichain_game::event::EventOf;
 
 /// The entity a timeline shows, fixed regardless of the selected line
 #[derive(Component, Debug)]
@@ -22,6 +23,7 @@ pub struct TimelineTargets<'w, 's> {
     selected_line: Option<Res<'w, SelectedLine>>,
     fixed: Query<'w, 's, &'static TimelineOf>,
     follow: Query<'w, 's, (), With<FollowSelectedLine>>,
+    placements: Query<'w, 's, (Option<&'static ChildOf>, Option<&'static EventOf>)>,
 }
 
 impl TimelineTargets<'_, '_> {
@@ -34,5 +36,19 @@ impl TimelineTargets<'_, '_> {
             return self.selected_line.as_ref().map(|line| line.0);
         }
         None
+    }
+
+    /// Whether the timeline shows the entity, which is placed on its current target
+    pub fn displays(&self, timeline: Entity, entity: Entity) -> bool {
+        let placement = self
+            .placements
+            .get(entity)
+            .ok()
+            .and_then(|(child_of, event_of)| {
+                child_of
+                    .map(ChildOf::parent)
+                    .or(event_of.map(|event_of| event_of.0))
+            });
+        placement.is_some_and(|placement| self.get(timeline) == Some(placement))
     }
 }

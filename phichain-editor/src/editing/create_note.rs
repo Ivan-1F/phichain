@@ -10,7 +10,7 @@ use crate::identifier::{Identifier, IntoIdentifier};
 use crate::schedule::EditorSet;
 use crate::timeline::container::TimelineLayout;
 use crate::timeline::note::NoteTimeline;
-use crate::timeline::pending::{spawn_pending, CancelPendingNotOwnedBy, PendingOf};
+use crate::timeline::pending::{spawn_pending, ActivePending};
 use crate::timeline::TimelineContext;
 use crate::utils::convert::BevyEguiConvert;
 
@@ -70,7 +70,8 @@ fn create_note_system(
 
     mut edits: Edits,
 
-    pending_note_query: Query<(&Note, Entity, &PendingOf)>,
+    active_pending: ActivePending,
+    notes: Query<&Note>,
 ) -> Result {
     let Ok(window) = window_query.single() else {
         return Ok(());
@@ -90,21 +91,9 @@ fn create_note_system(
     };
     let viewport = item.viewport;
 
-    let placing = [
-        CreateNoteHotkeys::PlaceTap,
-        CreateNoteHotkeys::PlaceDrag,
-        CreateNoteHotkeys::PlaceFlick,
-        CreateNoteHotkeys::PlaceHold,
-    ]
-    .into_iter()
-    .any(|placement| hotkey.just_pressed(placement));
-    if placing {
-        commands.queue(CancelPendingNotOwnedBy(Some(item.timeline)));
-    }
-    let pending_note = pending_note_query
-        .single()
-        .ok()
-        .filter(|(_, _, owner)| owner.0 == item.timeline);
+    let pending_note = active_pending
+        .on(item.timeline)
+        .and_then(|entity| Some((notes.get(entity).ok()?, entity)));
 
     let calc_note_attrs = || {
         let time = ctx.y_to_time(cursor_position.y);
@@ -145,7 +134,7 @@ fn create_note_system(
         create_note(NoteKind::Drag);
     }
 
-    if let Some((pending_note, entity, _)) = pending_note {
+    if let Some((pending_note, entity)) = pending_note {
         let mut pending_note = *pending_note;
         if let NoteKind::Hold { .. } = pending_note.kind {
             let (x, beat) = calc_note_attrs();
@@ -153,7 +142,8 @@ fn create_note_system(
                 hold_beat: (beat - pending_note.beat).max(ctx.settings.minimum_beat()),
             };
             pending_note.x = x * CANVAS_WIDTH;
-            commands.entity(entity).insert(pending_note);
+            // The preview may be despawned by a cascade applied before this command
+            commands.entity(entity).try_insert(pending_note);
         }
     }
 
@@ -162,7 +152,7 @@ fn create_note_system(
     }
 
     if hotkey.just_pressed(CreateNoteHotkeys::PlaceHold) {
-        if let Some((pending_note, entity, _)) = pending_note {
+        if let Some((pending_note, entity)) = pending_note {
             commands.entity(entity).despawn();
             // Resolve the final cursor position here too: the preview's
             // queued replacement has not necessarily executed this frame.
