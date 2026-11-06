@@ -15,7 +15,6 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use phichain_chart::line::Line;
 use phichain_game::event::{EventOf, Events};
-use phichain_game::Pending;
 use std::iter;
 
 #[derive(Component, Debug, Clone, Copy)]
@@ -89,13 +88,7 @@ pub fn event_timeline_ui(
     In((mut ui, timeline)): In<(Ui, Entity)>,
     targets: TimelineTargets,
     ctx: TimelineContext,
-    event_query: Query<(
-        &LineEvent,
-        Entity,
-        Option<&Selected>,
-        Option<&Pending>,
-        Option<&PendingOf>,
-    )>,
+    event_query: Query<(&LineEvent, Entity, Option<&Selected>, Option<&PendingOf>)>,
     events_query: Query<&Events>,
     bpm_list: Res<BpmList>,
     mut clicks: MessageWriter<TimelineClick>,
@@ -169,8 +162,8 @@ pub fn event_timeline_ui(
     let viewport_margin = 100.0;
 
     for entity in events.iter() {
-        let (event, entity, selected, pending, pending_of) = event_query.get(*entity).unwrap();
-        if pending_of.is_some_and(|owner| owner.0 != timeline) {
+        let (event, entity, selected, pending) = event_query.get(*entity).unwrap();
+        if pending.is_some_and(|owner| owner.0 != timeline) {
             continue;
         }
 

@@ -20,14 +20,13 @@ use phichain_chart::line::Line;
 use phichain_chart::note::{Note, NoteKind};
 use phichain_game::curve_note_track::{CurveNote, CurveNoteTrack, CurveNoteTrackFrom};
 use phichain_game::highlight::Highlighted;
-use phichain_game::Pending;
 use std::cmp::Ordering;
 
 #[derive(Component, Debug, Clone, Copy)]
 pub struct NoteTimeline;
 
 type PendingTrackPreviews<'w, 's> =
-    Query<'w, 's, (Entity, &'static PendingOf), (With<Pending>, With<CurveNoteTrackFrom>)>;
+    Query<'w, 's, (Entity, &'static PendingOf), With<CurveNoteTrackFrom>>;
 
 fn pending_curve_note_track_ui(
     ui: &Ui,
@@ -92,7 +91,6 @@ pub fn note_timeline_ui(
         Option<&Highlighted>,
         Option<&Selected>,
         Option<&CurveNote>,
-        Option<&Pending>,
         Option<&PendingOf>,
     )>,
     selected_query: Query<&Selected>,
@@ -216,11 +214,11 @@ pub fn note_timeline_ui(
         }};
     }
 
-    for (note, entity, highlighted, selected, curve_note, pending, pending_of) in notes {
+    for (note, entity, highlighted, selected, curve_note, pending) in notes {
         if !ctx.settings.note_side_filter.filter(*note) {
             continue;
         }
-        if pending_of.is_some_and(|owner| owner.0 != timeline) {
+        if pending.is_some_and(|owner| owner.0 != timeline) {
             continue;
         }
 

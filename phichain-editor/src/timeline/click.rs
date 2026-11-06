@@ -36,13 +36,10 @@ fn cancel_pending_on_click(mut clicks: MessageReader<TimelineClick>, mut command
 fn select_clicked(
     mut clicks: MessageReader<TimelineClick>,
     mut select: MessageWriter<Select>,
-    pending: Query<&TimelinePending>,
+    pending: Query<(), With<TimelinePending>>,
 ) {
     for click in clicks.read() {
-        if pending
-            .get(click.timeline)
-            .is_ok_and(|pending| !pending.is_empty())
-        {
+        if pending.contains(click.timeline) {
             continue;
         }
         select.write(Select(vec![click.entity]));

@@ -143,7 +143,7 @@ mod tests {
 
     fn pending_tracks(world: &mut World) -> Vec<(Entity, Entity, Entity)> {
         world
-            .query_filtered::<(&CurveNoteTrackFrom, &PendingOf, &ChildOf), With<Pending>>()
+            .query::<(&CurveNoteTrackFrom, &PendingOf, &ChildOf)>()
             .iter(world)
             .map(|(from, owner, line)| (from.0, owner.0, line.parent()))
             .collect()

@@ -250,10 +250,7 @@ fn pending_hold_follows_the_cursor_only_on_its_owner_timeline() {
         world.resource_mut::<ButtonInput<KeyCode>>().reset_all();
         app.update();
         let world = app.world_mut();
-        let (note, pending_of) = world
-            .query_filtered::<(&Note, &PendingOf), With<Pending>>()
-            .single(world)
-            .unwrap();
+        let (note, pending_of) = world.query::<(&Note, &PendingOf)>().single(world).unwrap();
         assert_eq!(pending_of.0, owner);
         *note
     };
@@ -272,7 +269,7 @@ fn pending_hold_follows_the_cursor_only_on_its_owner_timeline() {
 
 fn pending_owners(world: &mut World) -> Vec<Entity> {
     world
-        .query_filtered::<&PendingOf, With<Pending>>()
+        .query::<&PendingOf>()
         .iter(world)
         .map(|owner| owner.0)
         .collect()

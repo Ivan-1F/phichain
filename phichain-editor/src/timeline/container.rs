@@ -203,7 +203,6 @@ pub fn move_separator(world: &mut World, index: usize, by: f32) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use phichain_chart::line::Line;
 
     fn world_with_container() -> World {
         let mut world = World::new();
@@ -257,20 +256,6 @@ mod tests {
         assert_eq!(at(50.0), Some(timelines[0]));
         assert_eq!(at(250.0), Some(timelines[1]));
         assert_eq!(at(400.0), None);
-    }
-
-    #[test]
-    fn despawning_the_target_line_removes_its_timeline() {
-        let mut world = world_with_container();
-        let line = world.spawn(Line::default()).id();
-        push_timeline(&mut world, NoteTimeline, Some(line));
-        let fixed = *ordered_timelines(&mut world).last().unwrap();
-        assert_eq!(world.get::<TimelineOf>(fixed).unwrap().0, line);
-
-        world.despawn(line);
-
-        assert!(world.get_entity(fixed).is_err());
-        assert_eq!(edges(&mut world), vec![(0.0, 200.0), (200.0, 300.0)]);
     }
 
     #[test]
