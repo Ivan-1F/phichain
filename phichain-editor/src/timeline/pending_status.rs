@@ -97,15 +97,20 @@ fn status_ui(ui: &mut Ui, status: &PendingStatus) -> bool {
         },
     );
 
-    ui.horizontal_wrapped(|ui| {
-        for hint in &status.hints {
-            if let Some(key) = &hint.key {
-                ui.label(RichText::new(key).strong());
+    // One hint per row, keys in their own column
+    let keyed = status.hints.iter().any(|hint| hint.key.is_some());
+    egui::Grid::new("pending_hints")
+        .num_columns(if keyed { 2 } else { 1 })
+        .min_col_width(0.0)
+        .show(ui, |ui| {
+            for hint in &status.hints {
+                if keyed {
+                    ui.label(RichText::new(hint.key.as_deref().unwrap_or_default()).strong());
+                }
+                ui.add(egui::Label::new(&hint.action).truncate());
+                ui.end_row();
             }
-            ui.label(&hint.action);
-            ui.add_space(8.0);
-        }
-    });
+        });
 
     cancel
 }
