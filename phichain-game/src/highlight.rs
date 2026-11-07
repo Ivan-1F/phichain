@@ -1,5 +1,5 @@
 use crate::{GameConfig, GameSet};
-use bevy::platform::collections::HashMap;
+use bevy::platform::collections::{HashMap, HashSet};
 use bevy::prelude::*;
 use phichain_chart::beat::Beat;
 use phichain_chart::note::Note;
@@ -8,49 +8,74 @@ pub struct HighlightPlugin;
 
 impl Plugin for HighlightPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<HighlightedBeat>().add_systems(
-            Update,
-            (calc_highlighted_beat_system, mark_highlight_system)
-                .chain()
-                .in_set(GameSet),
-        );
+        app.init_resource::<NotesByBeat>()
+            .add_observer(index_note)
+            .add_observer(unindex_note)
+            .add_systems(Update, mark_highlight_system.in_set(GameSet));
     }
 }
 
 #[derive(Component, Debug, Copy, Clone)]
 pub struct Highlighted;
 
-#[derive(Resource, Default, Debug, Clone)]
-pub struct HighlightedBeat(HashMap<Beat, u32>);
-
-fn calc_highlighted_beat_system(
-    query: Query<&Note>,
-    mut highlighted_beat: ResMut<HighlightedBeat>,
-) {
-    highlighted_beat.0.clear();
-    for note in &query {
-        let counter = highlighted_beat.0.entry(note.beat.reduced()).or_insert(0);
-        *counter += 1;
-    }
+/// Notes grouped by beat, with the beats whose highlight may be out of date
+#[derive(Resource, Default)]
+struct NotesByBeat {
+    notes: HashMap<Beat, Vec<Entity>>,
+    dirty: HashSet<Beat>,
 }
 
+// notes are immutable, so every change goes through these two triggers
+
+fn index_note(trigger: On<Insert, Note>, notes: Query<&Note>, mut index: ResMut<NotesByBeat>) {
+    let Ok(note) = notes.get(trigger.entity) else {
+        return;
+    };
+    let beat = note.beat.reduced();
+    index.notes.entry(beat).or_default().push(trigger.entity);
+    index.dirty.insert(beat);
+}
+
+fn unindex_note(trigger: On<Replace, Note>, notes: Query<&Note>, mut index: ResMut<NotesByBeat>) {
+    let Ok(note) = notes.get(trigger.entity) else {
+        return;
+    };
+    let beat = note.beat.reduced();
+    if let Some(entities) = index.notes.get_mut(&beat) {
+        entities.retain(|entity| *entity != trigger.entity);
+        if entities.is_empty() {
+            index.notes.remove(&beat);
+        }
+    }
+    index.dirty.insert(beat);
+}
+
+/// A note is highlighted if multi highlight is on and another note shares its beat
 fn mark_highlight_system(
     mut commands: Commands,
-    query: Query<(Entity, &Note)>,
-    highlighted_beat: ResMut<HighlightedBeat>,
-
+    mut index: ResMut<NotesByBeat>,
+    highlighted: Query<Has<Highlighted>>,
     settings: Res<GameConfig>,
 ) {
-    for (entity, note) in &query {
-        // The note may be despawned before these visual updates are applied.
-        let mut entity = commands.entity(entity);
-        if highlighted_beat.0.contains_key(&note.beat.reduced())
-            && highlighted_beat.0[&note.beat.reduced()] > 1
-            && settings.multi_highlight
-        {
-            entity.try_insert(Highlighted);
-        } else {
-            entity.try_remove::<Highlighted>();
+    let index = &mut *index;
+    if settings.is_changed() {
+        index.dirty.extend(index.notes.keys().copied());
+    }
+
+    for beat in index.dirty.drain() {
+        let Some(entities) = index.notes.get(&beat) else {
+            continue;
+        };
+        let highlight = settings.multi_highlight && entities.len() > 1;
+        for &entity in entities {
+            if highlighted.get(entity).is_ok_and(|has| has != highlight) {
+                // The note may be despawned before these visual updates are applied.
+                if highlight {
+                    commands.entity(entity).try_insert(Highlighted);
+                } else {
+                    commands.entity(entity).try_remove::<Highlighted>();
+                }
+            }
         }
     }
 }
@@ -63,6 +88,54 @@ mod tests {
     use phichain_chart::note::NoteKind;
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Arc;
+
+    #[test]
+    fn highlights_follow_notes_sharing_a_beat() {
+        let mut app = App::new();
+        app.insert_resource(GameConfig {
+            multi_highlight: true,
+            ..default()
+        })
+        .add_plugins(HighlightPlugin);
+
+        let note = |beat: i32| Note::new(NoteKind::Tap, true, Beat::from(beat as f32), 0.0, 1.0);
+        let assert_highlights = |app: &mut App| {
+            app.update();
+            let world = app.world_mut();
+            let multi_highlight = world.resource::<GameConfig>().multi_highlight;
+            let notes: Vec<_> = world
+                .query::<(&Note, Has<Highlighted>)>()
+                .iter(world)
+                .map(|(note, highlighted)| (note.beat, highlighted))
+                .collect();
+            for (beat, highlighted) in &notes {
+                let shared = notes.iter().filter(|(other, _)| other == beat).count() > 1;
+                assert_eq!(*highlighted, multi_highlight && shared, "note at {beat:?}");
+            }
+        };
+
+        let world = app.world_mut();
+        let a = world.spawn(note(1)).id();
+        let b = world.spawn(note(1)).id();
+        world.spawn(note(2));
+        assert_highlights(&mut app);
+
+        // moving away and onto a shared beat
+        app.world_mut().entity_mut(a).insert(note(2));
+        assert_highlights(&mut app);
+
+        app.world_mut().entity_mut(b).insert(note(2));
+        assert_highlights(&mut app);
+
+        app.world_mut().entity_mut(a).despawn();
+        assert_highlights(&mut app);
+
+        app.world_mut().resource_mut::<GameConfig>().multi_highlight = false;
+        assert_highlights(&mut app);
+
+        app.world_mut().resource_mut::<GameConfig>().multi_highlight = true;
+        assert_highlights(&mut app);
+    }
 
     #[test]
     fn despawn_before_deferred_highlight_updates_is_safe() {
