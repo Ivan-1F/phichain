@@ -299,8 +299,7 @@ fn batch_delete_with_hold_rebuilds_render_children_on_undo() {
         commands.spawn((note(), tap_id, ChildOf(line), Selected));
         commands.spawn((hold, hold_id, ChildOf(line), Selected));
     });
-    // Use the real rendering producer: a bare ECS fixture would miss the
-    // children that distinguish a rendered Hold from other notes.
+    // Run the real renderer, which adds the children that mark a rendered Hold
     app.update();
     let hold_entity = entity_with_id(&mut app, hold_id);
     let original_children: Vec<_> = app
@@ -376,59 +375,67 @@ fn batch_delete_with_hold_rebuilds_render_children_on_undo() {
 #[test]
 fn curve_endpoints_delete_their_tracks() {
     use phichain_game::curve_note_track::{CurveNoteTrackFrom, CurveNoteTrackTo};
-    let (mut app, line) = fixture();
-    close_document(app.world_mut());
-    let from = app
-        .world_mut()
-        .spawn((note(), ChildOf(line), Selected))
-        .id();
-    let to = app.world_mut().spawn((note(), ChildOf(line))).id();
-    let unrelated = app
-        .world_mut()
-        .spawn((note(), ChildOf(line), Selected))
-        .id();
-    let track = app
-        .world_mut()
-        .spawn((
-            CurveNoteTrackFrom(from),
-            CurveNoteTrackTo(to),
-            ChildOf(line),
-        ))
-        .id();
-    open_document(app.world_mut());
-    app.world_mut()
-        .run_system_once::<_, Result, _>(crate::editing::delete_selected::delete_selected_system)
-        .unwrap()
-        .unwrap();
-    assert!(app.world().get_entity(to).is_ok());
-    for entity in [from, unrelated, track] {
-        assert!(app.world().get_entity(entity).is_err());
+    for delete_from in [true, false] {
+        let (mut app, line) = fixture();
+        close_document(app.world_mut());
+        let from = app.world_mut().spawn((note(), ChildOf(line))).id();
+        let to = app.world_mut().spawn((note(), ChildOf(line))).id();
+        let unrelated = app
+            .world_mut()
+            .spawn((note(), ChildOf(line), Selected))
+            .id();
+        let track = app
+            .world_mut()
+            .spawn((
+                CurveNoteTrackFrom(from),
+                CurveNoteTrackTo(to),
+                ChildOf(line),
+            ))
+            .id();
+        let (deleted, kept) = if delete_from { (from, to) } else { (to, from) };
+        app.world_mut().entity_mut(deleted).insert(Selected);
+        open_document(app.world_mut());
+        app.world_mut()
+            .run_system_once::<_, Result, _>(
+                crate::editing::delete_selected::delete_selected_system,
+            )
+            .unwrap()
+            .unwrap();
+        assert!(app.world().get_entity(kept).is_ok());
+        for entity in [deleted, unrelated, track] {
+            assert!(app.world().get_entity(entity).is_err());
+        }
+        assert_eq!(app.world().resource::<EditorHistory>().record.len(), 1);
+        undo(&mut app);
+        assert_eq!(
+            app.world_mut().query::<&Note>().iter(app.world()).count(),
+            3
+        );
+        let (from_link, to_link) = app
+            .world_mut()
+            .query::<(&CurveNoteTrackFrom, &CurveNoteTrackTo)>()
+            .single(app.world())
+            .unwrap();
+        let (deleted_link, kept_link) = if delete_from {
+            (from_link.0, to_link.0)
+        } else {
+            (to_link.0, from_link.0)
+        };
+        assert!(app.world().get::<Note>(deleted_link).is_some());
+        assert_eq!(kept_link, kept);
+        redo(&mut app);
+        assert_eq!(
+            app.world_mut().query::<&Note>().iter(app.world()).count(),
+            1
+        );
     }
-    assert_eq!(app.world().resource::<EditorHistory>().record.len(), 1);
-    undo(&mut app);
-    assert_eq!(
-        app.world_mut().query::<&Note>().iter(app.world()).count(),
-        3
-    );
-    let (from, to_link) = app
-        .world_mut()
-        .query::<(&CurveNoteTrackFrom, &CurveNoteTrackTo)>()
-        .single(app.world())
-        .unwrap();
-    assert!(app.world().get::<Note>(from.0).is_some());
-    assert_eq!(to_link.0, to);
-    redo(&mut app);
-    assert_eq!(
-        app.world_mut().query::<&Note>().iter(app.world()).count(),
-        1
-    );
 }
 
 #[test]
 fn lifecycle_observer_commands_belong_to_the_edit_that_triggered_them() {
     let (mut app, line) = fixture();
-    // Use a different component as the trigger to avoid recursively observing
-    // the replacement itself. This models a synchronous editing side effect.
+    // Trigger on another component so the observer doesn't observe its own replacement
+    // This models a synchronous editing side effect
     #[derive(Component)]
     struct Mirror;
     app.add_observer(

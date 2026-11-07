@@ -53,9 +53,9 @@ pub fn spawn_pending(
 ) {
     commands.queue(move |world: &mut World| {
         if cancel_pending(world) {
-            if let Some(mut toasts) = world.get_resource_mut::<ToastsStorage>() {
-                toasts.info(t!("tab.timeline.pending.cancelled.replaced"));
-            }
+            world
+                .resource_mut::<ToastsStorage>()
+                .info(t!("tab.timeline.pending.cancelled.replaced"));
         }
         world.spawn((bundle, PendingOf(owner), status));
     });
@@ -66,7 +66,7 @@ fn cancel_undisplayed_pending(
     mut commands: Commands,
     pending: Query<(Entity, &PendingOf)>,
     targets: TimelineTargets,
-    toasts: Option<ResMut<ToastsStorage>>,
+    mut toasts: ResMut<ToastsStorage>,
 ) {
     let mut cancelled = false;
     for (entity, owner) in &pending {
@@ -75,7 +75,7 @@ fn cancel_undisplayed_pending(
             cancelled = true;
         }
     }
-    if let (true, Some(mut toasts)) = (cancelled, toasts) {
+    if cancelled {
         toasts.info(t!("tab.timeline.pending.cancelled.line_switched"));
     }
 }

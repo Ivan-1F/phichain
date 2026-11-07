@@ -4,6 +4,7 @@ use super::history::{open_document, EditorHistory, HistoryPlugin};
 use crate::hotkey::{HotkeyRegistry, HotkeyState};
 use crate::id_index::IdIndexPlugin;
 use crate::misc::WorkingDirectory;
+use crate::notification::ToastsStorage;
 use crate::selection::SelectedLine;
 use crate::tab::timeline::TimelineViewport;
 use crate::timeline::container::{
@@ -32,6 +33,7 @@ fn editing_test_app() -> (App, Entity) {
         .init_resource::<HotkeyState>()
         .init_resource::<TimelineSettings>()
         .init_resource::<BpmList>()
+        .init_resource::<ToastsStorage>()
         .insert_resource(WorkingDirectory(std::path::PathBuf::new()))
         .insert_resource(ChartTime(0.0))
         .insert_resource(AudioDuration(std::time::Duration::from_secs(60)))
