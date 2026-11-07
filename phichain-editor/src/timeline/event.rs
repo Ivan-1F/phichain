@@ -10,10 +10,12 @@ use crate::timing::SeekTo;
 use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
 use bevy::prelude::{Component, Entity, In, MessageWriter, Query, Res};
 use egui::{Align2, Color32, FontId, Rect, Sense, Stroke, StrokeKind, Ui};
+use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use phichain_chart::line::Line;
 use phichain_game::event::{EventOf, Events};
+use std::collections::HashMap;
 use std::iter;
 
 #[derive(Component, Debug, Clone, Copy)]
@@ -29,16 +31,6 @@ struct EventTrackData<T> {
 }
 
 impl<T> EventTrackData<T> {
-    fn get(&self, kind: LineEventKind) -> &T {
-        match kind {
-            LineEventKind::X => &self.x,
-            LineEventKind::Y => &self.y,
-            LineEventKind::Rotation => &self.rotation,
-            LineEventKind::Opacity => &self.opacity,
-            LineEventKind::Speed => &self.speed,
-        }
-    }
-
     fn get_mut(&mut self, kind: LineEventKind) -> &mut T {
         match kind {
             LineEventKind::X => &mut self.x,
@@ -73,14 +65,33 @@ impl<T: Clone> EventTrackData<T> {
     }
 }
 
-impl<T: PartialEq> EventTrackData<T> {
-    fn contains(&self, value: &T) -> bool {
-        &self.x == value
-            || &self.y == value
-            || &self.rotation == value
-            || &self.opacity == value
-            || &self.speed == value
-    }
+#[derive(Debug, Clone, Copy)]
+struct Endpoint {
+    y: f32,
+    beat: Beat,
+    value: f32,
+    color: Color32,
+}
+
+/// A start or end value of an event, or the value on the seam of two continuous events
+struct ValueLabel {
+    kind: LineEventKind,
+    pos: egui::Pos2,
+    anchor: Align2,
+    value: f32,
+    seam: bool,
+}
+
+/// Width of an event relative to its track
+const EVENT_WIDTH: f32 = 0.8;
+const EVENT_FILL_OPACITY: f32 = 0.25;
+const EVENT_VALUE_SIZE: f32 = 11.0;
+const TRACK_HEADER_HEIGHT: f32 = 20.0;
+const TRACK_HEADER_SIZE: f32 = 13.0;
+
+/// Round to at most two decimals, dropping trailing zeros and the sign of zero
+fn format_value(value: f32) -> String {
+    ((value * 100.0).round() / 100.0 + 0.0).to_string()
 }
 
 pub fn event_timeline_ui(
@@ -121,10 +132,17 @@ pub fn event_timeline_ui(
     }
 
     let track_width = viewport.width() / 5.0;
-    let event_width = track_width / 2.0;
+    let event_width = track_width * EVENT_WIDTH;
 
     let compute_x =
         |track: u8| -> f32 { track_width * track as f32 - track_width / 2.0 + viewport.min.x };
+
+    let track_rect = |kind: LineEventKind| {
+        Rect::from_center_size(
+            egui::Pos2::new(compute_x(kind.into()), viewport.center().y),
+            egui::Vec2::new(track_width, viewport.height()),
+        )
+    };
 
     let get_event_rect = |event: &LineEvent| {
         let x = compute_x(event.kind.into());
@@ -140,72 +158,38 @@ pub fn event_timeline_ui(
         Rect::from_center_size(center, size)
     };
 
-    // in viewport, but start value outside bottom
-    let mut start_outside_bottom = EventTrackData::splat(None::<Entity>);
-
-    // in viewport, but end value outside bottom
-    let mut end_outside_bottom = EventTrackData::splat(None::<Entity>);
-
-    // outside bottom
-    let mut first_events_outside_bottom = EventTrackData::splat(None::<Entity>);
-    let mut first_events_outside_bottom_y = EventTrackData::splat(f32::MAX);
-
-    // outside top
-    let mut first_events_outside_top = EventTrackData::splat(None::<Entity>);
-    let mut first_events_outside_top_y = EventTrackData::splat(f32::MIN);
-
     let Ok(events) = events_query.get(line_entity) else {
         return;
     };
+    let events = events
+        .iter()
+        .filter_map(|entity| event_query.get(*entity).ok())
+        .filter(|(_, _, _, pending)| !pending.is_some_and(|owner| owner.0 != timeline))
+        .collect::<Vec<_>>();
+
+    // used to find seams where an event continues the previous one with the same value
+    let starts = events
+        .iter()
+        .map(|(event, ..)| ((event.kind, event.start_beat), event.value.start()))
+        .collect::<HashMap<_, _>>();
+    let ends = events
+        .iter()
+        .map(|(event, ..)| ((event.kind, event.end_beat), event.value.end()))
+        .collect::<HashMap<_, _>>();
+
+    // the nearest event endpoint beyond each edge of each track
+    let mut above = EventTrackData::splat(None::<Endpoint>);
+    let mut below = EventTrackData::splat(None::<Endpoint>);
+
+    // painted after all events so no event covers them
+    let mut labels = Vec::<ValueLabel>::new();
 
     let viewport_margin = 100.0;
+    let font = FontId::monospace(EVENT_VALUE_SIZE);
+    let in_view = |y: f32| viewport.y_range().contains(y);
 
-    for entity in events.iter() {
-        let (event, entity, selected, pending) = event_query.get(*entity).unwrap();
-        if pending.is_some_and(|owner| owner.0 != timeline) {
-            continue;
-        }
-
+    for (event, entity, selected, pending) in events {
         let rect = get_event_rect(event);
-
-        if rect.bottom() >= viewport.bottom() && rect.top() <= viewport.bottom() {
-            // in viewport, but start value outside bottom
-            *start_outside_bottom.get_mut(event.kind) = Some(entity);
-        }
-
-        if rect.top() <= viewport.top() && rect.bottom() >= viewport.top() {
-            // in viewport, but start value outside bottom
-            *end_outside_bottom.get_mut(event.kind) = Some(entity);
-        }
-
-        if rect.top() >= viewport.bottom() {
-            // outside bottom
-            if rect.top() < *first_events_outside_bottom_y.get(event.kind) {
-                *first_events_outside_bottom_y.get_mut(event.kind) = rect.top();
-                *first_events_outside_bottom.get_mut(event.kind) = Some(entity);
-            }
-        }
-
-        if rect.bottom() <= viewport.top() {
-            // outside top
-            if rect.bottom() > *first_events_outside_top_y.get(event.kind) {
-                *first_events_outside_top_y.get_mut(event.kind) = rect.bottom();
-                *first_events_outside_top.get_mut(event.kind) = Some(entity);
-            }
-        }
-
-        // skip rendering work for events far outside of the viewport unless they are
-        // referenced by one of the boundary helpers (next/previous event indicators).
-        let is_far_outside = rect.bottom() < viewport.top() - viewport_margin
-            || rect.top() > viewport.bottom() + viewport_margin;
-        if is_far_outside
-            && !start_outside_bottom.contains(&Some(entity))
-            && !end_outside_bottom.contains(&Some(entity))
-            && !first_events_outside_bottom.contains(&Some(entity))
-            && !first_events_outside_top.contains(&Some(entity))
-        {
-            continue;
-        }
 
         let mut color = if selected.is_some() {
             Color32::LIGHT_GREEN
@@ -220,47 +204,74 @@ pub fn event_timeline_ui(
             color = color.gamma_multiply(PENDING_OPACITY);
         }
 
-        let response = ui.allocate_rect(rect, Sense::click());
-        if ui.is_rect_visible(rect)
-            || first_events_outside_bottom.contains(&Some(entity))
-            || first_events_outside_top.contains(&Some(entity))
+        for endpoint in [
+            Endpoint {
+                y: rect.bottom(),
+                beat: event.start_beat,
+                value: event.value.start(),
+                color,
+            },
+            Endpoint {
+                y: rect.top(),
+                beat: event.end_beat,
+                value: event.value.end(),
+                color,
+            },
+        ] {
+            if endpoint.y < viewport.top() {
+                let nearest = above.get_mut(event.kind);
+                if nearest.is_none_or(|nearest| endpoint.y > nearest.y) {
+                    *nearest = Some(endpoint);
+                }
+            } else if endpoint.y > viewport.bottom() {
+                let nearest = below.get_mut(event.kind);
+                if nearest.is_none_or(|nearest| endpoint.y < nearest.y) {
+                    *nearest = Some(endpoint);
+                }
+            }
+        }
+
+        if rect.bottom() < viewport.top() - viewport_margin
+            || rect.top() > viewport.bottom() + viewport_margin
         {
+            continue;
+        }
+
+        let response = ui.allocate_rect(rect, Sense::click());
+        if ui.is_rect_visible(rect) {
             ui.painter().rect(
                 rect,
                 0.0,
-                color,
-                Stroke::new(2.0_f32, color.gamma_multiply(1.2)),
+                color.gamma_multiply(EVENT_FILL_OPACITY),
+                Stroke::new(1.0_f32, color),
                 StrokeKind::Middle,
             );
+        }
 
-            ui.painter().text(
-                if end_outside_bottom.contains(&Some(entity)) {
-                    rect.center_top()
-                        .max(egui::Pos2::new(rect.center_top().x, viewport.top()))
+        let (start, end) = (event.value.start(), event.value.end());
+        if in_view(rect.bottom()) {
+            let seam = ends.get(&(event.kind, event.start_beat)) == Some(&start);
+            labels.push(ValueLabel {
+                kind: event.kind,
+                pos: rect.center_bottom(),
+                anchor: if seam {
+                    Align2::CENTER_CENTER
                 } else {
-                    rect.center_top()
-                        .min(egui::Pos2::new(rect.center_top().x, viewport.max.y - 18.0))
+                    Align2::CENTER_BOTTOM
                 },
-                Align2::CENTER_TOP,
-                event.value.end(),
-                FontId::default(),
-                Color32::DARK_GREEN,
-            );
-            ui.painter().text(
-                if start_outside_bottom.contains(&Some(entity)) {
-                    rect.center_bottom()
-                        .min(egui::Pos2::new(rect.center_bottom().x, viewport.max.y))
-                } else {
-                    rect.center_bottom().max(egui::Pos2::new(
-                        rect.center_bottom().x,
-                        viewport.top() + 18.0,
-                    ))
-                },
-                Align2::CENTER_BOTTOM,
-                event.value.start(),
-                FontId::default(),
-                Color32::DARK_GREEN,
-            );
+                value: start,
+                seam,
+            });
+        }
+        // a seam shared with the next event is labeled by that event
+        if in_view(rect.top()) && starts.get(&(event.kind, event.end_beat)) != Some(&end) {
+            labels.push(ValueLabel {
+                kind: event.kind,
+                pos: rect.center_top(),
+                anchor: Align2::CENTER_TOP,
+                value: end,
+                seam: false,
+            });
         }
 
         if pending.is_none() {
@@ -276,79 +287,73 @@ pub fn event_timeline_ui(
         }
     }
 
-    let mut make_anchor = |kind: LineEventKind, event: Entity, top: bool| {
-        let x = compute_x(kind.into());
-        let size = egui::Vec2::new(event_width, 10.0);
-        let center = egui::Pos2::new(
-            x,
-            if top {
-                viewport.top() + 10.0 / 2.0
-            } else {
-                viewport.bottom() - 10.0 / 2.0
-            },
-        );
+    for label in labels {
+        let painter = ui.painter().with_clip_rect(track_rect(label.kind));
+        let galley =
+            painter.layout_no_wrap(format_value(label.value), font.clone(), Color32::WHITE);
+        let rect = label.anchor.anchor_size(label.pos, galley.size());
+        if label.seam {
+            // cut the seam so the shared value reads as sitting between the two events
+            painter.rect_filled(rect.expand2(egui::vec2(2.0, 0.0)), 0.0, Color32::BLACK);
+        }
+        painter.galley(rect.min, galley, Color32::WHITE);
+    }
 
-        if ui
-            .allocate_rect(Rect::from_center_size(center, size), Sense::click())
-            .on_hover_cursor(egui::CursorIcon::PointingHand)
-            .on_hover_text(t!("tab.timeline.event.jump_to_event"))
-            .clicked()
-        {
-            if let Ok(event) = event_query.get(event) {
-                // TODO: refactor logic for navigation
-                seek_to.write(SeekTo(bpm_list.time_at(event.0.start_beat)));
+    for (edges, top) in [(&above, true), (&below, false)] {
+        for (kind, endpoint) in edges.iter() {
+            let Some(endpoint) = endpoint else {
+                continue;
+            };
+            let (anchor, y) = if top {
+                (Align2::CENTER_TOP, viewport.top() + 2.0)
+            } else {
+                (Align2::CENTER_BOTTOM, viewport.bottom() - 2.0)
+            };
+            let painter = ui.painter().with_clip_rect(track_rect(kind));
+            let galley = painter.layout_no_wrap(
+                format_value(endpoint.value),
+                font.clone(),
+                Color32::PLACEHOLDER,
+            );
+            let rect =
+                anchor.anchor_size(egui::Pos2::new(compute_x(kind.into()), y), galley.size());
+            let response = ui
+                .allocate_rect(rect, Sense::click())
+                .on_hover_cursor(egui::CursorIcon::PointingHand)
+                .on_hover_text(t!("tab.timeline.event.jump_to_event"));
+            let color = if response.hovered() {
+                Color32::WHITE
+            } else {
+                endpoint.color
+            };
+            painter.galley(rect.min, galley, color);
+            if response.clicked() {
+                seek_to.write(SeekTo(bpm_list.time_at(endpoint.beat)));
             }
         }
-    };
-
-    for (kind, event) in first_events_outside_bottom.iter() {
-        if let Some(event) = event {
-            make_anchor(kind, *event, false);
-        }
     }
 
-    for (kind, event) in first_events_outside_top.iter() {
-        if let Some(event) = event {
-            make_anchor(kind, *event, true);
-        }
-    }
-
-    // event track type indicator banner
-    ui.painter().rect(
-        Rect::from_two_pos(
-            egui::Pos2::new(viewport.min.x, viewport.max.y * INDICATOR_POSITION + 10.0),
-            egui::Pos2::new(viewport.max.x, viewport.max.y * INDICATOR_POSITION + 40.0),
+    // track headers right below the indicator
+    let header_y =
+        viewport.top() + viewport.height() * INDICATOR_POSITION + 1.0 + TRACK_HEADER_HEIGHT / 2.0;
+    for (kind, txt) in [
+        (LineEventKind::X, "X"),
+        (LineEventKind::Y, "Y"),
+        (
+            LineEventKind::Rotation,
+            egui_phosphor::regular::ARROWS_CLOCKWISE,
         ),
-        0.0,
-        Color32::BLACK,
-        Stroke::NONE,
-        StrokeKind::Middle,
-    );
-
-    // event track type indicator
-    ui.style_mut().interaction.selectable_labels = false;
-    for (i, txt) in [
-        "X",
-        "Y",
-        egui_phosphor::regular::ARROWS_CLOCKWISE,
-        egui_phosphor::regular::CIRCLE_HALF,
-        egui_phosphor::regular::GAUGE,
-    ]
-    .iter()
-    .enumerate()
-    {
-        ui.put(
-            Rect::from_center_size(
-                egui::Pos2::new(
-                    viewport.min.x + viewport.width() / 5.0 * i as f32 + viewport.width() / 10.0,
-                    viewport.max.y * INDICATOR_POSITION + 20.0,
-                ),
-                egui::Vec2::splat(10.0),
-            ),
-            egui::Label::new(egui::RichText::new(*txt).color(Color32::WHITE).size(20.0)),
+        (LineEventKind::Opacity, egui_phosphor::regular::CIRCLE_HALF),
+        (LineEventKind::Speed, egui_phosphor::regular::GAUGE),
+    ] {
+        ui.painter().with_clip_rect(track_rect(kind)).text(
+            egui::Pos2::new(compute_x(kind.into()), header_y),
+            Align2::CENTER_CENTER,
+            txt,
+            FontId::proportional(TRACK_HEADER_SIZE),
+            ui.visuals().weak_text_color(),
         );
     }
-    ui.style_mut().interaction.selectable_labels = true;
 }
 
 pub fn event_timeline_drag_selection(
