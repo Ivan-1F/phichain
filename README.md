@@ -10,9 +10,6 @@
 
 基于 Rust 和 Bevy 的 Phigros 制谱工具链
 
-> [!NOTE]
-> 本项目为非官方项目，与南京鸽游网络有限公司（Pigeon Games）及《Phigros》官方不存在授权、合作或运营关系
-
 - QQ 群: [768476938](https://phicha.in/qq)
 - Discord: [discord.gg/ESUwcdMBPv](https://phicha.in/discord)
 
@@ -23,3 +20,6 @@
 - [Phira](https://github.com/teamflos/phira)
 - [cmdysj](https://space.bilibili.com/252635690) 的 Re:PhiEdit
 - `assets/respack` 目录下的资源文件来自 [https://github.com/MisaLiu/phi-chart-render], 并且遵循 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) 许可协议
+
+> [!NOTE]
+> 本项目为非官方项目，与南京鸽游网络有限公司（Pigeon Games）及《Phigros》官方不存在授权、合作或运营关系

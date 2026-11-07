@@ -10,9 +10,6 @@
 
 Phigros charting toolchain written in Rust and Bevy
 
-> [!NOTE]
-> This is an unofficial project. It is not authorized by, partnered with, or operated by Pigeon Games (南京鸽游网络有限公司) or the official Phigros team
-
 - QQ Group: [768476938](https://phicha.in/qq)
 - Discord: [discord.gg/ESUwcdMBPv](https://phicha.in/discord)
 
@@ -23,3 +20,6 @@ Phigros charting toolchain written in Rust and Bevy
 - [Phira](https://github.com/teamflos/phira)
 - Re:PhiEdit by [cmdysj](https://space.bilibili.com/252635690)
 - The resource assets under `assets/respack` are from [https://github.com/MisaLiu/phi-chart-render], and are licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)
+
+> [!NOTE]
+> This is an unofficial project. It is not authorized by, partnered with, or operated by Pigeon Games (南京鸽游网络有限公司) or the official Phigros team

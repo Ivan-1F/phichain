@@ -10,9 +10,6 @@
 
 RustとBevyをベースにしたPhigrosの譜面制作ツールチェインです。
 
-> [!NOTE]
-> 本プロジェクトは非公式プロジェクトです。南京鸽游网络有限公司（Pigeon Games）および『Phigros』公式から許諾を受けておらず、提携関係や運営上の関係もありません
-
 - QQグループ: [768476938](https://phicha.in/qq)
 - Discord: [discord.gg/ESUwcdMBPv](https://phicha.in/discord)
 
@@ -23,3 +20,6 @@ RustとBevyをベースにしたPhigrosの譜面制作ツールチェインで�
 - [Phira](https://github.com/teamflos/phira)
 - [cmdysj](https://space.bilibili.com/252635690) 氏の Re:PhiEdit
 - `assets/respack` ディレクトリ内のアセットファイルは [https://github.com/MisaLiu/phi-chart-render] に由来し、[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) ライセンスに従います。
+
+> [!NOTE]
+> 本プロジェクトは非公式プロジェクトです。南京鸽游网络有限公司（Pigeon Games）および『Phigros』公式から許諾を受けておらず、提携関係や運営上の関係もありません
