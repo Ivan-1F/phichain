@@ -1,5 +1,4 @@
 use bevy::{prelude::*, sprite::Anchor};
-use num::{FromPrimitive, Rational32};
 use phichain_assets::{HoldParts, ImageAssets, RespackDimensions};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
@@ -7,11 +6,13 @@ use phichain_chart::event::{EventEvaluationResult, LineEvent, LineEventKind};
 use phichain_chart::line::{Line, LineOpacity, LinePosition, LineRotation};
 
 use crate::constants::PERFECT_COLOR;
-use crate::event::Events;
+use crate::event::{EventIndex, Events};
 use crate::highlight::Highlighted;
 use crate::layer::{HOLD_LAYER, NOTE_LAYER};
 use crate::scale;
+use crate::speed::SpeedTable;
 use crate::{ChartTime, Derived, GameConfig, GameSet, GameViewport};
+use bevy::platform::collections::HashMap;
 use phichain_chart::line::LineSpeed;
 use phichain_chart::note::{Note, NoteKind};
 
@@ -195,9 +196,8 @@ pub fn update_line_system(
 }
 
 pub fn update_note_y_system(
-    query: Query<(&Children, Option<&Events>), With<Line>>,
+    query: Query<(Entity, &Children), With<Line>>,
     game_viewport: Res<GameViewport>,
-    line_event_query: Query<&LineEvent>,
     mut note_query: Query<(
         &mut Transform,
         &mut Anchor,
@@ -208,30 +208,24 @@ pub fn update_note_y_system(
     time: Res<ChartTime>,
     bpm_list: Res<BpmList>,
     dimensions: Res<RespackDimensions>,
+    index: Res<EventIndex>,
+    mut tables: Local<HashMap<Entity, SpeedTable>>,
 ) {
-    for (children, events) in &query {
-        let mut speed_events: Vec<SpeedSegment> = Vec::new();
-        if let Some(events) = events {
-            for event_entity in events.iter() {
-                if let Ok(event) = line_event_query.get(event_entity) {
-                    if event.kind.is_speed() {
-                        speed_events.push(SpeedSegment {
-                            start_time: bpm_list.time_at(event.start_beat),
-                            end_time: bpm_list.time_at(event.end_beat),
-                            start_value: event.value.start(),
-                            end_value: event.value.end(),
-                        });
-                    }
-                }
+    // speed events rarely change, so their distance tables are only rebuilt then
+    if index.is_changed() || bpm_list.is_changed() {
+        tables.clear();
+        for (line, _) in &query {
+            if let Some(track) = index.track(line, LineEventKind::Speed) {
+                tables.insert(line, SpeedTable::new(track, &bpm_list));
             }
         }
+    }
 
-        speed_events.sort_by(|a, b| {
-            Rational32::from_f32(a.start_time).cmp(&Rational32::from_f32(b.start_time))
-        });
-
+    let no_speed_events = SpeedTable::default();
+    for (line, children) in &query {
+        let table = tables.get(&line).unwrap_or(&no_speed_events);
         let distance = |time| {
-            distance_at(&speed_events, time) * (game_viewport.0.height() * (120.0 / 900.0))
+            table.distance_at(time) * (game_viewport.0.height() * (120.0 / 900.0))
                 / scale::line_world_scale(game_viewport.0.width())
         };
         let current_distance = distance(time.0);
@@ -443,66 +437,4 @@ pub fn update_line_texture_system(
     for mut sprite in &mut query {
         sprite.image = assets.line.clone();
     }
-}
-
-#[derive(Debug, Clone)]
-struct SpeedSegment {
-    start_time: f32,
-    end_time: f32,
-    start_value: f32,
-    end_value: f32,
-}
-
-fn distance_at(speed_events: &[SpeedSegment], time: f32) -> f32 {
-    let mut last_time = 0.0;
-    let mut last_speed = 10.0;
-    let mut area = 0.0;
-
-    for event in speed_events {
-        if time <= last_time {
-            break;
-        }
-
-        let gap_end = event.start_time.min(time);
-        if gap_end > last_time {
-            area += (gap_end - last_time) * last_speed;
-            last_time = gap_end;
-        }
-
-        if time <= event.start_time {
-            break;
-        }
-
-        let time_span = event.end_time - event.start_time;
-        if time_span <= 0.0 {
-            last_time = last_time.max(event.end_time);
-            last_speed = event.end_value;
-            continue;
-        }
-
-        let seg_start = event.start_time.max(last_time);
-        let seg_end = event.end_time.min(time);
-        if seg_end > seg_start {
-            let speed_span = event.end_value - event.start_value;
-            let start_ratio = (seg_start - event.start_time) / time_span;
-            let end_ratio = (seg_end - event.start_time) / time_span;
-            let start_speed = event.start_value + start_ratio * speed_span;
-            let end_speed = event.start_value + end_ratio * speed_span;
-
-            area += (seg_end - seg_start) * (start_speed + end_speed) / 2.0;
-
-            if time <= event.end_time {
-                return area;
-            }
-        }
-
-        last_time = event.end_time;
-        last_speed = event.end_value;
-    }
-
-    if time > last_time {
-        area += (time - last_time) * last_speed;
-    }
-
-    area
 }

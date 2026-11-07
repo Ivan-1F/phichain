@@ -12,6 +12,7 @@ pub mod loader;
 pub mod scale;
 mod score;
 pub mod serialization;
+mod speed;
 mod ui;
 pub mod utils;
 
