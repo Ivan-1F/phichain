@@ -83,6 +83,7 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
 
     // overlay
     timeline::common::indicator_ui(&mut ui, world);
+    timeline::common::cursor_beat_ui(&mut ui, world);
     for item in &timelines {
         timeline::common::timeline_badge_ui(&mut ui, world, item.timeline, item.viewport);
     }

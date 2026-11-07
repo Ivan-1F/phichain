@@ -139,7 +139,7 @@ pub mod common {
     /// Opacity of the horizontal beat grid lines on timelines
     const BEAT_LINE_OPACITY: f32 = 40.0 / 255.0;
 
-    const PRIMARY_BEAT_LABEL_SIZE: f32 = 14.0;
+    const BEAT_LABEL_SIZE: f32 = 11.0;
 
     pub fn timeline_badge_ui(
         ui: &mut Ui,
@@ -208,10 +208,8 @@ pub mod common {
         let ctx = state.get_mut(world);
         let denom = ctx.settings.density;
         // labels sit above their lines, so lines just below the viewport can still show one
-        let lines = ctx.beat_lines_between(
-            ctx.viewport.0.min.y,
-            ctx.viewport.0.max.y + PRIMARY_BEAT_LABEL_SIZE,
-        );
+        let lines =
+            ctx.beat_lines_between(ctx.viewport.0.min.y, ctx.viewport.0.max.y + BEAT_LABEL_SIZE);
         for (numer, beat_time) in lines {
             let primary = numer.is_multiple_of(denom);
             let rect = egui::Rect::from_center_size(
@@ -223,22 +221,45 @@ pub mod common {
             );
             ui.painter()
                 .rect_filled(rect, 0.0, Color32::WHITE.gamma_multiply(BEAT_LINE_OPACITY));
-            let (label, size) = if primary {
-                ((numer / denom).to_string(), PRIMARY_BEAT_LABEL_SIZE)
-            } else {
-                (
-                    format!("{}:{}/{}", numer / denom, numer % denom, denom),
-                    8.0,
-                )
-            };
+            if !primary {
+                continue;
+            }
             ui.painter().text(
                 rect.left_top() + egui::Vec2::new(4.0, 0.0),
                 Align2::LEFT_BOTTOM,
-                label,
-                FontId::monospace(size),
+                numer / denom,
+                FontId::monospace(BEAT_LABEL_SIZE),
                 Color32::WHITE,
             );
         }
+    }
+
+    /// Highlight the beat line under the cursor and show its full beat
+    pub fn cursor_beat_ui(ui: &mut Ui, world: &mut World) {
+        let mut state: SystemState<TimelineContext> = SystemState::new(world);
+        let ctx = state.get_mut(world);
+        let viewport = ctx.viewport.0.into_egui();
+        let Some(pos) = ui.ctx().pointer_hover_pos() else {
+            return;
+        };
+        if !ui.rect_contains_pointer(viewport) {
+            return;
+        }
+
+        let beat = ctx.settings.attach(ctx.y_to_beat_f32(pos.y));
+        let y = ctx.beat_to_y(beat);
+        let color = ui.visuals().selection.bg_fill;
+        ui.painter().hline(viewport.x_range(), y, (1.0, color));
+
+        let galley = ui.painter().layout_no_wrap(
+            format!("{beat:?}"),
+            FontId::monospace(BEAT_LABEL_SIZE),
+            Color32::WHITE,
+        );
+        let rect = Align2::LEFT_BOTTOM
+            .anchor_size(egui::Pos2::new(viewport.left() + 4.0, y), galley.size());
+        ui.painter().rect_filled(rect.expand(2.0), 2.0, color);
+        ui.painter().galley(rect.min, galley, Color32::WHITE);
     }
 
     pub fn separator_ui(ui: &mut Ui, world: &mut World) {
