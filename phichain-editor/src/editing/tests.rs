@@ -44,6 +44,7 @@ fn editing_test_app() -> (App, Entity) {
         .add_plugins((
             IdIndexPlugin,
             phichain_game::line::LinePlugin,
+            phichain_game::event::EventIndexPlugin,
             HistoryPlugin,
             CreateNotePlugin,
             CreateEventPlugin,
@@ -199,6 +200,12 @@ fn second_placement_key_determines_final_event_type() {
             _ => unreachable!(),
         }
     }
+}
+
+#[test]
+fn placed_transition_events_continue_from_and_into_their_neighbors() {
+    let event = place_event_with_keys(KeyCode::KeyR, KeyCode::KeyR);
+    assert_eq!((event.value.start(), event.value.end()), (10.0, 30.0));
 }
 
 #[test]

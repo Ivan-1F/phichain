@@ -14,8 +14,7 @@ use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use phichain_chart::line::Line;
-use phichain_game::event::{EventIndex, EventOf, Events};
-use std::collections::HashMap;
+use phichain_game::event::{EventIndex, EventOf};
 use std::iter;
 
 #[derive(Component, Debug, Clone, Copy)]
@@ -99,7 +98,6 @@ pub fn event_timeline_ui(
     targets: TimelineTargets,
     ctx: TimelineContext,
     event_query: Query<(&LineEvent, Entity, Option<&Selected>, Option<&PendingOf>)>,
-    events_query: Query<&Events>,
     bpm_list: Res<BpmList>,
     mut clicks: MessageWriter<TimelineClick>,
     mut seek_to: MessageWriter<SeekTo>,
@@ -160,25 +158,6 @@ pub fn event_timeline_ui(
         Rect::from_center_size(center, size)
     };
 
-    let Ok(events) = events_query.get(line_entity) else {
-        return;
-    };
-    let events = events
-        .iter()
-        .filter_map(|entity| event_query.get(*entity).ok())
-        .filter(|(_, _, _, pending)| !pending.is_some_and(|owner| owner.0 != timeline))
-        .collect::<Vec<_>>();
-
-    // used to find seams where an event continues the previous one with the same value
-    let starts = events
-        .iter()
-        .map(|(event, ..)| ((event.kind, event.start_beat), event.value.start()))
-        .collect::<HashMap<_, _>>();
-    let ends = events
-        .iter()
-        .map(|(event, ..)| ((event.kind, event.end_beat), event.value.end()))
-        .collect::<HashMap<_, _>>();
-
     // the nearest event endpoint beyond each edge of each track
     let mut above = EventTrackData::splat(None::<Endpoint>);
     let mut below = EventTrackData::splat(None::<Endpoint>);
@@ -189,103 +168,143 @@ pub fn event_timeline_ui(
     let viewport_margin = 100.0;
     let font = FontId::monospace(EVENT_VALUE_SIZE);
     let in_view = |y: f32| viewport.y_range().contains(y);
+    let lowest = ctx.y_to_beat_f32(viewport.bottom() + viewport_margin);
+    let highest = ctx.y_to_beat_f32(viewport.top() - viewport_margin);
 
-    for (event, entity, selected, pending) in events {
-        let rect = get_event_rect(event);
-
-        let mut color = if selected.is_some() {
-            Color32::LIGHT_GREEN
-        } else {
-            match event.value {
-                LineEventValue::Transition { .. } => Color32::LIGHT_BLUE,
-                LineEventValue::Constant { .. } => Color32::LIGHT_RED,
-            }
-        };
-
-        if pending.is_some() {
-            color = color.gamma_multiply(PENDING_OPACITY);
-        }
-
-        for endpoint in [
-            Endpoint {
-                y: rect.bottom(),
-                beat: event.start_beat,
-                value: event.value.start(),
-                color,
-            },
-            Endpoint {
-                y: rect.top(),
-                beat: event.end_beat,
-                value: event.value.end(),
-                color,
-            },
-        ] {
-            if endpoint.y < viewport.top() {
-                let nearest = above.get_mut(event.kind);
-                if nearest.is_none_or(|nearest| endpoint.y > nearest.y) {
-                    *nearest = Some(endpoint);
-                }
-            } else if endpoint.y > viewport.bottom() {
-                let nearest = below.get_mut(event.kind);
-                if nearest.is_none_or(|nearest| endpoint.y < nearest.y) {
-                    *nearest = Some(endpoint);
-                }
+    for kind in [
+        LineEventKind::X,
+        LineEventKind::Y,
+        LineEventKind::Rotation,
+        LineEventKind::Opacity,
+        LineEventKind::Speed,
+    ] {
+        // events near the viewport, with one more on each side for seams and edge values
+        let mut events = Vec::new();
+        for (entity, event) in index.until(line_entity, kind, highest) {
+            events.push((entity, *event));
+            if event.end_beat.value() < lowest {
+                break;
             }
         }
+        events.reverse();
+        events.extend(
+            index
+                .since(line_entity, kind, highest)
+                .find(|(_, event)| event.start_beat.value() > highest)
+                .map(|(entity, event)| (entity, *event)),
+        );
+        events.retain(|(entity, _)| {
+            !event_query
+                .get(*entity)
+                .is_ok_and(|(.., pending)| pending.is_some_and(|owner| owner.0 != timeline))
+        });
 
-        if rect.bottom() < viewport.top() - viewport_margin
-            || rect.top() > viewport.bottom() + viewport_margin
-        {
-            continue;
-        }
+        for (i, &(entity, _)) in events.iter().enumerate() {
+            let Ok((event, entity, selected, pending)) = event_query.get(entity) else {
+                continue;
+            };
+            let previous = i.checked_sub(1).and_then(|i| events.get(i)).map(|(_, e)| e);
+            let next = events.get(i + 1).map(|(_, e)| e);
+            let rect = get_event_rect(event);
 
-        let response = ui.allocate_rect(rect, Sense::click());
-        if ui.is_rect_visible(rect) {
-            ui.painter().rect(
-                rect,
-                0.0,
-                color.gamma_multiply(EVENT_FILL_OPACITY),
-                Stroke::new(1.0_f32, color),
-                StrokeKind::Middle,
-            );
-        }
+            let mut color = if selected.is_some() {
+                Color32::LIGHT_GREEN
+            } else {
+                match event.value {
+                    LineEventValue::Transition { .. } => Color32::LIGHT_BLUE,
+                    LineEventValue::Constant { .. } => Color32::LIGHT_RED,
+                }
+            };
 
-        let (start, end) = (event.value.start(), event.value.end());
-        if in_view(rect.bottom()) {
-            let seam = ends.get(&(event.kind, event.start_beat)) == Some(&start);
-            labels.push(ValueLabel {
-                kind: event.kind,
-                pos: rect.center_bottom(),
-                anchor: if seam {
-                    Align2::CENTER_CENTER
-                } else {
-                    Align2::CENTER_BOTTOM
+            if pending.is_some() {
+                color = color.gamma_multiply(PENDING_OPACITY);
+            }
+
+            for endpoint in [
+                Endpoint {
+                    y: rect.bottom(),
+                    beat: event.start_beat,
+                    value: event.value.start(),
+                    color,
                 },
-                value: start,
-                seam,
-            });
-        }
-        // a seam shared with the next event is labeled by that event
-        if in_view(rect.top()) && starts.get(&(event.kind, event.end_beat)) != Some(&end) {
-            labels.push(ValueLabel {
-                kind: event.kind,
-                pos: rect.center_top(),
-                anchor: Align2::CENTER_TOP,
-                value: end,
-                seam: false,
-            });
-        }
+                Endpoint {
+                    y: rect.top(),
+                    beat: event.end_beat,
+                    value: event.value.end(),
+                    color,
+                },
+            ] {
+                if endpoint.y < viewport.top() {
+                    let nearest = above.get_mut(kind);
+                    if nearest.is_none_or(|nearest| endpoint.y > nearest.y) {
+                        *nearest = Some(endpoint);
+                    }
+                } else if endpoint.y > viewport.bottom() {
+                    let nearest = below.get_mut(kind);
+                    if nearest.is_none_or(|nearest| endpoint.y < nearest.y) {
+                        *nearest = Some(endpoint);
+                    }
+                }
+            }
 
-        if pending.is_none() {
-            edits
-                .component(entity, event, t!("history.edit_events", count = 1))
-                .edit(ui, "event_range", |ui, event| {
-                    ui.add(BeatRangeDragZone::new(rect, &ctx, event));
+            if rect.bottom() < viewport.top() - viewport_margin
+                || rect.top() > viewport.bottom() + viewport_margin
+            {
+                continue;
+            }
+
+            let response = ui.allocate_rect(rect, Sense::click());
+            if ui.is_rect_visible(rect) {
+                ui.painter().rect(
+                    rect,
+                    0.0,
+                    color.gamma_multiply(EVENT_FILL_OPACITY),
+                    Stroke::new(1.0_f32, color),
+                    StrokeKind::Middle,
+                );
+            }
+
+            let (start, end) = (event.value.start(), event.value.end());
+            if in_view(rect.bottom()) {
+                let seam = previous.is_some_and(|previous| {
+                    previous.end_beat == event.start_beat && previous.value.end() == start
                 });
-        }
+                labels.push(ValueLabel {
+                    kind,
+                    pos: rect.center_bottom(),
+                    anchor: if seam {
+                        Align2::CENTER_CENTER
+                    } else {
+                        Align2::CENTER_BOTTOM
+                    },
+                    value: start,
+                    seam,
+                });
+            }
+            // a seam shared with the next event is labeled by that event
+            let seam = next
+                .is_some_and(|next| next.start_beat == event.end_beat && next.value.start() == end);
+            if in_view(rect.top()) && !seam {
+                labels.push(ValueLabel {
+                    kind,
+                    pos: rect.center_top(),
+                    anchor: Align2::CENTER_TOP,
+                    value: end,
+                    seam: false,
+                });
+            }
 
-        if response.clicked() {
-            clicks.write(TimelineClick { timeline, entity });
+            if pending.is_none() {
+                edits
+                    .component(entity, event, t!("history.edit_events", count = 1))
+                    .edit(ui, "event_range", |ui, event| {
+                        ui.add(BeatRangeDragZone::new(rect, &ctx, event));
+                    });
+            }
+
+            if response.clicked() {
+                clicks.write(TimelineClick { timeline, entity });
+            }
         }
     }
 

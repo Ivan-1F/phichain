@@ -34,23 +34,46 @@ impl EventIndex {
         self.0.get(&(line, kind))
     }
 
+    /// Events of a track starting at or before the beat, latest first
+    pub fn until(
+        &self,
+        line: Entity,
+        kind: LineEventKind,
+        beat: f32,
+    ) -> impl Iterator<Item = (Entity, &LineEvent)> {
+        // every event starting at or before the beat is ordered before this bound
+        let bound = (beat!(beat.floor() as i32 + 1), Entity::PLACEHOLDER);
+        self.track(line, kind)
+            .into_iter()
+            .flat_map(move |track| track.range(..bound).rev())
+            .filter(move |(_, event)| event.start_beat.value() <= beat)
+            .map(|(&(_, entity), event)| (entity, event))
+    }
+
+    /// Events of a track starting at or after the beat, earliest first
+    pub fn since(
+        &self,
+        line: Entity,
+        kind: LineEventKind,
+        beat: f32,
+    ) -> impl Iterator<Item = (Entity, &LineEvent)> {
+        // every event starting at or after the beat is ordered after this bound
+        let bound = (beat!(beat.floor() as i32 - 1), Entity::PLACEHOLDER);
+        self.track(line, kind)
+            .into_iter()
+            .flat_map(move |track| track.range(bound..))
+            .filter(move |(_, event)| event.start_beat.value() >= beat)
+            .map(|(&(_, entity), event)| (entity, event))
+    }
+
     /// Evaluate a track of a line at the given beat
     ///
     /// Equals the max of every event's inclusive evaluation as long as the events on the track do not overlap.
     /// Only the last two events starting at or before the beat matter then, since the earlier one may end right at it.
     pub fn evaluate(&self, line: Entity, kind: LineEventKind, beat: f32) -> EventEvaluationResult {
-        let Some(track) = self.track(line, kind) else {
-            return EventEvaluationResult::Unaffected;
-        };
-        // every event starting at or before the beat starts before this bound
-        let bound = beat!(beat.floor() as i32 + 1);
-        track
-            .range(..(bound, Entity::PLACEHOLDER))
-            .rev()
-            .map(|(_, event)| event)
-            .filter(|event| event.start_beat.value() <= beat)
+        self.until(line, kind, beat)
             .take(2)
-            .map(|event| event.evaluate_inclusive(beat))
+            .map(|(_, event)| event.evaluate_inclusive(beat))
             .max()
             .unwrap_or(EventEvaluationResult::Unaffected)
     }
@@ -152,7 +175,7 @@ mod tests {
     }
 
     #[test]
-    fn evaluate_matches_every_event_when_events_do_not_overlap() {
+    fn queries_match_scanning_every_event() {
         use phichain_chart::easing::Easing;
         use rand::rngs::StdRng;
         use rand::{Rng, SeedableRng};
@@ -199,6 +222,29 @@ mod tests {
             let mut index = EventIndex::default();
             index.0.insert((line, LineEventKind::X), track.clone());
             for beat in beats {
+                let until: Vec<_> = index
+                    .until(line, LineEventKind::X, beat)
+                    .map(|(e, _)| e)
+                    .collect();
+                let mut expected: Vec<_> = track
+                    .iter()
+                    .filter(|(_, event)| event.start_beat.value() <= beat)
+                    .map(|(&(_, e), _)| e)
+                    .collect();
+                expected.reverse();
+                assert_eq!(until, expected, "until {beat}");
+
+                let since: Vec<_> = index
+                    .since(line, LineEventKind::X, beat)
+                    .map(|(e, _)| e)
+                    .collect();
+                let expected: Vec<_> = track
+                    .iter()
+                    .filter(|(_, event)| event.start_beat.value() >= beat)
+                    .map(|(&(_, e), _)| e)
+                    .collect();
+                assert_eq!(since, expected, "since {beat}");
+
                 let every = track
                     .values()
                     .map(|event| event.evaluate_inclusive(beat))

@@ -14,7 +14,7 @@ use crate::timeline::pending_status::{PendingHint, PendingStatus};
 use crate::timeline::TimelineContext;
 use crate::utils::convert::BevyEguiConvert;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
-use phichain_game::event::EventOf;
+use phichain_game::event::{EventIndex, EventOf};
 
 enum CreateEventHotkeys {
     PlaceTransitionEvent,
@@ -72,7 +72,8 @@ fn create_event_system(
     timeline_pending: Query<&TimelinePending>,
     events: Query<&LineEvent>,
 
-    event_query: Query<(&LineEvent, &EventOf), Without<Pending>>,
+    index: Res<EventIndex>,
+    pending: Query<(), With<Pending>>,
 ) -> Result {
     let Ok(window) = window_query.single() else {
         return Ok(());
@@ -128,32 +129,17 @@ fn create_event_system(
             let (track, beat) = calc_event_attrs();
             new_event.kind = LineEventKind::try_from(track).expect("Unknown event track");
             new_event.end_beat = beat.max(new_event.start_beat + ctx.settings.minimum_beat());
-            let events: Vec<_> = event_query
-                .iter()
-                .filter(|(event, parent)| {
-                    event.kind == new_event.kind && parent.target() == line_entity
-                })
-                .map(|(event, _)| event)
-                .collect();
-            if let Some(last_event) = events
-                .iter()
-                .filter(|event| event.end_beat <= new_event.start_beat)
-                .max_by(|a, b| {
-                    a.end_beat
-                        .cmp(&b.end_beat)
-                        .then_with(|| a.value.end().total_cmp(&b.value.end()))
-                })
+            let confirmed = |(entity, _): &(Entity, &LineEvent)| !pending.contains(*entity);
+            if let Some((_, last_event)) = index
+                .until(line_entity, new_event.kind, new_event.start_beat.value())
+                .filter(confirmed)
+                .find(|(_, event)| event.end_beat <= new_event.start_beat)
             {
                 *new_event.value.start_mut() = last_event.value.end();
             }
-            if let Some(next_event) = events
-                .iter()
-                .filter(|event| event.start_beat >= new_event.end_beat)
-                .min_by(|a, b| {
-                    a.start_beat
-                        .cmp(&b.start_beat)
-                        .then_with(|| b.value.start().total_cmp(&a.value.start()))
-                })
+            if let Some((_, next_event)) = index
+                .since(line_entity, new_event.kind, new_event.end_beat.value())
+                .find(confirmed)
             {
                 *new_event.value.end_mut() = next_event.value.start();
             }
