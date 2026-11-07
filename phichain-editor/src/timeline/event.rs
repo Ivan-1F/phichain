@@ -12,9 +12,9 @@ use bevy::prelude::{Component, Entity, In, MessageWriter, Query, Res};
 use egui::{Align2, Color32, FontId, Rect, Sense, Stroke, StrokeKind, Ui};
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
-use phichain_chart::event::{EventEvaluationResult, LineEvent, LineEventKind, LineEventValue};
+use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use phichain_chart::line::Line;
-use phichain_game::event::{EventOf, Events};
+use phichain_game::event::{EventIndex, EventOf, Events};
 use std::collections::HashMap;
 use std::iter;
 
@@ -105,6 +105,7 @@ pub fn event_timeline_ui(
     mut seek_to: MessageWriter<SeekTo>,
     mut edits: Edits,
     chart_time: Res<ChartTime>,
+    index: Res<EventIndex>,
 ) {
     let Some(line_entity) = targets.get(timeline) else {
         return;
@@ -182,10 +183,6 @@ pub fn event_timeline_ui(
     let mut above = EventTrackData::splat(None::<Endpoint>);
     let mut below = EventTrackData::splat(None::<Endpoint>);
 
-    // evaluated the same way the line itself is
-    let beat: f32 = bpm_list.beat_at(chart_time.0).into();
-    let mut current = EventTrackData::splat(EventEvaluationResult::Unaffected);
-
     // painted after all events so no event covers them
     let mut labels = Vec::<ValueLabel>::new();
 
@@ -194,9 +191,6 @@ pub fn event_timeline_ui(
     let in_view = |y: f32| viewport.y_range().contains(y);
 
     for (event, entity, selected, pending) in events {
-        let slot = current.get_mut(event.kind);
-        *slot = slot.clone().max(event.evaluate_inclusive(beat));
-
         let rect = get_event_rect(event);
 
         let mut color = if selected.is_some() {
@@ -362,8 +356,16 @@ pub fn event_timeline_ui(
             ui.visuals().weak_text_color(),
         );
     }
-    for (kind, value) in current.iter() {
-        let Some(value) = value.value() else {
+    // evaluated the same way the line itself is
+    let beat: f32 = bpm_list.beat_at(chart_time.0).into();
+    for kind in [
+        LineEventKind::X,
+        LineEventKind::Y,
+        LineEventKind::Rotation,
+        LineEventKind::Opacity,
+        LineEventKind::Speed,
+    ] {
+        let Some(value) = index.evaluate(line_entity, kind, beat).value() else {
             continue;
         };
         let painter = ui.painter().with_clip_rect(track_rect(kind));

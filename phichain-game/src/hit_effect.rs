@@ -1,5 +1,5 @@
 use crate::constants::PERFECT_COLOR;
-use crate::event::Events;
+use crate::event::EventIndex;
 use crate::layer::HIT_EFFECT_LAYER;
 use crate::{ChartTime, GameConfig, GameSet, GameViewport, Paused};
 use bevy::prelude::*;
@@ -9,7 +9,7 @@ use phichain_assets::{HitEffectAtlas, ImageAssets, RespackMeta};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::easing::Easing;
-use phichain_chart::event::{EventEvaluationResult, LineEvent, LineEventKind};
+use phichain_chart::event::LineEventKind;
 use phichain_chart::line::Line;
 use phichain_chart::note::{Note, NoteKind};
 use rand::Rng;
@@ -136,40 +136,13 @@ fn update_hit_effect_scale_system(
 #[derive(Component, Debug)]
 struct PlayedHitEffect(f32);
 
-/// Evaluate line events at a given beat and return (x, y, rotation) values.
-fn evaluate_line_at_beat(
-    beat: f32,
-    events: &Events,
-    line_event_query: &Query<&LineEvent>,
-) -> (f32, f32, f32) {
-    let mut x_value = EventEvaluationResult::Unaffected;
-    let mut y_value = EventEvaluationResult::Unaffected;
-    let mut rotation_value = EventEvaluationResult::Unaffected;
-
-    for event in events.iter().filter_map(|e| line_event_query.get(e).ok()) {
-        let value = event.evaluate_inclusive(beat);
-        match event.kind {
-            LineEventKind::X => x_value = x_value.max(value),
-            LineEventKind::Y => y_value = y_value.max(value),
-            LineEventKind::Rotation => rotation_value = rotation_value.max(value),
-            _ => {}
-        }
-    }
-
-    (
-        x_value.value().unwrap_or(0.0),
-        y_value.value().unwrap_or(0.0),
-        rotation_value.value().unwrap_or(0.0),
-    )
-}
-
 /// Compute the world position for a hit effect by composing the note's line hierarchy.
 fn compute_hit_effect_position(
     mut line_entity: Entity,
     beat: f32,
     note_x: f32,
-    line_query: &Query<(Option<&Events>, Option<&ChildOf>), With<Line>>,
-    line_event_query: &Query<&LineEvent>,
+    line_query: &Query<Option<&ChildOf>, With<Line>>,
+    index: &EventIndex,
     game_viewport: &GameViewport,
 ) -> Option<Vec2> {
     let vw = game_viewport.0.width();
@@ -177,10 +150,18 @@ fn compute_hit_effect_position(
     let mut position = Vec2::new(note_x / CANVAS_WIDTH * vw, 0.0);
 
     loop {
-        let (events, parent) = line_query.get(line_entity).ok()?;
-        let (line_x, line_y, line_rotation) = events
-            .map(|events| evaluate_line_at_beat(beat, events, line_event_query))
-            .unwrap_or_default();
+        let parent = line_query.get(line_entity).ok()?;
+        let value = |kind| {
+            index
+                .evaluate(line_entity, kind, beat)
+                .value()
+                .unwrap_or(0.0)
+        };
+        let (line_x, line_y, line_rotation) = (
+            value(LineEventKind::X),
+            value(LineEventKind::Y),
+            value(LineEventKind::Rotation),
+        );
         let (sin, cos) = line_rotation.to_radians().sin_cos();
 
         position = Vec2::new(
@@ -198,8 +179,8 @@ fn compute_hit_effect_position(
 fn spawn_hit_effect_system(
     mut commands: Commands,
     query: Query<(&Note, &ChildOf, Entity, Option<&PlayedHitEffect>)>,
-    line_query: Query<(Option<&Events>, Option<&ChildOf>), With<Line>>,
-    line_event_query: Query<&LineEvent>,
+    line_query: Query<Option<&ChildOf>, With<Line>>,
+    index: Res<EventIndex>,
     time: Res<ChartTime>,
     bpm_list: Res<BpmList>,
     assets: Res<ImageAssets>,
@@ -231,7 +212,7 @@ fn spawn_hit_effect_system(
                 effect_beat,
                 note.x,
                 &line_query,
-                &line_event_query,
+                &index,
                 &game_viewport,
             ) else {
                 return;

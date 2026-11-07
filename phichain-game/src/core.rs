@@ -2,11 +2,11 @@ use bevy::{prelude::*, sprite::Anchor};
 use phichain_assets::{HoldParts, ImageAssets, RespackDimensions};
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
-use phichain_chart::event::{EventEvaluationResult, LineEvent, LineEventKind};
+use phichain_chart::event::LineEventKind;
 use phichain_chart::line::{Line, LineOpacity, LinePosition, LineRotation};
 
 use crate::constants::PERFECT_COLOR;
-use crate::event::{EventIndex, Events};
+use crate::event::EventIndex;
 use crate::highlight::Highlighted;
 use crate::layer::{HOLD_LAYER, NOTE_LAYER};
 use crate::scale;
@@ -103,14 +103,14 @@ pub fn update_note_system(
 
 pub fn compute_line_system(
     keyboard: Res<ButtonInput<KeyCode>>,
-    event_query: Query<&LineEvent>,
+    index: Res<EventIndex>,
     mut line_query: Query<
         (
+            Entity,
             &mut LinePosition,
             &mut LineRotation,
             &mut LineOpacity,
             &mut LineSpeed,
-            &Events,
         ),
         With<Line>,
     >,
@@ -119,39 +119,24 @@ pub fn compute_line_system(
 ) {
     let beat: f32 = bpm_list.beat_at(time.0).into();
     line_query.par_iter_mut().for_each(
-        |(mut position, mut rotation, mut opacity, mut speed, events)| {
-            let mut x_value = EventEvaluationResult::Unaffected;
-            let mut y_value = EventEvaluationResult::Unaffected;
-            let mut rotation_value = EventEvaluationResult::Unaffected;
-            let mut opacity_value = EventEvaluationResult::Unaffected;
-            let mut speed_value = EventEvaluationResult::Unaffected;
+        |(line, mut position, mut rotation, mut opacity, mut speed)| {
+            let value = |kind| index.evaluate(line, kind, beat).value();
 
-            for event in events.iter().filter_map(|x| event_query.get(x).ok()) {
-                let value = event.evaluate_inclusive(beat);
-                match event.kind {
-                    LineEventKind::X => x_value = x_value.max(value),
-                    LineEventKind::Y => y_value = y_value.max(value),
-                    LineEventKind::Rotation => rotation_value = rotation_value.max(value),
-                    LineEventKind::Opacity => opacity_value = opacity_value.max(value),
-                    LineEventKind::Speed => speed_value = speed_value.max(value),
-                }
-            }
-
-            if let Some(x_value) = x_value.value() {
+            if let Some(x_value) = value(LineEventKind::X) {
                 position.0.x = x_value;
             }
-            if let Some(y_value) = y_value.value() {
+            if let Some(y_value) = value(LineEventKind::Y) {
                 position.0.y = y_value;
             }
-            if let Some(rotation_value) = rotation_value.value() {
+            if let Some(rotation_value) = value(LineEventKind::Rotation) {
                 rotation.0 = rotation_value.to_radians();
             }
             if keyboard.pressed(KeyCode::KeyT) {
                 opacity.0 = 1.0;
-            } else if let Some(opacity_value) = opacity_value.value() {
+            } else if let Some(opacity_value) = value(LineEventKind::Opacity) {
                 opacity.0 = opacity_value / 255.0;
             }
-            if let Some(speed_value) = speed_value.value() {
+            if let Some(speed_value) = value(LineEventKind::Speed) {
                 speed.0 = speed_value;
             }
         },

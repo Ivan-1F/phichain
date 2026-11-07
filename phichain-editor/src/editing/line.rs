@@ -10,9 +10,8 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use phichain_chart::id::{Identified, LineId};
 use phichain_chart::serialization::SerializedLine;
-use phichain_game::event::Events;
+use phichain_game::event::EventIndex;
 pub(crate) use phichain_game::loader::load_line as spawn_line;
-use phichain_game::Pending;
 
 pub struct LineEditingPlugin;
 impl Plugin for LineEditingPlugin {
@@ -42,14 +41,12 @@ fn create_line_system(mut edits: Edits) -> Result {
 
 fn create_line_from_selected_system(
     selected_line: Res<SelectedLine>,
-    event_query: Query<&LineEvent, Without<Pending>>,
-    events_query: Query<&Events>,
+    index: Res<EventIndex>,
     time: Res<ChartTime>,
     bpm_list: Res<BpmList>,
     mut edits: Edits,
 ) -> Result {
     let beat = bpm_list.beat_at(time.0).value();
-    let events = events_query.get(selected_line.0).ok();
     let events = [
         (LineEventKind::X, 0.0),
         (LineEventKind::Y, 0.0),
@@ -59,14 +56,9 @@ fn create_line_from_selected_system(
     ]
     .into_iter()
     .map(|(kind, fallback)| {
-        let value = events
-            .iter()
-            .flat_map(|events| events.iter())
-            .filter_map(|entity| event_query.get(entity).ok())
-            .filter(|event| event.kind == kind)
-            .map(|event| event.evaluate_inclusive(beat))
-            .max()
-            .and_then(|result| result.value())
+        let value = index
+            .evaluate(selected_line.0, kind, beat)
+            .value()
             .unwrap_or(fallback);
         Identified::new(LineEvent {
             kind,

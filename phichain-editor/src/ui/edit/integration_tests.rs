@@ -665,7 +665,8 @@ fn timeline_resources(app: &mut App) {
     ))
     .insert_resource(phichain_game::audio::AudioDuration(
         std::time::Duration::from_secs(60),
-    ));
+    ))
+    .add_plugins(phichain_game::event::EventIndexPlugin);
 }
 
 #[test]

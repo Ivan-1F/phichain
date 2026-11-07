@@ -1,7 +1,8 @@
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
+use phichain_chart::beat;
 use phichain_chart::beat::Beat;
-use phichain_chart::event::{LineEvent, LineEventKind};
+use phichain_chart::event::{EventEvaluationResult, LineEvent, LineEventKind};
 use std::collections::BTreeMap;
 
 #[derive(Component, Debug, Clone, Copy, PartialEq, Reflect)]
@@ -31,6 +32,27 @@ pub struct EventIndex(HashMap<(Entity, LineEventKind), EventTrack>);
 impl EventIndex {
     pub fn track(&self, line: Entity, kind: LineEventKind) -> Option<&EventTrack> {
         self.0.get(&(line, kind))
+    }
+
+    /// Evaluate a track of a line at the given beat
+    ///
+    /// Equals the max of every event's inclusive evaluation as long as the events on the track do not overlap.
+    /// Only the last two events starting at or before the beat matter then, since the earlier one may end right at it.
+    pub fn evaluate(&self, line: Entity, kind: LineEventKind, beat: f32) -> EventEvaluationResult {
+        let Some(track) = self.track(line, kind) else {
+            return EventEvaluationResult::Unaffected;
+        };
+        // every event starting at or before the beat starts before this bound
+        let bound = beat!(beat.floor() as i32 + 1);
+        track
+            .range(..(bound, Entity::PLACEHOLDER))
+            .rev()
+            .map(|(_, event)| event)
+            .filter(|event| event.start_beat.value() <= beat)
+            .take(2)
+            .map(|event| event.evaluate_inclusive(beat))
+            .max()
+            .unwrap_or(EventEvaluationResult::Unaffected)
     }
 }
 
@@ -127,6 +149,68 @@ mod tests {
             events.sort_by_key(|(beat, entity, _)| (*beat, *entity));
         }
         tracks.into_iter().collect()
+    }
+
+    #[test]
+    fn evaluate_matches_every_event_when_events_do_not_overlap() {
+        use phichain_chart::easing::Easing;
+        use rand::rngs::StdRng;
+        use rand::{Rng, SeedableRng};
+
+        let mut rng = StdRng::seed_from_u64(0);
+        let mut world = World::new();
+        let line = world.spawn_empty().id();
+        for _ in 0..200 {
+            // in quarter beats, so seams and gaps land on exact beats
+            let mut quarter = rng.random_range(-4..4);
+            let mut track = EventTrack::new();
+            for _ in 0..rng.random_range(0..12) {
+                quarter += rng.random_range(0..3);
+                let start = beat!(0, quarter, 4);
+                quarter += rng.random_range(1..6);
+                let end = beat!(0, quarter, 4);
+                let value = if rng.random_bool(0.5) {
+                    LineEventValue::constant(rng.random_range(-10.0..10.0))
+                } else {
+                    LineEventValue::transition(
+                        rng.random_range(-10.0..10.0),
+                        rng.random_range(-10.0..10.0),
+                        Easing::EaseInOutSine,
+                    )
+                };
+                let event = LineEvent {
+                    kind: LineEventKind::X,
+                    start_beat: start,
+                    end_beat: end,
+                    value,
+                };
+                track.insert((start, world.spawn_empty().id()), event);
+            }
+
+            let mut beats: Vec<f32> = (0..30)
+                .map(|_| rng.random_range(-3.0..quarter as f32 / 4.0 + 2.0))
+                .collect();
+            beats.extend(
+                track
+                    .values()
+                    .flat_map(|e| [e.start_beat.value(), e.end_beat.value()]),
+            );
+
+            let mut index = EventIndex::default();
+            index.0.insert((line, LineEventKind::X), track.clone());
+            for beat in beats {
+                let every = track
+                    .values()
+                    .map(|event| event.evaluate_inclusive(beat))
+                    .max()
+                    .unwrap_or(EventEvaluationResult::Unaffected);
+                assert_eq!(
+                    index.evaluate(line, LineEventKind::X, beat),
+                    every,
+                    "at {beat}"
+                );
+            }
+        }
     }
 
     #[test]
