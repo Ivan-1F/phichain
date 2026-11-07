@@ -6,13 +6,13 @@ use crate::timeline::container::TimelineRect;
 use crate::timeline::pending::PendingOf;
 use crate::timeline::target::{target_name, TimelineOf, TimelineTargets};
 use crate::timeline::{TimelineContext, LANE_LINE_OPACITY};
-use crate::timing::SeekTo;
+use crate::timing::{ChartTime, SeekTo};
 use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
 use bevy::prelude::{Component, Entity, In, MessageWriter, Query, Res};
 use egui::{Align2, Color32, FontId, Rect, Sense, Stroke, StrokeKind, Ui};
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
-use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
+use phichain_chart::event::{EventEvaluationResult, LineEvent, LineEventKind, LineEventValue};
 use phichain_chart::line::Line;
 use phichain_game::event::{EventOf, Events};
 use std::collections::HashMap;
@@ -104,6 +104,7 @@ pub fn event_timeline_ui(
     mut clicks: MessageWriter<TimelineClick>,
     mut seek_to: MessageWriter<SeekTo>,
     mut edits: Edits,
+    chart_time: Res<ChartTime>,
 ) {
     let Some(line_entity) = targets.get(timeline) else {
         return;
@@ -181,6 +182,10 @@ pub fn event_timeline_ui(
     let mut above = EventTrackData::splat(None::<Endpoint>);
     let mut below = EventTrackData::splat(None::<Endpoint>);
 
+    // evaluated the same way the line itself is
+    let beat: f32 = bpm_list.beat_at(chart_time.0).into();
+    let mut current = EventTrackData::splat(EventEvaluationResult::Unaffected);
+
     // painted after all events so no event covers them
     let mut labels = Vec::<ValueLabel>::new();
 
@@ -189,6 +194,9 @@ pub fn event_timeline_ui(
     let in_view = |y: f32| viewport.y_range().contains(y);
 
     for (event, entity, selected, pending) in events {
+        let slot = current.get_mut(event.kind);
+        *slot = slot.clone().max(event.evaluate_inclusive(beat));
+
         let rect = get_event_rect(event);
 
         let mut color = if selected.is_some() {
@@ -333,9 +341,9 @@ pub fn event_timeline_ui(
         }
     }
 
-    // track headers right below the indicator
-    let header_y =
-        viewport.top() + viewport.height() * INDICATOR_POSITION + 1.0 + TRACK_HEADER_HEIGHT / 2.0;
+    // track headers right below the indicator, with the current values of the line under them
+    let header_top = viewport.top() + viewport.height() * INDICATOR_POSITION + 1.0;
+    let header_y = header_top + TRACK_HEADER_HEIGHT / 2.0;
     for (kind, txt) in [
         (LineEventKind::X, "X"),
         (LineEventKind::Y, "Y"),
@@ -353,6 +361,20 @@ pub fn event_timeline_ui(
             FontId::proportional(TRACK_HEADER_SIZE),
             ui.visuals().weak_text_color(),
         );
+    }
+    for (kind, value) in current.iter() {
+        let Some(value) = value.value() else {
+            continue;
+        };
+        let painter = ui.painter().with_clip_rect(track_rect(kind));
+        let galley = painter.layout_no_wrap(format_value(value), font.clone(), Color32::WHITE);
+        let rect = Align2::CENTER_TOP.anchor_size(
+            egui::Pos2::new(compute_x(kind.into()), header_top + TRACK_HEADER_HEIGHT),
+            galley.size(),
+        );
+        // cover the event values passing below so the two never mix
+        painter.rect_filled(rect.expand2(egui::vec2(2.0, 0.0)), 0.0, Color32::BLACK);
+        painter.galley(rect.min, galley, Color32::WHITE);
     }
 }
 
