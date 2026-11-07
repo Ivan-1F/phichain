@@ -17,6 +17,7 @@ pub mod utils;
 
 use crate::core::CoreGamePlugin;
 use crate::curve_note_track::CurveNoteTrackPlugin;
+use crate::event::EventIndexPlugin;
 use crate::highlight::HighlightPlugin;
 use crate::hit_effect::HitEffectPlugin;
 use crate::illustration::IllustrationPlugin;
@@ -129,6 +130,7 @@ impl Plugin for GamePlugin {
             .add_message::<PauseToggleRequest>()
             .add_plugins(NonblockingLoaderPlugin)
             .add_plugins(LinePlugin)
+            .add_plugins(EventIndexPlugin)
             .add_plugins(HighlightPlugin)
             .add_plugins(CoreGamePlugin)
             .add_plugins(CurveNoteTrackPlugin)
