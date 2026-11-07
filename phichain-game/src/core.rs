@@ -38,10 +38,7 @@ impl Plugin for CoreGamePlugin {
                 .chain()
                 .in_set(GameSet),
         )
-        .add_systems(
-            Update,
-            (update_line_texture_system, update_note_texture_system).in_set(GameSet),
-        )
+        .add_systems(Update, update_line_texture_system.in_set(GameSet))
         // hold components
         .add_systems(
             Update,
