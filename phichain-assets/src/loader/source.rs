@@ -50,7 +50,7 @@ impl PackSource {
     pub fn exists(&self, name: &str) -> bool {
         match self {
             Self::Dir(dir) => dir.join(name).exists(),
-            Self::Zip(archive) => archive.file_names().any(|n| n == name),
+            Self::Zip(archive) => archive.index_for_name(name).is_some(),
         }
     }
 }
