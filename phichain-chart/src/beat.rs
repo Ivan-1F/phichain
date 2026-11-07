@@ -229,9 +229,7 @@ impl CheckedAdd for Beat {
 
 impl PartialEq for Beat {
     fn eq(&self, other: &Self) -> bool {
-        let a = self.reduced();
-        let b = other.reduced();
-        a.0 == b.0 && a.1 == b.1
+        self.cmp(other) == Ordering::Equal
     }
 }
 
@@ -244,13 +242,14 @@ impl PartialOrd for Beat {
 }
 
 impl Ord for Beat {
+    /// Cross-multiplies instead of reducing both sides, since sorting and searching compare a lot
     fn cmp(&self, other: &Self) -> Ordering {
-        let a = self.reduced();
-        let b = other.reduced();
-        match a.0.cmp(&b.0) {
-            Ordering::Equal => a.1.cmp(&b.1),
-            ord => ord,
-        }
+        // the whole beat over the denominator, which stays positive in `Rational32`
+        let numer = |beat: &Beat| {
+            i128::from(beat.0) * i128::from(*beat.1.denom()) + i128::from(*beat.1.numer())
+        };
+        let denom = |beat: &Beat| i128::from(*beat.1.denom());
+        (numer(self) * denom(other)).cmp(&(numer(other) * denom(self)))
     }
 }
 
@@ -309,6 +308,27 @@ impl FromStr for Beat {
 mod tests {
     use super::*;
     use std::hash::{DefaultHasher, Hasher};
+
+    #[test]
+    fn comparison_matches_comparing_reduced_beats() {
+        let reduced_cmp = |a: &Beat, b: &Beat| {
+            let (a, b) = (a.reduced(), b.reduced());
+            a.0.cmp(&b.0).then(a.1.cmp(&b.1))
+        };
+        let beats: Vec<_> = (-3..=3)
+            .flat_map(|whole| {
+                (-9..=9).flat_map(move |numer| {
+                    (1..=8).map(move |denom| Beat::new(whole, Rational32::new(numer, denom)))
+                })
+            })
+            .collect();
+        for a in &beats {
+            for b in &beats {
+                assert_eq!(a.cmp(b), reduced_cmp(a, b), "{a:?} vs {b:?}");
+                assert_eq!(a == b, reduced_cmp(a, b) == Ordering::Equal);
+            }
+        }
+    }
 
     #[test]
     fn test_eq() {
