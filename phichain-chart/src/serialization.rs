@@ -4,11 +4,15 @@ use serde::{Deserialize, Serialize};
 use crate::bpm_list::BpmList;
 use crate::curve_note_track::CurveNoteTrack;
 use crate::event::{LineEvent, LineEventKind, LineEventValue};
+use crate::id::{Identified, LineId};
 use crate::line::Line;
 use crate::migration::{migrate, CURRENT_FORMAT};
 use crate::note::Note;
 use crate::offset::Offset;
+use std::collections::HashSet;
+use std::iter::once;
 use thiserror::Error;
+use uuid::Uuid;
 
 #[derive(Debug, Error)]
 pub enum ParseChartError {
@@ -16,14 +20,35 @@ pub enum ParseChartError {
     InvalidChart(#[from] serde_json::Error),
     #[error("migration failed: {0}")]
     MigrationFailed(anyhow::Error),
+    #[error("duplicate object ID: {0}")]
+    DuplicateId(Uuid),
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize)]
 pub struct PhichainChart {
     pub format: u64,
     pub offset: Offset,
     pub bpm_list: BpmList,
     pub lines: Vec<SerializedLine>,
+}
+
+#[derive(Deserialize)]
+struct CurrentPhichainChart {
+    format: u64,
+    offset: Offset,
+    bpm_list: BpmList,
+    lines: Vec<SerializedLine>,
+}
+
+impl From<CurrentPhichainChart> for PhichainChart {
+    fn from(chart: CurrentPhichainChart) -> Self {
+        Self {
+            format: chart.format,
+            offset: chart.offset,
+            bpm_list: chart.bpm_list,
+            lines: chart.lines,
+        }
+    }
 }
 
 impl PhichainChart {
@@ -36,10 +61,10 @@ impl PhichainChart {
         }
     }
 
-    /// Parse a chart from JSON, migrating it to the latest format if necessary
+    /// Parse a complete chart from JSON, migrating it to the latest format and validating it.
     ///
     /// Charts already at the latest format are deserialized directly,
-    /// skipping the costly [`serde_json::Value`] intermediate representation
+    /// skipping the costly [`serde_json::Value`] intermediate representation.
     pub fn from_json_str(json: &str) -> Result<Self, ParseChartError> {
         #[derive(Deserialize)]
         struct FormatProbe {
@@ -49,13 +74,39 @@ impl PhichainChart {
 
         let probe: FormatProbe = serde_json::from_str(json)?;
 
-        if probe.format == CURRENT_FORMAT {
-            Ok(serde_json::from_str(json)?)
+        let chart: Self = if probe.format == CURRENT_FORMAT {
+            serde_json::from_str::<CurrentPhichainChart>(json)?.into()
         } else {
             let value: serde_json::Value = serde_json::from_str(json)?;
             let migrated = migrate(&value).map_err(ParseChartError::MigrationFailed)?;
-            Ok(serde_json::from_value(migrated)?)
+            serde_json::from_value::<CurrentPhichainChart>(migrated)?.into()
+        };
+
+        chart.validate_unique_ids()?;
+        Ok(chart)
+    }
+
+    fn validate_unique_ids(&self) -> Result<(), ParseChartError> {
+        fn visit(
+            lines: &[SerializedLine],
+            seen: &mut HashSet<Uuid>,
+        ) -> Result<(), ParseChartError> {
+            for line in lines {
+                for id in once(line.id.uuid())
+                    .chain(line.notes.iter().map(|note| note.id.uuid()))
+                    .chain(line.events.iter().map(|event| event.id.uuid()))
+                    .chain(line.curve_note_tracks.iter().map(|track| track.id.uuid()))
+                {
+                    if !seen.insert(id) {
+                        return Err(ParseChartError::DuplicateId(id));
+                    }
+                }
+                visit(&line.children, seen)?;
+            }
+            Ok(())
         }
+
+        visit(&self.lines, &mut HashSet::new())
     }
 }
 
@@ -85,8 +136,9 @@ impl Default for PhichainChart {
 pub struct SerializedLine {
     #[serde(flatten)]
     pub line: Line,
-    pub notes: Vec<Note>,
-    pub events: Vec<LineEvent>,
+    pub id: LineId,
+    pub notes: Vec<Identified<Note>>,
+    pub events: Vec<Identified<LineEvent>>,
     pub children: Vec<SerializedLine>,
     pub curve_note_tracks: Vec<CurveNoteTrack>,
 }
@@ -94,13 +146,15 @@ pub struct SerializedLine {
 impl SerializedLine {
     pub fn new(
         line: Line,
-        notes: Vec<Note>,
-        events: Vec<LineEvent>,
+        id: LineId,
+        notes: Vec<Identified<Note>>,
+        events: Vec<Identified<LineEvent>>,
         children: Vec<SerializedLine>,
         curve_note_tracks: Vec<CurveNoteTrack>,
     ) -> Self {
         Self {
             line,
+            id,
             notes,
             events,
             children,
@@ -114,38 +168,39 @@ impl Default for SerializedLine {
     fn default() -> Self {
         Self {
             line: Default::default(),
+            id: LineId::new(),
             notes: Default::default(),
             events: vec![
-                LineEvent {
+                Identified::new(LineEvent {
                     kind: LineEventKind::X,
                     value: LineEventValue::constant(0.0),
                     start_beat: Beat::ZERO,
                     end_beat: Beat::ONE,
-                },
-                LineEvent {
+                }),
+                Identified::new(LineEvent {
                     kind: LineEventKind::Y,
                     value: LineEventValue::constant(0.0),
                     start_beat: Beat::ZERO,
                     end_beat: Beat::ONE,
-                },
-                LineEvent {
+                }),
+                Identified::new(LineEvent {
                     kind: LineEventKind::Rotation,
                     value: LineEventValue::constant(0.0),
                     start_beat: Beat::ZERO,
                     end_beat: Beat::ONE,
-                },
-                LineEvent {
+                }),
+                Identified::new(LineEvent {
                     kind: LineEventKind::Opacity,
                     value: LineEventValue::constant(0.0),
                     start_beat: Beat::ZERO,
                     end_beat: Beat::ONE,
-                },
-                LineEvent {
+                }),
+                Identified::new(LineEvent {
                     kind: LineEventKind::Speed,
                     value: LineEventValue::constant(10.0),
                     start_beat: Beat::ZERO,
                     end_beat: Beat::ONE,
-                },
+                }),
             ],
             children: vec![],
             curve_note_tracks: vec![],
@@ -183,6 +238,20 @@ mod tests {
         assert!(matches!(
             PhichainChart::from_json_str("not json"),
             Err(ParseChartError::InvalidChart(_))
+        ));
+    }
+
+    #[test]
+    fn test_from_json_str_rejects_duplicate_ids() {
+        let mut chart = PhichainChart::default();
+        let duplicate = chart.lines[0].clone();
+        let id = duplicate.id.uuid();
+        chart.lines.push(duplicate);
+
+        let json = serde_json::to_string(&chart).unwrap();
+        assert!(matches!(
+            PhichainChart::from_json_str(&json),
+            Err(ParseChartError::DuplicateId(found)) if found == id
         ));
     }
 }

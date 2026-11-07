@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use bevy_egui::EguiPreUpdateSet;
 
 mod compat;
+pub mod edit;
 pub mod latch;
 pub mod sides;
 pub mod widgets;
@@ -13,7 +14,12 @@ impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             PreUpdate,
-            mute_keyboard_for_bevy_when_egui_wants_system.after(EguiPreUpdateSet::ProcessInput),
+            (
+                edit::interrupt_gesture_system,
+                mute_keyboard_for_bevy_when_egui_wants_system,
+            )
+                .chain()
+                .after(EguiPreUpdateSet::ProcessInput),
         );
     }
 }

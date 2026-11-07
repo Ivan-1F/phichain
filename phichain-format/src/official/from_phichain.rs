@@ -63,8 +63,8 @@ pub fn phichain_to_official(
             let events = line
                 .events
                 .iter()
+                .map(|e| e.data)
                 .filter(|e| e.kind == kind)
-                .copied()
                 .collect::<Vec<_>>();
 
             let filled_gap = fill_gap(&events, 0.0).map_err(|source| {
@@ -137,14 +137,14 @@ pub fn phichain_to_official(
         let mut x_events = vec![];
         let mut y_events = vec![];
 
-        for event in &line.events {
+        for event in line.events.iter().map(|e| e.data) {
             match event.kind {
                 LineEventKind::X => {
-                    let mut events = cut(*event, options.minimum_beat);
+                    let mut events = cut(event, options.minimum_beat);
                     x_events.append(&mut events);
                 }
                 LineEventKind::Y => {
-                    let mut events = cut(*event, options.minimum_beat);
+                    let mut events = cut(event, options.minimum_beat);
                     y_events.append(&mut events);
                 }
                 _ => {}
@@ -194,11 +194,12 @@ pub fn phichain_to_official(
         let mut speed_events = line
             .events
             .iter()
+            .map(|e| e.data)
             .filter(|e| matches!(e.kind, LineEventKind::Speed))
             .collect::<Vec<_>>();
         speed_events.sort_by_key(|e| e.start_beat);
 
-        let mut notes = line.notes.clone();
+        let mut notes = line.notes.iter().map(|n| n.data).collect::<Vec<_>>();
         notes.sort_by_key(|n| n.beat);
 
         for note in notes {

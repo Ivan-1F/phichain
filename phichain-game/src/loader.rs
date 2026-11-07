@@ -1,12 +1,13 @@
 pub mod nonblocking;
 
-use crate::curve_note_track::CurveNoteTrack;
+use crate::curve_note_track::{CurveNoteTrackFrom, CurveNoteTrackTo};
 use crate::event::EventOf;
 use crate::illustration::{load_illustration, open_illustration};
 use anyhow::Context;
 use bevy::prelude::*;
 use phichain_chart::project::Project;
 use phichain_chart::serialization::{PhichainChart, SerializedLine};
+use std::collections::HashMap;
 
 /// Load a project to the world using a [`Commands`]
 ///
@@ -34,36 +35,36 @@ pub fn load_project(project: &Project, commands: &mut Commands) -> anyhow::Resul
     Ok(())
 }
 
-fn load_line(line: SerializedLine, commands: &mut Commands, parent: Option<Entity>) -> Entity {
+pub fn load_line(line: SerializedLine, commands: &mut Commands, parent: Option<Entity>) -> Entity {
     let id = commands
-        .spawn(line.line)
+        .spawn((line.line, line.id))
         .with_children(|parent| {
-            let mut note_entity_order = vec![];
+            let mut note_entities = HashMap::new();
 
             for note in line.notes {
-                let id = parent.spawn(note).id();
-                note_entity_order.push(id);
+                let entity = parent.spawn((note.data, note.id)).id();
+                note_entities.insert(note.id, entity);
             }
 
             for track in line.curve_note_tracks {
-                if let (Some(from), Some(to)) = (
-                    note_entity_order.get(track.from),
-                    note_entity_order.get(track.to),
-                ) {
-                    parent.spawn(CurveNoteTrack {
-                        from: Some(*from),
-                        to: Some(*to),
-                        options: track.options,
-                    });
+                if let (Some(from), Some(to)) =
+                    (note_entities.get(&track.from), note_entities.get(&track.to))
+                {
+                    parent.spawn((
+                        track.options,
+                        track.id,
+                        CurveNoteTrackFrom(*from),
+                        CurveNoteTrackTo(*to),
+                    ));
                 } else {
-                    warn!("invalid curve note track detected: {:?}", track);
+                    warn!("dangling curve note track detected: {:?}", track);
                 }
             }
         })
         .id();
 
     for event in line.events {
-        commands.spawn((event, EventOf(id)));
+        commands.spawn((event.data, event.id, EventOf(id)));
     }
 
     if let Some(parent) = parent {

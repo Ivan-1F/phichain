@@ -9,6 +9,7 @@ pub enum ConvertError {
     UnableToInferFormat,
     Io(#[from] std::io::Error),
     Json(#[from] serde_json::Error),
+    PhichainInput(#[from] phichain_chart::serialization::ParseChartError),
     OfficialInput(#[from] phichain_format::official::OfficialInputError),
     OfficialOutput(#[from] phichain_format::official::OfficialOutputError),
     RpeInput(#[from] phichain_format::rpe::RpeInputError),
@@ -32,6 +33,7 @@ impl std::fmt::Display for ConvertError {
             }
             ConvertError::Io(e) => write!(f, "{e}"),
             ConvertError::Json(e) => write!(f, "{e}"),
+            ConvertError::PhichainInput(e) => write!(f, "{e}"),
             ConvertError::OfficialInput(e) => write!(f, "{e}"),
             ConvertError::OfficialOutput(e) => write!(f, "{e}"),
             ConvertError::RpeInput(e) => write!(f, "{e}"),
@@ -47,6 +49,7 @@ impl ConvertError {
             ConvertError::UnableToInferFormat => "UnableToInferFormat",
             ConvertError::Io(_) => "Io",
             ConvertError::Json(_) => "Json",
+            ConvertError::PhichainInput(_) => "PhichainInput",
             ConvertError::OfficialInput(_) => "OfficialInput",
             ConvertError::OfficialOutput(_) => "OfficialOutput",
             ConvertError::RpeInput(_) => "RpeInput",

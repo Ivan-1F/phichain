@@ -8,7 +8,6 @@ mod bench;
 mod cli;
 mod constants;
 mod editing;
-mod events;
 mod export;
 mod file;
 mod fps;
@@ -16,6 +15,7 @@ mod graphics;
 mod hit_sound;
 mod home;
 mod hotkey;
+mod id_index;
 mod identifier;
 mod ime;
 mod l10n;
@@ -48,7 +48,6 @@ use crate::autosave::AutoSavePlugin;
 use crate::cli::{Args, CliPlugin};
 use crate::editing::history::EditorHistory;
 use crate::editing::EditingPlugin;
-use crate::events::EventPlugin;
 use crate::export::ExportPlugin;
 use crate::fps::{FpsDisplay, FpsPlugin};
 use crate::graphics::GraphicsPlugin;
@@ -153,6 +152,7 @@ fn main() {
         .add_plugins(GraphicsPlugin)
         .add_plugins(ImeCompatPlugin)
         .add_plugins(GamePlugin)
+        .add_plugins(id_index::IdIndexPlugin)
         .add_plugins(ActionPlugin)
         .add_plugins(AutoSavePlugin)
         .add_plugins(ScreenshotPlugin)
@@ -173,7 +173,6 @@ fn main() {
         .add_plugins(AssetsPlugin)
         .add_plugins(NotificationPlugin)
         .add_plugins(RespackPlugin)
-        .add_plugins(EventPlugin)
         .add_plugins(ZoomPlugin)
         .add_plugins(FpsPlugin)
         .add_plugins(LayoutPlugin)
@@ -369,7 +368,7 @@ fn ui_system(world: &mut World) {
             ui.label(format!("Selected Events: {selected_events}"));
 
             world.resource_scope(|_world: &mut World, history: Mut<EditorHistory>| {
-                if !history.0.is_saved() {
+                if !history.is_saved() {
                     ui.label("*");
                 }
             });

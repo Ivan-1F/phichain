@@ -1,6 +1,4 @@
-use crate::editing::command::event::EditEvent;
-use crate::editing::command::{CommandSequence, EditorCommand};
-use crate::editing::DoCommand;
+use crate::editing::history::Edits;
 use crate::selection::Selected;
 use bevy::prelude::*;
 use egui::{Align, Layout, Ui};
@@ -9,7 +7,7 @@ use phichain_chart::event::{LineEvent, LineEventKind};
 pub fn multiple_events_inspector(
     In(mut ui): In<Ui>,
     query: Query<(&LineEvent, Entity), With<Selected>>,
-    mut event_writer: MessageWriter<DoCommand>,
+    mut edits: Edits,
 ) -> Result {
     ui.label(t!(
         "tab.inspector.multiple_events.title",
@@ -22,26 +20,28 @@ pub fn multiple_events_inspector(
             .button(t!("tab.inspector.multiple_events.negate"))
             .clicked()
         {
-            let commands = query
+            let events: Vec<_> = query
                 .iter()
                 .filter(|(event, _)| event.kind != LineEventKind::Opacity)
                 .map(|(event, entity)| {
-                    EditorCommand::EditEvent(EditEvent::new(
+                    (
                         entity,
-                        *event,
                         LineEvent {
                             value: event.value.negated(),
                             ..*event
                         },
-                    ))
+                    )
                 })
-                .collect::<Vec<_>>();
-
-            event_writer.write(DoCommand(EditorCommand::CommandSequence(CommandSequence(
-                commands,
-            ))));
+                .collect();
+            edits.once(
+                t!("history.edit_events", count = events.len()),
+                move |commands| {
+                    for (entity, event) in events {
+                        commands.entity(entity).insert(event);
+                    }
+                },
+            );
         }
     });
-
     Ok(())
 }

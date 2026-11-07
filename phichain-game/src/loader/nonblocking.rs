@@ -32,6 +32,8 @@ pub enum LoadProjectError {
     CannotOpenChart(#[from] std::io::Error),
     #[error("invalid chart")]
     InvalidChart(#[from] serde_json::Error),
+    #[error("duplicate object ID: {0}")]
+    DuplicateId(uuid::Uuid),
     #[error("migration failed")]
     MigrationFailed(#[from] anyhow::Error),
     #[error("cannot load audio")]
@@ -42,6 +44,7 @@ impl From<ParseChartError> for LoadProjectError {
     fn from(error: ParseChartError) -> Self {
         match error {
             ParseChartError::InvalidChart(error) => Self::InvalidChart(error),
+            ParseChartError::DuplicateId(id) => Self::DuplicateId(id),
             ParseChartError::MigrationFailed(error) => Self::MigrationFailed(error),
         }
     }

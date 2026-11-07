@@ -3,16 +3,17 @@ use bevy_persistent::Persistent;
 use egui::Ui;
 
 use crate::settings::EditorSettings;
+use crate::timeline::container::{laid_out_timelines, layout_timelines};
+use crate::timeline::kind::timeline_ui;
+use crate::timeline::pending_status::pending_status_ui;
 use crate::timeline::settings::TimelineSettings;
-use crate::timeline::Timeline;
 use crate::timing::{Pause, Paused, Seek};
-use crate::utils::convert::BevyEguiConvert;
 use crate::{spectrogram, timeline};
 use phichain_chart::note::Note;
 
 pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
-    let mut timeline_viewport = world.resource_mut::<TimelineViewport>();
     let clip_rect = ui.clip_rect();
+    let mut timeline_viewport = world.resource_mut::<TimelineViewport>();
     timeline_viewport.0 = Rect::from_corners(
         Vec2 {
             x: clip_rect.min.x,
@@ -23,6 +24,7 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
             y: clip_rect.max.y,
         },
     );
+    layout_timelines(world);
 
     // draw spectrogram background after viewport is updated
     spectrogram::draw(ui.painter(), world);
@@ -61,26 +63,32 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
         }
     }
 
+    // background
+    timeline::common::beat_line_ui(&mut ui, world);
+    timeline::common::bpm_change_ui(&mut ui, world);
     // TODO bevy-0.16: make timeline_tab return Result and handle error using ? operator when register_tab supports systems returning Result
     let _ = timeline::drag_selection::timeline_drag_selection(&mut ui, world);
-    let viewport = world.resource::<TimelineViewport>();
-    let timeline_settings = world.resource::<TimelineSettings>();
 
-    let timelines = timeline_settings.container.clone();
-
-    for (index, item) in timelines
-        .allocate(viewport.0.into_egui())
-        .iter()
-        .enumerate()
-    {
-        item.timeline.ui(&mut ui, world, item.viewport);
-        timeline::common::timeline_badge_ui(&mut ui, world, item, index);
+    // content
+    let timelines = laid_out_timelines(world);
+    for item in &timelines {
+        let mut child = ui.new_child(
+            egui::UiBuilder::new()
+                .max_rect(item.viewport)
+                .id_salt(item.timeline),
+        );
+        child.set_clip_rect(item.viewport.intersect(ui.clip_rect()));
+        timeline_ui(world, child, item.timeline);
     }
 
-    timeline::common::beat_line_ui(&mut ui, world);
+    // overlay
     timeline::common::indicator_ui(&mut ui, world);
+    for item in &timelines {
+        timeline::common::timeline_badge_ui(&mut ui, world, item.timeline, item.viewport);
+    }
+    pending_status_ui(&mut ui, world);
     timeline::common::separator_ui(&mut ui, world);
-    timeline::common::bpm_change_ui(&mut ui, world);
+    timeline::drag_selection::drag_selection_marquee_ui(&mut ui, world);
 }
 
 #[derive(Resource, Debug)]

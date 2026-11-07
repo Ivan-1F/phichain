@@ -9,7 +9,33 @@
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::hash::Hash;
 use uuid::Uuid;
+
+#[cfg(feature = "bevy")]
+use bevy::ecs::reflect::ReflectComponent;
+
+/// A chart data type whose identity is carried by a separate id component
+pub trait HasId {
+    type Id: Copy + Eq + Hash + Default + Serialize + for<'de> Deserialize<'de>;
+}
+
+/// A chart object paired with its id, used at the serialization boundary
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct Identified<T: HasId> {
+    pub id: T::Id,
+    #[serde(flatten)]
+    pub data: T,
+}
+
+impl<T: HasId> Identified<T> {
+    pub fn new(data: T) -> Self {
+        Self {
+            id: T::Id::default(),
+            data,
+        }
+    }
+}
 
 macro_rules! define_ids {
     ($($(#[$meta:meta])* $name:ident => $variant:ident),* $(,)?) => {
@@ -19,10 +45,12 @@ macro_rules! define_ids {
             #[serde(transparent)]
             #[repr(transparent)]
             #[cfg_attr(feature = "bevy", derive(bevy::prelude::Component))]
+            #[cfg_attr(feature = "bevy", component(immutable))]
+            #[cfg_attr(feature = "bevy", derive(bevy::prelude::Reflect))]
+            #[cfg_attr(feature = "bevy", reflect(opaque, Component, Clone, PartialEq, Debug))]
             pub struct $name(Uuid);
 
             impl $name {
-                /// Mint a new unique id
                 pub fn new() -> Self {
                     Self(Uuid::now_v7())
                 }
@@ -87,6 +115,10 @@ define_ids! {
     LineId => Line,
     /// Id of a [`crate::curve_note_track::CurveNoteTrack`]
     CurveNoteTrackId => CurveNoteTrack,
+    /// Id of a [`crate::bpm_list::BpmPoint`]
+    BpmPointId => BpmPoint,
+    /// Id of the open project session, carrying its editable metadata and offset.
+    ProjectId => Project,
 }
 
 #[cfg(test)]

@@ -20,3 +20,4 @@ serde_json = "1.0.117"
 bevy_kira_audio = { workspace = true }
 infer = "0.19.0"
 thiserror = "2.0.17"
+uuid = "1.13.1"

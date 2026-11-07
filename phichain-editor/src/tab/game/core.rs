@@ -1,4 +1,4 @@
-use crate::editing::pending::Pending;
+use crate::constants::PENDING_OPACITY;
 use crate::project::project_loaded;
 use crate::selection::{Selected, SelectedLine};
 use crate::settings::{EditorSettings, ShowLineAnchorOption};
@@ -11,6 +11,7 @@ use phichain_chart::project::Project;
 use phichain_game::core::HoldComponent;
 use phichain_game::curve_note_track::CurveNote;
 use phichain_game::GameConfig;
+use phichain_game::Pending;
 
 pub struct CoreGamePlugin;
 
@@ -52,10 +53,12 @@ fn update_note_tint_system(
         } else {
             bevy::color::palettes::css::WHITE
         };
+        // The timelines apply opacity in gamma space through egui; sprite blending is
+        // linear, so decode the perceptual value with the sRGB transfer function
         let alpha = if pending.is_some() {
-            40.0 / 255.0
+            Srgba::gamma_function(PENDING_OPACITY)
         } else if curve_note.is_some() {
-            100.0 / 255.0
+            Srgba::gamma_function(100.0 / 255.0)
         } else {
             1.0
         };

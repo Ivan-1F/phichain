@@ -1,35 +1,39 @@
 use crate::beat;
 use crate::beat::Beat;
+#[cfg(feature = "bevy")]
+use crate::id::BpmPointId;
+#[cfg(feature = "bevy")]
+use bevy::ecs::reflect::ReflectComponent;
 use serde::{Deserialize, Deserializer, Serialize};
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
+#[cfg_attr(
+    feature = "bevy",
+    derive(bevy::prelude::Component, bevy::prelude::Reflect)
+)]
+#[cfg_attr(feature = "bevy", component(immutable))]
+#[cfg_attr(feature = "bevy", require(BpmPointId))]
+#[cfg_attr(feature = "bevy", reflect(opaque, Component, Clone, PartialEq, Debug))]
 pub struct BpmPoint {
     pub beat: Beat,
     pub bpm: f32,
-
-    #[serde(skip_serializing, default)]
-    time: f32,
-}
-
-impl PartialEq for BpmPoint {
-    fn eq(&self, other: &Self) -> bool {
-        self.beat == other.beat && self.bpm == other.bpm
-    }
 }
 
 impl BpmPoint {
     pub fn new(beat: Beat, bpm: f32) -> Self {
-        Self {
-            beat,
-            bpm,
-            time: 0.0,
-        }
+        Self { beat, bpm }
     }
 }
 
 #[derive(Debug, Clone, Serialize)]
 #[cfg_attr(feature = "bevy", derive(bevy::prelude::Resource))]
-pub struct BpmList(pub Vec<BpmPoint>);
+#[serde(transparent)]
+pub struct BpmList(
+    pub Vec<BpmPoint>,
+    /// Computed start times, in the same order as the BPM points.
+    #[serde(skip)]
+    Vec<f32>,
+);
 
 impl<'de> Deserialize<'de> for BpmList {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -37,10 +41,7 @@ impl<'de> Deserialize<'de> for BpmList {
         D: Deserializer<'de>,
     {
         let points = Vec::<BpmPoint>::deserialize(deserializer)?;
-        let mut bpm_list = BpmList::new(points);
-        bpm_list.compute();
-
-        Ok(bpm_list)
+        Ok(BpmList::new(points))
     }
 }
 
@@ -52,7 +53,7 @@ impl Default for BpmList {
 
 impl BpmList {
     pub fn new(points: Vec<BpmPoint>) -> Self {
-        let mut list = Self(points);
+        let mut list = Self(points, Vec::new());
         list.compute();
         list
     }
@@ -65,13 +66,14 @@ impl BpmList {
         let mut time = 0.0;
         let mut last_beat = 0.0;
         let mut last_bpm = -1.0;
-        for point in &mut self.0 {
+        self.1.clear();
+        for point in &self.0 {
             if last_bpm != -1.0 {
                 time += (point.beat.value() - last_beat) * (60.0 / last_bpm);
             }
             last_beat = point.beat.value();
             last_bpm = point.bpm;
-            point.time = time;
+            self.1.push(time);
         }
     }
 
@@ -89,15 +91,16 @@ impl BpmList {
     }
 
     pub fn time_at(&self, beat: Beat) -> f32 {
-        let point = self
+        let (point, time) = self
             .0
             .iter()
-            .take_while(|p| p.beat.value() < beat.value())
+            .zip(&self.1)
+            .take_while(|(p, _)| p.beat.value() < beat.value())
             .last()
-            .or_else(|| self.0.first())
+            .or_else(|| self.0.first().zip(self.1.first()))
             .expect("No bpm points available");
 
-        point.time + (beat.value() - point.beat.value()) * (60.0 / point.bpm)
+        time + (beat.value() - point.beat.value()) * (60.0 / point.bpm)
     }
 
     pub fn beat_at(&self, time: f32) -> Beat {
@@ -106,25 +109,28 @@ impl BpmList {
 
     /// Get the beat at the given time without converting the result to [`Beat`]
     pub fn beat_at_f32(&self, time: f32) -> f32 {
-        let point = self
+        let (point, start_time) = self
             .0
             .iter()
-            .take_while(|p| p.time <= time)
+            .zip(&self.1)
+            .take_while(|(_, start)| **start <= time)
             .last()
-            .or_else(|| self.0.first())
+            .or_else(|| self.0.first().zip(self.1.first()))
             .expect("No bpm points available");
 
-        point.beat.value() + (time - point.time) * point.bpm / 60.0
+        point.beat.value() + (time - start_time) * point.bpm / 60.0
     }
 
     /// Get the effective BPM at the given time
     pub fn bpm_at(&self, time: f32) -> f32 {
         self.0
             .iter()
-            .take_while(|p| p.time <= time)
+            .zip(&self.1)
+            .take_while(|(_, start)| **start <= time)
             .last()
-            .or_else(|| self.0.first())
+            .or_else(|| self.0.first().zip(self.1.first()))
             .expect("No bpm points available")
+            .0
             .bpm
     }
 
@@ -210,11 +216,11 @@ mod tests {
 
         assert_eq!(first.beat, Beat::ZERO);
         assert_eq!(first.bpm, 120.0);
-        assert_eq!(first.time, 0.0);
+        assert_eq!(deserialized.time_at(first.beat), 0.0);
 
         assert_eq!(second.beat, Beat::ONE);
         assert_eq!(second.bpm, 240.0);
-        assert_eq!(second.time, 0.5);
+        assert_eq!(deserialized.time_at(second.beat), 0.5);
     }
 
     #[test]

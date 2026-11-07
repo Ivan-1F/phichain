@@ -1,8 +1,8 @@
+use crate::timeline::container::{ordered_timelines, push_timeline, swap_timelines};
 use crate::timeline::event::EventTimeline;
+use crate::timeline::kind::timeline_name;
 use crate::timeline::note::NoteTimeline;
 use crate::timeline::settings::TimelineSettings;
-use crate::timeline::Timeline;
-use crate::timeline::TimelineItem;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use egui::{RichText, Ui};
@@ -11,9 +11,9 @@ use phichain_chart::line::Line;
 use super::timeline::NoteSideFilter;
 
 pub fn timeline_setting_tab(In(mut ui): In<Ui>, world: &mut World) {
-    let mut state: SystemState<(Query<(&Line, Entity)>, ResMut<TimelineSettings>)> =
+    let mut state: SystemState<(Query<(&Line, Entity)>, ResMut<TimelineSettings>, Commands)> =
         SystemState::new(world);
-    let (line_query, mut timeline_settings) = state.get_mut(world);
+    let (line_query, mut timeline_settings, mut commands) = state.get_mut(world);
 
     egui::Grid::new("timeline_setting_grid")
         .num_columns(2)
@@ -89,18 +89,18 @@ pub fn timeline_setting_tab(In(mut ui): In<Ui>, world: &mut World) {
                         )
                         .clicked()
                     {
-                        timeline_settings
-                            .container
-                            .push_right(TimelineItem::Note(NoteTimeline::new_binding()));
+                        commands.queue(|world: &mut World| {
+                            push_timeline(world, NoteTimeline, None);
+                        });
                         ui.close();
                     }
                     ui.separator();
                     for (line, entity) in line_query.iter() {
                         // TODO: move timeline selector to dedicated widget
                         if ui.button(&line.name).clicked() {
-                            timeline_settings
-                                .container
-                                .push_right(TimelineItem::Note(NoteTimeline::new(entity)));
+                            commands.queue(move |world: &mut World| {
+                                push_timeline(world, NoteTimeline, Some(entity));
+                            });
                             ui.close();
                         }
                     }
@@ -115,17 +115,17 @@ pub fn timeline_setting_tab(In(mut ui): In<Ui>, world: &mut World) {
                         )
                         .clicked()
                     {
-                        timeline_settings
-                            .container
-                            .push_right(TimelineItem::Event(EventTimeline::new_binding()));
+                        commands.queue(|world: &mut World| {
+                            push_timeline(world, EventTimeline, None);
+                        });
                         ui.close();
                     }
                     ui.separator();
                     for (line, entity) in line_query.iter() {
                         if ui.button(&line.name).clicked() {
-                            timeline_settings
-                                .container
-                                .push_right(TimelineItem::Event(EventTimeline::new(entity)));
+                            commands.queue(move |world: &mut World| {
+                                push_timeline(world, EventTimeline, Some(entity));
+                            });
                             ui.close();
                         }
                     }
@@ -135,41 +135,43 @@ pub fn timeline_setting_tab(In(mut ui): In<Ui>, world: &mut World) {
 
         ui.end_row();
 
-        let container = &world.resource::<TimelineSettings>().container;
+        state.apply(world);
+
+        let timelines = ordered_timelines(world);
         let mut delete = None;
         let mut move_up = None;
         let mut move_down = None;
 
-        for (index, timeline) in container.timelines.iter().enumerate() {
+        for (index, timeline) in timelines.iter().enumerate() {
+            let name = timeline_name(world, *timeline);
             ui.horizontal(|ui| {
                 ui.horizontal(|ui| {
                     if ui.button(" × ").clicked() {
-                        delete.replace(index);
+                        delete.replace(*timeline);
                     }
                     ui.add_enabled_ui(index > 0, |ui| {
                         if ui.button(" ↑ ").clicked() {
                             move_up.replace(index);
                         }
                     });
-                    ui.add_enabled_ui(index < container.timelines.len() - 1, |ui| {
+                    ui.add_enabled_ui(index < timelines.len() - 1, |ui| {
                         if ui.button(" ↓ ").clicked() {
                             move_down.replace(index);
                         }
                     });
-                    ui.label(timeline.timeline.name(world));
+                    ui.label(name);
                 });
             });
         }
 
-        let container = &mut world.resource_mut::<TimelineSettings>().container;
         if let Some(delete) = delete {
-            container.remove(delete);
+            world.despawn(delete);
         }
         if let Some(move_up) = move_up {
-            container.swap(move_up - 1, move_up);
+            swap_timelines(world, timelines[move_up - 1], timelines[move_up]);
         }
         if let Some(move_down) = move_down {
-            container.swap(move_down, move_down + 1);
+            swap_timelines(world, timelines[move_down], timelines[move_down + 1]);
         }
     }
 }

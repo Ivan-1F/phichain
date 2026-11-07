@@ -11,6 +11,8 @@ use strum::EnumIter;
 
 /// TODO: this can be replaced with bevy::prelude::EaseFunction and bevy::prelude::FunctionCurve
 #[derive(Debug, Default, Copy, Clone, PartialEq, Serialize, Deserialize, EnumIter)]
+#[cfg_attr(feature = "bevy", derive(bevy::prelude::Reflect))]
+#[cfg_attr(feature = "bevy", reflect(Clone, PartialEq, Debug))]
 #[serde(tag = "type", rename_all = "snake_case")]
 #[repr(u8)]
 pub enum Easing {

@@ -241,6 +241,14 @@ pub struct HotkeyContext<'w, 's> {
 }
 
 impl HotkeyContext<'_, '_> {
+    /// The keys currently bound to the hotkey, for display
+    pub fn label(&self, hotkey: impl IntoIdentifier) -> String {
+        self.state
+            .get(hotkey)
+            .map(|hotkey| hotkey.to_string())
+            .unwrap_or_default()
+    }
+
     pub fn just_pressed(&self, hotkey: impl IntoIdentifier) -> bool {
         if self.query.is_empty() {
             self.state
