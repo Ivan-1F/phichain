@@ -82,13 +82,16 @@ fn sync_game_config_system(
     project: Res<Project>,
     mut game_config: ResMut<GameConfig>,
 ) {
-    game_config.note_scale = editor_settings.game.note_scale;
-    game_config.fc_ap_indicator = editor_settings.game.fc_ap_indicator;
-    game_config.multi_highlight = editor_settings.game.multi_highlight;
-    game_config.hide_hit_effect = editor_settings.game.hide_hit_effect;
-    game_config.hit_effect_follow_game_time = editor_settings.game.hit_effect_follow_game_time;
-    game_config.name = project.meta.name.clone();
-    game_config.level = project.meta.level.clone();
+    // only write on actual changes so systems can rely on change detection of the config
+    game_config.set_if_neq(GameConfig {
+        note_scale: editor_settings.game.note_scale,
+        fc_ap_indicator: editor_settings.game.fc_ap_indicator,
+        multi_highlight: editor_settings.game.multi_highlight,
+        hide_hit_effect: editor_settings.game.hide_hit_effect,
+        hit_effect_follow_game_time: editor_settings.game.hit_effect_follow_game_time,
+        name: project.meta.name.clone(),
+        level: project.meta.level.clone(),
+    });
 }
 
 fn update_line_tint_system(

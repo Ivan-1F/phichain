@@ -68,7 +68,7 @@ pub struct SeekRequest(pub f32);
 #[derive(Message, Debug, Default, Clone, Copy)]
 pub struct PauseToggleRequest;
 
-#[derive(Debug, Clone, Resource)]
+#[derive(Debug, Clone, PartialEq, Resource)]
 pub struct GameConfig {
     pub note_scale: f32,
     pub fc_ap_indicator: bool,
