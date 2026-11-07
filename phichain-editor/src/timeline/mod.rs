@@ -78,20 +78,24 @@ pub struct TimelineContext<'w> {
 }
 
 impl TimelineContext<'_> {
-    pub fn primary_beat_times(&self) -> Vec<f32> {
-        std::iter::repeat(0)
-            .enumerate()
-            .map(|(i, _)| self.bpm_list.time_at(Beat::from(i as f32)))
-            .take_while(|x| x <= &self.audio_duration.0.as_secs_f32())
-            .collect()
-    }
-
-    pub fn secondary_beat_times(&self) -> Vec<f32> {
-        std::iter::repeat(0)
-            .enumerate()
-            .map(|(i, _)| self.bpm_list.time_at(beat!(0, i, self.settings.density)))
-            .take_while(|x| x <= &self.audio_duration.0.as_secs_f32())
-            .collect()
+    /// Beat grid lines between two y positions within the audio, as `(index, time)`
+    ///
+    /// `index` counts `1 / density` beats from beat 0.
+    pub fn beat_lines_between(
+        &self,
+        top: f32,
+        bottom: f32,
+    ) -> impl Iterator<Item = (u32, f32)> + '_ {
+        let density = self.settings.density;
+        let latest = self.y_to_time(top).min(self.audio_duration.0.as_secs_f32());
+        let earliest = self.y_to_time(bottom);
+        let first = (self.bpm_list.beat_at_f32(earliest) * density as f32)
+            .ceil()
+            .max(0.0) as u32;
+        let last = (self.bpm_list.beat_at_f32(latest) * density as f32).floor();
+        (first..)
+            .take_while(move |index| *index as f32 <= last)
+            .map(move |index| (index, self.bpm_list.time_at(beat!(0, index, density))))
     }
 
     pub fn time_to_y(&self, time: f32) -> f32 {
@@ -134,6 +138,8 @@ pub mod common {
 
     /// Opacity of the horizontal beat grid lines on timelines
     const BEAT_LINE_OPACITY: f32 = 40.0 / 255.0;
+
+    const PRIMARY_BEAT_LABEL_SIZE: f32 = 14.0;
 
     pub fn timeline_badge_ui(
         ui: &mut Ui,
@@ -200,45 +206,36 @@ pub mod common {
     pub fn beat_line_ui(ui: &mut Ui, world: &mut World) {
         let mut state: SystemState<TimelineContext> = SystemState::new(world);
         let ctx = state.get_mut(world);
-        for (index, beat_time) in ctx.primary_beat_times().iter().enumerate() {
+        let denom = ctx.settings.density;
+        // labels sit above their lines, so lines just below the viewport can still show one
+        let lines = ctx.beat_lines_between(
+            ctx.viewport.0.min.y,
+            ctx.viewport.0.max.y + PRIMARY_BEAT_LABEL_SIZE,
+        );
+        for (numer, beat_time) in lines {
+            let primary = numer.is_multiple_of(denom);
             let rect = egui::Rect::from_center_size(
                 egui::Pos2::new(
                     ctx.viewport.0.width() / 2.0 + ctx.viewport.0.min.x,
-                    ctx.time_to_y(*beat_time),
+                    ctx.time_to_y(beat_time),
                 ),
-                egui::Vec2::new(ctx.viewport.0.width(), 2.0),
+                egui::Vec2::new(ctx.viewport.0.width(), if primary { 2.0 } else { 0.5 }),
             );
             ui.painter()
                 .rect_filled(rect, 0.0, Color32::WHITE.gamma_multiply(BEAT_LINE_OPACITY));
+            let (label, size) = if primary {
+                ((numer / denom).to_string(), PRIMARY_BEAT_LABEL_SIZE)
+            } else {
+                (
+                    format!("{}:{}/{}", numer / denom, numer % denom, denom),
+                    8.0,
+                )
+            };
             ui.painter().text(
                 rect.left_top() + egui::Vec2::new(4.0, 0.0),
                 Align2::LEFT_BOTTOM,
-                index,
-                FontId::monospace(14.0),
-                Color32::WHITE,
-            );
-        }
-
-        for (index, beat_time) in ctx.secondary_beat_times().iter().enumerate() {
-            if (index as u32).is_multiple_of(ctx.settings.density) {
-                continue;
-            }
-            let rect = egui::Rect::from_center_size(
-                egui::Pos2::new(
-                    ctx.viewport.0.width() / 2.0 + ctx.viewport.0.min.x,
-                    ctx.time_to_y(*beat_time),
-                ),
-                egui::Vec2::new(ctx.viewport.0.width(), 0.5),
-            );
-            ui.painter()
-                .rect_filled(rect, 0.0, Color32::WHITE.gamma_multiply(BEAT_LINE_OPACITY));
-            let numer = index as u32;
-            let denom = ctx.settings.density;
-            ui.painter().text(
-                rect.left_top() + egui::Vec2::new(4.0, 0.0),
-                Align2::LEFT_BOTTOM,
-                format!("{}:{}/{}", numer / denom, numer % denom, denom),
-                FontId::monospace(8.0),
+                label,
+                FontId::monospace(size),
                 Color32::WHITE,
             );
         }
