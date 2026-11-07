@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::note::{Note, NoteKind};
 
@@ -184,7 +183,7 @@ fn create_note_system(
                 (
                     Note::new(
                         NoteKind::Hold {
-                            hold_beat: Beat::ONE,
+                            hold_beat: ctx.settings.minimum_beat(),
                         },
                         true,
                         beat,

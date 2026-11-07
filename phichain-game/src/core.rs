@@ -53,6 +53,7 @@ impl Plugin for CoreGamePlugin {
                 hide_hold_head_system,
                 despawn_hold_component_system,
             )
+                .chain()
                 .in_set(GameSet),
         );
     }
