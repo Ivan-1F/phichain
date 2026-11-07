@@ -75,7 +75,9 @@ tab:
     curve_note_track:
       same_endpoint: 起点和终点不能是同一个音符
     pending:
-      cancelled: 已取消未完成的创建
+      cancelled:
+        replaced: "开始了新的创建，已取消之前未完成的创建"
+        line_switched: "时间线切换到了其他判定线，已取消未完成的创建"
       hold: "正在放置 Hold"
       event: "正在放置事件"
       curve_note_track: "正在创建曲线音符轨迹"

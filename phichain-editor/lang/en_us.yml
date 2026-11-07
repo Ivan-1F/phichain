@@ -75,7 +75,9 @@ tab:
     curve_note_track:
       same_endpoint: The start and end cannot be the same note.
     pending:
-      cancelled: Cancelled the unfinished creation
+      cancelled:
+        replaced: "Started a new creation, the unfinished one was cancelled"
+        line_switched: "The timeline switched to another line, the unfinished creation was cancelled"
       hold: "Placing Hold"
       event: "Placing Event"
       curve_note_track: "Creating Curve Note Track"

@@ -75,7 +75,9 @@ tab:
     curve_note_track:
       same_endpoint: 始点と終点に同じノーツは指定できません
     pending:
-      cancelled: 未完了の作成をキャンセルしました
+      cancelled:
+        replaced: "新しい作成を開始したため、未完了の作成をキャンセルしました"
+        line_switched: "タイムラインが別の判定線に切り替わったため、未完了の作成をキャンセルしました"
       hold: "Hold を配置中"
       event: "イベントを配置中"
       curve_note_track: "カーブノーツトラックを作成中"

@@ -54,7 +54,7 @@ pub fn spawn_pending(
     commands.queue(move |world: &mut World| {
         if cancel_pending(world) {
             if let Some(mut toasts) = world.get_resource_mut::<ToastsStorage>() {
-                notify_cancelled(&mut toasts);
+                toasts.info(t!("tab.timeline.pending.cancelled.replaced"));
             }
         }
         world.spawn((bundle, PendingOf(owner), status));
@@ -76,12 +76,8 @@ fn cancel_undisplayed_pending(
         }
     }
     if let (true, Some(mut toasts)) = (cancelled, toasts) {
-        notify_cancelled(&mut toasts);
+        toasts.info(t!("tab.timeline.pending.cancelled.line_switched"));
     }
-}
-
-fn notify_cancelled(toasts: &mut ToastsStorage) {
-    toasts.info(t!("tab.timeline.pending.cancelled"));
 }
 
 fn cancel_pending_on_escape(world: &mut World) {
