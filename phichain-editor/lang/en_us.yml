@@ -19,6 +19,7 @@ history:
   cut: "Cut %{objects}"
   edit_tracks: "Edit %{count} curve tracks"
   create_events: "Create %{count} events"
+  events_overlap: "Events can't overlap"
   create_line: "Create line"
   move_line: "Move line"
   delete_line: "Delete line"

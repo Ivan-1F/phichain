@@ -19,6 +19,7 @@ history:
   cut: "%{objects}を切り取り"
   edit_tracks: "%{count} 本の曲線トラックを変更"
   create_events: "%{count} 個のイベントを追加"
+  events_overlap: "イベントは重ねられません"
   create_line: "判定線を追加"
   move_line: "判定線を移動"
   delete_line: "判定線を削除"

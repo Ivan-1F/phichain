@@ -1,5 +1,5 @@
 use super::changes::{PendingChanges, Recorder};
-use super::{run_commands, EditorHistory, Edits};
+use super::{keep_if_valid, run_commands, EditorHistory, Edits};
 use bevy::prelude::*;
 use uuid::Uuid;
 
@@ -53,7 +53,7 @@ impl Edits<'_, '_> {
     }
 
     /// Apply a live update, retaining the first old value across all updates.
-    /// Updates from an interaction that has already ended are ignored.
+    /// Updates from an interaction that has already ended are ignored, and so are updates leaving events invalid.
     pub fn gesture(&mut self, id: GestureId, edit: impl FnOnce(&mut Commands) + Send + 'static) {
         self.queue(move |world| {
             world.flush();
@@ -70,9 +70,12 @@ impl Edits<'_, '_> {
                 .gesture
                 .take()
                 .unwrap();
-            world.resource_mut::<Recorder>().resume(gesture.pending);
+            world.resource_mut::<Recorder>().begin();
             run_commands(world, edit);
-            gesture.pending = world.resource_mut::<Recorder>().finish();
+            let step = world.resource_mut::<Recorder>().finish();
+            if let Some(step) = keep_if_valid(world, step) {
+                gesture.pending.absorb(step);
+            }
             gesture.seen = true;
             world.resource_mut::<EditorHistory>().gesture = Some(gesture);
         });

@@ -12,8 +12,10 @@ fn fixture() -> (App, Entity) {
     app.add_plugins((
         IdIndexPlugin,
         phichain_game::line::LinePlugin,
+        phichain_game::event::EventIndexPlugin,
         HistoryPlugin,
-    ));
+    ))
+    .init_resource::<crate::notification::ToastsStorage>();
     let line = app.world_mut().spawn(Line::default()).id();
     app.world_mut().insert_resource(SelectedLine(line));
     open_document(app.world_mut());
@@ -939,4 +941,105 @@ fn go_to_during_a_gesture_cancels_the_gesture_without_jumping() {
 
     go_to(&mut app, 1);
     assert_eq!(app.world().resource::<EditorHistory>().position(), 1);
+}
+
+fn x_event(start: i32, end: i32) -> LineEvent {
+    use phichain_chart::event::{LineEventKind, LineEventValue};
+    LineEvent {
+        kind: LineEventKind::X,
+        start_beat: phichain_chart::beat!(start),
+        end_beat: phichain_chart::beat!(end),
+        value: LineEventValue::constant(0.0),
+    }
+}
+
+fn spawn_event(app: &mut App, line: Entity, event: LineEvent) -> Entity {
+    apply_edit(app.world_mut(), "create", move |commands| {
+        commands.spawn((event, EventOf(line)));
+    });
+    events(app)
+        .into_iter()
+        .find(|(_, candidate)| *candidate == event)
+        .unwrap()
+        .0
+}
+
+fn events(app: &mut App) -> Vec<(Entity, LineEvent)> {
+    let mut events: Vec<_> = app
+        .world_mut()
+        .query::<(Entity, &LineEvent)>()
+        .iter(app.world())
+        .map(|(entity, event)| (entity, *event))
+        .collect();
+    events.sort_by_key(|(_, event)| event.start_beat);
+    events
+}
+
+#[test]
+fn edits_leaving_events_invalid_are_reverted_and_not_recorded() {
+    let (mut app, line) = fixture();
+    let event = spawn_event(&mut app, line, x_event(0, 2));
+    let edits: [Box<dyn FnOnce(&mut Commands) + Send>; 2] = [
+        Box::new(move |commands| {
+            commands.spawn((x_event(1, 3), EventOf(line)));
+        }),
+        Box::new(move |commands| {
+            commands.entity(event).insert(x_event(0, 0));
+        }),
+    ];
+    for edit in edits {
+        apply_edit(app.world_mut(), "invalid", edit);
+        assert_eq!(events(&mut app), vec![(event, x_event(0, 2))]);
+        assert_eq!(app.world().resource::<EditorHistory>().record.len(), 1);
+    }
+}
+
+#[test]
+fn events_may_overlap_in_the_middle_of_an_edit() {
+    let (mut app, line) = fixture();
+    let first = spawn_event(&mut app, line, x_event(0, 1));
+    let second = spawn_event(&mut app, line, x_event(1, 2));
+    apply_edit(app.world_mut(), "move", move |commands| {
+        commands.entity(first).insert(x_event(1, 2));
+        commands.entity(second).insert(x_event(2, 3));
+    });
+    assert_eq!(
+        events(&mut app),
+        vec![(first, x_event(1, 2)), (second, x_event(2, 3))]
+    );
+    assert_eq!(app.world().resource::<EditorHistory>().record.len(), 3);
+}
+
+#[test]
+fn pending_events_are_not_neighbors() {
+    let (mut app, line) = fixture();
+    app.world_mut()
+        .spawn((x_event(1, 3), EventOf(line), Pending));
+    spawn_event(&mut app, line, x_event(0, 2));
+    assert_eq!(app.world().resource::<EditorHistory>().record.len(), 1);
+}
+
+#[test]
+fn a_gesture_skips_updates_leaving_events_invalid() {
+    let (mut app, line) = fixture();
+    let dragged = spawn_event(&mut app, line, x_event(0, 1));
+    spawn_event(&mut app, line, x_event(2, 3));
+    let id = begin_gesture(&mut app);
+    for (to, kept) in [((1, 2), (1, 2)), ((2, 3), (1, 2)), ((3, 4), (3, 4))] {
+        app.world_mut()
+            .run_system_once(move |mut edits: Edits| {
+                edits.gesture(id, move |commands| {
+                    commands.entity(dragged).insert(x_event(to.0, to.1));
+                });
+            })
+            .unwrap();
+        let event = *app.world().get::<LineEvent>(dragged).unwrap();
+        assert_eq!(event, x_event(kept.0, kept.1));
+    }
+    finish_gesture(&mut app, id);
+    assert_eq!(app.world().resource::<EditorHistory>().record.len(), 3);
+    undo(&mut app);
+    assert_eq!(app.world().get::<LineEvent>(dragged), Some(&x_event(0, 1)));
+    redo(&mut app);
+    assert_eq!(app.world().get::<LineEvent>(dragged), Some(&x_event(3, 4)));
 }

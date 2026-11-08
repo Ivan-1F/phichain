@@ -15,7 +15,8 @@ use gesture::{finish_unattended_gesture, ActiveGesture};
 mod tests;
 
 pub use self::changes::ChangeSet;
-use self::changes::{Recorder, Registry};
+use self::changes::{PendingChanges, Recorder, Registry};
+use crate::notification::{ToastsExt, ToastsStorage};
 use bevy::ecs::system::SystemParam;
 use bevy::ecs::world::CommandQueue;
 use bevy::prelude::*;
@@ -28,8 +29,9 @@ use phichain_chart::note::Note;
 use phichain_chart::offset::Offset;
 use phichain_chart::project::ProjectMeta;
 use phichain_game::curve_note_track::{CurveNoteTrackFrom, CurveNoteTrackTo};
-use phichain_game::event::EventOf;
+use phichain_game::event::{EventIndex, EventOf};
 use phichain_game::line::LineOrder;
+use phichain_game::Pending;
 use std::borrow::Cow;
 use std::fmt;
 use undo::{Edit, Record};
@@ -297,11 +299,40 @@ fn apply_edit(
     world.resource_mut::<Recorder>().begin();
     run_commands(world, edit);
     let pending = world.resource_mut::<Recorder>().finish();
+    let Some(pending) = keep_if_valid(world, pending) else {
+        world
+            .resource_mut::<ToastsStorage>()
+            .error(t!("history.events_overlap"));
+        return;
+    };
     let changes = pending.settle(world);
     let description = description.describe(&changes);
     world.resource_scope(|world, mut history: Mut<EditorHistory>| {
         history.record_changes(world, description, changes);
     });
+}
+
+/// Revert a step that leaves an event overlapping another or without length
+fn keep_if_valid(world: &mut World, step: PendingChanges) -> Option<PendingChanges> {
+    if step.entities().all(|entity| event_fits(world, entity)) {
+        return Some(step);
+    }
+    step.settle(world).apply(world, false);
+    None
+}
+
+fn event_fits(world: &World, entity: Entity) -> bool {
+    let Ok(entity) = world.get_entity(entity) else {
+        return true;
+    };
+    let (Some(event), Some(event_of)) = (entity.get::<LineEvent>(), entity.get::<EventOf>()) else {
+        return true;
+    };
+    world
+        .resource::<EventIndex>()
+        .fits(event_of.target(), entity.id(), event, |other| {
+            world.entity(other).contains::<Pending>()
+        })
 }
 
 fn run_commands(world: &mut World, edit: impl FnOnce(&mut Commands)) {

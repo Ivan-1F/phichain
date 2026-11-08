@@ -56,12 +56,8 @@ pub(super) struct Recorder {
 
 impl Recorder {
     pub fn begin(&mut self) {
-        self.resume(PendingChanges::default());
-    }
-
-    pub fn resume(&mut self, pending: PendingChanges) {
         assert!(self.active.is_none(), "nested document edit");
-        self.active = Some(pending);
+        self.active = Some(PendingChanges::default());
     }
 
     pub fn finish(&mut self) -> PendingChanges {
@@ -101,7 +97,7 @@ fn record_replace<T: Component + Reflect + Clone>(
     mut recorder: ResMut<Recorder>,
 ) {
     let entity = query.get(event.entity).unwrap();
-    // Clone only the first old value, not every intermediate drag update.
+    // Clone only the first old value within a step.
     if !recorder.enabled
         || recorder.replaying
         || entity.contains::<Derived>()
@@ -223,6 +219,24 @@ pub struct ChangeSet {
 impl PendingChanges {
     pub fn is_empty(&self) -> bool {
         self.before.is_empty()
+    }
+
+    pub fn entities(&self) -> impl Iterator<Item = Entity> + '_ {
+        self.touched.values().copied()
+    }
+
+    /// Append a later step, keeping the values from before this one
+    pub fn absorb(&mut self, later: PendingChanges) {
+        for id in later.born {
+            if !self.touched.contains_key(&id) {
+                self.born.insert(id);
+            }
+        }
+        for (key, before) in later.before {
+            self.before.entry(key).or_insert(before);
+        }
+        self.touched.extend(later.touched);
+        self.references.extend(later.references);
     }
 
     pub fn settle(mut self, world: &World) -> ChangeSet {

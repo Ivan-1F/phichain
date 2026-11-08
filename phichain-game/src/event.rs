@@ -77,6 +77,29 @@ impl EventIndex {
             .max()
             .unwrap_or(EventEvaluationResult::Unaffected)
     }
+
+    /// Whether the event has length and shares no beat with its neighbors on the track, leaving out events `skip` accepts
+    ///
+    /// Checking the neighbors covers the whole track as long as the other events do not overlap.
+    pub fn fits(
+        &self,
+        line: Entity,
+        entity: Entity,
+        event: &LineEvent,
+        skip: impl Fn(Entity) -> bool,
+    ) -> bool {
+        let start = event.start_beat.value();
+        let other = |(other, _): &(Entity, &LineEvent)| *other != entity && !skip(*other);
+        event.start_beat < event.end_beat
+            && self
+                .until(line, event.kind, start)
+                .find(other)
+                .is_none_or(|(_, previous)| previous.end_beat <= event.start_beat)
+            && self
+                .since(line, event.kind, start)
+                .find(other)
+                .is_none_or(|(_, next)| event.end_beat <= next.start_beat)
+    }
 }
 
 pub struct EventIndexPlugin;
@@ -256,6 +279,57 @@ mod tests {
                     "at {beat}"
                 );
             }
+        }
+    }
+
+    #[test]
+    fn fits_matches_comparing_every_event() {
+        use rand::rngs::StdRng;
+        use rand::{Rng, SeedableRng};
+        use std::collections::HashSet;
+
+        let mut rng = StdRng::seed_from_u64(1);
+        let mut world = World::new();
+        let line = world.spawn_empty().id();
+        let event = |start, end| LineEvent {
+            kind: LineEventKind::X,
+            start_beat: beat!(0, start, 4),
+            end_beat: beat!(0, end, 4),
+            value: LineEventValue::constant(0.0),
+        };
+        for _ in 0..500 {
+            // the other events never overlap, in quarter beats
+            let mut track = EventTrack::new();
+            let mut quarter = 0;
+            for _ in 0..rng.random_range(0..8) {
+                quarter += rng.random_range(0..3);
+                let start = quarter;
+                quarter += rng.random_range(1..4);
+                let other = event(start, quarter);
+                track.insert((other.start_beat, world.spawn_empty().id()), other);
+            }
+            let start = rng.random_range(-2..quarter + 2);
+            let candidate = event(start, start + rng.random_range(-1..6));
+            let entity = world.spawn_empty().id();
+            track.insert((candidate.start_beat, entity), candidate);
+            let skipped: HashSet<Entity> = track
+                .keys()
+                .map(|&(_, other)| other)
+                .filter(|_| rng.random_bool(0.2))
+                .collect();
+
+            let expected = candidate.start_beat < candidate.end_beat
+                && track
+                    .iter()
+                    .filter(|((_, other), _)| *other != entity && !skipped.contains(other))
+                    .all(|(_, other)| {
+                        other.end_beat <= candidate.start_beat
+                            || candidate.end_beat <= other.start_beat
+                    });
+            let mut index = EventIndex::default();
+            index.0.insert((line, LineEventKind::X), track.clone());
+            let fits = index.fits(line, entity, &candidate, |other| skipped.contains(&other));
+            assert_eq!(fits, expected, "{candidate:?} in {track:?}");
         }
     }
 

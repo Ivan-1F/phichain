@@ -249,8 +249,12 @@ mod tests {
 
     fn fixture() -> App {
         let mut app = App::new();
-        app.add_plugins((IdIndexPlugin, HistoryPlugin))
-            .init_resource::<EditorClipboard>();
+        app.add_plugins((
+            IdIndexPlugin,
+            phichain_game::event::EventIndexPlugin,
+            HistoryPlugin,
+        ))
+        .init_resource::<EditorClipboard>();
         app
     }
 
