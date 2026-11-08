@@ -1,7 +1,7 @@
 use super::gesture_response;
 use crate::editing::history::Edits;
 use bevy::prelude::*;
-use egui::{Response, Ui, UiBuilder, Widget, WidgetText};
+use egui::{InnerResponse, Response, Ui, UiBuilder, Widget, WidgetText};
 use std::hash::Hash;
 
 /// A frame-local component value shared by its editable fields.
@@ -59,10 +59,14 @@ impl<T: Component + Clone + PartialEq> ComponentEditor<'_, '_, '_, T> {
         label: impl Into<WidgetText>,
         draw: impl FnOnce(&mut FieldUi<'_>, &mut T) -> R,
     ) -> R {
-        egui::Sides::new()
-            .shrink_right()
-            .show(ui, |ui| ui.label(label), |ui| self.edit(ui, key, draw))
-            .1
+        let (label, region) = egui::Sides::new().shrink_right().show(
+            ui,
+            |ui| ui.label(label),
+            |ui| self.edit_region(ui, key, draw),
+        );
+        // Let assistive technology name the edit region after its label
+        let _ = region.response.labelled_by(label.id);
+        region.inner
     }
 
     /// Draw an edit region without a label, for controls such as timeline handles.
@@ -78,6 +82,15 @@ impl<T: Component + Clone + PartialEq> ComponentEditor<'_, '_, '_, T> {
         key: impl Hash,
         draw: impl FnOnce(&mut FieldUi<'_>, &mut T) -> R,
     ) -> R {
+        self.edit_region(ui, key, draw).inner
+    }
+
+    fn edit_region<R>(
+        &mut self,
+        ui: &mut Ui,
+        key: impl Hash,
+        draw: impl FnOnce(&mut FieldUi<'_>, &mut T) -> R,
+    ) -> InnerResponse<R> {
         let id = ui.id().with((self.entity, key));
         ui.scope_builder(UiBuilder::new().id(id), |ui| {
             let before = self.value.clone();
@@ -118,7 +131,6 @@ impl<T: Component + Clone + PartialEq> ComponentEditor<'_, '_, '_, T> {
             }
             result
         })
-        .inner
     }
 }
 
