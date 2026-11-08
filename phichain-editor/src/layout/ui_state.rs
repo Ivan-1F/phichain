@@ -65,6 +65,10 @@ impl egui_dock::TabViewer for TabViewer<'_> {
         t!(format!("tab.{tab}.title").as_str()).into()
     }
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
+        // Name the tab's content region after its title for assistive technology
+        let title = self.title(tab).text().to_owned();
+        ui.response()
+            .widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Panel, true, &title));
         self.registry.tab_ui(ui, self.world, tab);
     }
 
