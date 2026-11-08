@@ -132,8 +132,7 @@ fn create_event_system(
             let confirmed = |(entity, _): &(Entity, &LineEvent)| !pending.contains(*entity);
             if let Some((_, last_event)) = index
                 .until(line_entity, new_event.kind, new_event.start_beat.value())
-                .filter(confirmed)
-                .find(|(_, event)| event.end_beat <= new_event.start_beat)
+                .find(confirmed)
             {
                 *new_event.value.start_mut() = last_event.value.end();
             }
