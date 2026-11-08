@@ -8,6 +8,10 @@ pub struct Args {
     /// Load project from this path when launch
     #[arg(short, long)]
     pub project: Option<String>,
+
+    #[cfg(feature = "capture")]
+    #[command(flatten)]
+    pub capture: crate::capture::CaptureArgs,
 }
 
 pub struct CliPlugin;

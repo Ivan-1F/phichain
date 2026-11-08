@@ -5,6 +5,8 @@ mod action;
 mod audio;
 mod autosave;
 mod bench;
+#[cfg(feature = "capture")]
+mod capture;
 mod cli;
 mod constants;
 mod editing;
@@ -125,8 +127,11 @@ fn main() {
         .add_plugins(HotkeyPlugin)
         .add_plugins(CliPlugin)
         .add_plugins(crate::bench::BenchPlugin)
-        .add_plugins(MiscPlugin)
-        .add_plugins(UiPlugin)
+        .add_plugins(MiscPlugin);
+    // replaces the working directory before any plugin reads its config from there
+    #[cfg(feature = "capture")]
+    app.add_plugins(capture::CapturePlugin);
+    app.add_plugins(UiPlugin)
         .add_plugins(TranslationPlugin)
         .add_plugins(RecentProjectsPlugin)
         .add_plugins(HomePlugin)
