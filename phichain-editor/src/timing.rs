@@ -14,9 +14,9 @@ use phichain_game::audio::InstanceHandle;
 #[derive(Resource)]
 pub struct ChartTime(pub f32);
 
-/// While present, the owner of this resource advances both chart times instead of the audio
+/// While present, chart time runs on Bevy's clock alone, without syncing to the audio position
 #[derive(Resource)]
-pub struct ExternalClock;
+pub struct NoAudioSync;
 
 /// Represents if the editor is paused
 #[derive(Resource)]
@@ -77,11 +77,7 @@ impl Plugin for TimingPlugin {
             .insert_resource(Timing::new())
             .add_systems(
                 PreUpdate,
-                update_time_system.run_if(
-                    project_loaded()
-                        .and(resource_exists::<InstanceHandle>)
-                        .and(not(resource_exists::<ExternalClock>)),
-                ),
+                update_time_system.run_if(project_loaded().and(resource_exists::<InstanceHandle>)),
             )
             .add_action(
                 "phichain.pause_resume",
@@ -210,8 +206,12 @@ impl Timing {
         (self.pause_time.unwrap_or(self.real_time) - self.start_time) * self.speed
     }
 
-    pub fn update(&mut self, real_time: f32, music_time: f32) {
+    /// Advance to `real_time`, drifting towards `music_time` when given
+    pub fn update(&mut self, real_time: f32, music_time: Option<f32>) {
         self.real_time = real_time;
+        let Some(music_time) = music_time else {
+            return;
+        };
         if self.real_time > self.wait && self.pause_time.is_none() {
             self.start_time -= (music_time - self.now()) * 3e-3;
         }
@@ -263,12 +263,15 @@ pub fn update_time_system(
 
     mut chart_time: ResMut<ChartTime>,
     mut game_time: ResMut<phichain_game::ChartTime>,
+    no_audio_sync: Option<Res<NoAudioSync>>,
 ) {
     timing.set_speed(settings.audio.playback_rate);
 
     if let Some(instance) = audio_instances.get_mut(&handle.0) {
-        let value = instance.state().position().unwrap_or_default() as f32;
-        timing.update(time.elapsed_secs(), value);
+        let music_time = no_audio_sync
+            .is_none()
+            .then(|| instance.state().position().unwrap_or_default() as f32);
+        timing.update(time.elapsed_secs(), music_time);
 
         let now = timing.now() - offset.0 / 1000.0;
 
