@@ -1,148 +1,78 @@
 use crate::event::EventTrack;
 use phichain_chart::bpm_list::BpmList;
 
+/// The speed of a line before its first speed event
+const DEFAULT_SPEED: f32 = 10.0;
+
 #[derive(Debug, Clone, Copy)]
 struct SpeedSegment {
     start_time: f32,
     end_time: f32,
     start_value: f32,
     end_value: f32,
+    /// Distance travelled from time zero when the segment starts
+    distance: f32,
 }
 
-/// The progress of integrating speed over time, segment by segment
-#[derive(Debug, Clone, Copy)]
-struct Scan {
-    area: f32,
-    last_time: f32,
-    last_speed: f32,
-}
-
-impl Default for Scan {
-    fn default() -> Self {
-        Self {
-            area: 0.0,
-            last_time: 0.0,
-            last_speed: 10.0,
-        }
-    }
-}
-
-impl Scan {
-    /// Integrate up to `time` through one segment
-    ///
-    /// Returns the distance at `time` if it is reached within the segment, or `None` to go on with the next one.
-    fn advance(&mut self, event: &SpeedSegment, time: f32) -> Option<f32> {
-        if time <= self.last_time {
-            return Some(self.finish(time));
-        }
-
-        let gap_end = event.start_time.min(time);
-        if gap_end > self.last_time {
-            self.area += (gap_end - self.last_time) * self.last_speed;
-            self.last_time = gap_end;
-        }
-
-        if time <= event.start_time {
-            return Some(self.finish(time));
-        }
-
-        let time_span = event.end_time - event.start_time;
-        if time_span <= 0.0 {
-            self.last_time = self.last_time.max(event.end_time);
-            self.last_speed = event.end_value;
-            return None;
-        }
-
-        let seg_start = event.start_time.max(self.last_time);
-        let seg_end = event.end_time.min(time);
-        if seg_end > seg_start {
-            let speed_span = event.end_value - event.start_value;
-            let start_ratio = (seg_start - event.start_time) / time_span;
-            let end_ratio = (seg_end - event.start_time) / time_span;
-            let start_speed = event.start_value + start_ratio * speed_span;
-            let end_speed = event.start_value + end_ratio * speed_span;
-
-            self.area += (seg_end - seg_start) * (start_speed + end_speed) / 2.0;
-
-            if time <= event.end_time {
-                return Some(self.area);
-            }
-        }
-
-        self.last_time = event.end_time;
-        self.last_speed = event.end_value;
-        None
-    }
-
-    /// Integrate up to `time` after the last segment
-    fn finish(&self, time: f32) -> f32 {
-        if time > self.last_time {
-            self.area + (time - self.last_time) * self.last_speed
+impl SpeedSegment {
+    /// Distance at a time from the start of this segment until the next one starts
+    fn distance_at(&self, time: f32) -> f32 {
+        if time >= self.end_time {
+            let length = self.end_time - self.start_time;
+            self.distance
+                + length * (self.start_value + self.end_value) / 2.0
+                + (time - self.end_time) * self.end_value
         } else {
-            self.area
+            let progress = (time - self.start_time) / (self.end_time - self.start_time);
+            let speed = self.start_value + (self.end_value - self.start_value) * progress;
+            self.distance + (time - self.start_time) * (self.start_value + speed) / 2.0
         }
-    }
-
-    fn distance(mut self, segments: &[SpeedSegment], time: f32) -> f32 {
-        for segment in segments {
-            if let Some(distance) = self.advance(segment, time) {
-                return distance;
-            }
-        }
-        self.finish(time)
     }
 }
 
 /// Distance travelled by a line over time, driven by its speed events
 ///
-/// A scan fully passes every segment ending before its time, so a query resumes from the first segment it stops in.
+/// Speed changes linearly within an event and holds its end value until the next one starts.
 #[derive(Debug, Default)]
-pub struct SpeedTable {
-    segments: Vec<SpeedSegment>,
-    /// The scan state before each segment, and after the last one
-    scans: Vec<Scan>,
-    /// The running max of the time each segment stops a scan at
-    stops: Vec<f32>,
-}
+pub struct SpeedTable(Vec<SpeedSegment>);
 
 impl SpeedTable {
     pub fn new(track: &EventTrack, bpm_list: &BpmList) -> Self {
-        let segments: Vec<_> = track
-            .values()
-            .map(|event| SpeedSegment {
-                start_time: bpm_list.time_at(event.start_beat),
-                end_time: bpm_list.time_at(event.end_beat),
-                start_value: event.value.start(),
-                end_value: event.value.end(),
-            })
-            .collect();
-        Self::from_segments(segments)
+        Self::from_segments(track.values().map(|event| {
+            [
+                bpm_list.time_at(event.start_beat),
+                bpm_list.time_at(event.end_beat),
+                event.value.start(),
+                event.value.end(),
+            ]
+        }))
     }
 
-    fn from_segments(segments: Vec<SpeedSegment>) -> Self {
-        let mut scan = Scan::default();
-        let mut scans = Vec::with_capacity(segments.len() + 1);
-        let mut stops = Vec::with_capacity(segments.len());
-        let mut stop = f32::NEG_INFINITY;
-        for segment in &segments {
-            scans.push(scan);
-            scan.advance(segment, f32::INFINITY);
-            stop = stop.max(segment.start_time.max(segment.end_time));
-            stops.push(stop);
+    /// Build from `[start_time, end_time, start_value, end_value]` of each event, in order
+    fn from_segments(segments: impl IntoIterator<Item = [f32; 4]>) -> Self {
+        let mut table: Vec<SpeedSegment> = Vec::new();
+        for [start_time, end_time, start_value, end_value] in segments {
+            let distance = table.last().map_or(start_time * DEFAULT_SPEED, |previous| {
+                previous.distance_at(start_time)
+            });
+            table.push(SpeedSegment {
+                start_time,
+                end_time,
+                start_value,
+                end_value,
+                distance,
+            });
         }
-        scans.push(scan);
-        Self {
-            segments,
-            scans,
-            stops,
-        }
+        Self(table)
     }
 
+    /// Distance travelled from time zero, which stays zero before it
     pub fn distance_at(&self, time: f32) -> f32 {
-        let first = self.stops.partition_point(|stop| *stop < time);
-        // an empty table has no scans and falls back to a line without speed events
-        let scan = self.scans.get(first).copied().unwrap_or_default();
-        scan.distance(&self.segments[first..], time)
+        let time = time.max(0.0);
+        match self.0.partition_point(|segment| segment.start_time <= time) {
+            0 => time * DEFAULT_SPEED,
+            next => self.0[next - 1].distance_at(time),
+        }
     }
 }
 
@@ -152,36 +82,65 @@ mod tests {
     use rand::rngs::StdRng;
     use rand::{Rng, SeedableRng};
 
+    /// Integrate the speed from zero to the time over every piece of constant or linear speed
+    fn integrate(segments: &[[f32; 4]], time: f32) -> f32 {
+        let mut pieces = vec![];
+        let mut held = (f32::NEG_INFINITY, DEFAULT_SPEED);
+        for &[start, end, start_value, end_value] in segments {
+            pieces.push((held.0, start, held.1, held.1));
+            pieces.push((start, end, start_value, end_value));
+            held = (end, end_value);
+        }
+        pieces.push((held.0, f32::INFINITY, held.1, held.1));
+
+        pieces
+            .into_iter()
+            .map(|(from, to, a, b)| {
+                let (low, high) = (from.max(0.0), to.min(time));
+                if high <= low {
+                    return 0.0;
+                }
+                let speed = |t: f32| {
+                    if a == b {
+                        a
+                    } else {
+                        a + (b - a) * (t - from) / (to - from)
+                    }
+                };
+                (high - low) * (speed(low) + speed(high)) / 2.0
+            })
+            .sum()
+    }
+
     #[test]
-    fn table_matches_a_full_scan() {
+    fn table_matches_integrating_every_piece() {
         let mut rng = StdRng::seed_from_u64(0);
         for _ in 0..200 {
-            // gaps, overlaps and instant segments, ordered by start time
-            let mut start = 0.0;
+            // events never overlap, with gaps between them
+            let mut end = 0.0;
             let segments: Vec<_> = (0..rng.random_range(0..20))
                 .map(|_| {
-                    start += rng.random_range(-1.0..3.0_f32).max(0.0);
-                    let end = start + rng.random_range(-0.5..4.0_f32).max(0.0);
-                    SpeedSegment {
-                        start_time: start,
-                        end_time: end,
-                        start_value: rng.random_range(-20.0..20.0),
-                        end_value: rng.random_range(-20.0..20.0),
-                    }
+                    let start = end + rng.random_range(-1.0..3.0_f32).max(0.0);
+                    end = start + rng.random_range(0.0..4.0_f32);
+                    [
+                        start,
+                        end,
+                        rng.random_range(-20.0..20.0),
+                        rng.random_range(-20.0..20.0),
+                    ]
                 })
                 .collect();
 
-            let mut times: Vec<f32> = (0..50)
-                .map(|_| rng.random_range(-2.0..start + 6.0))
-                .collect();
-            times.extend(segments.iter().flat_map(|s| [s.start_time, s.end_time]));
+            let mut times: Vec<f32> = (0..50).map(|_| rng.random_range(-2.0..end + 6.0)).collect();
+            times.extend(segments.iter().flat_map(|&[start, end, ..]| [start, end]));
 
             let table = SpeedTable::from_segments(segments.clone());
             for time in times {
-                assert_eq!(
-                    table.distance_at(time),
-                    Scan::default().distance(&segments, time),
-                    "at {time} in {segments:?}"
+                let expected = integrate(&segments, time);
+                let actual = table.distance_at(time);
+                assert!(
+                    (actual - expected).abs() <= 1e-3 * expected.abs().max(1.0),
+                    "{actual} != {expected} at {time} in {segments:?}"
                 );
             }
         }
