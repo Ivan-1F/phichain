@@ -449,8 +449,9 @@ pub fn event_timeline_ui(
         }
     }
 
-    // track headers right below the indicator, with the current values of the line under them
-    let header_top = viewport.top() + viewport.height() * INDICATOR_POSITION + 1.0;
+    // track headers right below the indicator, and the current values of the line on it
+    let indicator_y = viewport.top() + viewport.height() * INDICATOR_POSITION;
+    let header_top = indicator_y + 1.0;
     let header_y = header_top + TRACK_HEADER_HEIGHT / 2.0;
     for (kind, txt) in [
         (LineEventKind::X, "X"),
@@ -484,8 +485,8 @@ pub fn event_timeline_ui(
         };
         let painter = ui.painter().with_clip_rect(track_rect(kind));
         let galley = painter.layout_no_wrap(format_value(value), font.clone(), Color32::WHITE);
-        let rect = Align2::CENTER_TOP.anchor_size(
-            egui::Pos2::new(compute_x(kind.into()), header_top + TRACK_HEADER_HEIGHT),
+        let rect = Align2::CENTER_BOTTOM.anchor_size(
+            egui::Pos2::new(compute_x(kind.into()), indicator_y - 1.0),
             galley.size(),
         );
         // cover the event values passing below so the two never mix
