@@ -12,7 +12,8 @@ use phichain_chart::easing::Easing;
 use phichain_chart::event::LineEventKind;
 use phichain_chart::line::Line;
 use phichain_chart::note::{Note, NoteKind};
-use rand::Rng;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use std::time::Duration;
 
 /// Hit effect sprite width as a multiple of the reference note width.
@@ -20,6 +21,22 @@ use std::time::Duration;
 const HIT_FX_NOTE_WIDTH_RATIO: f32 = 256.0 * 6.0 / 989.0;
 
 pub struct HitEffectPlugin;
+
+/// Random source of hit particles, seeded when every run must render the same particles
+#[derive(Resource)]
+pub struct HitEffectRng(pub StdRng);
+
+impl HitEffectRng {
+    pub fn seeded(seed: u64) -> Self {
+        Self(StdRng::seed_from_u64(seed))
+    }
+}
+
+impl Default for HitEffectRng {
+    fn default() -> Self {
+        Self(StdRng::from_os_rng())
+    }
+}
 
 /// A simple timer for hit effects, compat layer for [`GameConfig::hit_effect_follow_game_time`]
 #[derive(Debug, Clone, Default, Resource)]
@@ -57,6 +74,7 @@ fn update_hit_effect_time_system(
 impl Plugin for HitEffectPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<HitEffectTime>()
+            .init_resource::<HitEffectRng>()
             .add_systems(
                 Update,
                 (
@@ -187,6 +205,7 @@ fn spawn_hit_effect_system(
     game_viewport: Res<GameViewport>,
 
     config: Res<GameConfig>,
+    mut rng: ResMut<HitEffectRng>,
 ) {
     if config.hide_hit_effect {
         return;
@@ -235,7 +254,7 @@ fn spawn_hit_effect_system(
             let factor = game_viewport.0.width() / 426.0;
 
             for _ in 0..4 {
-                commands.spawn(HitParticleBundle::new(position, factor));
+                commands.spawn(HitParticleBundle::new(position, factor, &mut rng.0));
             }
 
             commands.entity(entity).insert(PlayedHitEffect(time.0));
@@ -281,15 +300,15 @@ pub struct HitParticleBundle {
 }
 
 impl HitParticleBundle {
-    pub fn new(position: Vec2, factor: f32) -> Self {
-        let size = rand::rng().random_range(7.0..=10.0) * factor;
+    pub fn new(position: Vec2, factor: f32, rng: &mut impl Rng) -> Self {
+        let size = rng.random_range(7.0..=10.0) * factor;
         let shape = shapes::Rectangle {
             extents: Vec2::splat(size),
             origin: Default::default(),
             ..default()
         };
 
-        let angle = rand::rng().random_range(-std::f32::consts::PI..=std::f32::consts::PI);
+        let angle = rng.random_range(-std::f32::consts::PI..=std::f32::consts::PI);
         let quat = Quat::from_rotation_z(angle);
 
         Self {
