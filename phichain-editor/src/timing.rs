@@ -14,6 +14,10 @@ use phichain_game::audio::InstanceHandle;
 #[derive(Resource)]
 pub struct ChartTime(pub f32);
 
+/// While present, the owner of this resource advances both chart times instead of the audio
+#[derive(Resource)]
+pub struct ExternalClock;
+
 /// Represents if the editor is paused
 #[derive(Resource)]
 pub struct Paused(pub bool);
@@ -73,7 +77,11 @@ impl Plugin for TimingPlugin {
             .insert_resource(Timing::new())
             .add_systems(
                 PreUpdate,
-                update_time_system.run_if(project_loaded().and(resource_exists::<InstanceHandle>)),
+                update_time_system.run_if(
+                    project_loaded()
+                        .and(resource_exists::<InstanceHandle>)
+                        .and(not(resource_exists::<ExternalClock>)),
+                ),
             )
             .add_action(
                 "phichain.pause_resume",
