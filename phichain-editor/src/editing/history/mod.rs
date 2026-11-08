@@ -336,7 +336,7 @@ fn event_fits(world: &World, entity: Entity) -> bool {
     };
     world
         .resource::<EventIndex>()
-        .fits(event_of.target(), entity.id(), event, |_| false)
+        .fits(event_of.target(), entity.id(), event)
 }
 
 fn run_commands(world: &mut World, edit: impl FnOnce(&mut Commands)) {

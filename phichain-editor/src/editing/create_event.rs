@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::easing::Easing;
-use phichain_game::Pending;
 
 use crate::editing::history::Edits;
 use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
@@ -10,7 +9,7 @@ use crate::notification::{ToastsExt, ToastsStorage};
 use crate::schedule::EditorSet;
 use crate::timeline::container::TimelineLayout;
 use crate::timeline::event::EventTimeline;
-use crate::timeline::pending::{spawn_pending, TimelinePending};
+use crate::timeline::pending::{spawn_pending, PendingOf};
 use crate::timeline::pending_status::{PendingHint, PendingStatus};
 use crate::timeline::TimelineContext;
 use crate::utils::convert::BevyEguiConvert;
@@ -70,11 +69,9 @@ fn create_event_system(
 
     mut edits: Edits,
 
-    timeline_pending: Query<&TimelinePending>,
-    events: Query<&LineEvent>,
+    pending_event: Option<Single<(Entity, &LineEvent, &PendingOf)>>,
 
     index: Res<EventIndex>,
-    pending: Query<(), With<Pending>>,
     mut toasts: ResMut<ToastsStorage>,
 ) -> Result {
     let Ok(window) = window_query.single() else {
@@ -96,11 +93,12 @@ fn create_event_system(
     let viewport = item.viewport;
 
     let requested_value = requested_event_value(&hotkey);
-    let pending_event = timeline_pending
-        .get(item.timeline)
-        .ok()
-        .and_then(TimelinePending::entity)
-        .and_then(|entity| Some((events.get(entity).ok()?, entity)));
+    let pending_event = pending_event.map(Single::into_inner);
+    // a new pending event replaces the one on another timeline
+    let replaced = pending_event.map_or(Entity::PLACEHOLDER, |(entity, ..)| entity);
+    let pending_event = pending_event
+        .filter(|(.., owner)| owner.0 == item.timeline)
+        .map(|(entity, event, _)| (event, entity));
 
     let calc_event_attrs = || {
         let time = ctx.y_to_time(cursor_position.y);
@@ -120,7 +118,7 @@ fn create_event_system(
         let (track, beat) = calc_event_attrs();
         moved.end_beat = beat.max(moved.start_beat + ctx.settings.minimum_beat());
         moved.kind = LineEventKind::try_from(track).expect("Unknown event track");
-        if !index.fits(line_entity, entity, &moved, |_| false) {
+        if !index.fits(line_entity, entity, &moved) {
             return (*pending_event, entity);
         }
         // The preview may be despawned by a cascade applied before this command
@@ -133,7 +131,7 @@ fn create_event_system(
             // inherit event's start & end value from neighbor events
             let mut new_event = pending_event;
             new_event.value = value;
-            let confirmed = |(entity, _): &(Entity, &LineEvent)| !pending.contains(*entity);
+            let confirmed = |(other, _): &(Entity, &LineEvent)| *other != entity;
             if let Some((_, last_event)) = index
                 .until(line_entity, new_event.kind, new_event.start_beat.value())
                 .find(confirmed)
@@ -158,10 +156,7 @@ fn create_event_system(
                 start_beat: beat,
                 end_beat: beat + ctx.settings.minimum_beat(),
             };
-            // the existing pending object is replaced
-            if !index.fits(line_entity, Entity::PLACEHOLDER, &event, |entity| {
-                pending.contains(entity)
-            }) {
+            if !index.fits(line_entity, replaced, &event) {
                 toasts.error(t!("history.events_overlap"));
                 return Ok(());
             }

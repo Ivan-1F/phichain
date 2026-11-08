@@ -1,6 +1,6 @@
 use crate::schedule::EditorSet;
 use crate::selection::{handle_select_event, Select};
-use crate::timeline::pending::TimelinePending;
+use crate::timeline::pending::PendingOf;
 use bevy::prelude::*;
 
 /// An object drawn on a timeline was clicked
@@ -27,14 +27,13 @@ impl Plugin for TimelineClickPlugin {
 fn select_clicked(
     mut clicks: MessageReader<TimelineClick>,
     mut select: MessageWriter<Select>,
-    timeline_pending: Query<&TimelinePending>,
+    pending: Option<Single<&PendingOf>>,
 ) {
     for click in clicks.read() {
-        let pending = timeline_pending
-            .get(click.timeline)
-            .ok()
-            .and_then(TimelinePending::entity);
-        if pending.is_some() {
+        if pending
+            .as_ref()
+            .is_some_and(|owner| owner.0 == click.timeline)
+        {
             continue;
         }
         select.write(Select(vec![click.entity]));

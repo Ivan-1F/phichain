@@ -73,18 +73,13 @@ impl EventIndex {
             .map(|(_, event)| event.value_at(beat))
     }
 
-    /// Whether the event has length and shares no beat with its neighbors on the track, leaving out events `skip` accepts
+    /// Whether the event of `entity` has length and shares no beat with its neighbors on the track
     ///
+    /// The entity may be indexed already or not at all.
     /// Checking the neighbors covers the whole track as long as the other events do not overlap.
-    pub fn fits(
-        &self,
-        line: Entity,
-        entity: Entity,
-        event: &LineEvent,
-        skip: impl Fn(Entity) -> bool,
-    ) -> bool {
+    pub fn fits(&self, line: Entity, entity: Entity, event: &LineEvent) -> bool {
         let start = event.start_beat.value();
-        let other = |(other, _): &(Entity, &LineEvent)| *other != entity && !skip(*other);
+        let other = |(other, _): &(Entity, &LineEvent)| *other != entity;
         event.start_beat < event.end_beat
             && self
                 .until(line, event.kind, start)
@@ -281,7 +276,6 @@ mod tests {
     fn fits_matches_comparing_every_event() {
         use rand::rngs::StdRng;
         use rand::{Rng, SeedableRng};
-        use std::collections::HashSet;
 
         let mut rng = StdRng::seed_from_u64(1);
         let mut world = World::new();
@@ -305,25 +299,25 @@ mod tests {
             }
             let start = rng.random_range(-2..quarter + 2);
             let candidate = event(start, start + rng.random_range(-1..6));
-            let entity = world.spawn_empty().id();
-            track.insert((candidate.start_beat, entity), candidate);
-            let skipped: HashSet<Entity> = track
-                .keys()
-                .map(|&(_, other)| other)
-                .filter(|_| rng.random_bool(0.2))
-                .collect();
+            let entity = if rng.random_bool(0.5) {
+                let entity = world.spawn_empty().id();
+                track.insert((candidate.start_beat, entity), candidate);
+                entity
+            } else {
+                Entity::PLACEHOLDER
+            };
 
             let expected = candidate.start_beat < candidate.end_beat
                 && track
                     .iter()
-                    .filter(|((_, other), _)| *other != entity && !skipped.contains(other))
+                    .filter(|((_, other), _)| *other != entity)
                     .all(|(_, other)| {
                         other.end_beat <= candidate.start_beat
                             || candidate.end_beat <= other.start_beat
                     });
             let mut index = EventIndex::default();
             index.0.insert((line, LineEventKind::X), track.clone());
-            let fits = index.fits(line, entity, &candidate, |other| skipped.contains(&other));
+            let fits = index.fits(line, entity, &candidate);
             assert_eq!(fits, expected, "{candidate:?} in {track:?}");
         }
     }

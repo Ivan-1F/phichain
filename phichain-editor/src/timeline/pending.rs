@@ -16,13 +16,6 @@ pub struct PendingOf(pub Entity);
 #[relationship_target(relationship = PendingOf, linked_spawn)]
 pub struct TimelinePending(Vec<Entity>);
 
-impl TimelinePending {
-    /// The pending object on the timeline, there is at most one
-    pub fn entity(&self) -> Option<Entity> {
-        self.0.first().copied()
-    }
-}
-
 pub struct PendingPlugin;
 
 impl Plugin for PendingPlugin {

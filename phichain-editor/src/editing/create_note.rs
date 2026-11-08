@@ -9,7 +9,7 @@ use crate::identifier::{Identifier, IntoIdentifier};
 use crate::schedule::EditorSet;
 use crate::timeline::container::TimelineLayout;
 use crate::timeline::note::NoteTimeline;
-use crate::timeline::pending::{spawn_pending, TimelinePending};
+use crate::timeline::pending::{spawn_pending, PendingOf};
 use crate::timeline::pending_status::{PendingHint, PendingStatus};
 use crate::timeline::TimelineContext;
 use crate::utils::convert::BevyEguiConvert;
@@ -70,8 +70,7 @@ fn create_note_system(
 
     mut edits: Edits,
 
-    timeline_pending: Query<&TimelinePending>,
-    notes: Query<&Note>,
+    pending_note: Option<Single<(Entity, &Note, &PendingOf)>>,
 ) -> Result {
     let Ok(window) = window_query.single() else {
         return Ok(());
@@ -91,11 +90,10 @@ fn create_note_system(
     };
     let viewport = item.viewport;
 
-    let pending_note = timeline_pending
-        .get(item.timeline)
-        .ok()
-        .and_then(TimelinePending::entity)
-        .and_then(|entity| Some((notes.get(entity).ok()?, entity)));
+    let pending_note = pending_note
+        .map(Single::into_inner)
+        .filter(|(.., owner)| owner.0 == item.timeline)
+        .map(|(entity, note, _)| (note, entity));
 
     let calc_note_attrs = || {
         let time = ctx.y_to_time(cursor_position.y);
