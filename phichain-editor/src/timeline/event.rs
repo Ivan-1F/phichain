@@ -16,7 +16,6 @@ use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use phichain_chart::line::Line;
 use phichain_game::event::{EventIndex, EventOf, EventTrack};
-use std::iter;
 use std::sync::Arc;
 
 #[derive(Component, Debug, Clone, Copy)]
@@ -130,6 +129,25 @@ const CURVE_INSET: f32 = 0.15;
 /// Vertical distance between two samples of a curve, in points
 const CURVE_STEP: f32 = 2.0;
 
+/// Number of tracks on an event timeline, one for each event kind from left to right
+const TRACK_COUNT: u8 = 5;
+
+/// The column of an event timeline holding events of `kind`
+pub fn track_rect(viewport: Rect, kind: LineEventKind) -> Rect {
+    let width = viewport.width() / TRACK_COUNT as f32;
+    let left = viewport.min.x + width * (u8::from(kind) - 1) as f32;
+    Rect::from_x_y_ranges(left..=left + width, viewport.y_range())
+}
+
+/// The kind of events on the column under `x`, or the nearest column when outside the timeline
+pub fn track_at(viewport: Rect, x: f32) -> LineEventKind {
+    let width = viewport.width() / TRACK_COUNT as f32;
+    let index = ((x - viewport.min.x) / width)
+        .floor()
+        .clamp(0.0, (TRACK_COUNT - 1) as f32) as u8;
+    LineEventKind::try_from(index + 1).expect("every track holds an event kind")
+}
+
 /// Round to at most two decimals, dropping trailing zeros and the sign of zero
 fn format_value(value: f32) -> String {
     ((value * 100.0).round() / 100.0 + 0.0).to_string()
@@ -157,19 +175,18 @@ pub fn event_timeline_ui(
     let viewport = ui.max_rect();
     let ui = &mut ui;
 
-    // lane
-    // [0.2, 0.4, 0.6, 0.8]
-    let lane_percents = iter::repeat_n(0.0, 5 - 1)
-        .enumerate()
-        .map(|(i, _)| (i + 1) as f32 * 1.0 / 5.0)
-        .collect::<Vec<_>>();
-    for percent in lane_percents {
+    let track = |kind: LineEventKind| track_rect(viewport, kind);
+
+    // lane lines between tracks
+    for kind in [
+        LineEventKind::Y,
+        LineEventKind::Rotation,
+        LineEventKind::Opacity,
+        LineEventKind::Speed,
+    ] {
         ui.painter().rect_filled(
             Rect::from_center_size(
-                egui::Pos2::new(
-                    viewport.min.x + viewport.width() * percent,
-                    viewport.center().y,
-                ),
+                egui::Pos2::new(track(kind).left(), viewport.center().y),
                 egui::Vec2::new(2.0, viewport.height()),
             ),
             0.0,
@@ -177,21 +194,10 @@ pub fn event_timeline_ui(
         );
     }
 
-    let track_width = viewport.width() / 5.0;
-    let event_width = track_width * EVENT_WIDTH;
-
-    let compute_x =
-        |track: u8| -> f32 { track_width * track as f32 - track_width / 2.0 + viewport.min.x };
-
-    let track_rect = |kind: LineEventKind| {
-        Rect::from_center_size(
-            egui::Pos2::new(compute_x(kind.into()), viewport.center().y),
-            egui::Vec2::new(track_width, viewport.height()),
-        )
-    };
+    let event_width = track(LineEventKind::X).width() * EVENT_WIDTH;
 
     let get_event_rect = |event: &LineEvent| {
-        let x = compute_x(event.kind.into());
+        let x = track(event.kind).center().x;
         let y = ctx.time_to_y(bpm_list.time_at(event.start_beat));
 
         let size = egui::Vec2::new(
@@ -406,7 +412,7 @@ pub fn event_timeline_ui(
     }
 
     for label in labels {
-        let painter = ui.painter().with_clip_rect(track_rect(label.kind));
+        let painter = ui.painter().with_clip_rect(track(label.kind));
         let galley =
             painter.layout_no_wrap(format_value(label.value), font.clone(), Color32::WHITE);
         let rect = label.anchor.anchor_size(label.pos, galley.size());
@@ -427,14 +433,14 @@ pub fn event_timeline_ui(
             } else {
                 (Align2::CENTER_BOTTOM, viewport.bottom() - 2.0)
             };
-            let painter = ui.painter().with_clip_rect(track_rect(kind));
+            let painter = ui.painter().with_clip_rect(track(kind));
             let galley = painter.layout_no_wrap(
                 format_value(endpoint.value),
                 font.clone(),
                 Color32::PLACEHOLDER,
             );
             let rect =
-                anchor.anchor_size(egui::Pos2::new(compute_x(kind.into()), y), galley.size());
+                anchor.anchor_size(egui::Pos2::new(track(kind).center().x, y), galley.size());
             let response = ui
                 .allocate_rect(rect, Sense::click())
                 .on_hover_cursor(egui::CursorIcon::PointingHand)
@@ -465,8 +471,8 @@ pub fn event_timeline_ui(
         (LineEventKind::Opacity, egui_phosphor::regular::CIRCLE_HALF),
         (LineEventKind::Speed, egui_phosphor::regular::GAUGE),
     ] {
-        ui.painter().with_clip_rect(track_rect(kind)).text(
-            egui::Pos2::new(compute_x(kind.into()), header_y),
+        ui.painter().with_clip_rect(track(kind)).text(
+            egui::Pos2::new(track(kind).center().x, header_y),
             Align2::CENTER_CENTER,
             txt,
             FontId::proportional(TRACK_HEADER_SIZE),
@@ -485,10 +491,10 @@ pub fn event_timeline_ui(
         let Some(value) = index.evaluate(line_entity, kind, beat) else {
             continue;
         };
-        let painter = ui.painter().with_clip_rect(track_rect(kind));
+        let painter = ui.painter().with_clip_rect(track(kind));
         let galley = painter.layout_no_wrap(format_value(value), font.clone(), Color32::WHITE);
         let rect = Align2::CENTER_BOTTOM.anchor_size(
-            egui::Pos2::new(compute_x(kind.into()), indicator_y - 1.0),
+            egui::Pos2::new(track(kind).center().x, indicator_y - 1.0),
             galley.size(),
         );
         // cover the event values passing below so the two never mix
@@ -497,11 +503,11 @@ pub fn event_timeline_ui(
     }
 
     for (kind, curve) in curves {
-        ui.painter().with_clip_rect(track_rect(kind)).add(curve);
+        ui.painter().with_clip_rect(track(kind)).add(curve);
     }
     for (kind, pos, galley, color) in texts {
         ui.painter()
-            .with_clip_rect(track_rect(kind))
+            .with_clip_rect(track(kind))
             .galley(pos, galley, color);
     }
 }
@@ -520,15 +526,15 @@ pub fn event_timeline_drag_selection(
     };
     let x_range = selection.x_range();
     let time_range = selection.y_range();
+    // the selection is relative to the timeline
+    let local = Rect::from_min_size(egui::Pos2::ZERO, viewport.size());
 
     event_query
         .iter()
         .filter(|x| x.1.target() == line_entity)
         .filter(|x| {
             let event = x.0;
-            let track: u8 = event.kind.into();
-            let target_x = (track - 1) as f32 * (1.0 / 5.0) + (1.0 / (5.0 * 2.0));
-            x_range.contains(target_x * viewport.width())
+            x_range.contains(track_rect(local, event.kind).center().x)
                 && time_range.contains(bpm_list.time_at(event.start_beat))
         })
         .map(|x| x.2)
@@ -546,4 +552,28 @@ pub fn event_timeline_name(
         &timeline_of,
         &lines,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn track_at_inverts_track_rect() {
+        let viewport = Rect::from_min_size(egui::pos2(100.0, 0.0), egui::vec2(500.0, 300.0));
+        for kind in [
+            LineEventKind::X,
+            LineEventKind::Y,
+            LineEventKind::Rotation,
+            LineEventKind::Opacity,
+            LineEventKind::Speed,
+        ] {
+            let rect = track_rect(viewport, kind);
+            assert_eq!(track_at(viewport, rect.left()), kind);
+            assert_eq!(track_at(viewport, rect.center().x), kind);
+            assert_eq!(track_at(viewport, rect.right() - 0.1), kind);
+        }
+        assert_eq!(track_at(viewport, 0.0), LineEventKind::X);
+        assert_eq!(track_at(viewport, 1000.0), LineEventKind::Speed);
+    }
 }

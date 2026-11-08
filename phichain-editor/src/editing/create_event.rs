@@ -8,12 +8,12 @@ use crate::identifier::{Identifier, IntoIdentifier};
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::schedule::EditorSet;
 use crate::timeline::container::TimelineLayout;
-use crate::timeline::event::EventTimeline;
+use crate::timeline::event::{track_at, EventTimeline};
 use crate::timeline::pending::{spawn_pending, PendingOf};
 use crate::timeline::pending_status::{PendingHint, PendingStatus};
 use crate::timeline::TimelineContext;
 use crate::utils::convert::BevyEguiConvert;
-use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
+use phichain_chart::event::{LineEvent, LineEventValue};
 use phichain_game::event::{EventIndex, EventOf};
 
 enum CreateEventHotkeys {
@@ -105,19 +105,15 @@ fn create_event_system(
         let beat = bpm_list.beat_at(time).value();
         let beat = ctx.settings.attach(beat);
 
-        let track =
-            (((cursor_position.x - viewport.min.x) / (viewport.width() / 5.0)).floor() as u8 + 1)
-                .min(5);
-
-        (track, beat)
+        (track_at(viewport, cursor_position.x), beat)
     };
 
     // pending events follow the cursor, staying where it last fit
     let pending_event = pending_event.map(|(pending_event, entity)| {
         let mut moved = *pending_event;
-        let (track, beat) = calc_event_attrs();
+        let (kind, beat) = calc_event_attrs();
         moved.end_beat = beat.max(moved.start_beat + ctx.settings.minimum_beat());
-        moved.kind = LineEventKind::try_from(track).expect("Unknown event track");
+        moved.kind = kind;
         if !index.fits(line_entity, entity, &moved) {
             return (*pending_event, entity);
         }
@@ -149,9 +145,9 @@ fn create_event_system(
                 commands.spawn((new_event, EventOf(line_entity)));
             });
         } else {
-            let (track, beat) = calc_event_attrs();
+            let (kind, beat) = calc_event_attrs();
             let event = LineEvent {
-                kind: LineEventKind::try_from(track).expect("Unknown event track"),
+                kind,
                 value,
                 start_beat: beat,
                 end_beat: beat + ctx.settings.minimum_beat(),
