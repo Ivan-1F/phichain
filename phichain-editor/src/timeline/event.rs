@@ -8,13 +8,14 @@ use crate::timeline::target::{target_name, TimelineOf, TimelineTargets};
 use crate::timeline::{TimelineContext, LANE_LINE_OPACITY};
 use crate::timing::{ChartTime, SeekTo};
 use crate::ui::widgets::beat_range_drag_zone::BeatRangeDragZone;
-use bevy::prelude::{Component, Entity, In, MessageWriter, Query, Res};
+use bevy::platform::collections::HashMap;
+use bevy::prelude::{Component, DetectChanges, Entity, In, Local, MessageWriter, Query, Res};
 use egui::{Align2, Color32, FontId, Rect, Sense, Stroke, StrokeKind, Ui};
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
 use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use phichain_chart::line::Line;
-use phichain_game::event::{EventIndex, EventOf};
+use phichain_game::event::{EventIndex, EventOf, EventTrack};
 use std::iter;
 
 #[derive(Component, Debug, Clone, Copy)]
@@ -81,12 +82,52 @@ struct ValueLabel {
     seam: bool,
 }
 
+/// A run of events on a track, each starting where the previous one ends
+#[derive(Debug, Clone, Copy)]
+pub struct Group {
+    start: Beat,
+    min: f32,
+    max: f32,
+    alone: bool,
+}
+
+fn groups(track: &EventTrack) -> Vec<Group> {
+    let mut groups = Vec::<Group>::new();
+    let mut end = None;
+    for event in track.values() {
+        let (start_value, end_value) = (event.value.start(), event.value.end());
+        let (min, max) = (start_value.min(end_value), start_value.max(end_value));
+        match groups.last_mut() {
+            Some(group) if end == Some(event.start_beat) => {
+                group.min = group.min.min(min);
+                group.max = group.max.max(max);
+                group.alone = false;
+            }
+            _ => groups.push(Group {
+                start: event.start_beat,
+                min,
+                max,
+                alone: true,
+            }),
+        }
+        end = Some(event.end_beat);
+    }
+    groups
+}
+
 /// Width of an event relative to its track
 const EVENT_WIDTH: f32 = 0.8;
 const EVENT_FILL_OPACITY: f32 = 0.25;
 const EVENT_VALUE_SIZE: f32 = 11.0;
 const TRACK_HEADER_HEIGHT: f32 = 20.0;
 const TRACK_HEADER_SIZE: f32 = 13.0;
+const CURVE_WIDTH: f32 = 2.0;
+
+const CURVE_COLOR: Color32 = Color32::from_rgb(255, 200, 0);
+/// Space kept between a curve and each side of its event, relative to the event width
+const CURVE_INSET: f32 = 0.15;
+/// Vertical distance between two samples of a curve, in points
+const CURVE_STEP: f32 = 2.0;
 
 /// Round to at most two decimals, dropping trailing zeros and the sign of zero
 fn format_value(value: f32) -> String {
@@ -104,7 +145,11 @@ pub fn event_timeline_ui(
     mut edits: Edits,
     chart_time: Res<ChartTime>,
     index: Res<EventIndex>,
+    mut group_cache: Local<HashMap<(Entity, LineEventKind), Vec<Group>>>,
 ) {
+    if index.is_changed() {
+        group_cache.clear();
+    }
     let Some(line_entity) = targets.get(timeline) else {
         return;
     };
@@ -164,6 +209,8 @@ pub fn event_timeline_ui(
 
     // painted after all events so no event covers them
     let mut labels = Vec::<ValueLabel>::new();
+    // painted last over everything else
+    let mut curves = Vec::<(LineEventKind, egui::Shape)>::new();
 
     let viewport_margin = 100.0;
     let font = FontId::monospace(EVENT_VALUE_SIZE);
@@ -197,6 +244,13 @@ pub fn event_timeline_ui(
             !event_query
                 .get(*entity)
                 .is_ok_and(|(.., pending)| pending.is_some_and(|owner| owner.0 != timeline))
+        });
+
+        let groups = group_cache.entry((line_entity, kind)).or_insert_with(|| {
+            index
+                .track(line_entity, kind)
+                .map(groups)
+                .unwrap_or_default()
         });
 
         for (i, &(entity, _)) in events.iter().enumerate() {
@@ -262,6 +316,47 @@ pub fn event_timeline_ui(
                     Stroke::new(1.0_f32, color),
                     StrokeKind::Middle,
                 );
+
+                // values run from left to right over the range of the group
+                let group =
+                    groups[groups.partition_point(|group| group.start <= event.start_beat) - 1];
+                let axis = rect.shrink2(egui::vec2(rect.width() * CURVE_INSET, 0.0));
+                let x = |value: f32| {
+                    if group.max > group.min {
+                        axis.left() + (value - group.min) / (group.max - group.min) * axis.width()
+                    } else {
+                        axis.center().x
+                    }
+                };
+                let mut curve_color = CURVE_COLOR;
+                if pending.is_some() {
+                    curve_color = curve_color.gamma_multiply(PENDING_OPACITY);
+                }
+                let stroke = Stroke::new(CURVE_WIDTH, curve_color);
+                match event.value {
+                    LineEventValue::Constant { value } => {
+                        if !group.alone {
+                            curves
+                                .push((kind, egui::Shape::vline(x(value), rect.y_range(), stroke)));
+                        }
+                    }
+                    LineEventValue::Transition { easing, .. } => {
+                        let bottom = rect.bottom().min(viewport.bottom());
+                        let top = rect.top().max(viewport.top());
+                        let steps = if easing.is_linear() {
+                            1
+                        } else {
+                            ((bottom - top) / CURVE_STEP).ceil().max(1.0) as usize
+                        };
+                        let points = (0..=steps)
+                            .map(|i| {
+                                let y = bottom + (top - bottom) * i as f32 / steps as f32;
+                                egui::pos2(x(event.value_at(ctx.y_to_beat_f32(y))), y)
+                            })
+                            .collect();
+                        curves.push((kind, egui::Shape::line(points, stroke)));
+                    }
+                }
             }
 
             let (start, end) = (event.value.start(), event.value.end());
@@ -396,6 +491,10 @@ pub fn event_timeline_ui(
         // cover the event values passing below so the two never mix
         painter.rect_filled(rect.expand2(egui::vec2(2.0, 0.0)), 0.0, Color32::BLACK);
         painter.galley(rect.min, galley, Color32::WHITE);
+    }
+
+    for (kind, curve) in curves {
+        ui.painter().with_clip_rect(track_rect(kind)).add(curve);
     }
 }
 
