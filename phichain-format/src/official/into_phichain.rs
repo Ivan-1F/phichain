@@ -187,7 +187,7 @@ pub fn official_to_phichain(
             },
         );
 
-        let speed_events = events.speed().sorted();
+        let speed_events = events.speed();
 
         let mut notes: Vec<_> = line
             .notes_above

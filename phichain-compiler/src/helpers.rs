@@ -2,8 +2,7 @@ use itertools::Itertools;
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
 use phichain_chart::easing::Easing;
-use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
-use thiserror::Error;
+use phichain_chart::event::{LineEvent, LineEventValue};
 
 const EASING_FITTING_POSSIBLE_EASINGS: [Easing; 31] = [
     Easing::Linear,
@@ -156,14 +155,6 @@ pub fn are_contiguous(first: &LineEvent, second: &LineEvent) -> bool {
         || (first.start_beat == second.end_beat && first.value.start() == second.value.end())
 }
 
-#[derive(Error, Debug, Eq, PartialEq)]
-pub enum EventSequenceError {
-    #[error("the event sequence has overlap at {0:?}")]
-    Overlap(Beat),
-    #[error("events in the event sequence do not share a single kind")]
-    DifferentKind,
-}
-
 /// Cut the given event to multiple small segments
 ///
 /// For constant events, return without modification
@@ -246,87 +237,26 @@ pub fn sorted(events: &[LineEvent]) -> Vec<LineEvent> {
         .collect()
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum EnsureSameKindResult {
-    Empty,
-    Kind(LineEventKind),
-}
-
-/// Checks if all events in the sequence share the same [`LineEventKind`]
-///
-/// - If the sequence is empty, it returns `Ok(EnsureSameKindResult::Empty)`
-/// - If all events in the sequence have the same kind, it returns `Ok(EnsureSameKindResult::Kind(LineEventKind))`
-/// - If the events differ, it returns `Err(EventSequenceError::DifferentKind)`
-pub fn ensure_same_kind(events: &[LineEvent]) -> Result<EnsureSameKindResult, EventSequenceError> {
-    if events.is_empty() {
-        Ok(EnsureSameKindResult::Empty)
-    } else {
-        let first = events[0].kind;
-
-        if events.iter().skip(1).all(|x| x.kind == first) {
-            Ok(EnsureSameKindResult::Kind(first))
-        } else {
-            Err(EventSequenceError::DifferentKind)
-        }
-    }
-}
-
-/// Check if the given event sequence has overlap
+/// Fill the gaps before and between the events of a track with constant events holding the previous value
 ///
 /// ```text
-/// |         |=====|      |=====|       |===============|       |=====|    true
-///
-/// |   |=====|        |===============|       |=====|                      false
-/// |       |======|
-///
-/// |   |=====|        |===============|       |=====|                      false
-/// |                           |=================|
+/// 0
+/// v
+/// |      |=====|      |=====|       |===============|
+/// |------|=====|------|=====|-------|===============|
 /// ```
-pub fn check_overlap(events: &[LineEvent]) -> Result<(), EventSequenceError> {
-    match sorted(events)
-        .iter()
-        .tuple_windows()
-        .find(|(a, b)| a.end_beat > b.start_beat)
-    {
-        None => Ok(()),
-        Some((_, b)) => Err(EventSequenceError::Overlap(b.start_beat)),
-    }
-}
-
-/// Fill the gap in the event sequence until a given beat. The given event sequence should be sorted
-///
-/// ```text
-/// 0                                                                     end
-/// v                                                                      v
-/// |      |=====|      |=====|       |===============|       |=====|
-/// |------|=====|------|=====|-------|===============|-------|=====|------|
-/// ```
-pub fn fill_gap_until(
-    events: &[LineEvent],
-    until: Beat,
-    default: f32,
-) -> Result<Vec<LineEvent>, EventSequenceError> {
-    let kind = match ensure_same_kind(events)? {
-        EnsureSameKindResult::Empty => {
-            return Ok(vec![]);
-        }
-        EnsureSameKindResult::Kind(kind) => kind,
-    };
-
-    check_overlap(events)?;
-
+pub fn fill_gap(events: &[LineEvent], default: f32) -> Vec<LineEvent> {
     let mut last_end = beat!(0);
     let mut last_value = default;
-
     let mut filled = vec![];
 
     for event in sorted(events) {
         if event.start_beat > last_end {
             filled.push(LineEvent {
-                kind,
+                kind: event.kind,
                 start_beat: last_end,
                 end_beat: event.start_beat,
-                value: LineEventValue::Constant { value: last_value },
+                value: LineEventValue::constant(last_value),
             });
         }
         filled.push(event);
@@ -335,30 +265,7 @@ pub fn fill_gap_until(
         last_value = event.value.end();
     }
 
-    if last_end < until {
-        filled.push(LineEvent {
-            kind,
-            start_beat: last_end,
-            end_beat: until,
-            value: LineEventValue::Constant { value: last_value },
-        });
-    }
-
-    Ok(filled)
-}
-
-/// Fill the gap in the event sequence
-///
-/// ```text
-/// |              |=====|      |=====|       |===============|       |=====|
-/// |--------------|=====|------|=====|-------|===============|-------|=====|
-/// ```
-pub fn fill_gap(events: &[LineEvent], default: f32) -> Result<Vec<LineEvent>, EventSequenceError> {
-    fill_gap_until(
-        events,
-        events.last().map(|x| x.end_beat).unwrap_or(beat!(0)),
-        default,
-    )
+    filled
 }
 
 #[cfg(test)]

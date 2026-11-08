@@ -1,5 +1,3 @@
-use phichain_chart::event::LineEventKind;
-use phichain_compiler::helpers::EventSequenceError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -14,10 +12,4 @@ pub enum OfficialInputError {
 pub enum OfficialOutputError {
     #[error("BPM list is empty")]
     EmptyBpmList,
-    #[error("event sequence error in line '{line_name}' for event kind {event_kind:?}: {source}")]
-    EventSequenceError {
-        line_name: String,
-        event_kind: LineEventKind,
-        source: EventSequenceError,
-    },
 }

@@ -55,8 +55,7 @@ pub fn phichain_to_official(
             minimum_beat: Beat,
             mut transform: F,
             target: &mut Vec<T>,
-        ) -> Result<(), OfficialOutputError>
-        where
+        ) where
             F: FnMut(&LineEvent) -> T,
             T: std::fmt::Debug,
         {
@@ -67,15 +66,7 @@ pub fn phichain_to_official(
                 .filter(|e| e.kind == kind)
                 .collect::<Vec<_>>();
 
-            let filled_gap = fill_gap(&events, 0.0).map_err(|source| {
-                OfficialOutputError::EventSequenceError {
-                    line_name: line.line.name.clone(),
-                    event_kind: kind,
-                    source,
-                }
-            })?;
-
-            for event in filled_gap {
+            for event in fill_gap(&events, 0.0) {
                 let event_segments = cut_with_options(
                     event,
                     minimum_beat,
@@ -89,8 +80,6 @@ pub fn phichain_to_official(
                     .collect::<Vec<_>>();
                 target.append(&mut transformed_events);
             }
-
-            Ok(())
         }
 
         process(
@@ -104,7 +93,7 @@ pub fn phichain_to_official(
                 end: e.value.end(),
             },
             &mut official_line.rotate_events,
-        )?;
+        );
 
         process(
             &line,
@@ -117,7 +106,7 @@ pub fn phichain_to_official(
                 end: e.value.end() / 255.0,
             },
             &mut official_line.opacity_events,
-        )?;
+        );
 
         process(
             &line,
@@ -130,7 +119,7 @@ pub fn phichain_to_official(
                 floor_position: 0.0, // this will be calculated later
             },
             &mut official_line.speed_events,
-        )?;
+        );
 
         // -------- Move events --------
 
@@ -150,9 +139,6 @@ pub fn phichain_to_official(
                 _ => {}
             }
         }
-
-        x_events.sort_by_key(|e| e.start_beat);
-        y_events.sort_by_key(|e| e.start_beat);
 
         let mut split_beats = vec![];
         for event in &x_events {
@@ -191,13 +177,12 @@ pub fn phichain_to_official(
 
         // -------- Notes --------
 
-        let mut speed_events = line
+        let speed_events = line
             .events
             .iter()
             .map(|e| e.data)
             .filter(|e| matches!(e.kind, LineEventKind::Speed))
             .collect::<Vec<_>>();
-        speed_events.sort_by_key(|e| e.start_beat);
 
         let mut notes = line.notes.iter().map(|n| n.data).collect::<Vec<_>>();
         notes.sort_by_key(|n| n.beat);
