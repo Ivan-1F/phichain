@@ -12,6 +12,7 @@ use phichain_chart::id::{Identified, LineId};
 use phichain_chart::serialization::SerializedLine;
 use phichain_game::event::EventIndex;
 pub(crate) use phichain_game::loader::load_line as spawn_line;
+use phichain_game::Pending;
 
 pub struct LineEditingPlugin;
 impl Plugin for LineEditingPlugin {
@@ -39,9 +40,10 @@ fn create_line_system(mut edits: Edits) -> Result {
     Ok(())
 }
 
-fn create_line_from_selected_system(
+pub(super) fn create_line_from_selected_system(
     selected_line: Res<SelectedLine>,
     index: Res<EventIndex>,
+    pending: Query<(), With<Pending>>,
     time: Res<ChartTime>,
     bpm_list: Res<BpmList>,
     mut edits: Edits,
@@ -57,8 +59,11 @@ fn create_line_from_selected_system(
     .into_iter()
     .map(|(kind, fallback)| {
         let value = index
-            .evaluate(selected_line.0, kind, beat)
-            .value()
+            .until(selected_line.0, kind, beat)
+            .filter(|(entity, _)| !pending.contains(*entity))
+            .map(|(_, event)| event.evaluate_inclusive(beat))
+            .max()
+            .and_then(|result| result.value())
             .unwrap_or(fallback);
         Identified::new(LineEvent {
             kind,

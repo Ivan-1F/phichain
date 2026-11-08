@@ -209,6 +209,44 @@ fn placed_transition_events_continue_from_and_into_their_neighbors() {
 }
 
 #[test]
+fn lines_created_from_the_selected_line_ignore_pending_events() {
+    use bevy::ecs::system::RunSystemOnce;
+
+    let (mut app, line) = editing_test_app();
+    let event = |start: u32, end: u32, value: f32| LineEvent {
+        kind: LineEventKind::X,
+        value: LineEventValue::constant(value),
+        start_beat: Beat::from(start as f32),
+        end_beat: Beat::from(end as f32),
+    };
+    let timelines = ordered_timelines(app.world_mut());
+    let world = app.world_mut();
+    world.spawn((event(0, 1, 10.0), EventOf(line)));
+    world.spawn((
+        event(1, 3, 0.0),
+        Pending,
+        PendingOf(timelines[1]),
+        EventOf(line),
+    ));
+    // the second beat, inside the pending event
+    world.insert_resource(ChartTime(1.0));
+    open_document(world);
+
+    let created: Result = world
+        .run_system_once(super::line::create_line_from_selected_system)
+        .unwrap();
+    created.unwrap();
+
+    let created: Vec<_> = world
+        .query::<(&LineEvent, &EventOf)>()
+        .iter(world)
+        .filter(|(event, event_of)| event_of.0 != line && event.kind == LineEventKind::X)
+        .map(|(event, _)| event.value.start())
+        .collect();
+    assert_eq!(created, [10.0]);
+}
+
+#[test]
 fn escape_cancels_pending_hold_and_event_on_their_timelines() {
     for x in [300.0, 750.0] {
         assert_escape_cancels(Some(window_at(Vec2::new(x, 300.0))), None, true);
