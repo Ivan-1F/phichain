@@ -6188,6 +6188,7 @@ dependencies = [
  "nom 8.0.0",
  "num",
  "num_enum",
+ "rand 0.9.5",
  "serde",
  "serde_json",
  "serde_repr",

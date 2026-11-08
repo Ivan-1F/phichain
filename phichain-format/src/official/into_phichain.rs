@@ -224,5 +224,6 @@ pub fn official_to_phichain(
         phichain.lines.push(line);
     }
 
+    phichain.normalize_events();
     Ok(phichain)
 }

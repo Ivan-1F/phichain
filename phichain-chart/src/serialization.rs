@@ -65,6 +65,8 @@ impl PhichainChart {
     ///
     /// Charts already at the latest format are deserialized directly,
     /// skipping the costly [`serde_json::Value`] intermediate representation.
+    ///
+    /// Events are then normalized, see [`PhichainChart::normalize_events`].
     pub fn from_json_str(json: &str) -> Result<Self, ParseChartError> {
         #[derive(Deserialize)]
         struct FormatProbe {
@@ -74,7 +76,7 @@ impl PhichainChart {
 
         let probe: FormatProbe = serde_json::from_str(json)?;
 
-        let chart: Self = if probe.format == CURRENT_FORMAT {
+        let mut chart: Self = if probe.format == CURRENT_FORMAT {
             serde_json::from_str::<CurrentPhichainChart>(json)?.into()
         } else {
             let value: serde_json::Value = serde_json::from_str(json)?;
@@ -83,6 +85,7 @@ impl PhichainChart {
         };
 
         chart.validate_unique_ids()?;
+        chart.normalize_events();
         Ok(chart)
     }
 
@@ -253,5 +256,26 @@ mod tests {
             PhichainChart::from_json_str(&json),
             Err(ParseChartError::DuplicateId(found)) if found == id
         ));
+    }
+
+    #[test]
+    fn test_from_json_str_normalizes_events() {
+        let mut chart = PhichainChart::default();
+        let later = Identified::new(LineEvent {
+            kind: LineEventKind::X,
+            value: LineEventValue::constant(1.0),
+            start_beat: Beat::ZERO,
+            end_beat: Beat::ONE,
+        });
+        chart.lines[0].events.push(later);
+
+        let json = serde_json::to_string(&chart).unwrap();
+        let chart = PhichainChart::from_json_str(&json).unwrap();
+        let x: Vec<_> = chart.lines[0]
+            .events
+            .iter()
+            .filter(|event| event.data.kind == LineEventKind::X)
+            .collect();
+        assert_eq!(x, vec![&later]);
     }
 }

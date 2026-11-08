@@ -276,6 +276,7 @@ pub fn rpe_to_phichain(
     let lines = remove_empty_placeholder_lines(lines);
 
     phichain.lines = lines;
+    phichain.normalize_events();
     Ok(phichain)
 }
 

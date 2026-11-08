@@ -4,6 +4,7 @@ pub mod constants;
 pub mod curve_note_track;
 pub mod easing;
 pub mod event;
+pub mod event_track;
 pub mod id;
 pub mod line;
 pub mod metrics;

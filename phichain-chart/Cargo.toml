@@ -21,5 +21,8 @@ thiserror = "2.0.17"
 
 uuid = { version = "1.13.1", features = ["v4", "v7", "serde"] }
 
+[dev-dependencies]
+rand = "0.9.1"
+
 [features]
 bevy = ["bevy/bevy_sprite", "bevy/bevy_picking"]
