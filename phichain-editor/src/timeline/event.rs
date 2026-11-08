@@ -17,6 +17,7 @@ use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
 use phichain_chart::line::Line;
 use phichain_game::event::{EventIndex, EventOf, EventTrack};
 use std::iter;
+use std::sync::Arc;
 
 #[derive(Component, Debug, Clone, Copy)]
 pub struct EventTimeline;
@@ -209,8 +210,9 @@ pub fn event_timeline_ui(
 
     // painted after all events so no event covers them
     let mut labels = Vec::<ValueLabel>::new();
-    // painted last over everything else
+    // painted between the backgrounds of values and their text
     let mut curves = Vec::<(LineEventKind, egui::Shape)>::new();
+    let mut texts = Vec::<(LineEventKind, egui::Pos2, Arc<egui::Galley>, Color32)>::new();
 
     let viewport_margin = 100.0;
     let font = FontId::monospace(EVENT_VALUE_SIZE);
@@ -412,7 +414,7 @@ pub fn event_timeline_ui(
             // cut the seam so the shared value reads as sitting between the two events
             painter.rect_filled(rect.expand2(egui::vec2(2.0, 0.0)), 0.0, Color32::BLACK);
         }
-        painter.galley(rect.min, galley, Color32::WHITE);
+        texts.push((label.kind, rect.min, galley, Color32::WHITE));
     }
 
     for (edges, top) in [(&above, true), (&below, false)] {
@@ -442,7 +444,7 @@ pub fn event_timeline_ui(
             } else {
                 endpoint.color
             };
-            painter.galley(rect.min, galley, color);
+            texts.push((kind, rect.min, galley, color));
             if response.clicked() {
                 seek_to.write(SeekTo(bpm_list.time_at(endpoint.beat)));
             }
@@ -491,11 +493,16 @@ pub fn event_timeline_ui(
         );
         // cover the event values passing below so the two never mix
         painter.rect_filled(rect.expand2(egui::vec2(2.0, 0.0)), 0.0, Color32::BLACK);
-        painter.galley(rect.min, galley, Color32::WHITE);
+        texts.push((kind, rect.min, galley, Color32::WHITE));
     }
 
     for (kind, curve) in curves {
         ui.painter().with_clip_rect(track_rect(kind)).add(curve);
+    }
+    for (kind, pos, galley, color) in texts {
+        ui.painter()
+            .with_clip_rect(track_rect(kind))
+            .galley(pos, galley, color);
     }
 }
 
