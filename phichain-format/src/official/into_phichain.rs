@@ -198,13 +198,7 @@ pub fn official_to_phichain(
 
         for note in &mut notes {
             if let NoteKind::Hold { .. } = note.kind {
-                let mut speed = 0.0;
-                for event in &speed_events {
-                    let result = event.evaluate_inclusive(note.beat.value());
-                    if let Some(value) = result.value() {
-                        speed = value;
-                    }
-                }
+                let speed = speed_events.evaluate_inclusive(note.beat);
 
                 if speed == 0.0 {
                     note.speed = 0.0;

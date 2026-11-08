@@ -384,7 +384,7 @@ pub fn event_timeline_ui(
         LineEventKind::Opacity,
         LineEventKind::Speed,
     ] {
-        let Some(value) = index.evaluate(line_entity, kind, beat).value() else {
+        let Some(value) = index.evaluate(line_entity, kind, beat) else {
             continue;
         };
         let painter = ui.painter().with_clip_rect(track_rect(kind));

@@ -2,7 +2,7 @@ use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
-use phichain_chart::event::{EventEvaluationResult, LineEvent, LineEventKind};
+use phichain_chart::event::{LineEvent, LineEventKind};
 use std::collections::BTreeMap;
 
 #[derive(Component, Debug, Clone, Copy, PartialEq, Reflect)]
@@ -66,16 +66,11 @@ impl EventIndex {
             .map(|(&(_, entity), event)| (entity, event))
     }
 
-    /// Evaluate a track of a line at the given beat
-    ///
-    /// Equals the max of every event's inclusive evaluation as long as the events on the track do not overlap.
-    /// Only the last two events starting at or before the beat matter then, since the earlier one may end right at it.
-    pub fn evaluate(&self, line: Entity, kind: LineEventKind, beat: f32) -> EventEvaluationResult {
+    /// Evaluate a track of a line at the given beat, decided by the event starting last at or before it
+    pub fn evaluate(&self, line: Entity, kind: LineEventKind, beat: f32) -> Option<f32> {
         self.until(line, kind, beat)
-            .take(2)
-            .map(|(_, event)| event.evaluate_inclusive(beat))
-            .max()
-            .unwrap_or(EventEvaluationResult::Unaffected)
+            .next()
+            .map(|(_, event)| event.value_at(beat))
     }
 
     /// Whether the event has length and shares no beat with its neighbors on the track, leaving out events `skip` accepts
@@ -268,14 +263,14 @@ mod tests {
                     .collect();
                 assert_eq!(since, expected, "since {beat}");
 
-                let every = track
+                let latest = track
                     .values()
-                    .map(|event| event.evaluate_inclusive(beat))
-                    .max()
-                    .unwrap_or(EventEvaluationResult::Unaffected);
+                    .rev()
+                    .find(|event| event.start_beat.value() <= beat)
+                    .map(|event| event.value_at(beat));
                 assert_eq!(
                     index.evaluate(line, LineEventKind::X, beat),
-                    every,
+                    latest,
                     "at {beat}"
                 );
             }

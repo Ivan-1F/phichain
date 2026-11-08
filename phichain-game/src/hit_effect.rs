@@ -151,12 +151,7 @@ fn compute_hit_effect_position(
 
     loop {
         let parent = line_query.get(line_entity).ok()?;
-        let value = |kind| {
-            index
-                .evaluate(line_entity, kind, beat)
-                .value()
-                .unwrap_or(0.0)
-        };
+        let value = |kind| index.evaluate(line_entity, kind, beat).unwrap_or(0.0);
         let (line_x, line_y, line_rotation) = (
             value(LineEventKind::X),
             value(LineEventKind::Y),

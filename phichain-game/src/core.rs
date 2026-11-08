@@ -120,7 +120,7 @@ pub fn compute_line_system(
     let beat: f32 = bpm_list.beat_at(time.0).into();
     line_query.par_iter_mut().for_each(
         |(line, mut position, mut rotation, mut opacity, mut speed)| {
-            let value = |kind| index.evaluate(line, kind, beat).value();
+            let value = |kind| index.evaluate(line, kind, beat);
 
             if let Some(x_value) = value(LineEventKind::X) {
                 position.0.x = x_value;

@@ -81,14 +81,8 @@ pub fn fit_easing(events: &[LineEvent], epsilon: f32) -> Result<LineEvent, Vec<L
 
         let mut fits = true;
         for event in events {
-            let expected_start = target_event
-                .evaluate_inclusive(event.start_beat.value())
-                .value()
-                .unwrap();
-            let expected_end = target_event
-                .evaluate_inclusive(event.end_beat.value())
-                .value()
-                .unwrap();
+            let expected_start = target_event.value_at(event.start_beat.value());
+            let expected_end = target_event.value_at(event.end_beat.value());
 
             if (expected_start - event.value.start()).abs() > epsilon
                 || (expected_end - event.value.end()).abs() > epsilon
@@ -222,11 +216,8 @@ pub fn cut_with_options(event: LineEvent, minimum: Beat, options: CutOptions) ->
                 let start_beat = current;
                 let end_beat = std::cmp::min(current + minimum, event.end_beat);
 
-                let start_value = event
-                    .evaluate_inclusive(start_beat.value())
-                    .value()
-                    .unwrap();
-                let end_value = event.evaluate_inclusive(end_beat.value()).value().unwrap();
+                let start_value = event.value_at(start_beat.value());
+                let end_value = event.value_at(end_beat.value());
 
                 events.push(LineEvent {
                     kind: event.kind,

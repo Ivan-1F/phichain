@@ -58,9 +58,8 @@ fn normalize_line(line: &mut SerializedLine) {
                 "shortened event {id} on line {} to {end:?}, where the next one starts",
                 line.id
             );
-            if let Some(value) = event.evaluate_inclusive(end.value()).value() {
-                *event.value.end_mut() = value;
-            }
+            let value = event.value_at(end.value());
+            *event.value.end_mut() = value;
             event.end_beat = end;
         }
     }
@@ -127,11 +126,7 @@ mod tests {
             .enumerate()
             .filter(|(_, event)| event.kind == kind && event.start_beat <= beat)
             .max_by_key(|&(index, event)| (event.start_beat, index))?;
-        if beat < event.end_beat {
-            event.evaluate_inclusive(beat.value()).value()
-        } else {
-            Some(event.value.end())
-        }
+        Some(event.value_at(beat.value()))
     }
 
     #[test]

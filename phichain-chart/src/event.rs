@@ -7,12 +7,6 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Boundary {
-    Inclusive,
-    Exclusive,
-}
-
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, IntoPrimitive, TryFromPrimitive,
 )]
@@ -201,149 +195,24 @@ impl PartialOrd for LineEvent {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum EventEvaluationResult {
-    /// The event is affecting the line at the given beat
-    Affecting(f32),
-    /// The given beat is later than the end beat of this event
-    ///
-    /// If there's no other events after this event,
-    /// the value is inherited from the end value of this event
-    Inherited { from: Beat, value: f32 },
-    /// The given beat is before the start beat of this event
-    ///
-    /// This event does not have any effect on the line
-    Unaffected,
-}
-
-impl Eq for EventEvaluationResult {}
-
-impl PartialOrd for EventEvaluationResult {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-/// [`Unaffected`] compares as less than any [`Inherited`] or [`Affecting`]
-///
-/// [`Inherited`] compares as less than [`Affecting`]
-///
-/// Two [`Affecting`] compare based on their contained values. Two [`Inherited`]
-/// compare by `from`, then by value when they end at the same beat.
-///
-/// In other words:
-///
-/// - [`Unaffected`] < [`Inherited`] < [`Affecting`]
-/// - Two [`Affecting`] compare by value; two [`Inherited`] compare by `from`, then value
-///
-/// ```rust
-/// # use phichain_chart::beat;
-/// use phichain_chart::event::EventEvaluationResult as R;
-/// assert!(R::Unaffected < R::Affecting(10.0));
-/// assert!(R::Unaffected < R::Inherited { from: beat!(0), value: 10.0 });
-/// assert!(R::Inherited { from: beat!(0), value: 200.0 } < R::Affecting(10.0));
-/// assert!(R::Inherited { from: beat!(0), value: 200.0 } < R::Inherited { from: beat!(2), value: 10.0 });
-/// assert!(R::Affecting(5.0) < R::Affecting(10.0));
-/// let a = R::Inherited { from: beat!(2), value: 5.0 };
-/// let b = R::Inherited { from: beat!(2), value: 10.0 };
-/// assert_eq!((&a).max(&b), (&b).max(&a));
-/// ```
-///
-/// [`Unaffected`]: EventEvaluationResult::Unaffected
-/// [`Inherited`]: EventEvaluationResult::Inherited
-/// [`Affecting`]: EventEvaluationResult::Affecting
-impl Ord for EventEvaluationResult {
-    fn cmp(&self, other: &Self) -> Ordering {
-        match (self, other) {
-            (EventEvaluationResult::Unaffected, EventEvaluationResult::Unaffected) => {
-                Ordering::Equal
-            }
-            (EventEvaluationResult::Unaffected, _) => Ordering::Less,
-            (_, EventEvaluationResult::Unaffected) => Ordering::Greater,
-
-            (
-                EventEvaluationResult::Inherited { from: a, value: av },
-                EventEvaluationResult::Inherited { from: b, value: bv },
-            ) => a.cmp(b).then_with(|| av.total_cmp(bv)),
-            (EventEvaluationResult::Affecting(a), EventEvaluationResult::Affecting(b)) => {
-                a.total_cmp(b)
-            }
-
-            (EventEvaluationResult::Inherited { .. }, EventEvaluationResult::Affecting(_)) => {
-                Ordering::Less
-            }
-            (EventEvaluationResult::Affecting(_), EventEvaluationResult::Inherited { .. }) => {
-                Ordering::Greater
-            }
-        }
-    }
-}
-
-impl EventEvaluationResult {
-    /// Returns [`Some`] with the contained value if the variant is [`Affecting`] or [`Inherited`], or [`None`] if [`Unaffected`]
-    ///
-    /// [`Affecting`]: EventEvaluationResult::Affecting
-    /// [`Inherited`]: EventEvaluationResult::Inherited
-    /// [`Unaffected`]: EventEvaluationResult::Unaffected
-    pub fn value(&self) -> Option<f32> {
-        match self {
-            EventEvaluationResult::Affecting(value) => Some(*value),
-            EventEvaluationResult::Inherited { value, .. } => Some(*value),
-            EventEvaluationResult::Unaffected => None,
-        }
-    }
-}
-
 impl LineEvent {
     pub fn duration(&self) -> Beat {
         self.end_beat - self.start_beat
     }
 
-    pub fn evaluate(&self, beat: f32, boundary: Boundary) -> EventEvaluationResult {
-        let start_beat = self.start_beat.value();
-        let end_beat = self.end_beat.value();
-        if matches!(boundary, Boundary::Exclusive) && beat <= start_beat {
-            return EventEvaluationResult::Unaffected;
-        }
+    /// The value at the beat, holding the start value before the event and the end value after it
+    pub fn value_at(&self, beat: f32) -> f32 {
         match self.value {
+            LineEventValue::Constant { value } => value,
             LineEventValue::Transition { start, end, easing } => {
-                if beat >= start_beat && beat <= end_beat {
-                    let percent = if start_beat == end_beat {
-                        1.0
-                    } else {
-                        (beat - start_beat) / (end_beat - start_beat)
-                    };
-                    EventEvaluationResult::Affecting(start.ease_to(end, percent, easing))
-                } else if beat > end_beat {
-                    EventEvaluationResult::Inherited {
-                        from: self.end_beat,
-                        value: end,
-                    }
+                let (from, to) = (self.start_beat.value(), self.end_beat.value());
+                if beat >= to {
+                    end
                 } else {
-                    EventEvaluationResult::Unaffected
-                }
-            }
-            LineEventValue::Constant { value } => {
-                if beat >= start_beat && beat <= end_beat {
-                    EventEvaluationResult::Affecting(value)
-                } else if beat > end_beat {
-                    EventEvaluationResult::Inherited {
-                        from: self.end_beat,
-                        value,
-                    }
-                } else {
-                    EventEvaluationResult::Unaffected
+                    start.ease_to(end, ((beat - from) / (to - from)).max(0.0), easing)
                 }
             }
         }
-    }
-
-    pub fn evaluate_inclusive(&self, beat: f32) -> EventEvaluationResult {
-        self.evaluate(beat, Boundary::Inclusive)
-    }
-
-    pub fn evaluate_exclusive(&self, beat: f32) -> EventEvaluationResult {
-        self.evaluate(beat, Boundary::Exclusive)
     }
 }
 
@@ -372,4 +241,21 @@ macro_rules! event {
             value: $crate::event::LineEventValue::constant($value as f32),
         }
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::beat;
+    use crate::easing::Easing;
+    use crate::event::LineEventKind;
+
+    #[test]
+    fn value_at_follows_the_curve_and_holds_both_ends() {
+        let event = event!(LineEventKind::X, beat!(2) => beat!(4), 10 => 30, Easing::EaseInQuad);
+        assert_eq!(event.value_at(1.0), 10.0);
+        assert_eq!(event.value_at(2.0), 10.0);
+        assert_eq!(event.value_at(3.0), 15.0);
+        assert_eq!(event.value_at(4.0), 30.0);
+        assert_eq!(event.value_at(5.0), 30.0);
+    }
 }

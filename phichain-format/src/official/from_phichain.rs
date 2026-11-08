@@ -212,13 +212,7 @@ pub fn phichain_to_official(
 
             let above = note.above;
             let speed = if matches!(note.kind, NoteKind::Hold { .. }) {
-                let mut speed = 0.0;
-                for event in &speed_events {
-                    let result = event.evaluate_inclusive(note.beat.value());
-                    if let Some(value) = result.value() {
-                        speed = value;
-                    }
-                }
+                let speed = speed_events.evaluate_inclusive(note.beat);
 
                 note.speed * (speed / 9.0 * 2.0)
             } else {

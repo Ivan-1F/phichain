@@ -1,18 +1,14 @@
 use itertools::Itertools;
 use phichain_chart::beat::Beat;
-use phichain_chart::event::{Boundary, LineEvent, LineEventKind};
+use phichain_chart::event::{LineEvent, LineEventKind};
 use std::collections::HashMap;
 
 pub trait EventSequence: Sized {
-    fn evaluate(&self, beat: Beat, boundary: Boundary) -> f32;
+    /// The value decided by the last event in the sequence starting at or before the beat
+    fn evaluate_inclusive(&self, beat: Beat) -> f32;
 
-    fn evaluate_inclusive(&self, beat: Beat) -> f32 {
-        self.evaluate(beat, Boundary::Inclusive)
-    }
-
-    fn evaluate_exclusive(&self, beat: Beat) -> f32 {
-        self.evaluate(beat, Boundary::Exclusive)
-    }
+    /// The value decided by the last event in the sequence starting before the beat
+    fn evaluate_exclusive(&self, beat: Beat) -> f32;
 
     fn x(&self) -> Self;
     fn y(&self) -> Self;
@@ -26,17 +22,18 @@ pub trait EventSequence: Sized {
 }
 
 impl EventSequence for Vec<LineEvent> {
-    fn evaluate(&self, beat: Beat, boundary: Boundary) -> f32 {
-        let mut ret = 0.0;
+    fn evaluate_inclusive(&self, beat: Beat) -> f32 {
+        self.iter()
+            .rev()
+            .find(|event| event.start_beat <= beat)
+            .map_or(0.0, |event| event.value_at(beat.value()))
+    }
 
-        for event in self {
-            let result = event.evaluate(beat.value(), boundary);
-            if let Some(value) = result.value() {
-                ret = value;
-            }
-        }
-
-        ret
+    fn evaluate_exclusive(&self, beat: Beat) -> f32 {
+        self.iter()
+            .rev()
+            .find(|event| event.start_beat < beat)
+            .map_or(0.0, |event| event.value_at(beat.value()))
     }
 
     fn x(&self) -> Self {

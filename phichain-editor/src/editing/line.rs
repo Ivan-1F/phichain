@@ -60,10 +60,8 @@ pub(super) fn create_line_from_selected_system(
     .map(|(kind, fallback)| {
         let value = index
             .until(selected_line.0, kind, beat)
-            .filter(|(entity, _)| !pending.contains(*entity))
-            .map(|(_, event)| event.evaluate_inclusive(beat))
-            .max()
-            .and_then(|result| result.value())
+            .find(|(entity, _)| !pending.contains(*entity))
+            .map(|(_, event)| event.value_at(beat))
             .unwrap_or(fallback);
         Identified::new(LineEvent {
             kind,
