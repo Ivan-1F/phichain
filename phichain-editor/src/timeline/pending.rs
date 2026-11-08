@@ -85,7 +85,7 @@ fn cancel_pending_on_escape(world: &mut World) {
 }
 
 /// Despawn the pending object, returning whether there was one
-fn cancel_pending(world: &mut World) -> bool {
+pub fn cancel_pending(world: &mut World) -> bool {
     let pending: Vec<_> = world
         .query_filtered::<Entity, With<PendingOf>>()
         .iter(world)

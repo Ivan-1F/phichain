@@ -400,3 +400,68 @@ fn placing_events_on_another_timeline_replaces_the_pending_event() {
     assert_eq!(world.query::<&LineEvent>().iter(world).count(), 1);
     assert_eq!(world.resource::<EditorHistory>().entries().count(), 0);
 }
+
+fn press(app: &mut App, key: KeyCode) {
+    let mut keyboard = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+    keyboard.reset_all();
+    keyboard.press(key);
+    app.update();
+}
+
+fn spawn_x_event(app: &mut App, line: Entity, start: f32, end: f32) {
+    app.world_mut().spawn((
+        LineEvent {
+            kind: LineEventKind::X,
+            value: LineEventValue::constant(0.0),
+            start_beat: Beat::from(start),
+            end_beat: Beat::from(end),
+        },
+        EventOf(line),
+    ));
+}
+
+#[test]
+fn pending_events_cannot_start_inside_an_event() {
+    let (mut app, line) = editing_test_app();
+    // at beat 0.5 of the X track
+    app.world_mut().spawn(window_at(Vec2::new(630.0, 300.0)));
+    spawn_x_event(&mut app, line, 0.0, 1.0);
+    open_document(app.world_mut());
+
+    press(&mut app, KeyCode::KeyQ);
+    let world = app.world_mut();
+    let pending = world
+        .query_filtered::<(), With<Pending>>()
+        .iter(world)
+        .count();
+    assert_eq!(pending, 0);
+}
+
+#[test]
+fn pending_events_stop_at_the_next_event() {
+    let (mut app, line) = editing_test_app();
+    let window = app
+        .world_mut()
+        .spawn(window_at(Vec2::new(630.0, 300.0)))
+        .id();
+    spawn_x_event(&mut app, line, 0.75, 100.0);
+    open_document(app.world_mut());
+
+    press(&mut app, KeyCode::KeyQ);
+    app.world_mut()
+        .get_mut::<Window>(window)
+        .unwrap()
+        .set_cursor_position(Some(Vec2::new(630.0, 0.0)));
+    app.update();
+    press(&mut app, KeyCode::KeyQ);
+
+    let world = app.world_mut();
+    let created: Vec<_> = world
+        .query::<&LineEvent>()
+        .iter(world)
+        .map(|event| (event.start_beat, event.end_beat))
+        .filter(|&(start, _)| start == Beat::from(0.5))
+        .collect();
+    assert_eq!(created, [(Beat::from(0.5), Beat::from(0.75))]);
+    assert_eq!(world.resource::<EditorHistory>().entries().count(), 1);
+}

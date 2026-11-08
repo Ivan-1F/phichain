@@ -17,6 +17,7 @@ mod tests;
 pub use self::changes::ChangeSet;
 use self::changes::{PendingChanges, Recorder, Registry};
 use crate::notification::{ToastsExt, ToastsStorage};
+use crate::timeline::pending::cancel_pending;
 use bevy::ecs::system::SystemParam;
 use bevy::ecs::world::CommandQueue;
 use bevy::prelude::*;
@@ -31,7 +32,6 @@ use phichain_chart::project::ProjectMeta;
 use phichain_game::curve_note_track::{CurveNoteTrackFrom, CurveNoteTrackTo};
 use phichain_game::event::{EventIndex, EventOf};
 use phichain_game::line::LineOrder;
-use phichain_game::Pending;
 use std::borrow::Cow;
 use std::fmt;
 use undo::{Edit, Record};
@@ -111,8 +111,7 @@ impl EditorHistory {
     }
 
     pub fn undo(&mut self, world: &mut World) {
-        if self.has_gesture() {
-            self.cancel_gesture(world);
+        if self.cancel_interaction(world) {
             return;
         }
         if !self.record.can_undo() {
@@ -122,8 +121,7 @@ impl EditorHistory {
     }
 
     pub fn redo(&mut self, world: &mut World) {
-        if self.has_gesture() {
-            self.cancel_gesture(world);
+        if self.cancel_interaction(world) {
             return;
         }
         if !self.record.can_redo() {
@@ -132,10 +130,18 @@ impl EditorHistory {
         self.current = self.record.redo(world).unwrap();
     }
 
-    /// Jump to the state with `position` entries applied, undoing or redoing as needed.
-    pub fn go_to(&mut self, world: &mut World, position: usize) {
+    /// Cancel the gesture or pending object in progress instead of moving through history
+    fn cancel_interaction(&mut self, world: &mut World) -> bool {
         if self.has_gesture() {
             self.cancel_gesture(world);
+            return true;
+        }
+        cancel_pending(world)
+    }
+
+    /// Jump to the state with `position` entries applied, undoing or redoing as needed.
+    pub fn go_to(&mut self, world: &mut World, position: usize) {
+        if self.cancel_interaction(world) {
             return;
         }
         if let Some(current) = self.record.go_to(world, position).last() {
@@ -330,9 +336,7 @@ fn event_fits(world: &World, entity: Entity) -> bool {
     };
     world
         .resource::<EventIndex>()
-        .fits(event_of.target(), entity.id(), event, |other| {
-            world.entity(other).contains::<Pending>()
-        })
+        .fits(event_of.target(), entity.id(), event, |_| false)
 }
 
 fn run_commands(world: &mut World, edit: impl FnOnce(&mut Commands)) {

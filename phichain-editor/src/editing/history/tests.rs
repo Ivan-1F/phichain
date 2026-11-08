@@ -1011,12 +1011,36 @@ fn events_may_overlap_in_the_middle_of_an_edit() {
 }
 
 #[test]
-fn pending_events_are_not_neighbors() {
+fn pending_events_are_neighbors_too() {
     let (mut app, line) = fixture();
     app.world_mut()
         .spawn((x_event(1, 3), EventOf(line), Pending));
-    spawn_event(&mut app, line, x_event(0, 2));
-    assert_eq!(app.world().resource::<EditorHistory>().record.len(), 1);
+    apply_edit(app.world_mut(), "create", move |commands| {
+        commands.spawn((x_event(0, 2), EventOf(line)));
+    });
+    assert_eq!(events(&mut app).len(), 1);
+    assert_eq!(app.world().resource::<EditorHistory>().record.len(), 0);
+}
+
+#[test]
+fn undo_and_redo_cancel_a_pending_object_first() {
+    use crate::timeline::pending::PendingOf;
+    let (mut app, line) = fixture();
+    let place = |app: &mut App| {
+        let owner = app.world_mut().spawn_empty().id();
+        app.world_mut()
+            .spawn((x_event(2, 3), EventOf(line), PendingOf(owner)));
+    };
+    let event = spawn_event(&mut app, line, x_event(0, 1));
+
+    place(&mut app);
+    undo(&mut app);
+    assert_eq!(events(&mut app), vec![(event, x_event(0, 1))]);
+
+    undo(&mut app);
+    place(&mut app);
+    redo(&mut app);
+    assert_eq!(events(&mut app), vec![]);
 }
 
 #[test]

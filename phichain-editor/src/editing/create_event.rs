@@ -6,6 +6,7 @@ use phichain_game::Pending;
 use crate::editing::history::Edits;
 use crate::hotkey::{Hotkey, HotkeyContext, HotkeyExt};
 use crate::identifier::{Identifier, IntoIdentifier};
+use crate::notification::{ToastsExt, ToastsStorage};
 use crate::schedule::EditorSet;
 use crate::timeline::container::TimelineLayout;
 use crate::timeline::event::EventTimeline;
@@ -74,6 +75,7 @@ fn create_event_system(
 
     index: Res<EventIndex>,
     pending: Query<(), With<Pending>>,
+    mut toasts: ResMut<ToastsStorage>,
 ) -> Result {
     let Ok(window) = window_query.single() else {
         return Ok(());
@@ -112,23 +114,25 @@ fn create_event_system(
         (track, beat)
     };
 
-    if let Some((pending_event, entity)) = pending_event {
-        let mut pending_event = *pending_event;
+    // pending events follow the cursor, staying where it last fit
+    let pending_event = pending_event.map(|(pending_event, entity)| {
+        let mut moved = *pending_event;
         let (track, beat) = calc_event_attrs();
-        pending_event.end_beat = beat.max(pending_event.start_beat + ctx.settings.minimum_beat());
-        pending_event.kind = LineEventKind::try_from(track).expect("Unknown event track");
+        moved.end_beat = beat.max(moved.start_beat + ctx.settings.minimum_beat());
+        moved.kind = LineEventKind::try_from(track).expect("Unknown event track");
+        if !index.fits(line_entity, entity, &moved, |_| false) {
+            return (*pending_event, entity);
+        }
         // The preview may be despawned by a cascade applied before this command
-        commands.entity(entity).try_insert(pending_event);
-    }
+        commands.entity(entity).try_insert(moved);
+        (moved, entity)
+    });
 
     if let Some(value) = requested_value {
         if let Some((pending_event, entity)) = pending_event {
             // inherit event's start & end value from neighbor events
-            let mut new_event = *pending_event;
+            let mut new_event = pending_event;
             new_event.value = value;
-            let (track, beat) = calc_event_attrs();
-            new_event.kind = LineEventKind::try_from(track).expect("Unknown event track");
-            new_event.end_beat = beat.max(new_event.start_beat + ctx.settings.minimum_beat());
             let confirmed = |(entity, _): &(Entity, &LineEvent)| !pending.contains(*entity);
             if let Some((_, last_event)) = index
                 .until(line_entity, new_event.kind, new_event.start_beat.value())
@@ -148,7 +152,19 @@ fn create_event_system(
             });
         } else {
             let (track, beat) = calc_event_attrs();
-            let kind = LineEventKind::try_from(track).expect("Unknown event track");
+            let event = LineEvent {
+                kind: LineEventKind::try_from(track).expect("Unknown event track"),
+                value,
+                start_beat: beat,
+                end_beat: beat + ctx.settings.minimum_beat(),
+            };
+            // the existing pending object is replaced
+            if !index.fits(line_entity, Entity::PLACEHOLDER, &event, |entity| {
+                pending.contains(entity)
+            }) {
+                toasts.error(t!("history.events_overlap"));
+                return Ok(());
+            }
             let status = PendingStatus {
                 title: t!("tab.timeline.pending.event").into(),
                 hints: vec![
@@ -166,15 +182,7 @@ fn create_event_system(
                 &mut commands,
                 item.timeline,
                 status,
-                (
-                    LineEvent {
-                        kind,
-                        value,
-                        start_beat: beat,
-                        end_beat: beat + ctx.settings.minimum_beat(),
-                    },
-                    EventOf(line_entity),
-                ),
+                (event, EventOf(line_entity)),
             );
         }
     }
