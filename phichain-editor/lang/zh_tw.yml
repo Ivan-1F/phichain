@@ -68,6 +68,12 @@ menu_bar:
         save: 儲存
         cancel: 取消
 
+quick_action:
+  aspect_ratio: 預覽長寬比
+  progress: 進度
+  time: 時間（秒）
+  beat: 時間（拍）
+
 tab:
   game:
     title: 預覽

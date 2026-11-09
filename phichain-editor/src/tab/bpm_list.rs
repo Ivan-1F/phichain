@@ -1,6 +1,7 @@
 use crate::editing::history::Edits;
 use crate::timeline::settings::TimelineSettings;
 use crate::timing::ChartTime;
+use crate::ui::accessibility::AccessibleName;
 use crate::ui::widgets::beat_value::BeatValue;
 use bevy::prelude::*;
 use egui::{ScrollArea, Ui};
@@ -25,14 +26,14 @@ pub fn bpm_list_tab(
                     egui::Grid::new("bpm_point").num_columns(2).show(ui, |ui| {
                         let mut editor =
                             edits.component(*entity, *point, t!("history.edit_bpm_point"));
-                        ui.label(t!("tab.bpm_list.point.beat"));
+                        let label = ui.label(t!("tab.bpm_list.point.beat"));
                         let prev = index
                             .checked_sub(1)
                             .and_then(|prev| points.get(prev))
                             .map(|(_, _, point)| point.beat);
                         let next = points.get(index + 1).map(|(_, _, point)| point.beat);
                         ui.add_enabled_ui(point.beat != Beat::ZERO, |ui| {
-                            editor.edit(ui, "beat", |ui, point| {
+                            let region = editor.edit(ui, "beat", |ui, point| {
                                 let before = point.beat;
                                 ui.add(
                                     BeatValue::new(&mut point.beat)
@@ -45,14 +46,18 @@ pub fn bpm_list_tab(
                                     point.beat = before;
                                 }
                             });
+                            region.response.labelled(&label);
                         })
                         .response
                         .on_disabled_hover_text(t!("tab.bpm_list.zero_beat_not_editable"));
                         ui.end_row();
-                        ui.label(t!("tab.bpm_list.point.bpm"));
-                        editor.edit(ui, "bpm", |ui, point| {
-                            ui.add(egui::DragValue::new(&mut point.bpm).range(0.01..=f32::MAX));
-                        });
+                        let label = ui.label(t!("tab.bpm_list.point.bpm"));
+                        editor
+                            .edit(ui, "bpm", |ui, point| {
+                                ui.add(egui::DragValue::new(&mut point.bpm).range(0.01..=f32::MAX));
+                            })
+                            .response
+                            .labelled(&label);
                         ui.end_row();
                     });
                     if ui

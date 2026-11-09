@@ -20,5 +20,7 @@ pub enum Media {
         src: String,
         width: u32,
         height: u32,
+        /// Media pixels per CSS pixel when shown at the size it has in the editor
+        scale: f32,
     },
 }

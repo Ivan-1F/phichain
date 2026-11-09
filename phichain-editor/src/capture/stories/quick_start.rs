@@ -1,5 +1,7 @@
+use crate::capture::locate::{by_name, by_role, panel};
 use crate::capture::story::{Anchor, Story};
 use crate::tab::EditorTab;
+use bevy_egui::egui::accesskit::Role;
 use phichain_chart::project::ProjectMeta;
 
 pub fn quick_start() -> Story {
@@ -8,8 +10,7 @@ pub fn quick_start() -> Story {
         ..Default::default()
     });
 
-    story.image(
-        "editor-overview",
+    story.image("editor-overview").anchors(
         [
             EditorTab::Game,
             EditorTab::Timeline,
@@ -17,8 +18,20 @@ pub fn quick_start() -> Story {
             EditorTab::Inspector,
             EditorTab::TimelineSetting,
         ]
-        .map(Anchor::tab),
+        .map(Anchor::panel),
     );
+
+    story.click(by_role(Role::Button).name("menu_bar.tabs.title"));
+    story.click(by_role(Role::Button).name("tab.bpm_list.title"));
+    story
+        .image("bpm-list")
+        .anchor(Anchor::new("bpm_list.panel", panel(EditorTab::BpmList)))
+        .anchor(Anchor::new(
+            "bpm_list.point_0.bpm",
+            panel(EditorTab::BpmList)
+                .find(by_name("tab.bpm_list.point.bpm"))
+                .find(by_role(Role::SpinButton)),
+        ));
 
     story
 }

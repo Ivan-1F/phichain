@@ -1,5 +1,6 @@
 use super::gesture_response;
 use crate::editing::history::Edits;
+use crate::ui::accessibility::AccessibleName;
 use bevy::prelude::*;
 use egui::{InnerResponse, Response, Ui, UiBuilder, Widget, WidgetText};
 use std::hash::Hash;
@@ -62,10 +63,9 @@ impl<T: Component + Clone + PartialEq> ComponentEditor<'_, '_, '_, T> {
         let (label, region) = egui::Sides::new().shrink_right().show(
             ui,
             |ui| ui.label(label),
-            |ui| self.edit_region(ui, key, draw),
+            |ui| self.edit(ui, key, draw),
         );
-        // Let assistive technology name the edit region after its label
-        let _ = region.response.labelled_by(label.id);
+        region.response.labelled(&label);
         region.inner
     }
 
@@ -76,16 +76,8 @@ impl<T: Component + Clone + PartialEq> ComponentEditor<'_, '_, '_, T> {
     /// The callback must report one operation through `add` or `custom`. Changes in
     /// that callback belong to this region; only a changed value is written back.
     /// Disabled regions discard even changes caused by a widget's value clamping.
+    /// The region's response lets a label drawn elsewhere name it with `labelled_by`.
     pub fn edit<R>(
-        &mut self,
-        ui: &mut Ui,
-        key: impl Hash,
-        draw: impl FnOnce(&mut FieldUi<'_>, &mut T) -> R,
-    ) -> R {
-        self.edit_region(ui, key, draw).inner
-    }
-
-    fn edit_region<R>(
         &mut self,
         ui: &mut Ui,
         key: impl Hash,

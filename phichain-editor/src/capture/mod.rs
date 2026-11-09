@@ -3,6 +3,7 @@
 //! Started with `--capture <story>`. Every run uses a fresh working directory, a fixed time step
 //! and fixed randomness, so the same story produces the same media.
 
+mod input;
 mod locate;
 mod manifest;
 mod runner;
@@ -17,7 +18,7 @@ use crate::timing::NoAudioSync;
 use bevy::prelude::*;
 use bevy::time::TimeUpdateStrategy;
 use bevy::window::PrimaryWindow;
-use bevy_egui::{EguiContexts, EguiPrimaryContextPass};
+use bevy_egui::{EguiContexts, EguiPostUpdateSet, EguiPrimaryContextPass};
 use phichain_game::HitEffectRng;
 use runner::Runner;
 use std::path::{Path, PathBuf};
@@ -83,7 +84,19 @@ impl Plugin for CapturePlugin {
             .insert_resource(HitEffectRng::seeded(0))
             .insert_resource(Runner::new(out, work, story.commands))
             .add_systems(Startup, setup_system)
-            .add_systems(First, runner::drive_system.run_if(project_loaded()))
+            .add_systems(
+                First,
+                (
+                    input::discard_real_input_system,
+                    runner::drive_system.run_if(project_loaded()),
+                    input::place_cursor_system,
+                )
+                    .chain(),
+            )
+            .add_systems(
+                PostUpdate,
+                input::lift_cursor_system.after(EguiPostUpdateSet::ProcessOutput),
+            )
             .add_systems(EguiPrimaryContextPass, enable_accesskit_system);
     }
 }
