@@ -3,6 +3,7 @@ use crate::timeline::event::EventTimeline;
 use crate::timeline::kind::timeline_name;
 use crate::timeline::note::NoteTimeline;
 use crate::timeline::settings::TimelineSettings;
+use crate::ui::accessibility::AccessibleName;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use egui::{RichText, Ui};
@@ -20,31 +21,34 @@ pub fn timeline_setting_tab(In(mut ui): In<Ui>, world: &mut World) {
         .spacing([20.0, 2.0])
         .striped(true)
         .show(&mut ui, |ui| {
-            ui.label(t!("tab.timeline_setting.zoom"));
+            let label = ui.label(t!("tab.timeline_setting.zoom"));
             ui.add(
                 egui::DragValue::new(&mut timeline_settings.zoom)
                     .range(0.1..=5.0)
                     .speed(0.02),
-            );
+            )
+            .labelled(&label);
             ui.end_row();
 
-            ui.label(t!("tab.timeline_setting.density"));
+            let label = ui.label(t!("tab.timeline_setting.density"));
             ui.add(
                 egui::DragValue::new(&mut timeline_settings.density)
                     .range(1..=32)
                     .speed(1),
-            );
+            )
+            .labelled(&label);
             ui.end_row();
 
-            ui.label(t!("tab.timeline_setting.lane"));
+            let label = ui.label(t!("tab.timeline_setting.lane"));
             ui.add(
                 egui::DragValue::new(&mut timeline_settings.lanes)
                     .range(1..=64)
                     .speed(1),
-            );
+            )
+            .labelled(&label);
             ui.end_row();
 
-            ui.label(t!("tab.timeline_setting.note_side_filter.title"));
+            let label = ui.label(t!("tab.timeline_setting.note_side_filter.title"));
             ui.horizontal(|ui| {
                 ui.selectable_value(
                     &mut timeline_settings.note_side_filter,
@@ -61,19 +65,23 @@ pub fn timeline_setting_tab(In(mut ui): In<Ui>, world: &mut World) {
                     NoteSideFilter::Below,
                     t!("tab.timeline_setting.note_side_filter.below"),
                 );
-            });
+            })
+            .response
+            .labelled(&label);
             ui.end_row();
 
-            ui.label(t!("tab.timeline_setting.show_spectrogram"));
-            ui.checkbox(&mut timeline_settings.show_spectrogram, "");
+            let label = ui.label(t!("tab.timeline_setting.show_spectrogram"));
+            ui.checkbox(&mut timeline_settings.show_spectrogram, "")
+                .labelled(&label);
             ui.end_row();
 
-            ui.label(t!("tab.timeline_setting.spectrogram_opacity"));
+            let label = ui.label(t!("tab.timeline_setting.spectrogram_opacity"));
             ui.add(
                 egui::DragValue::new(&mut timeline_settings.spectrogram_opacity)
                     .range(0.0..=1.0)
                     .speed(0.01),
-            );
+            )
+            .labelled(&label);
             ui.end_row();
         });
 

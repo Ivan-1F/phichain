@@ -68,6 +68,12 @@ menu_bar:
         save: 保存
         cancel: キャンセル
 
+quick_action:
+  aspect_ratio: プレビューのアスペクト比
+  progress: 再生位置
+  time: 時間 (秒)
+  beat: 時間 (拍)
+
 tab:
   game:
     title: プレビュー

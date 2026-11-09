@@ -13,7 +13,7 @@ too_many_arguments = "allow"
 # Enable Tracy profiler client (connect with a matching Tracy GUI version)
 trace_tracy = ["bevy/trace_tracy"]
 # Drive the editor with built-in stories to capture media for the documentation
-capture = ["egui/accesskit", "dep:kittest"]
+capture = ["dep:kittest"]
 
 [package.metadata.i18n]
 available-locales = ["en_us", "zh_cn", "zh_tw", "ja_jp"]
@@ -40,7 +40,8 @@ phichain-format = { path = "../phichain-format" }
 
 # Egui Dependencies: Update according to egui version
 
-egui = "0.33.3"
+# accesskit only builds the tree for assistive technology when a context enables it
+egui = { version = "0.33.3", features = ["accesskit"] }
 egui_dock = { version = "0.18.0", features = ["serde"] }
 egui_extras = { version = "0.33.3", features = ["all_loaders"] }
 egui-phosphor = "0.11.0"

@@ -1,8 +1,12 @@
+mod audit;
 mod quick_start;
 
 use super::story::Story;
 
-const STORIES: &[(&str, fn() -> Story)] = &[("quick-start", quick_start::quick_start)];
+const STORIES: &[(&str, fn() -> Story)] = &[
+    ("quick-start", quick_start::quick_start),
+    ("audit", audit::audit),
+];
 
 pub fn find(name: &str) -> Option<Story> {
     STORIES
