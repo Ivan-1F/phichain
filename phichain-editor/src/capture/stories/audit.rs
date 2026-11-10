@@ -3,11 +3,15 @@ use crate::capture::story::Story;
 use crate::identifier::IntoIdentifier;
 use crate::tab::EditorTab;
 use bevy_egui::egui::accesskit::Role;
-use phichain_chart::project::ProjectMeta;
 
 /// Lists what assistive technology cannot name, with every tab of the editor shown
 pub fn audit() -> Story {
-    let mut story = Story::new(ProjectMeta::default());
+    let mut story = Story::default();
+    story.audit("home");
+    super::fill_new_project(&mut story);
+    story.audit("create-project");
+    super::create_new_project(&mut story);
+
     let mut toggle = |tab: EditorTab| {
         story.click(by_role(Role::Button).name("menu_bar.tabs.title"));
         story.click(by_role(Role::Button).name(format!("tab.{}.title", tab.into_identifier())));

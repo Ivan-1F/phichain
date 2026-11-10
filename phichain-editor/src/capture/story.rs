@@ -4,14 +4,13 @@ use super::FPS;
 use crate::identifier::IntoIdentifier;
 use crate::tab::EditorTab;
 use bevy::input::keyboard::KeyCode;
-use phichain_chart::project::ProjectMeta;
 
 /// Seconds the cursor takes to reach a target unless told otherwise
 const MOVE_SECONDS: f64 = 0.4;
 
-/// The commands of one documentation page, run in a single editor session from a new project
+/// The commands of one documentation page, run in a single editor session from the home screen
+#[derive(Default)]
 pub struct Story {
-    pub project: ProjectMeta,
     pub commands: Vec<Command>,
 }
 
@@ -37,13 +36,6 @@ impl Anchor {
 }
 
 impl Story {
-    pub fn new(project: ProjectMeta) -> Self {
-        Self {
-            project,
-            commands: vec![],
-        }
-    }
-
     pub fn wait(&mut self, seconds: f64) {
         self.commands.push(Command::Wait(frames(seconds)));
     }
@@ -70,6 +62,11 @@ impl Story {
     /// Type into whatever has keyboard focus
     pub fn type_text(&mut self, text: &'static str) {
         self.commands.push(Command::Type(text));
+    }
+
+    /// Pick a file the working directory starts with, such as [`MUSIC`](super::MUSIC), in the file dialog that is open
+    pub fn choose(&mut self, file: &'static str) {
+        self.commands.push(Command::Choose(file));
     }
 
     /// Take the cursor out of the window

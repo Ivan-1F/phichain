@@ -1,5 +1,6 @@
+use super::{create_new_project, fill_new_project, new_project_dialog, new_project_field};
 use crate::capture::locate::{
-    by_role, event_timeline, event_timeline_at, note_timeline, note_timeline_at, panel,
+    around, by_role, event_timeline, event_timeline_at, note_timeline, note_timeline_at, panel,
 };
 use crate::capture::story::{Anchor, Story};
 use crate::identifier::IntoIdentifier;
@@ -7,7 +8,6 @@ use crate::tab::EditorTab;
 use bevy::input::keyboard::KeyCode;
 use bevy_egui::egui::accesskit::Role;
 use phichain_chart::event::LineEventKind;
-use phichain_chart::project::ProjectMeta;
 
 /// Opens a closed tab from the window menu, or closes an open one
 fn toggle_tab(story: &mut Story, tab: EditorTab) {
@@ -16,10 +16,30 @@ fn toggle_tab(story: &mut Story, tab: EditorTab) {
 }
 
 pub fn quick_start() -> Story {
-    let mut story = Story::new(ProjectMeta {
-        name: "Quick Start".into(),
-        ..Default::default()
-    });
+    let mut story = Story::default();
+
+    fill_new_project(&mut story);
+    let dialog_button = |name: &str| new_project_dialog().find(by_role(Role::Button).name(name));
+    story
+        .image("create-project")
+        .anchor(Anchor::new("create_project.dialog", new_project_dialog()))
+        .anchor(Anchor::new(
+            "create_project.music",
+            dialog_button("home.create_project.select_music"),
+        ))
+        .anchor(Anchor::new(
+            "create_project.illustration",
+            dialog_button("home.create_project.select_illustration"),
+        ))
+        .anchor(Anchor::new(
+            "create_project.meta",
+            around(super::PROJECT_INFO.map(|(field, _)| new_project_field(field))),
+        ))
+        .anchor(Anchor::new(
+            "create_project.create",
+            dialog_button("home.create_project.create"),
+        ));
+    create_new_project(&mut story);
 
     story.image("editor-overview").anchors(
         [
