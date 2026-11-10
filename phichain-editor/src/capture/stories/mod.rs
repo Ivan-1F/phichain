@@ -6,6 +6,9 @@ use super::story::Story;
 use super::{ILLUSTRATION, MUSIC, PROJECT};
 use bevy_egui::egui::accesskit::Role;
 
+/// Named after the documentation page they capture for, which is where `scripts/capture.sh` puts their media
+///
+/// Stories without a page, such as the audit, are only run by hand.
 const STORIES: &[(&str, fn() -> Story)] = &[
     ("quick-start", quick_start::quick_start),
     ("audit", audit::audit),
