@@ -3,6 +3,7 @@ use super::runner::{Command, Shot};
 use super::FPS;
 use crate::identifier::IntoIdentifier;
 use crate::tab::EditorTab;
+use bevy::input::keyboard::KeyCode;
 use phichain_chart::project::ProjectMeta;
 
 /// Seconds the cursor takes to reach a target unless told otherwise
@@ -43,6 +44,10 @@ impl Story {
         }
     }
 
+    pub fn wait(&mut self, seconds: f64) {
+        self.commands.push(Command::Wait(frames(seconds)));
+    }
+
     pub fn move_to(&mut self, target: impl Into<Locator>) {
         self.move_to_over(target, MOVE_SECONDS);
     }
@@ -58,6 +63,25 @@ impl Story {
         self.commands.push(Command::Click);
     }
 
+    pub fn press(&mut self, key: KeyCode) {
+        self.commands.push(Command::Press(key));
+    }
+
+    /// Type into whatever has keyboard focus
+    pub fn type_text(&mut self, text: &'static str) {
+        self.commands.push(Command::Type(text));
+    }
+
+    /// Take the cursor out of the window
+    pub fn leave(&mut self) {
+        self.commands.push(Command::Leave);
+    }
+
+    /// Move the chart to a beat
+    pub fn seek(&mut self, beat: f32) {
+        self.commands.push(Command::Seek(beat));
+    }
+
     /// Capture the window as the image `id`, with the pointer out of the window
     pub fn image(&mut self, id: &'static str) -> &mut Shot {
         self.commands.push(Command::Leave);
@@ -66,6 +90,33 @@ impl Story {
             unreachable!();
         };
         shot
+    }
+
+    /// Record the window as the video `id` while `record` runs, with `anchors` for the documentation to focus on
+    pub fn video(
+        &mut self,
+        id: &'static str,
+        anchors: impl IntoIterator<Item = Anchor>,
+        record: impl FnOnce(&mut Self),
+    ) {
+        self.commands.push(Command::StartVideo {
+            id,
+            anchors: anchors.into_iter().collect(),
+        });
+        record(self);
+        self.commands.push(Command::StopVideo);
+    }
+
+    /// Mark where step `step` of the instructions begins, for the documentation to follow along
+    pub fn step(&mut self, step: u32, run: impl FnOnce(&mut Self)) {
+        self.commands.push(Command::Step(step));
+        run(self);
+    }
+
+    /// Outline an anchor in the video for a while, without affecting the editor
+    pub fn highlight(&mut self, anchor: Anchor, seconds: f64) {
+        self.commands
+            .push(Command::Highlight(anchor, frames(seconds)));
     }
 
     /// List the interactive nodes on screen that have no name, in `<id>.audit.txt`
