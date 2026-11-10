@@ -1,8 +1,19 @@
-use crate::capture::locate::{by_name, by_role, panel};
+use crate::capture::locate::{
+    by_role, event_timeline, event_timeline_at, note_timeline, note_timeline_at, panel,
+};
 use crate::capture::story::{Anchor, Story};
+use crate::identifier::IntoIdentifier;
 use crate::tab::EditorTab;
+use bevy::input::keyboard::KeyCode;
 use bevy_egui::egui::accesskit::Role;
+use phichain_chart::event::LineEventKind;
 use phichain_chart::project::ProjectMeta;
+
+/// Opens a closed tab from the window menu, or closes an open one
+fn toggle_tab(story: &mut Story, tab: EditorTab) {
+    story.click(by_role(Role::Button).name("menu_bar.tabs.title"));
+    story.click(by_role(Role::Button).name(format!("tab.{}.title", tab.into_identifier())));
+}
 
 pub fn quick_start() -> Story {
     let mut story = Story::new(ProjectMeta {
@@ -21,17 +32,111 @@ pub fn quick_start() -> Story {
         .map(Anchor::panel),
     );
 
-    story.click(by_role(Role::Button).name("menu_bar.tabs.title"));
-    story.click(by_role(Role::Button).name("tab.bpm_list.title"));
+    toggle_tab(&mut story, EditorTab::BpmList);
     story
         .image("bpm-list")
         .anchor(Anchor::new("bpm_list.panel", panel(EditorTab::BpmList)))
         .anchor(Anchor::new(
             "bpm_list.point_0.bpm",
             panel(EditorTab::BpmList)
-                .find(by_name("tab.bpm_list.point.bpm"))
-                .find(by_role(Role::SpinButton)),
+                .find(by_role(Role::SpinButton).name("tab.bpm_list.point.bpm")),
         ));
+    toggle_tab(&mut story, EditorTab::BpmList);
+
+    // the demos use beats 1.5 to 3.5, which fit at a smaller zoom from beat 1
+    story.click(
+        panel(EditorTab::TimelineSetting)
+            .find(by_role(Role::SpinButton).name("tab.timeline_setting.zoom")),
+    );
+    story.type_text("1");
+    story.press(KeyCode::Enter);
+    story.seek(1.0);
+
+    let note_timeline_anchor = || Anchor::new("timeline.note", note_timeline());
+
+    story.video("place-notes", [note_timeline_anchor()], |s| {
+        s.wait(0.75);
+        // a little off the grid lines, so every note visibly snaps
+        for (beat, lane, key) in [
+            (1.97, 2, KeyCode::KeyQ),
+            (2.28, 4, KeyCode::KeyW),
+            (2.47, 6, KeyCode::KeyE),
+        ] {
+            s.move_to_over(note_timeline_at(beat, lane), 0.8);
+            s.wait(0.4);
+            s.press(key);
+            s.wait(0.75);
+        }
+        s.wait(0.75);
+    });
+
+    story.video("place-hold", [note_timeline_anchor()], |s| {
+        s.step(1, |s| {
+            s.wait(0.6);
+            // starts with the tap, so both show they are hit together
+            s.move_to_over(note_timeline_at(1.97, 8), 0.8);
+            s.wait(0.4);
+            s.press(KeyCode::KeyR);
+            s.wait(0.5);
+        });
+        s.step(2, |s| {
+            s.move_to_over(note_timeline_at(3.54, 8), 1.3);
+            s.wait(0.5);
+        });
+        s.step(3, |s| {
+            s.press(KeyCode::KeyR);
+            s.wait(1.5);
+        });
+    });
+
+    let end_value = Anchor::new(
+        "inspector.end_value",
+        panel(EditorTab::Inspector)
+            .find(by_role(Role::SpinButton).name("tab.inspector.single_event.end_value")),
+    );
+    story.video(
+        "create-event",
+        [
+            Anchor::new("timeline.event", event_timeline()),
+            Anchor::panel(EditorTab::Inspector),
+        ],
+        |s| {
+            s.step(1, |s| {
+                s.wait(0.6);
+                s.move_to_over(event_timeline_at(LineEventKind::Y, 1.55), 0.9);
+                s.wait(0.4);
+                s.press(KeyCode::KeyR);
+                s.wait(0.5);
+            });
+            s.step(2, |s| {
+                s.move_to_over(event_timeline_at(LineEventKind::Y, 3.45), 1.3);
+                s.wait(0.4);
+                s.press(KeyCode::KeyR);
+                s.wait(0.75);
+            });
+            s.step(3, |s| {
+                s.click(event_timeline_at(LineEventKind::Y, 2.5));
+                s.wait(0.5);
+                s.highlight(end_value.clone(), 3.0);
+                s.click(end_value.locator.clone());
+                s.wait(0.4);
+                s.type_text("-300");
+                s.wait(0.3);
+                s.press(KeyCode::Enter);
+                s.wait(1.6);
+            });
+        },
+    );
+
+    story.leave();
+    story.seek(0.0);
+    story.video("preview-result", [Anchor::panel(EditorTab::Game)], |s| {
+        s.wait(0.7);
+        s.press(KeyCode::Space);
+        s.wait(2.5);
+        s.press(KeyCode::Space);
+        s.wait(1.3);
+    });
 
     story
 }

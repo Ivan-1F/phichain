@@ -5,15 +5,67 @@
 
 use crate::identifier::{Identifier, IntoIdentifier};
 use crate::tab::EditorTab;
+use crate::timeline::container::{LaidOutTimeline, TimelineLayout};
+use crate::timeline::event::{track_rect, EventTimeline};
+use crate::timeline::note::NoteTimeline;
+use crate::timeline::TimelineContext;
+use bevy::ecs::system::SystemParam;
+use bevy::prelude::{Query as EcsQuery, With};
 use bevy_egui::egui;
 use bevy_egui::egui::accesskit::{Action, Role};
 use egui_dock::DockState;
+use phichain_chart::beat::Beat;
+use phichain_chart::event::LineEventKind;
 use rust_i18n::t;
 
 /// What `Locator`s resolve against: the screen as the editor last drew it
-pub struct Screen<'a> {
+pub struct Screen<'a, 'w, 's> {
     pub tree: &'a Tree,
     pub dock: &'a DockState<Identifier>,
+    pub timelines: &'a Timelines<'w, 's>,
+}
+
+/// The timelines as laid out on the timeline tab
+#[derive(SystemParam)]
+pub struct Timelines<'w, 's> {
+    context: TimelineContext<'w>,
+    layout: TimelineLayout<'w, 's>,
+    notes: EcsQuery<'w, 's, (), With<NoteTimeline>>,
+    events: EcsQuery<'w, 's, (), With<EventTimeline>>,
+}
+
+impl Timelines<'_, '_> {
+    /// The only laid out timeline of a kind
+    fn only(
+        &self,
+        is_kind: impl Fn(&LaidOutTimeline) -> bool,
+        kind: &str,
+    ) -> Result<egui::Rect, String> {
+        let found = self.layout.timelines().filter(is_kind).collect::<Vec<_>>();
+        match found.as_slice() {
+            [timeline] => Ok(timeline.viewport),
+            [] => Err(format!("no {kind} timeline is shown")),
+            _ => Err(format!("{} {kind} timelines are shown", found.len())),
+        }
+    }
+
+    fn note_timeline(&self) -> Result<egui::Rect, String> {
+        self.only(|item| self.notes.contains(item.timeline), "note")
+    }
+
+    fn event_timeline(&self) -> Result<egui::Rect, String> {
+        self.only(|item| self.events.contains(item.timeline), "event")
+    }
+
+    /// Where `beat` is drawn, if inside `viewport`
+    fn beat_y(&self, viewport: egui::Rect, beat: f32) -> Result<f32, String> {
+        let y = self.context.beat_to_y(Beat::from(beat));
+        viewport
+            .y_range()
+            .contains(y)
+            .then_some(y)
+            .ok_or_else(|| format!("beat {beat} is outside the timeline, seek or zoom first"))
+    }
 }
 
 #[derive(Clone)]
@@ -21,6 +73,38 @@ pub enum Locator {
     Query(Query),
     /// A tab's panel as laid out by the dock, with its tab bar
     Panel(Identifier),
+    NoteTimeline,
+    EventTimeline,
+    /// A beat on one of the lanes of the note timeline, counted from the left
+    NoteTimelineAt {
+        beat: f32,
+        lane: usize,
+    },
+    /// A beat in the middle of an event track
+    EventTimelineAt {
+        kind: LineEventKind,
+        beat: f32,
+    },
+}
+
+/// The area of the note timeline
+pub fn note_timeline() -> Locator {
+    Locator::NoteTimeline
+}
+
+/// The area of the event timeline
+pub fn event_timeline() -> Locator {
+    Locator::EventTimeline
+}
+
+/// A beat on a lane of the note timeline; beats between grid lines show how placing snaps
+pub fn note_timeline_at(beat: f32, lane: usize) -> Locator {
+    Locator::NoteTimelineAt { beat, lane }
+}
+
+/// A beat in the middle of an event track
+pub fn event_timeline_at(kind: LineEventKind, beat: f32) -> Locator {
+    Locator::EventTimelineAt { kind, beat }
 }
 
 impl From<Query> for Locator {
@@ -48,14 +132,6 @@ struct Step {
 pub fn by_role(role: Role) -> Query {
     Query::step(Step {
         role: Some(role),
-        ..Default::default()
-    })
-}
-
-/// Nodes named by the translation of `key`, through their own text or the label they are labelled by
-pub fn by_name(key: impl Into<String>) -> Query {
-    Query::step(Step {
-        name: Some(key.into()),
         ..Default::default()
     })
 }
@@ -159,17 +235,55 @@ impl Locator {
                 .find(|leaf| leaf.tabs.get(leaf.active.0) == Some(id))
                 .map(|leaf| leaf.rect)
                 .ok_or_else(|| format!("tab `{id}` is not open in front")),
+            Self::NoteTimeline => screen.timelines.note_timeline(),
+            Self::EventTimeline => screen.timelines.event_timeline(),
+            Self::NoteTimelineAt { beat, lane } => {
+                let viewport = screen.timelines.note_timeline()?;
+                let lanes = screen.timelines.context.settings.lane_percents();
+                let percent = lanes
+                    .get(*lane)
+                    .ok_or_else(|| format!("lane {lane} is beyond the {} lanes", lanes.len()))?;
+                let y = screen.timelines.beat_y(viewport, *beat)?;
+                let x = viewport.min.x + viewport.width() * percent;
+                Ok(egui::Rect::from_center_size(
+                    egui::pos2(x, y),
+                    egui::Vec2::ZERO,
+                ))
+            }
+            Self::EventTimelineAt { kind, beat } => {
+                let viewport = screen.timelines.event_timeline()?;
+                let y = screen.timelines.beat_y(viewport, *beat)?;
+                let x = track_rect(viewport, *kind).center().x;
+                Ok(egui::Rect::from_center_size(
+                    egui::pos2(x, y),
+                    egui::Vec2::ZERO,
+                ))
+            }
         }
     }
 }
 
 type Node<'tree> = kittest::AccessKitNode<'tree>;
 
-/// Whether `node` is named `name`, by its own text or the label it is labelled by
-///
-/// Labels themselves do not count, so a name leads to what it describes.
+/// Whether `node` is named `name`
 fn named(node: &Node<'_>, name: &str) -> bool {
-    node.role() != Role::Label && node.label().as_deref() == Some(name)
+    accessible_name(node).as_deref() == Some(name)
+}
+
+/// The name of a node, by its own text, the label it is labelled by, or else the region it is in
+///
+/// A control inside a named edit region is named after it, like a field in a labelled group.
+/// Regions are not looked for beyond the tab or window, and labels themselves have no name.
+fn accessible_name(node: &Node<'_>) -> Option<String> {
+    if node.role() == Role::Label {
+        return None;
+    }
+    let own = |node: &Node<'_>| node.label().filter(|name| !name.trim().is_empty());
+    own(node).or_else(|| {
+        std::iter::successors(node.parent(), |node| node.parent())
+            .take_while(|node| !matches!(node.role(), Role::Pane | Role::Window))
+            .find_map(|node| own(&node))
+    })
 }
 
 /// `node` and everything below it, in tree order
@@ -221,7 +335,6 @@ impl Tree {
 
     /// Interactive nodes that assistive technology cannot name, with the tab they are in
     ///
-    /// Widgets count as named when they or an enclosing region inside their tab has a name.
     /// Areas are interactive without being widgets, such as what timelines paint and the dock's own handles.
     pub fn audit(&self) -> Audit {
         let mut audit = Audit::default();
@@ -229,7 +342,7 @@ impl Tree {
             let data = node.data();
             let interactive =
                 data.supports_action(Action::Click) || data.supports_action(Action::Focus);
-            if !interactive || node.role() == Role::Label || has_name(&node) {
+            if !interactive || node.role() == Role::Label || accessible_name(&node).is_some() {
                 continue;
             }
             let tab = std::iter::successors(node.parent(), |node| node.parent())
@@ -268,12 +381,6 @@ impl Audit {
                 .collect::<String>(),
         )
     }
-}
-
-fn has_name(node: &Node<'_>) -> bool {
-    std::iter::successors(Some(*node), |node| node.parent())
-        .take_while(|node| !matches!(node.role(), Role::Pane | Role::Window))
-        .any(|node| node.label().is_some_and(|name| !name.trim().is_empty()))
 }
 
 fn describe(node: &Node<'_>) -> String {

@@ -77,9 +77,8 @@ impl Plugin for CapturePlugin {
         }
 
         app.insert_resource(WorkingDirectory(work.clone()))
-            .insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_secs_f64(
-                1.0 / FPS,
-            )))
+            // still until the project opens, see start_clock_system
+            .insert_resource(TimeUpdateStrategy::ManualDuration(Duration::ZERO))
             .insert_resource(NoAudioSync)
             .insert_resource(HitEffectRng::seeded(0))
             .insert_resource(Runner::new(out, work, story.commands))
@@ -88,6 +87,7 @@ impl Plugin for CapturePlugin {
                 First,
                 (
                     input::discard_real_input_system,
+                    start_clock_system.run_if(project_loaded().and(run_once)),
                     runner::drive_system.run_if(project_loaded()),
                     input::place_cursor_system,
                 )
@@ -97,7 +97,10 @@ impl Plugin for CapturePlugin {
                 PostUpdate,
                 input::lift_cursor_system.after(EguiPostUpdateSet::ProcessOutput),
             )
-            .add_systems(EguiPrimaryContextPass, enable_accesskit_system);
+            .add_systems(
+                EguiPrimaryContextPass,
+                (enable_accesskit_system, input::draw_cursor_system),
+            );
     }
 }
 
@@ -158,6 +161,13 @@ fn setup_system(
             .set_scale_factor_override(Some(SCALE_FACTOR));
     }
     load.write(LoadProject(runner.project_path()));
+}
+
+/// Starts the clock once the project opens
+///
+/// Chart time derives from the time since launch, whose float rounding would otherwise vary with loading time.
+fn start_clock_system(mut strategy: ResMut<TimeUpdateStrategy>) {
+    *strategy = TimeUpdateStrategy::ManualDuration(Duration::from_secs_f64(1.0 / FPS));
 }
 
 fn enable_accesskit_system(mut contexts: EguiContexts) -> Result {
