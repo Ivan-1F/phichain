@@ -7,19 +7,22 @@ use bevy::input::mouse::{MouseButtonInput, MouseWheel};
 use bevy::input::ButtonState;
 use bevy::prelude::*;
 use bevy::window::{CursorEntered, CursorLeft, CursorMoved, Ime, PrimaryWindow, WindowEvent};
-use bevy_egui::{egui, EguiContexts};
+use bevy_egui::input::EguiInputEvent;
+use bevy_egui::{egui, EguiContexts, PrimaryEguiContext};
 
 /// Writes input the way winit does: each event both as its own message and as a [`WindowEvent`]
 #[derive(SystemParam)]
-pub struct Inject<'w> {
+pub struct Inject<'w, 's> {
     keyboard: MessageWriter<'w, KeyboardInput>,
     mouse: MessageWriter<'w, MouseButtonInput>,
     cursor: MessageWriter<'w, CursorMoved>,
     left: MessageWriter<'w, CursorLeft>,
     window: MessageWriter<'w, WindowEvent>,
+    egui: MessageWriter<'w, EguiInputEvent>,
+    contexts: Query<'w, 's, Entity, With<PrimaryEguiContext>>,
 }
 
-impl Inject<'_> {
+impl Inject<'_, '_> {
     pub fn key(&mut self, message: KeyboardInput) {
         self.window
             .write(WindowEvent::KeyboardInput(message.clone()));
@@ -39,6 +42,13 @@ impl Inject<'_> {
     pub fn left(&mut self, message: CursorLeft) {
         self.window.write(WindowEvent::CursorLeft(message.clone()));
         self.left.write(message);
+        // bevy_egui ignores the cursor leaving, so egui would keep showing hover where it left
+        for context in &self.contexts {
+            self.egui.write(EguiInputEvent {
+                context,
+                event: egui::Event::PointerGone,
+            });
+        }
     }
 }
 

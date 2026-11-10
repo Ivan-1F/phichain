@@ -32,7 +32,7 @@ impl SettingCategory for General {
                 ))
                 .color(Color32::LIGHT_BLUE),
                 Some(t!("tab.settings.category.general.language.description")),
-                |ui| language_combobox(ui, languages, &mut settings.general.language),
+                |ui| language_combobox(ui, languages, &mut settings.general.language).changed(),
             );
 
             ui.separator();

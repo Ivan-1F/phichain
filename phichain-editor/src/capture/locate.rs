@@ -22,7 +22,15 @@ use rust_i18n::t;
 pub struct Screen<'a, 'w, 's> {
     pub tree: &'a Tree,
     pub dock: &'a DockState<Identifier>,
-    pub timelines: &'a Timelines<'w, 's>,
+    /// `None` until a project opens
+    pub timelines: Option<&'a Timelines<'w, 's>>,
+}
+
+impl<'w, 's> Screen<'_, 'w, 's> {
+    fn timelines(&self) -> Result<&Timelines<'w, 's>, String> {
+        self.timelines
+            .ok_or_else(|| "timelines show once a project opens".to_owned())
+    }
 }
 
 /// The timelines as laid out on the timeline tab
@@ -85,6 +93,13 @@ pub enum Locator {
         kind: LineEventKind,
         beat: f32,
     },
+    /// The smallest region covering every target
+    Around(Vec<Locator>),
+}
+
+/// The smallest region covering every target, to point at a group of controls
+pub fn around(targets: impl IntoIterator<Item = impl Into<Locator>>) -> Locator {
+    Locator::Around(targets.into_iter().map(Into::into).collect())
 }
 
 /// The area of the note timeline
@@ -235,15 +250,15 @@ impl Locator {
                 .find(|leaf| leaf.tabs.get(leaf.active.0) == Some(id))
                 .map(|leaf| leaf.rect)
                 .ok_or_else(|| format!("tab `{id}` is not open in front")),
-            Self::NoteTimeline => screen.timelines.note_timeline(),
-            Self::EventTimeline => screen.timelines.event_timeline(),
+            Self::NoteTimeline => screen.timelines()?.note_timeline(),
+            Self::EventTimeline => screen.timelines()?.event_timeline(),
             Self::NoteTimelineAt { beat, lane } => {
-                let viewport = screen.timelines.note_timeline()?;
-                let lanes = screen.timelines.context.settings.lane_percents();
+                let viewport = screen.timelines()?.note_timeline()?;
+                let lanes = screen.timelines()?.context.settings.lane_percents();
                 let percent = lanes
                     .get(*lane)
                     .ok_or_else(|| format!("lane {lane} is beyond the {} lanes", lanes.len()))?;
-                let y = screen.timelines.beat_y(viewport, *beat)?;
+                let y = screen.timelines()?.beat_y(viewport, *beat)?;
                 let x = viewport.min.x + viewport.width() * percent;
                 Ok(egui::Rect::from_center_size(
                     egui::pos2(x, y),
@@ -251,14 +266,19 @@ impl Locator {
                 ))
             }
             Self::EventTimelineAt { kind, beat } => {
-                let viewport = screen.timelines.event_timeline()?;
-                let y = screen.timelines.beat_y(viewport, *beat)?;
+                let viewport = screen.timelines()?.event_timeline()?;
+                let y = screen.timelines()?.beat_y(viewport, *beat)?;
                 let x = track_rect(viewport, *kind).center().x;
                 Ok(egui::Rect::from_center_size(
                     egui::pos2(x, y),
                     egui::Vec2::ZERO,
                 ))
             }
+            Self::Around(targets) => targets
+                .iter()
+                .map(|target| target.resolve(screen))
+                .reduce(|a, b| Ok(a?.union(b?)))
+                .unwrap_or_else(|| Err("nothing to cover".to_owned())),
         }
     }
 }

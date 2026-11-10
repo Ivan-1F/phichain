@@ -3,7 +3,9 @@ use super::locate::{Locator, Screen, Timelines, Tree};
 use super::manifest::{Event, Manifest, Media};
 use super::story::Anchor;
 use super::FPS;
+use crate::file::PendingDialog;
 use crate::layout::ui_state::UiState;
+use crate::project::Project;
 use crate::timing::SeekTo;
 use bevy::input::keyboard::KeyboardInput;
 use bevy::input::mouse::MouseButtonInput;
@@ -15,12 +17,13 @@ use bevy_egui::{egui, EguiOutput, PrimaryEguiContext};
 use image::RgbImage;
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
+use phichain_game::loader::nonblocking::LoadingProject;
 use std::collections::{BTreeMap, VecDeque};
 use std::io::Write;
 use std::path::PathBuf;
 use std::process::{Child, ChildStdin, Stdio};
 
-/// Frames to wait after the project opens, until fonts, assets and the layout have settled
+/// Frames to wait after the window or a project opens, until fonts, assets and the layout have settled
 const OPEN_SETTLE: u32 = 60;
 /// Frames for the UI to respond to input, and for the tree to follow
 const INPUT_SETTLE: u32 = 6;
@@ -35,6 +38,8 @@ pub enum Command {
     Click,
     Press(KeyCode),
     Type(&'static str),
+    /// Pick a file of the working directory in the file dialog that is open
+    Choose(&'static str),
     /// Take the cursor out of the window, so nothing shows hover feedback
     Leave,
     /// Move the chart to a beat
@@ -157,10 +162,6 @@ impl Runner {
         }
     }
 
-    pub fn project_path(&self) -> PathBuf {
-        self.work.join("project")
-    }
-
     pub fn cursor(&self) -> Option<Vec2> {
         self.cursor
     }
@@ -221,8 +222,11 @@ pub fn drive_system(
     windows: Query<(Entity, &Window), With<PrimaryWindow>>,
     outputs: Query<&EguiOutput, With<PrimaryEguiContext>>,
     ui_state: Res<UiState>,
-    timelines: Timelines,
-    bpm_list: Res<BpmList>,
+    project: Option<Res<Project>>,
+    loading: Query<(), With<LoadingProject>>,
+    dialogs: Query<(Entity, &PendingDialog)>,
+    timelines: Option<Timelines>,
+    bpm_list: Option<Res<BpmList>>,
     mut seek: MessageWriter<SeekTo>,
     mut inject: Inject,
 ) {
@@ -230,6 +234,14 @@ pub fn drive_system(
         abort("The primary window is missing");
     };
     let runner = &mut *runner;
+
+    if project.is_some_and(|project| project.is_added()) {
+        runner.settle = OPEN_SETTLE;
+    }
+    // loading takes however many frames it does, which must not shift the story
+    if !loading.is_empty() {
+        return;
+    }
 
     close_finished_encoders(runner);
 
@@ -307,7 +319,7 @@ pub fn drive_system(
     let screen = |tree| Screen {
         tree,
         dock: &ui_state.state,
-        timelines: &timelines,
+        timelines: timelines.as_ref(),
     };
 
     match command {
@@ -364,6 +376,21 @@ pub fn drive_system(
             }
             runner.settle = INPUT_SETTLE;
         }
+        Command::Choose(file) => {
+            let mut open = dialogs.iter();
+            let (Some((entity, dialog)), None) = (open.next(), open.next()) else {
+                runner.fail(
+                    &format!(
+                        "Cannot choose `{file}` with {} file dialogs open",
+                        dialogs.iter().count()
+                    ),
+                    None,
+                );
+            };
+            commands.entity(entity).despawn();
+            dialog.answer(&mut commands, Some(runner.work.join(file)));
+            runner.settle = INPUT_SETTLE;
+        }
         Command::Leave => {
             if runner.cursor.take().is_some() {
                 inject.left(CursorLeft {
@@ -373,6 +400,9 @@ pub fn drive_system(
             }
         }
         Command::Seek(beat) => {
+            let Some(bpm_list) = &bpm_list else {
+                runner.fail("Cannot seek before a project opens", None);
+            };
             seek.write(SeekTo(bpm_list.time_at(Beat::from(beat))));
             runner.settle = INPUT_SETTLE;
         }

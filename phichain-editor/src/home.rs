@@ -2,6 +2,7 @@ use crate::recent_projects::{PersistentRecentProjectsExt, RecentProjects};
 use crate::settings::EditorSettings;
 use crate::tab::settings::settings_ui;
 use crate::translation::Languages;
+use crate::ui::accessibility::AccessibleName;
 use crate::ui::sides::SidesExt;
 use crate::ui::widgets::button_frame::button_frame;
 use crate::ui::widgets::language_combobox::language_combobox;
@@ -18,7 +19,7 @@ use egui::{Color32, CursorIcon, Id, RichText, ScrollArea, Sense};
 
 use phichain_game::loader::nonblocking::LoadingProject;
 use rfd::FileDialog;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 struct ProjectPick;
 struct IllustrationPick;
@@ -112,8 +113,12 @@ fn ui_system(world: &mut World) {
 
         if world.contains_resource::<CreatingProject>() {
             let modal = egui::Modal::new(Id::new("home.create_project")).show(ctx, |ui| {
+                let title = t!("home.create_project.label").to_string();
+                ui.response().widget_info(|| {
+                    egui::WidgetInfo::labeled(egui::WidgetType::Window, true, &title)
+                });
                 ui.set_width(400.0);
-                ui.heading(t!("home.create_project.label"));
+                ui.heading(&title);
                 ui.separator();
                 egui::Grid::new("create_project_grid")
                     .num_columns(2)
@@ -128,11 +133,7 @@ fn ui_system(world: &mut World) {
                             );
                         }
                         let form = world.resource::<CreateProjectForm>();
-                        let music_path = match &form.music {
-                            None => t!("home.create_project.unselected").to_string(),
-                            Some(path) => path.display().to_string(),
-                        };
-                        ui.label(music_path);
+                        picked_file(ui, form.music.as_deref());
                         ui.end_row();
 
                         if ui
@@ -146,33 +147,34 @@ fn ui_system(world: &mut World) {
                             );
                         }
                         let form = world.resource::<CreateProjectForm>();
-                        let illustration_text = match &form.illustration {
-                            None => t!("home.create_project.unselected").to_string(),
-                            Some(path) => path.display().to_string(),
-                        };
-                        ui.label(illustration_text);
+                        picked_file(ui, form.illustration.as_deref());
                         ui.end_row();
 
                         let mut form = world.resource_mut::<CreateProjectForm>();
 
-                        ui.label(t!("home.create_project.name"));
-                        ui.text_edit_singleline(&mut form.meta.name);
+                        let label = ui.label(t!("home.create_project.name"));
+                        ui.text_edit_singleline(&mut form.meta.name)
+                            .labelled(&label);
                         ui.end_row();
 
-                        ui.label(t!("home.create_project.level"));
-                        ui.text_edit_singleline(&mut form.meta.level);
+                        let label = ui.label(t!("home.create_project.level"));
+                        ui.text_edit_singleline(&mut form.meta.level)
+                            .labelled(&label);
                         ui.end_row();
 
-                        ui.label(t!("home.create_project.composer"));
-                        ui.text_edit_singleline(&mut form.meta.composer);
+                        let label = ui.label(t!("home.create_project.composer"));
+                        ui.text_edit_singleline(&mut form.meta.composer)
+                            .labelled(&label);
                         ui.end_row();
 
-                        ui.label(t!("home.create_project.charter"));
-                        ui.text_edit_singleline(&mut form.meta.charter);
+                        let label = ui.label(t!("home.create_project.charter"));
+                        ui.text_edit_singleline(&mut form.meta.charter)
+                            .labelled(&label);
                         ui.end_row();
 
-                        ui.label(t!("home.create_project.illustrator"));
-                        ui.text_edit_singleline(&mut form.meta.illustrator);
+                        let label = ui.label(t!("home.create_project.illustrator"));
+                        ui.text_edit_singleline(&mut form.meta.illustrator)
+                            .labelled(&label);
                         ui.end_row();
                     });
 
@@ -225,11 +227,10 @@ fn ui_system(world: &mut World) {
                         open_settings = true;
                     }
 
-                    if language_combobox(ui, languages, &mut language) {
-                        language_changed = true;
-                    }
+                    let combobox = language_combobox(ui, languages, &mut language);
+                    language_changed = combobox.changed();
 
-                    ui.label(
+                    let label = ui.label(
                         RichText::new(format!(
                             "{} {}",
                             egui_phosphor::regular::GLOBE,
@@ -237,6 +238,7 @@ fn ui_system(world: &mut World) {
                         ))
                         .color(Color32::LIGHT_BLUE),
                     );
+                    combobox.labelled(&label);
                 })
             },
         );
@@ -315,6 +317,20 @@ fn ui_system(world: &mut World) {
             world.remove_resource::<CreatingProject>();
         }
     });
+}
+
+/// The name of a picked file, which fits the dialog better than its path
+fn picked_file(ui: &mut egui::Ui, path: Option<&Path>) {
+    match path {
+        None => ui.label(t!("home.create_project.unselected")),
+        Some(path) => ui
+            .label(
+                path.file_name()
+                    .unwrap_or(path.as_os_str())
+                    .to_string_lossy(),
+            )
+            .on_hover_text(path.display().to_string()),
+    };
 }
 
 fn load_project_observer(

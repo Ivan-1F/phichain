@@ -11,26 +11,33 @@ mod stories;
 mod story;
 
 use crate::cli::Args;
+use crate::file::NoSystemDialogs;
 use crate::misc::WorkingDirectory;
-use crate::project::{create_project, project_loaded, LoadProject};
 use crate::settings::EditorSettings;
 use crate::timing::NoAudioSync;
 use bevy::prelude::*;
 use bevy::time::TimeUpdateStrategy;
 use bevy::window::PrimaryWindow;
 use bevy_egui::{EguiContexts, EguiPostUpdateSet, EguiPrimaryContextPass};
+use phichain_game::loader::nonblocking::LoadingProject;
 use phichain_game::HitEffectRng;
 use runner::Runner;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
-use story::Story;
 
 const FPS: f64 = 60.0;
+const FRAME: Duration = Duration::from_nanos((1e9 / FPS) as u64);
 /// Logical size of the window, the same for every story
 const WINDOW_SIZE: (u32, u32) = (1280, 800);
 const SCALE_FACTOR: f32 = 2.0;
 /// Length of the silent music of the demo project
 const MUSIC_SECONDS: u32 = 120;
+
+/// What the working directory starts with, for stories to pick in file dialogs
+pub const MUSIC: &str = "music.wav";
+pub const ILLUSTRATION: &str = "illustration.png";
+/// An empty folder to create the project in
+pub const PROJECT: &str = "project";
 
 #[derive(clap::Args, Debug)]
 pub struct CaptureArgs {
@@ -71,15 +78,15 @@ impl Plugin for CapturePlugin {
         }
 
         let work = std::env::temp_dir().join(format!("phichain-capture-{}", std::process::id()));
-        if let Err(error) = prepare(&work, &language, &story) {
+        if let Err(error) = prepare(&work, &language) {
             eprintln!("Failed to prepare the capture workspace: {error:?}");
             std::process::exit(1);
         }
 
         app.insert_resource(WorkingDirectory(work.clone()))
-            // still until the project opens, see start_clock_system
-            .insert_resource(TimeUpdateStrategy::ManualDuration(Duration::ZERO))
+            .insert_resource(TimeUpdateStrategy::ManualDuration(FRAME))
             .insert_resource(NoAudioSync)
+            .insert_resource(NoSystemDialogs)
             .insert_resource(HitEffectRng::seeded(0))
             .insert_resource(Runner::new(out, work, story.commands))
             .add_systems(Startup, setup_system)
@@ -87,8 +94,8 @@ impl Plugin for CapturePlugin {
                 First,
                 (
                     input::discard_real_input_system,
-                    start_clock_system.run_if(project_loaded().and(run_once)),
-                    runner::drive_system.run_if(project_loaded()),
+                    clock_system,
+                    runner::drive_system,
                     input::place_cursor_system,
                 )
                     .chain(),
@@ -104,8 +111,8 @@ impl Plugin for CapturePlugin {
     }
 }
 
-/// Writes the settings and the demo project into a fresh working directory
-fn prepare(work: &Path, language: &str, story: &Story) -> anyhow::Result<()> {
+/// Writes the settings and the files of the demo project into a fresh working directory
+fn prepare(work: &Path, language: &str) -> anyhow::Result<()> {
     if work.exists() {
         std::fs::remove_dir_all(work)?;
     }
@@ -123,11 +130,9 @@ fn prepare(work: &Path, language: &str, story: &Story) -> anyhow::Result<()> {
         serde_yaml::to_string(&settings)?,
     )?;
 
-    let music = work.join("music.wav");
-    write_silence(&music, MUSIC_SECONDS)?;
-    let project = work.join("project");
-    std::fs::create_dir_all(&project)?;
-    create_project(project, music, None, story.project.clone())?;
+    write_silence(&work.join(MUSIC), MUSIC_SECONDS)?;
+    write_illustration(&work.join(ILLUSTRATION))?;
+    std::fs::create_dir_all(work.join(PROJECT))?;
 
     Ok(())
 }
@@ -147,11 +152,22 @@ fn write_silence(path: &Path, seconds: u32) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn setup_system(
-    mut windows: Query<&mut Window, With<PrimaryWindow>>,
-    runner: Res<Runner>,
-    mut load: MessageWriter<LoadProject>,
-) {
+/// A soft diagonal gradient, plain enough to stay behind the chart
+fn write_illustration(path: &Path) -> anyhow::Result<()> {
+    let (width, height) = (1920, 1080);
+    let from = [40.0, 62.0, 110.0];
+    let to = [120.0, 70.0, 140.0];
+    let image = image::RgbImage::from_fn(width, height, |x, y| {
+        let t = (x as f32 / width as f32 + y as f32 / height as f32) / 2.0;
+        image::Rgb(std::array::from_fn(|i| {
+            (from[i] + (to[i] - from[i]) * t).round() as u8
+        }))
+    });
+    image.save(path)?;
+    Ok(())
+}
+
+fn setup_system(mut windows: Query<&mut Window, With<PrimaryWindow>>) {
     if let Ok(mut window) = windows.single_mut() {
         window
             .resolution
@@ -160,14 +176,21 @@ fn setup_system(
             .resolution
             .set_scale_factor_override(Some(SCALE_FACTOR));
     }
-    load.write(LoadProject(runner.project_path()));
 }
 
-/// Starts the clock once the project opens
+/// Holds the clock while a project loads
 ///
-/// Chart time derives from the time since launch, whose float rounding would otherwise vary with loading time.
-fn start_clock_system(mut strategy: ResMut<TimeUpdateStrategy>) {
-    *strategy = TimeUpdateStrategy::ManualDuration(Duration::from_secs_f64(1.0 / FPS));
+/// Chart time derives from the time since launch, so it must not count the frames loading happens to take.
+fn clock_system(
+    mut strategy: ResMut<TimeUpdateStrategy>,
+    loading: Query<(), With<LoadingProject>>,
+) {
+    let step = if loading.is_empty() {
+        FRAME
+    } else {
+        Duration::ZERO
+    };
+    *strategy = TimeUpdateStrategy::ManualDuration(step);
 }
 
 fn enable_accesskit_system(mut contexts: EguiContexts) -> Result {
