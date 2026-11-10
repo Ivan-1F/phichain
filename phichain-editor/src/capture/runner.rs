@@ -27,6 +27,8 @@ use std::process::{Child, ChildStdin, Stdio};
 const OPEN_SETTLE: u32 = 60;
 /// Frames for the UI to respond to input, and for the tree to follow
 const INPUT_SETTLE: u32 = 6;
+/// Logical pixels kept around the target of an image limited to one, enough for its shadow and the marks beside it
+const IMAGE_MARGIN: f32 = 24.0;
 /// Video pixels per logical pixel, so a full window of 1280 points becomes 1920 pixels wide
 const VIDEO_SCALE: f32 = 1.5;
 
@@ -62,6 +64,8 @@ pub enum Command {
 pub struct Shot {
     id: &'static str,
     anchors: Vec<Anchor>,
+    /// What the image is limited to instead of the window
+    target: Option<Locator>,
 }
 
 impl Shot {
@@ -69,7 +73,14 @@ impl Shot {
         Self {
             id,
             anchors: vec![],
+            target: None,
         }
+    }
+
+    /// Limit the image to a surface of its own, such as an open dialog, that readers find without the window around it
+    pub fn of(&mut self, target: impl Into<Locator>) -> &mut Self {
+        self.target = Some(target.into());
+        self
     }
 
     pub fn anchor(&mut self, anchor: Anchor) -> &mut Self {
@@ -600,21 +611,33 @@ fn capture_image(
     shot: Shot,
 ) {
     let scale_factor = window.scale_factor();
+    let resolve = |locator: &Locator, what: &str| {
+        locator.resolve(screen).unwrap_or_else(|error| {
+            runner.fail(
+                &format!("Cannot find {what} of image `{}`: {error}", shot.id),
+                Some(screen.tree),
+            )
+        })
+    };
+    let window_rect = egui::Rect::from_min_size(
+        egui::Pos2::ZERO,
+        egui::vec2(window.width(), window.height()),
+    );
+    let area = match &shot.target {
+        Some(target) => resolve(target, "the target")
+            .expand(IMAGE_MARGIN)
+            .intersect(window_rect),
+        None => window_rect,
+    };
+    // images keep every physical pixel, so they stay sharp at their natural size
+    let [x, y, width, height] = media_rect(area, scale_factor).map(|value| value as u32);
     let anchors = shot
         .anchors
         .iter()
         .map(|anchor| {
-            let rect = anchor.locator.resolve(screen).unwrap_or_else(|error| {
-                runner.fail(
-                    &format!(
-                        "Cannot find anchor `{}` of image `{}`: {error}",
-                        anchor.name, shot.id
-                    ),
-                    Some(screen.tree),
-                )
-            });
-            // images keep every physical pixel, so they stay sharp at their natural size
-            (anchor.name.clone(), media_rect(rect, scale_factor))
+            let rect = resolve(&anchor.locator, &format!("anchor `{}`", anchor.name));
+            let [left, top, w, h] = media_rect(rect, scale_factor);
+            (anchor.name.clone(), [left - x as f32, top - y as f32, w, h])
         })
         .collect::<BTreeMap<_, _>>();
 
@@ -623,8 +646,8 @@ fn capture_image(
         id: shot.id.to_owned(),
         media: Media::Image {
             src: format!("{}.webp", shot.id),
-            width: window.physical_width(),
-            height: window.physical_height(),
+            width,
+            height,
             scale: scale_factor,
         },
         anchors,
@@ -643,7 +666,7 @@ fn capture_image(
                 .and_then(|image| {
                     std::fs::create_dir_all(path.parent().expect("frames have a directory"))?;
                     // the alpha channel holds brightness when HDR is enabled
-                    image.to_rgb8().save(&path)?;
+                    image.crop_imm(x, y, width, height).to_rgb8().save(&path)?;
                     Ok(())
                 });
             if let Err(error) = saved {
