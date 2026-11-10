@@ -50,6 +50,9 @@ pub struct CaptureArgs {
     /// Directory to write the media and manifests into
     #[arg(long, value_name = "DIR", requires = "capture")]
     pub capture_out: Option<PathBuf>,
+    /// Print the names of the capture stories, one per line
+    #[arg(long, conflicts_with = "capture")]
+    pub capture_list: bool,
 }
 
 pub struct CapturePlugin;
@@ -57,6 +60,12 @@ pub struct CapturePlugin;
 impl Plugin for CapturePlugin {
     fn build(&self, app: &mut App) {
         let args = &app.world().resource::<Args>().capture;
+        if args.capture_list {
+            for name in stories::names() {
+                println!("{name}");
+            }
+            std::process::exit(0);
+        }
         let Some(name) = args.capture.clone() else {
             return;
         };
