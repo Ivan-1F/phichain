@@ -22,7 +22,7 @@ pub fn quick_start() -> Story {
     let dialog_button = |name: &str| new_project_dialog().find(by_role(Role::Button).name(name));
     story
         .image("create-project")
-        .anchor(Anchor::new("create_project.dialog", new_project_dialog()))
+        .of(new_project_dialog())
         .anchor(Anchor::new(
             "create_project.music",
             dialog_button("home.create_project.select_music"),
