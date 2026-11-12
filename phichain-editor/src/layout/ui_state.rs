@@ -51,9 +51,33 @@ impl Default for UiState {
 impl UiState {
     pub fn ui(&mut self, world: &mut World, registry: &mut TabRegistry, ctx: &mut egui::Context) {
         let mut tab_viewer = TabViewer { world, registry };
+        let mut style = Style::from_egui(ctx.style().as_ref());
+
+        // Let the dock separator be the only border between adjacent panes.
+        style.tab.tab_body.stroke = egui::Stroke::NONE;
+        style.tab.tab_body.corner_radius = egui::CornerRadius::ZERO;
+        style.tab_bar.corner_radius = egui::CornerRadius::ZERO;
+        for tab in [
+            &mut style.tab.active,
+            &mut style.tab.inactive,
+            &mut style.tab.focused,
+            &mut style.tab.hovered,
+        ] {
+            tab.outline_color = egui::Color32::TRANSPARENT;
+            tab.corner_radius = egui::CornerRadius::ZERO;
+        }
+        // keep the outline as a keyboard focus indicator, with matching corners.
+        for tab in [
+            &mut style.tab.active_with_kb_focus,
+            &mut style.tab.inactive_with_kb_focus,
+            &mut style.tab.focused_with_kb_focus,
+        ] {
+            tab.corner_radius = egui::CornerRadius::ZERO;
+        }
 
         DockArea::new(&mut self.state)
-            .style(Style::from_egui(ctx.style().as_ref()))
+            .show_leaf_collapse_buttons(false)
+            .style(style)
             .show(ctx, &mut tab_viewer);
     }
 }
