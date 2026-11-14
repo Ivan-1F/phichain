@@ -82,8 +82,7 @@ pub fn quick_start() -> Story {
             (2.28, 4, KeyCode::KeyW),
             (2.47, 6, KeyCode::KeyE),
         ] {
-            s.move_to_over(note_timeline_at(beat, lane), 0.8);
-            s.wait(0.4);
+            s.move_to(note_timeline_at(beat, lane));
             s.press(key);
             s.wait(0.75);
         }
@@ -94,14 +93,12 @@ pub fn quick_start() -> Story {
         s.step(1, |s| {
             s.wait(0.6);
             // starts with the tap, so both show they are hit together
-            s.move_to_over(note_timeline_at(1.97, 8), 0.8);
-            s.wait(0.4);
+            s.move_to(note_timeline_at(1.97, 8));
             s.press(KeyCode::KeyR);
             s.wait(0.5);
         });
         s.step(2, |s| {
-            s.move_to_over(note_timeline_at(3.54, 8), 1.3);
-            s.wait(0.5);
+            s.move_to(note_timeline_at(3.54, 8));
         });
         s.step(3, |s| {
             s.press(KeyCode::KeyR);
@@ -123,14 +120,12 @@ pub fn quick_start() -> Story {
         |s| {
             s.step(1, |s| {
                 s.wait(0.6);
-                s.move_to_over(event_timeline_at(LineEventKind::Y, 1.55), 0.9);
-                s.wait(0.4);
+                s.move_to(event_timeline_at(LineEventKind::Y, 1.55));
                 s.press(KeyCode::KeyR);
                 s.wait(0.5);
             });
             s.step(2, |s| {
-                s.move_to_over(event_timeline_at(LineEventKind::Y, 3.45), 1.3);
-                s.wait(0.4);
+                s.move_to(event_timeline_at(LineEventKind::Y, 3.45));
                 s.press(KeyCode::KeyR);
                 s.wait(0.75);
             });
@@ -148,7 +143,6 @@ pub fn quick_start() -> Story {
         },
     );
 
-    story.leave();
     story.seek(0.0);
     story.video("preview-result", [Anchor::panel(EditorTab::Game)], |s| {
         s.wait(0.7);

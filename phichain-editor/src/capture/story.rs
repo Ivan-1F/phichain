@@ -5,8 +5,8 @@ use crate::identifier::IntoIdentifier;
 use crate::tab::EditorTab;
 use bevy::input::keyboard::KeyCode;
 
-/// Seconds the cursor takes to reach a target unless told otherwise
-const MOVE_SECONDS: f64 = 0.4;
+/// Seconds the cursor rests on a target before clicking or pressing a key there
+const REST_SECONDS: f64 = 0.4;
 
 /// The commands of one documentation page, run in a single editor session from the home screen
 #[derive(Default)]
@@ -40,13 +40,10 @@ impl Story {
         self.commands.push(Command::Wait(frames(seconds)));
     }
 
+    /// Move to the target and rest there a moment, as a hand does before acting
     pub fn move_to(&mut self, target: impl Into<Locator>) {
-        self.move_to_over(target, MOVE_SECONDS);
-    }
-
-    pub fn move_to_over(&mut self, target: impl Into<Locator>, seconds: f64) {
-        self.commands
-            .push(Command::MoveTo(target.into(), frames(seconds).max(1)));
+        self.commands.push(Command::MoveTo(target.into()));
+        self.wait(REST_SECONDS);
     }
 
     /// Move to the target and click it with the left button
@@ -69,11 +66,6 @@ impl Story {
         self.commands.push(Command::Choose(file));
     }
 
-    /// Take the cursor out of the window
-    pub fn leave(&mut self) {
-        self.commands.push(Command::Leave);
-    }
-
     /// Move the chart to a beat
     pub fn seek(&mut self, beat: f32) {
         self.commands.push(Command::Seek(beat));
@@ -90,12 +82,15 @@ impl Story {
     }
 
     /// Record the window as the video `id` while `record` runs, with `anchors` for the documentation to focus on
+    ///
+    /// The pointer starts out of the window, so it enters where the video first points instead of crossing from the story before.
     pub fn video(
         &mut self,
         id: &'static str,
         anchors: impl IntoIterator<Item = Anchor>,
         record: impl FnOnce(&mut Self),
     ) {
+        self.commands.push(Command::Leave);
         self.commands.push(Command::StartVideo {
             id,
             anchors: anchors.into_iter().collect(),
