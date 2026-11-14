@@ -1,19 +1,12 @@
-use super::{create_new_project, fill_new_project, new_project_dialog, new_project_field};
-use crate::capture::locate::{
-    around, by_role, event_timeline, event_timeline_at, note_timeline, note_timeline_at, panel,
+use super::{
+    create_new_project, fill_new_project, new_project_dialog, new_project_field, toggle_tab,
 };
+use crate::capture::locate::{around, by_role, event_timeline_at, note_timeline_at, panel};
 use crate::capture::story::{Anchor, Story};
-use crate::identifier::IntoIdentifier;
 use crate::tab::EditorTab;
 use bevy::input::keyboard::KeyCode;
 use bevy_egui::egui::accesskit::Role;
 use phichain_chart::event::LineEventKind;
-
-/// Opens a closed tab from the window menu, or closes an open one
-fn toggle_tab(story: &mut Story, tab: EditorTab) {
-    story.click(by_role(Role::Button).name("menu_bar.tabs.title"));
-    story.click(by_role(Role::Button).name(format!("tab.{}.title", tab.into_identifier())));
-}
 
 pub fn quick_start() -> Story {
     let mut story = Story::default();
@@ -72,9 +65,7 @@ pub fn quick_start() -> Story {
     story.press(KeyCode::Enter);
     story.seek(1.0);
 
-    let note_timeline_anchor = || Anchor::new("timeline.note", note_timeline());
-
-    story.video("place-notes", [note_timeline_anchor()], |s| {
+    story.video("place-notes", |s| {
         s.wait(0.75);
         // a little off the grid lines, so every note visibly snaps
         for (beat, lane, key) in [
@@ -89,7 +80,7 @@ pub fn quick_start() -> Story {
         s.wait(0.75);
     });
 
-    story.video("place-hold", [note_timeline_anchor()], |s| {
+    story.video("place-hold", |s| {
         s.step(1, |s| {
             s.wait(0.6);
             // starts with the tap, so both show they are hit together
@@ -106,45 +97,35 @@ pub fn quick_start() -> Story {
         });
     });
 
-    let end_value = Anchor::new(
-        "inspector.end_value",
-        panel(EditorTab::Inspector)
-            .find(by_role(Role::SpinButton).name("tab.inspector.single_event.end_value")),
-    );
-    story.video(
-        "create-event",
-        [
-            Anchor::new("timeline.event", event_timeline()),
-            Anchor::panel(EditorTab::Inspector),
-        ],
-        |s| {
-            s.step(1, |s| {
-                s.wait(0.6);
-                s.move_to(event_timeline_at(LineEventKind::Y, 1.55));
-                s.press(KeyCode::KeyR);
-                s.wait(0.5);
-            });
-            s.step(2, |s| {
-                s.move_to(event_timeline_at(LineEventKind::Y, 3.45));
-                s.press(KeyCode::KeyR);
-                s.wait(0.75);
-            });
-            s.step(3, |s| {
-                s.click(event_timeline_at(LineEventKind::Y, 2.5));
-                s.wait(0.5);
-                s.highlight(end_value.clone(), 3.0);
-                s.click(end_value.locator.clone());
-                s.wait(0.4);
-                s.type_text("-300");
-                s.wait(0.3);
-                s.press(KeyCode::Enter);
-                s.wait(1.6);
-            });
-        },
-    );
+    let end_value = panel(EditorTab::Inspector)
+        .find(by_role(Role::SpinButton).name("tab.inspector.single_event.end_value"));
+    story.video("create-event", |s| {
+        s.step(1, |s| {
+            s.wait(0.6);
+            s.move_to(event_timeline_at(LineEventKind::Y, 1.55));
+            s.press(KeyCode::KeyR);
+            s.wait(0.5);
+        });
+        s.step(2, |s| {
+            s.move_to(event_timeline_at(LineEventKind::Y, 3.45));
+            s.press(KeyCode::KeyR);
+            s.wait(0.75);
+        });
+        s.step(3, |s| {
+            s.click(event_timeline_at(LineEventKind::Y, 2.5));
+            s.wait(0.5);
+            s.highlight(end_value.clone(), 3.0);
+            s.click(end_value);
+            s.wait(0.4);
+            s.type_text("-300");
+            s.wait(0.3);
+            s.press(KeyCode::Enter);
+            s.wait(1.6);
+        });
+    });
 
     story.seek(0.0);
-    story.video("preview-result", [Anchor::panel(EditorTab::Game)], |s| {
+    story.video("preview-result", |s| {
         s.wait(0.7);
         s.press(KeyCode::Space);
         s.wait(2.5);

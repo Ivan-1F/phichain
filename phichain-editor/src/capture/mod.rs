@@ -18,7 +18,7 @@ use crate::timing::NoAudioSync;
 use bevy::prelude::*;
 use bevy::time::TimeUpdateStrategy;
 use bevy::window::PrimaryWindow;
-use bevy_egui::{EguiContexts, EguiPostUpdateSet, EguiPrimaryContextPass};
+use bevy_egui::{EguiContexts, EguiPostUpdateSet, EguiPreUpdateSet, EguiPrimaryContextPass};
 use phichain_game::loader::nonblocking::LoadingProject;
 use phichain_game::HitEffectRng;
 use runner::Runner;
@@ -108,6 +108,12 @@ impl Plugin for CapturePlugin {
                     input::place_cursor_system,
                 )
                     .chain(),
+            )
+            .add_systems(
+                PreUpdate,
+                input::focus_window_system
+                    .after(EguiPreUpdateSet::ProcessInput)
+                    .before(EguiPreUpdateSet::BeginPass),
             )
             .add_systems(
                 PostUpdate,

@@ -7,9 +7,10 @@ pub type Rect = [f32; 4];
 /// Describes one captured media file for the documentation site
 #[derive(Serialize)]
 pub struct Manifest {
-    pub version: u32,
     pub id: String,
     pub media: Media,
+    /// Only images have them, as what a video marks moves while it plays and is located by its events
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub anchors: BTreeMap<String, Rect>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub events: Vec<Event>,
@@ -30,9 +31,6 @@ pub enum Media {
         poster: String,
         width: u32,
         height: u32,
-        scale: f32,
-        /// Seconds
-        duration: f64,
     },
 }
 
@@ -55,7 +53,6 @@ pub enum Event {
     },
     Highlight {
         t: f64,
-        anchor: String,
         rect: Rect,
         until: f64,
     },

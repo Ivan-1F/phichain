@@ -14,7 +14,7 @@ pub struct Story {
     pub commands: Vec<Command>,
 }
 
-/// A region named in a manifest, for the documentation to mark
+/// A region of an image named in its manifest, for the documentation to mark
 #[derive(Clone)]
 pub struct Anchor {
     pub name: String,
@@ -81,20 +81,12 @@ impl Story {
         shot
     }
 
-    /// Record the window as the video `id` while `record` runs, with `anchors` for the documentation to focus on
+    /// Record the window as the video `id` while `record` runs
     ///
     /// The pointer starts out of the window, so it enters where the video first points instead of crossing from the story before.
-    pub fn video(
-        &mut self,
-        id: &'static str,
-        anchors: impl IntoIterator<Item = Anchor>,
-        record: impl FnOnce(&mut Self),
-    ) {
+    pub fn video(&mut self, id: &'static str, record: impl FnOnce(&mut Self)) {
         self.commands.push(Command::Leave);
-        self.commands.push(Command::StartVideo {
-            id,
-            anchors: anchors.into_iter().collect(),
-        });
+        self.commands.push(Command::StartVideo(id));
         record(self);
         self.commands.push(Command::StopVideo);
     }
@@ -105,10 +97,10 @@ impl Story {
         run(self);
     }
 
-    /// Outline an anchor in the video for a while, without affecting the editor
-    pub fn highlight(&mut self, anchor: Anchor, seconds: f64) {
+    /// Outline the target in the video for a while, without affecting the editor
+    pub fn highlight(&mut self, target: impl Into<Locator>, seconds: f64) {
         self.commands
-            .push(Command::Highlight(anchor, frames(seconds)));
+            .push(Command::Highlight(target.into(), frames(seconds)));
     }
 
     /// List the interactive nodes on screen that have no name, in `<id>.audit.txt`
