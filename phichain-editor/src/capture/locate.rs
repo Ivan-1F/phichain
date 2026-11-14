@@ -81,8 +81,6 @@ pub enum Locator {
     Query(Query),
     /// A tab's panel as laid out by the dock, with its tab bar
     Panel(Identifier),
-    NoteTimeline,
-    EventTimeline,
     /// A beat on one of the lanes of the note timeline, counted from the left
     NoteTimelineAt {
         beat: f32,
@@ -100,16 +98,6 @@ pub enum Locator {
 /// The smallest region covering every target, to point at a group of controls
 pub fn around(targets: impl IntoIterator<Item = impl Into<Locator>>) -> Locator {
     Locator::Around(targets.into_iter().map(Into::into).collect())
-}
-
-/// The area of the note timeline
-pub fn note_timeline() -> Locator {
-    Locator::NoteTimeline
-}
-
-/// The area of the event timeline
-pub fn event_timeline() -> Locator {
-    Locator::EventTimeline
 }
 
 /// A beat on a lane of the note timeline; beats between grid lines show how placing snaps
@@ -250,8 +238,6 @@ impl Locator {
                 .find(|leaf| leaf.tabs.get(leaf.active.0) == Some(id))
                 .map(|leaf| leaf.rect)
                 .ok_or_else(|| format!("tab `{id}` is not open in front")),
-            Self::NoteTimeline => screen.timelines()?.note_timeline(),
-            Self::EventTimeline => screen.timelines()?.event_timeline(),
             Self::NoteTimelineAt { beat, lane } => {
                 let viewport = screen.timelines()?.note_timeline()?;
                 let lanes = screen.timelines()?.context.settings.lane_percents();

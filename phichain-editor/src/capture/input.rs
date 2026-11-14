@@ -8,7 +8,7 @@ use bevy::input::ButtonState;
 use bevy::prelude::*;
 use bevy::window::{CursorEntered, CursorLeft, CursorMoved, Ime, PrimaryWindow, WindowEvent};
 use bevy_egui::input::EguiInputEvent;
-use bevy_egui::{egui, EguiContexts, PrimaryEguiContext};
+use bevy_egui::{egui, EguiContexts, EguiInput, PrimaryEguiContext};
 
 /// Writes input the way winit does: each event both as its own message and as a [`WindowEvent`]
 #[derive(SystemParam)]
@@ -136,6 +136,13 @@ pub fn place_cursor_system(
 ) {
     if let Ok(mut window) = windows.single_mut() {
         window.set_cursor_position(runner.cursor());
+    }
+}
+
+/// Tells egui the window has focus whatever the real one has, as text fields hide their cursor in an unfocused window
+pub fn focus_window_system(mut inputs: Query<&mut EguiInput, With<PrimaryEguiContext>>) {
+    for mut input in &mut inputs {
+        input.focused = true;
     }
 }
 

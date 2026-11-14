@@ -1,8 +1,6 @@
-use crate::capture::locate::by_role;
+use super::toggle_tab;
 use crate::capture::story::Story;
-use crate::identifier::IntoIdentifier;
 use crate::tab::EditorTab;
-use bevy_egui::egui::accesskit::Role;
 
 /// Lists what assistive technology cannot name, with every tab of the editor shown
 pub fn audit() -> Story {
@@ -12,17 +10,13 @@ pub fn audit() -> Story {
     story.audit("create-project");
     super::create_new_project(&mut story);
 
-    let mut toggle = |tab: EditorTab| {
-        story.click(by_role(Role::Button).name("menu_bar.tabs.title"));
-        story.click(by_role(Role::Button).name(format!("tab.{}.title", tab.into_identifier())));
-    };
     // closed in the default layout
-    toggle(EditorTab::ChartBasicSetting);
-    toggle(EditorTab::BpmList);
-    toggle(EditorTab::History);
+    toggle_tab(&mut story, EditorTab::ChartBasicSetting);
+    toggle_tab(&mut story, EditorTab::BpmList);
+    toggle_tab(&mut story, EditorTab::History);
     // behind the timeline in the default layout, so it comes back in front in a window
-    toggle(EditorTab::Settings);
-    toggle(EditorTab::Settings);
+    toggle_tab(&mut story, EditorTab::Settings);
+    toggle_tab(&mut story, EditorTab::Settings);
 
     story.audit("editor");
     story

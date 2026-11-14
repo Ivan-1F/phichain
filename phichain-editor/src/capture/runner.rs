@@ -6,9 +6,9 @@ use super::FPS;
 use crate::file::PendingDialog;
 use crate::layout::ui_state::UiState;
 use crate::timing::SeekTo;
+use bevy::asset::LoadState;
 use bevy::input::keyboard::KeyboardInput;
 use bevy::input::mouse::MouseButtonInput;
-use bevy::asset::LoadState;
 use bevy::input::ButtonState;
 use bevy::prelude::*;
 use bevy::render::view::screenshot::{Screenshot, ScreenshotCaptured};
@@ -51,15 +51,13 @@ pub enum Command {
     Image(Shot),
     /// Write the interactive nodes that have no name to `<id>.audit.txt`
     Audit(&'static str),
-    StartVideo {
-        id: &'static str,
-        anchors: Vec<Anchor>,
-    },
+    /// Record every frame as the video `id` until it stops
+    StartVideo(&'static str),
     StopVideo,
     /// Mark where a numbered step of the instructions starts in the video
     Step(u32),
-    /// Outline an anchor in the video for a number of frames
-    Highlight(Anchor, u32),
+    /// Outline the target in the video for a number of frames
+    Highlight(Locator, u32),
 }
 
 /// An image of the whole window, so readers see things where they are in their own editor
@@ -106,7 +104,6 @@ struct Move {
 /// The video being recorded: every frame is captured until it stops
 struct Recording {
     id: &'static str,
-    anchors: BTreeMap<String, [f32; 4]>,
     events: Vec<Event>,
     /// Frames captured so far
     frames: u64,
@@ -456,29 +453,11 @@ pub fn drive_system(
                 path.display()
             );
         }
-        Command::StartVideo { id, anchors } => {
-            let tree = tree();
-            let screen = screen(&tree);
-            let anchors = anchors
-                .iter()
-                .map(|anchor| {
-                    let rect = anchor.locator.resolve(&screen).unwrap_or_else(|error| {
-                        runner.fail(
-                            &format!(
-                                "Cannot find anchor `{}` of video `{id}`: {error}",
-                                anchor.name
-                            ),
-                            Some(&tree),
-                        )
-                    });
-                    (anchor.name.clone(), media_rect(rect, VIDEO_SCALE))
-                })
-                .collect();
+        Command::StartVideo(id) => {
             let encoder = start_encoder(runner, window, id);
             runner.encoders.push(encoder);
             runner.recording = Some(Recording {
                 id,
-                anchors,
                 events: vec![],
                 frames: 0,
             });
@@ -493,35 +472,25 @@ pub fn drive_system(
             encoder.total = Some(recording.frames);
             let id = recording.id;
             runner.manifests.push(Manifest {
-                version: 1,
                 id: id.to_owned(),
                 media: Media::Video {
                     src: format!("{id}.webm"),
                     poster: format!("{id}.poster.webp"),
                     width: (window.width() * VIDEO_SCALE).round() as u32,
                     height: (window.height() * VIDEO_SCALE).round() as u32,
-                    scale: VIDEO_SCALE,
-                    duration: recording.frames as f64 / FPS,
                 },
-                anchors: recording.anchors,
+                anchors: BTreeMap::new(),
                 events: recording.events,
             });
         }
         Command::Step(step) => runner.record(|t| Event::Step { t, step }),
-        Command::Highlight(anchor, frames) => {
+        Command::Highlight(target, frames) => {
             let tree = tree();
-            let rect = anchor
-                .locator
-                .resolve(&screen(&tree))
-                .unwrap_or_else(|error| {
-                    runner.fail(
-                        &format!("Cannot find highlight `{}`: {error}", anchor.name),
-                        Some(&tree),
-                    )
-                });
+            let rect = target.resolve(&screen(&tree)).unwrap_or_else(|error| {
+                runner.fail(&format!("Cannot find the highlight: {error}"), Some(&tree))
+            });
             runner.record(|t| Event::Highlight {
                 t,
-                anchor: anchor.name,
                 rect: media_rect(rect, VIDEO_SCALE),
                 until: t + frames as f64 / FPS,
             });
@@ -578,6 +547,8 @@ fn start_encoder(runner: &Runner, window: &Window, id: &'static str) -> Encoder 
             "1",
         ])
         .args(["-deadline", "good", "-cpu-used", "2", "-pix_fmt", "yuv420p"])
+        // no random file id, so the same frames give the same file
+        .args(["-fflags", "+bitexact"])
         .arg(&path)
         .stdin(Stdio::piped())
         .spawn();
@@ -667,7 +638,6 @@ fn capture_image(
         .collect::<BTreeMap<_, _>>();
 
     runner.manifests.push(Manifest {
-        version: 1,
         id: shot.id.to_owned(),
         media: Media::Image {
             src: format!("{}.webp", shot.id),

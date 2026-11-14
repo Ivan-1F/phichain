@@ -4,6 +4,8 @@ mod quick_start;
 use super::locate::{by_role, Query};
 use super::story::Story;
 use super::{ILLUSTRATION, MUSIC, PROJECT};
+use crate::identifier::IntoIdentifier;
+use crate::tab::EditorTab;
 use bevy_egui::egui::accesskit::Role;
 
 /// Named after the documentation page they capture for, which is where `scripts/capture.sh` puts their media
@@ -23,6 +25,12 @@ pub fn find(name: &str) -> Option<Story> {
 
 pub fn names() -> Vec<&'static str> {
     STORIES.iter().map(|(name, _)| *name).collect()
+}
+
+/// Opens a closed tab from the window menu, or closes an open one
+fn toggle_tab(story: &mut Story, tab: EditorTab) {
+    story.click(by_role(Role::Button).name("menu_bar.tabs.title"));
+    story.click(by_role(Role::Button).name(format!("tab.{}.title", tab.into_identifier())));
 }
 
 /// The create project dialog of the home screen
