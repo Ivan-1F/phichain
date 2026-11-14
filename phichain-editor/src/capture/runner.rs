@@ -5,15 +5,15 @@ use super::story::Anchor;
 use super::FPS;
 use crate::file::PendingDialog;
 use crate::layout::ui_state::UiState;
-use crate::project::Project;
 use crate::timing::SeekTo;
 use bevy::input::keyboard::KeyboardInput;
 use bevy::input::mouse::MouseButtonInput;
+use bevy::asset::LoadState;
 use bevy::input::ButtonState;
 use bevy::prelude::*;
 use bevy::render::view::screenshot::{Screenshot, ScreenshotCaptured};
 use bevy::window::{CursorLeft, CursorMoved, PrimaryWindow};
-use bevy_egui::{egui, EguiOutput, PrimaryEguiContext};
+use bevy_egui::{egui, EguiContext, EguiOutput, PrimaryEguiContext};
 use image::RgbImage;
 use phichain_chart::beat::Beat;
 use phichain_chart::bpm_list::BpmList;
@@ -23,10 +23,10 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::process::{Child, ChildStdin, Stdio};
 
-/// Frames to wait after the window or a project opens, until fonts, assets and the layout have settled
-const OPEN_SETTLE: u32 = 60;
-/// Frames for the UI to respond to input, and for the tree to follow
-const INPUT_SETTLE: u32 = 6;
+/// Logical pixels per second the cursor moves at, so near targets take less time than far ones
+const CURSOR_SPEED: f32 = 300.0;
+/// Seconds even the shortest move takes, so a reader can follow where the cursor goes
+const MIN_MOVE_SECONDS: f32 = 0.8;
 /// Logical pixels kept around the target of an image limited to one, enough for its shadow and the marks beside it
 const IMAGE_MARGIN: f32 = 24.0;
 /// Video pixels per logical pixel, so a full window of 1280 points becomes 1920 pixels wide
@@ -35,8 +35,10 @@ const VIDEO_SCALE: f32 = 1.5;
 pub enum Command {
     /// Wait for a number of frames
     Wait(u32),
-    /// Move the cursor to the center of the target over a number of frames
-    MoveTo(Locator, u32),
+    /// Wait for the UI to respond, as after input; runs first for the window opening
+    Settle,
+    /// Move the cursor to the center of the target, taking longer the farther it is
+    MoveTo(Locator),
     Click,
     Press(KeyCode),
     Type(&'static str),
@@ -117,7 +119,7 @@ impl Recording {
     }
 }
 
-/// Feeds the frames of a video to ffmpeg in the order they were captured
+/// Feeds the frames of a video to ffmpeg in the order they were captured, as screenshots can arrive out of order
 struct Encoder {
     id: &'static str,
     ffmpeg: Child,
@@ -160,8 +162,8 @@ impl Runner {
         Self {
             out,
             work,
-            commands: commands.into(),
-            settle: OPEN_SETTLE,
+            commands: std::iter::once(Command::Settle).chain(commands).collect(),
+            settle: 0,
             cursor: None,
             moving: None,
             release_mouse: false,
@@ -232,9 +234,11 @@ pub fn drive_system(
     mut runner: ResMut<Runner>,
     windows: Query<(Entity, &Window), With<PrimaryWindow>>,
     outputs: Query<&EguiOutput, With<PrimaryEguiContext>>,
+    mut contexts: Query<&mut EguiContext, With<PrimaryEguiContext>>,
     ui_state: Res<UiState>,
-    project: Option<Res<Project>>,
     loading: Query<(), With<LoadingProject>>,
+    texts: Query<&TextFont>,
+    asset_server: Res<AssetServer>,
     dialogs: Query<(Entity, &PendingDialog)>,
     timelines: Option<Timelines>,
     bpm_list: Option<Res<BpmList>>,
@@ -244,11 +248,12 @@ pub fn drive_system(
     let Ok((window_entity, window)) = windows.single() else {
         abort("The primary window is missing");
     };
+    let Ok(mut context) = contexts.single_mut() else {
+        abort("The egui context is missing");
+    };
+    let respond = response_frames(context.get_mut());
     let runner = &mut *runner;
 
-    if project.is_some_and(|project| project.is_added()) {
-        runner.settle = OPEN_SETTLE;
-    }
     // loading takes however many frames it does, which must not shift the story
     if !loading.is_empty() {
         return;
@@ -308,6 +313,16 @@ pub fn drive_system(
         runner.settle -= 1;
         return;
     }
+    // text drawn before its font loads would be captured in another font; fonts bundled by Bevy are always loaded
+    let font_loading = texts.iter().any(|text| {
+        matches!(
+            asset_server.get_load_state(&text.font),
+            Some(LoadState::NotLoaded | LoadState::Loading)
+        )
+    });
+    if font_loading {
+        return;
+    }
 
     let Some(command) = runner.commands.pop_front() else {
         let encoding = runner.recording.is_some() || !runner.encoders.is_empty();
@@ -335,18 +350,21 @@ pub fn drive_system(
 
     match command {
         Command::Wait(frames) => runner.settle = frames,
-        Command::MoveTo(target, frames) => {
+        Command::Settle => runner.settle = respond,
+        Command::MoveTo(target) => {
             let tree = tree();
             let rect = target.resolve(&screen(&tree)).unwrap_or_else(|error| {
                 runner.fail(&format!("Cannot find the target: {error}"), Some(&tree))
             });
             let to = Vec2::new(rect.center().x, rect.center().y);
+            // coming from outside, the cursor enters right at the target
+            let from = runner.cursor.unwrap_or(to);
+            let seconds = (from.distance(to) / CURSOR_SPEED).max(MIN_MOVE_SECONDS);
             runner.moving = Some(Move {
-                // coming from outside, the cursor enters right at the target
-                from: runner.cursor.unwrap_or(to),
+                from,
                 to,
                 frame: 0,
-                total: frames,
+                total: (seconds * FPS as f32).round() as u32,
             });
         }
         Command::Click => {
@@ -363,7 +381,7 @@ pub fn drive_system(
                 t,
                 at: [cursor.x * VIDEO_SCALE, cursor.y * VIDEO_SCALE].map(f32::round),
             });
-            runner.settle = INPUT_SETTLE;
+            runner.settle = respond;
         }
         Command::Press(code) => {
             inject.key(key_message(code, ButtonState::Pressed, window_entity));
@@ -374,7 +392,7 @@ pub fn drive_system(
                 t,
                 keys: key_name(code),
             });
-            runner.settle = INPUT_SETTLE;
+            runner.settle = respond;
         }
         Command::Type(text) => {
             for character in text.chars() {
@@ -385,7 +403,7 @@ pub fn drive_system(
                     window_entity,
                 ));
             }
-            runner.settle = INPUT_SETTLE;
+            runner.settle = respond;
         }
         Command::Choose(file) => {
             let mut open = dialogs.iter();
@@ -400,14 +418,14 @@ pub fn drive_system(
             };
             commands.entity(entity).despawn();
             dialog.answer(&mut commands, Some(runner.work.join(file)));
-            runner.settle = INPUT_SETTLE;
+            runner.settle = respond;
         }
         Command::Leave => {
             if runner.cursor.take().is_some() {
                 inject.left(CursorLeft {
                     window: window_entity,
                 });
-                runner.settle = INPUT_SETTLE;
+                runner.settle = respond;
             }
         }
         Command::Seek(beat) => {
@@ -415,7 +433,7 @@ pub fn drive_system(
                 runner.fail("Cannot seek before a project opens", None);
             };
             seek.write(SeekTo(bpm_list.time_at(Beat::from(beat))));
-            runner.settle = INPUT_SETTLE;
+            runner.settle = respond;
         }
         Command::Image(shot) => {
             let tree = tree();
@@ -509,6 +527,13 @@ pub fn drive_system(
             });
         }
     }
+}
+
+/// Frames from a press until the UI has responded: the release, then egui's animations such as a dialog fading in
+fn response_frames(context: &egui::Context) -> u32 {
+    let animation = context.style().animation_time as f64 * FPS;
+    // past float error, so 1/12 of a second is 5 frames rather than 6
+    1 + (animation - 1e-3).ceil() as u32
 }
 
 /// `[x, y, width, height]` of a logical rect in media pixels
