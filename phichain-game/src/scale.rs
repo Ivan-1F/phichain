@@ -29,6 +29,7 @@ pub fn texel_unit(viewport_width: f32, pack_note_width: f32, user_scale: f32) ->
 }
 
 /// World scale of the line entity. Children (note sprites) inherit this.
+/// The line's visible dimensions are set separately through `Sprite::custom_size`.
 pub fn line_world_scale(viewport_width: f32) -> f32 {
     viewport_width * 3.0 / 1920.0
 }

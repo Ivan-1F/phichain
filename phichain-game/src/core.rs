@@ -159,8 +159,17 @@ pub fn update_line_system(
 
     config: Res<GameConfig>,
 ) {
+    let scale = scale::line_world_scale(game_viewport.0.width());
+    // Phigros 3.20.0: a 1920 x 3 sprite at 100 PPU, scaled by (3, 2.5),
+    // viewed through an orthographic camera with a world height of 10.
+    // Set the sprite size independently of the transform inherited by notes.
+    let line_size = if scale > 0.0 {
+        Vec2::new(5.76, 0.0075) * game_viewport.0.height() / scale
+    } else {
+        Vec2::ZERO
+    };
     for (position, rotation, opacity, mut transform, mut sprite, parent) in &mut line_query {
-        let scale = scale::line_world_scale(game_viewport.0.width());
+        sprite.custom_size = Some(line_size);
         transform.scale = Vec3::splat(if parent.is_some() { 1.0 } else { scale });
         transform.translation.x = position.0.x / CANVAS_WIDTH * game_viewport.0.width()
             / if parent.is_some() { scale } else { 1.0 };

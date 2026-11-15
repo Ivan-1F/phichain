@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [Core] Fixed line length and thickness not matching vanilla Phigros
+
 ## [v1.0.0-beta.8] - 2026-11-08
 
 ### Added
