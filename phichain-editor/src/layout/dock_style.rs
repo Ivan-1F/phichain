@@ -1,5 +1,5 @@
 use egui::{CentralPanel, Color32, Context, CornerRadius, Frame, Margin, Response, Stroke};
-use egui_dock::{DockArea, DockState, Style, TabViewer};
+use egui_dock::{DockArea, DockState, Style, TabInteractionStyle, TabViewer};
 
 pub(super) fn show_dock_area<Tab>(
     ctx: &Context,
@@ -27,7 +27,7 @@ pub(super) fn show_dock_area<Tab>(
         });
 }
 
-pub(super) fn dock_style(egui_style: &egui::Style) -> Style {
+fn dock_style(egui_style: &egui::Style) -> Style {
     let mut style = Style::from_egui(egui_style);
     let visuals = &egui_style.visuals;
     let background = visuals.window_fill();
@@ -47,38 +47,30 @@ pub(super) fn dock_style(egui_style: &egui::Style) -> Style {
     style.tab.minimum_width = None;
     style.tab.hline_below_active_tab_name = true;
 
-    for tab in [
-        &mut style.tab.active,
-        &mut style.tab.focused,
-        &mut style.tab.inactive,
-        &mut style.tab.hovered,
-        &mut style.tab.active_with_kb_focus,
-        &mut style.tab.focused_with_kb_focus,
-        &mut style.tab.inactive_with_kb_focus,
-    ] {
-        tab.corner_radius = CornerRadius::ZERO;
-        tab.outline_color = Color32::TRANSPARENT;
-        tab.bg_fill = background;
-        tab.text_color = visuals.text_color();
-    }
-    for tab in [
-        &mut style.tab.active,
-        &mut style.tab.focused,
-        &mut style.tab.active_with_kb_focus,
-        &mut style.tab.focused_with_kb_focus,
-    ] {
-        tab.bg_fill = selected;
-        tab.text_color = visuals.strong_text_color();
-    }
-    style.tab.hovered.bg_fill = selected;
-    style.tab.hovered.text_color = visuals.strong_text_color();
-    for tab in [
-        &mut style.tab.active_with_kb_focus,
-        &mut style.tab.focused_with_kb_focus,
-        &mut style.tab.inactive_with_kb_focus,
-    ] {
-        tab.outline_color = visuals.selection.stroke.color;
-    }
+    let inactive = TabInteractionStyle {
+        corner_radius: CornerRadius::ZERO,
+        outline_color: Color32::TRANSPARENT,
+        bg_fill: background,
+        text_color: visuals.text_color(),
+    };
+    let active = TabInteractionStyle {
+        bg_fill: selected,
+        text_color: visuals.strong_text_color(),
+        ..inactive.clone()
+    };
+    style.tab.inactive = inactive.clone();
+    style.tab.active = active.clone();
+    style.tab.focused = active.clone();
+    style.tab.hovered = active.clone();
+    style.tab.inactive_with_kb_focus = TabInteractionStyle {
+        outline_color: visuals.selection.stroke.color,
+        ..inactive
+    };
+    style.tab.active_with_kb_focus = TabInteractionStyle {
+        outline_color: visuals.selection.stroke.color,
+        ..active
+    };
+    style.tab.focused_with_kb_focus = style.tab.active_with_kb_focus.clone();
 
     style.buttons.close_tab_color = visuals.weak_text_color();
     style.buttons.close_all_tabs_color = visuals.weak_text_color();
