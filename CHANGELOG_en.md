@@ -2,10 +2,15 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [Editor] Redesigned tab styling for docked panels and floating windows
+
 ### Fixed
 
 - [Core] Fixed line length and thickness not matching vanilla Phigros
 - [Editor] Fixed transition speed events incorrectly showing the unsupported easing selector, easing parameters, and curve editor
+- [Editor] Fixed duplicate borders and mismatched corners where docked panels meet
 
 ## [v1.0.0-beta.8] - 2026-11-08
 
