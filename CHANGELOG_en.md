@@ -5,6 +5,7 @@
 ### Fixed
 
 - [Core] Fixed line length and thickness not matching vanilla Phigros
+- [Editor] Fixed transition speed events incorrectly showing the unsupported easing selector, easing parameters, and curve editor
 
 ## [v1.0.0-beta.8] - 2026-11-08
 

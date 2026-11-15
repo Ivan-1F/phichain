@@ -118,29 +118,31 @@ pub fn single_event_inspector(
                 );
             },
         );
-        editor.field(
-            &mut ui,
-            "easing",
-            t!("tab.inspector.single_event.easing"),
-            |ui, event| {
-                ui.add(EasingValue::new(event.value.easing_mut().unwrap()));
-            },
-        );
-        let easing = editor.value().value.easing();
-        if easing.is_steps() || easing.is_elastic() {
+        if !editor.value().kind.is_speed() {
             editor.field(
                 &mut ui,
-                "easing_parameter",
-                t!("game.easing.parameter"),
+                "easing",
+                t!("tab.inspector.single_event.easing"),
                 |ui, event| {
-                    ui.add(EasingParameter(event.value.easing_mut().unwrap()));
+                    ui.add(EasingValue::new(event.value.easing_mut().unwrap()));
                 },
             );
+            let easing = editor.value().value.easing();
+            if easing.is_steps() || easing.is_elastic() {
+                editor.field(
+                    &mut ui,
+                    "easing_parameter",
+                    t!("game.easing.parameter"),
+                    |ui, event| {
+                        ui.add(EasingParameter(event.value.easing_mut().unwrap()));
+                    },
+                );
+            }
+            ui.separator();
+            editor.edit(&mut ui, "easing_graph", |ui, event| {
+                ui.add(EasingGraph::new(event.value.easing_mut().unwrap()));
+            });
         }
-        ui.separator();
-        editor.edit(&mut ui, "easing_graph", |ui, event| {
-            ui.add(EasingGraph::new(event.value.easing_mut().unwrap()));
-        });
     } else {
         editor.field(
             &mut ui,
