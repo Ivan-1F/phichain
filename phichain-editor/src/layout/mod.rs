@@ -1,6 +1,7 @@
 mod apply;
 mod create;
 mod delete;
+mod dock_style;
 mod rename;
 pub mod ui_state;
 mod update;

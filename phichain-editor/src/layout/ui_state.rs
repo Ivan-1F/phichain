@@ -1,12 +1,14 @@
 use crate::identifier::{Identifier, IntoIdentifier};
+use crate::layout::dock_style::{paint_active_tab, show_dock_area};
 use crate::tab::{EditorTab, TabRegistry};
 use bevy::prelude::{Resource, World};
-use egui_dock::{DockArea, DockState, NodeIndex, Style};
+use egui_dock::{DockState, NodeIndex};
 use serde::{Deserialize, Serialize};
 
 struct TabViewer<'a> {
     world: &'a mut World,
     registry: &'a mut TabRegistry,
+    active_tabs: Vec<Identifier>,
 }
 
 #[derive(Resource, Clone, Serialize, Deserialize)]
@@ -50,35 +52,18 @@ impl Default for UiState {
 
 impl UiState {
     pub fn ui(&mut self, world: &mut World, registry: &mut TabRegistry, ctx: &mut egui::Context) {
-        let mut tab_viewer = TabViewer { world, registry };
-        let mut style = Style::from_egui(ctx.style().as_ref());
+        let mut tab_viewer = TabViewer {
+            world,
+            registry,
+            active_tabs: self
+                .state
+                .iter_all_nodes()
+                .filter_map(|(_, node)| node.get_leaf())
+                .filter_map(|leaf| leaf.tabs.get(leaf.active.0).cloned())
+                .collect(),
+        };
 
-        // Let the dock separator be the only border between adjacent panes.
-        style.tab.tab_body.stroke = egui::Stroke::NONE;
-        style.tab.tab_body.corner_radius = egui::CornerRadius::ZERO;
-        style.tab_bar.corner_radius = egui::CornerRadius::ZERO;
-        for tab in [
-            &mut style.tab.active,
-            &mut style.tab.inactive,
-            &mut style.tab.focused,
-            &mut style.tab.hovered,
-        ] {
-            tab.outline_color = egui::Color32::TRANSPARENT;
-            tab.corner_radius = egui::CornerRadius::ZERO;
-        }
-        // keep the outline as a keyboard focus indicator, with matching corners.
-        for tab in [
-            &mut style.tab.active_with_kb_focus,
-            &mut style.tab.inactive_with_kb_focus,
-            &mut style.tab.focused_with_kb_focus,
-        ] {
-            tab.corner_radius = egui::CornerRadius::ZERO;
-        }
-
-        DockArea::new(&mut self.state)
-            .show_leaf_collapse_buttons(false)
-            .style(style)
-            .show(ctx, &mut tab_viewer);
+        show_dock_area(ctx, &mut self.state, &mut tab_viewer);
     }
 }
 
@@ -90,6 +75,12 @@ impl egui_dock::TabViewer for TabViewer<'_> {
     }
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
         self.registry.tab_ui(ui, self.world, tab);
+    }
+
+    fn on_tab_button(&mut self, tab: &mut Self::Tab, response: &egui::Response) {
+        if self.active_tabs.contains(tab) {
+            paint_active_tab(response);
+        }
     }
 
     fn closeable(&mut self, tab: &mut Self::Tab) -> bool {
