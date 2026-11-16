@@ -165,6 +165,26 @@ pub fn push_timeline(world: &mut World, kind: impl Bundle, target: Option<Entity
     };
 }
 
+/// Insert a new timeline to the right of `after`, or append it when `after` is `None`.
+pub fn insert_timeline(
+    world: &mut World,
+    kind: impl Bundle,
+    target: Option<Entity>,
+    after: Option<Entity>,
+) {
+    let Some(container) = container(world) else {
+        return;
+    };
+    push_timeline(world, kind, target);
+    if let Some(after) = after {
+        let mut contained = world.get_mut::<ContainedTimelines>(container).unwrap();
+        if let Some(index) = contained.iter().position(|entity| entity == after) {
+            // Relationship hooks append the new entity; move it beside its anchor.
+            contained.0[index + 1..].rotate_right(1);
+        }
+    }
+}
+
 /// Swap two timelines, each keeping its weight
 pub fn swap_timelines(world: &mut World, a: Entity, b: Entity) {
     let Some(mut contained) =
@@ -257,8 +277,48 @@ mod tests {
     #[test]
     fn a_pushed_timeline_takes_the_average_weight() {
         let mut world = world_with_container();
-        push_timeline(&mut world, EventTimeline, None);
+        insert_timeline(&mut world, EventTimeline, None, None);
         assert_eq!(weights(&mut world), vec![2.0, 1.0, 1.5]);
+    }
+
+    #[test]
+    fn inserts_beside_the_anchor_with_the_requested_target() {
+        let mut world = world_with_container();
+        let before = ordered_timelines(&mut world);
+        let line = world.spawn_empty().id();
+
+        insert_timeline(&mut world, NoteTimeline, Some(line), Some(before[0]));
+
+        let after = ordered_timelines(&mut world);
+        assert_eq!(after.len(), 3);
+        assert_eq!((after[0], after[2]), (before[0], before[1]));
+        assert!(world.get::<NoteTimeline>(after[1]).is_some());
+        assert_eq!(world.get::<TimelineOf>(after[1]).unwrap().0, line);
+        assert!(world.get::<FollowSelectedLine>(after[1]).is_none());
+        assert_eq!(weights(&mut world), vec![2.0, 1.5, 1.0]);
+
+        insert_timeline(&mut world, EventTimeline, None, Some(before[1]));
+        let after = ordered_timelines(&mut world);
+        assert!(world.get::<EventTimeline>(after[3]).is_some());
+        assert!(world.get::<FollowSelectedLine>(after[3]).is_some());
+    }
+
+    #[test]
+    fn recreates_a_timeline_after_removing_all_timelines() {
+        let mut world = world_with_container();
+        let line = world.spawn_empty().id();
+        insert_timeline(&mut world, NoteTimeline, Some(line), None);
+        for timeline in ordered_timelines(&mut world) {
+            world.despawn(timeline);
+        }
+        assert!(ordered_timelines(&mut world).is_empty());
+        assert!(world.get_entity(line).is_ok());
+        assert!(edges(&mut world).is_empty());
+
+        insert_timeline(&mut world, EventTimeline, None, None);
+
+        assert_eq!(weights(&mut world), vec![1.0]);
+        assert_eq!(edges(&mut world), vec![(0.0, 300.0)]);
     }
 
     #[test]
@@ -275,7 +335,7 @@ mod tests {
     #[test]
     fn moving_a_separator_only_resizes_its_neighbors() {
         let mut world = world_with_container();
-        push_timeline(&mut world, EventTimeline, None);
+        insert_timeline(&mut world, EventTimeline, None, None);
 
         move_separator(&mut world, 0, 0.1);
         assert_approx(weights(&mut world), vec![2.45, 0.55, 1.5]);

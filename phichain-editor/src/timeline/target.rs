@@ -66,7 +66,7 @@ pub fn target_name(
             .get(of.0)
             .map(|line| line.name.clone())
             .unwrap_or_default(),
-        Err(_) => t!("tab.timeline_setting.timelines.binding").into_owned(),
+        Err(_) => t!("tab.timeline.binding").into_owned(),
     };
     format!("{icon} {name}")
 }

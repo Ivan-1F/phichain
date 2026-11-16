@@ -127,54 +127,155 @@ impl TimelineContext<'_> {
 pub mod common {
     use crate::constants::INDICATOR_POSITION;
     use crate::tab::timeline::TimelineViewport;
-    use crate::timeline::container::{laid_out_timelines, move_separator, swap_timelines};
+    use crate::timeline::container::{
+        insert_timeline, laid_out_timelines, move_separator, ordered_timelines, swap_timelines,
+    };
+    use crate::timeline::event::EventTimeline;
     use crate::timeline::kind::timeline_name;
+    use crate::timeline::note::NoteTimeline;
     use crate::timeline::TimelineContext;
     use crate::utils::convert::BevyEguiConvert;
     use bevy::ecs::system::SystemState;
     use bevy::prelude::*;
-    use egui::{epaint, Align2, Color32, FontId, Id, Sense, Ui};
+    use egui::{
+        Align, Align2, Color32, CornerRadius, FontId, Id, Layout, Rect, RichText, Sense, Ui,
+    };
     use phichain_chart::bpm_list::BpmList;
+    use phichain_chart::line::Line;
 
     /// Opacity of the horizontal beat grid lines on timelines
     const BEAT_LINE_OPACITY: f32 = 40.0 / 255.0;
 
     const BEAT_LABEL_SIZE: f32 = 11.0;
 
-    pub fn timeline_badge_ui(
-        ui: &mut Ui,
-        world: &mut World,
-        timeline: Entity,
-        viewport: egui::Rect,
-    ) {
-        let mut swap = None;
+    /// The same type → target menu is used by badges and the empty state.
+    fn creation_menu(ui: &mut Ui, world: &mut World, after: Option<Entity>) {
+        for (label, note) in [
+            (t!("tab.timeline.note_timeline"), true),
+            (t!("tab.timeline.event_timeline"), false),
+        ] {
+            ui.menu_button(label, |ui| {
+                let mut target = None;
+                if ui
+                    .button(RichText::new(t!("tab.timeline.binding")).strong())
+                    .clicked()
+                {
+                    target = Some(None);
+                }
+                ui.separator();
+                egui::ScrollArea::vertical()
+                    .max_height(300.0)
+                    .show(ui, |ui| {
+                        for (entity, line) in world.query::<(Entity, &Line)>().iter(world) {
+                            ui.push_id(entity, |ui| {
+                                if ui.button(&line.name).clicked() {
+                                    target = Some(Some(entity));
+                                }
+                            });
+                        }
+                    });
+                if let Some(target) = target {
+                    if note {
+                        insert_timeline(world, NoteTimeline, target, after);
+                    } else {
+                        insert_timeline(world, EventTimeline, target, after);
+                    }
+                    ui.close();
+                    ui.ctx().request_repaint();
+                }
+            });
+        }
+    }
 
+    pub fn empty_timeline_ui(ui: &mut Ui, world: &mut World) {
+        let viewport = ui.clip_rect();
+        let rect = Rect::from_min_max(
+            egui::pos2(
+                viewport.left(),
+                (viewport.center().y - 50.0).max(viewport.top()),
+            ),
+            viewport.right_bottom(),
+        );
+        ui.scope_builder(
+            egui::UiBuilder::new()
+                .id_salt("empty_timeline")
+                .max_rect(rect)
+                .layout(Layout::top_down(Align::Center)),
+            |ui| {
+                ui.heading(t!("tab.timeline.empty_title"));
+                ui.add_space(6.0);
+                ui.label(RichText::new(t!("tab.timeline.empty_description")).weak());
+                ui.add_space(12.0);
+                ui.menu_button(
+                    format!(
+                        "{} {}",
+                        egui_phosphor::regular::PLUS,
+                        t!("tab.timeline.create")
+                    ),
+                    |ui| creation_menu(ui, world, None),
+                );
+            },
+        );
+    }
+
+    pub fn timeline_badge_ui(ui: &mut Ui, world: &mut World, timeline: Entity, viewport: Rect) {
+        let id = Id::new(("timeline_badge", timeline));
+        let popup_id = id.with("add_menu");
         let name = timeline_name(world, timeline);
         let galley =
             ui.painter()
                 .layout_no_wrap(name.clone(), Default::default(), Default::default());
-
-        let badge_rect = egui::Rect::from_center_size(
-            egui::Pos2::new(
+        let badge = Rect::from_center_size(
+            egui::pos2(
                 viewport.center().x,
                 viewport.top() + viewport.height() * 0.1,
             ),
             galley.size(),
         );
-
-        let visuals = ui.style().visuals.widgets.inactive;
-
-        ui.put(badge_rect, |ui: &mut Ui| {
-            ui.dnd_drag_source(Id::new(("timeline_badge", timeline)), timeline, |ui| {
-                ui.painter().rect(
-                    badge_rect,
-                    visuals.corner_radius,
-                    visuals.weak_bg_fill,
-                    visuals.bg_stroke,
-                    epaint::StrokeKind::Inside,
-                );
+        let action_width = badge.height();
+        let remove_rect = Rect::from_min_max(
+            badge.left_top() - egui::vec2(action_width, 0.0),
+            badge.left_bottom(),
+        );
+        let add_rect = Rect::from_min_max(
+            badge.right_top(),
+            badge.right_bottom() + egui::vec2(action_width, 0.0),
+        );
+        let expanded = remove_rect.union(add_rect);
+        // A click on an action can also activate the underlying drag-selection surface.
+        // Only a badge drag should hide these controls, including on the release frame.
+        let dragging = [ui.ctx().dragged_id(), ui.ctx().drag_stopped_id()]
+            .into_iter()
+            .flatten()
+            .any(|dragged| {
+                ordered_timelines(world)
+                    .into_iter()
+                    .any(|timeline| dragged == Id::new(("timeline_badge", timeline)))
+            });
+        if dragging {
+            egui::Popup::close_id(ui.ctx(), popup_id);
+        }
+        let show_actions = !dragging
+            && (ui.rect_contains_pointer(expanded) || egui::Popup::is_id_open(ui.ctx(), popup_id));
+        let visuals = ui.visuals().widgets.inactive;
+        if show_actions {
+            // One continuous background; only the outer corners are rounded.
+            ui.painter()
+                .rect_filled(expanded, visuals.corner_radius, visuals.weak_bg_fill);
+        }
+        ui.put(badge, |ui: &mut Ui| {
+            ui.dnd_drag_source(id, timeline, |ui| {
+                if !show_actions {
+                    ui.painter().rect(
+                        badge,
+                        visuals.corner_radius,
+                        visuals.weak_bg_fill,
+                        visuals.bg_stroke,
+                        egui::StrokeKind::Inside,
+                    );
+                }
                 ui.add(
-                    egui::Label::new(egui::RichText::new(&name).color(Color32::WHITE))
+                    egui::Label::new(RichText::new(&name).color(Color32::WHITE))
                         .truncate()
                         .selectable(false),
                 )
@@ -182,14 +283,55 @@ pub mod common {
             .response
         });
 
-        // dropzone
-        let response = ui.allocate_rect(viewport, Sense::hover());
-        if let Some(dragged_payload) = response.dnd_release_payload::<Entity>() {
-            swap = Some((*dragged_payload, timeline));
+        if show_actions {
+            let remove = badge_action(
+                ui,
+                remove_rect,
+                id.with("remove"),
+                egui_phosphor::regular::X,
+                CornerRadius {
+                    ne: 0,
+                    se: 0,
+                    ..visuals.corner_radius
+                },
+            )
+            .on_hover_text(t!("tab.timeline.remove"));
+            let add = badge_action(
+                ui,
+                add_rect,
+                id.with("add"),
+                egui_phosphor::regular::PLUS,
+                CornerRadius {
+                    nw: 0,
+                    sw: 0,
+                    ..visuals.corner_radius
+                },
+            )
+            .on_hover_text(t!("tab.timeline.add"));
+            ui.painter().rect_stroke(
+                expanded,
+                visuals.corner_radius,
+                visuals.bg_stroke,
+                egui::StrokeKind::Inside,
+            );
+            for x in [badge.left(), badge.right()] {
+                ui.painter()
+                    .vline(x, badge.y_range(), (1.0, ui.visuals().extreme_bg_color));
+            }
+            egui::Popup::menu(&add)
+                .id(popup_id)
+                .show(|ui| creation_menu(ui, world, Some(timeline)));
+            if remove.clicked() {
+                world.despawn(timeline);
+                egui::Popup::close_id(ui.ctx(), popup_id);
+                ui.ctx().request_repaint();
+                return;
+            }
         }
 
-        if let Some(hovered_payload) = response.dnd_hover_payload::<Entity>() {
-            if *hovered_payload != timeline {
+        let response = ui.allocate_rect(viewport, Sense::hover());
+        if let Some(payload) = response.dnd_hover_payload::<Entity>() {
+            if *payload != timeline {
                 ui.painter().rect_filled(
                     viewport,
                     0.0,
@@ -197,10 +339,31 @@ pub mod common {
                 );
             }
         }
-
-        if let Some((from, to)) = swap {
-            swap_timelines(world, from, to);
+        if let Some(payload) = response.dnd_release_payload::<Entity>() {
+            swap_timelines(world, *payload, timeline);
         }
+    }
+
+    /// Match the existing badge's height and theme instead of imposing button padding.
+    fn badge_action(
+        ui: &mut Ui,
+        rect: Rect,
+        id: Id,
+        icon: &str,
+        corner_radius: CornerRadius,
+    ) -> egui::Response {
+        let response = ui.interact(rect, id, Sense::click());
+        let visuals = ui.style().interact(&response);
+        ui.painter()
+            .rect_filled(rect, corner_radius, visuals.weak_bg_fill);
+        ui.painter().text(
+            rect.center(),
+            Align2::CENTER_CENTER,
+            icon,
+            Default::default(),
+            visuals.text_color(),
+        );
+        response
     }
 
     pub fn beat_line_ui(ui: &mut Ui, world: &mut World) {

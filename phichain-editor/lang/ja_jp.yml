@@ -73,6 +73,14 @@ tab:
     title: プレビュー
   timeline:
     title: タイムライン
+    note_timeline: ノーツタイムライン
+    event_timeline: イベントタイムライン
+    binding: バインド
+    add: タイムラインを追加
+    remove: タイムラインを削除
+    empty_title: タイムラインがありません
+    empty_description: 最初のタイムラインを作成して、ノーツやイベントを編集しましょう。
+    create: タイムラインを作成
     curve_note_track:
       same_endpoint: 始点と終点に同じノーツは指定できません
     pending:
@@ -138,10 +146,6 @@ tab:
     lane: 垂直ガイドライン
     show_waveform: 波形を表示
     waveform_loading: 波形を読み込み中…
-    timelines:
-      new_note_timeline: + ノーツタイムライン
-      new_event_timeline: + イベントタイムライン
-      binding: バインド
     note_side_filter:
       title: ノーツの配置側
       all: すべて

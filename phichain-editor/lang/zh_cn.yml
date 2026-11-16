@@ -73,6 +73,14 @@ tab:
     title: 预览
   timeline:
     title: 时间线
+    note_timeline: 音符时间线
+    event_timeline: 事件时间线
+    binding: 绑定
+    add: 新增时间线
+    remove: 删除时间线
+    empty_title: 还没有时间线
+    empty_description: 创建第一条时间线，开始编辑音符和事件。
+    create: 创建时间线
     curve_note_track:
       same_endpoint: 起点和终点不能是同一个音符
     pending:
@@ -138,10 +146,6 @@ tab:
     lane: 垂直参考线
     show_waveform: 显示波形图
     waveform_loading: 波形加载中…
-    timelines:
-      new_note_timeline: + 音符时间线
-      new_event_timeline: + 事件时间线
-      binding: 绑定
     note_side_filter:
       title: 音符所属侧
       all: 所有

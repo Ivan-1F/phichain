@@ -6,6 +6,7 @@
 
 - [Editor] Redesigned tab styling for docked panels and floating windows
 - [Editor] Replaced the timeline's background spectrogram with a waveform, shown by default and toggleable in Timeline Settings
+- [Editor] Moved timeline creation and removal from Timeline Settings to buttons shown on either side of a timeline's label on hover. New timelines are inserted to its right after choosing a type and whether to follow the selected line or show a fixed line. An empty panel now shows a prompt to create the first timeline
 
 ### Fixed
 

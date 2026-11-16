@@ -73,6 +73,14 @@ tab:
     title: Preview
   timeline:
     title: Timeline
+    note_timeline: Note Timeline
+    event_timeline: Event Timeline
+    binding: Binding
+    add: Add timeline
+    remove: Remove timeline
+    empty_title: No timelines yet
+    empty_description: Create your first timeline to start editing notes and events.
+    create: Create timeline
     curve_note_track:
       same_endpoint: The start and end cannot be the same note.
     pending:
@@ -143,10 +151,6 @@ tab:
       all: All
       above: Above
       below: Below
-    timelines:
-      new_note_timeline: + Note Timeline
-      new_event_timeline: + Event Timeline
-      binding: Binding
   audio_setting:
     title: Audio Setting
     music_volume: Music Volume

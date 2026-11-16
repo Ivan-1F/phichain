@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
 use egui::Ui;
@@ -25,6 +28,11 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
         },
     );
     layout_timelines(world);
+    let timelines = laid_out_timelines(world);
+    if timelines.is_empty() {
+        timeline::common::empty_timeline_ui(&mut ui, world);
+        return;
+    }
 
     let is_hovering = ui.rect_contains_pointer(clip_rect);
     if is_hovering {
@@ -68,7 +76,6 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
     let _ = timeline::drag_selection::timeline_drag_selection(&mut ui, world);
 
     // content
-    let timelines = laid_out_timelines(world);
     for item in &timelines {
         let mut child = ui.new_child(
             egui::UiBuilder::new()
