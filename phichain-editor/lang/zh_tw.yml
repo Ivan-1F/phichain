@@ -136,8 +136,8 @@ tab:
     zoom: 時間線縮放
     density: 節拍線密度
     lane: 垂直參考線
-    show_spectrogram: 顯示頻譜圖
-    spectrogram_opacity: 頻譜不透明度
+    show_waveform: 顯示波形圖
+    waveform_loading: 波形載入中…
     timelines:
       new_note_timeline: + 音符時間線
       new_event_timeline: + 事件時間線

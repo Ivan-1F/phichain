@@ -136,8 +136,8 @@ tab:
     zoom: Timeline Zoom
     density: Timeline Density
     lane: Vertical Lane
-    show_spectrogram: Show Spectrogram
-    spectrogram_opacity: Spectrogram Opacity
+    show_waveform: Show Waveform
+    waveform_loading: Loading waveform…
     note_side_filter:
       title: Note Side
       all: All

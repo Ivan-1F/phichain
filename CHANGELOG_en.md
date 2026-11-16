@@ -5,6 +5,7 @@
 ### Changed
 
 - [Editor] Redesigned tab styling for docked panels and floating windows
+- [Editor] Replaced the timeline's background spectrogram with a waveform, shown by default and toggleable in Timeline Settings
 
 ### Fixed
 

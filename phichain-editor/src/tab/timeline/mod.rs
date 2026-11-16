@@ -8,7 +8,7 @@ use crate::timeline::kind::timeline_ui;
 use crate::timeline::pending_status::pending_status_ui;
 use crate::timeline::settings::TimelineSettings;
 use crate::timing::{Pause, Paused, Seek};
-use crate::{spectrogram, timeline};
+use crate::{timeline, waveform};
 use phichain_chart::note::Note;
 
 pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
@@ -25,9 +25,6 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
         },
     );
     layout_timelines(world);
-
-    // draw spectrogram background after viewport is updated
-    spectrogram::draw(ui.painter(), world);
 
     let is_hovering = ui.rect_contains_pointer(clip_rect);
     if is_hovering {
@@ -64,6 +61,7 @@ pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
     }
 
     // background
+    waveform::draw(&ui, world, clip_rect);
     timeline::common::beat_line_ui(&mut ui, world);
     timeline::common::bpm_change_ui(&mut ui, world);
     // TODO bevy-0.16: make timeline_tab return Result and handle error using ? operator when register_tab supports systems returning Result

@@ -32,7 +32,6 @@ mod schedule;
 mod screenshot;
 mod selection;
 mod settings;
-mod spectrogram;
 mod tab;
 mod telemetry;
 mod timeline;
@@ -40,6 +39,7 @@ mod timing;
 mod translation;
 mod ui;
 mod utils;
+mod waveform;
 mod zoom;
 
 use crate::action::{ActionPlugin, ActionRegistry};

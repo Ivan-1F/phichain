@@ -64,16 +64,8 @@ pub fn timeline_setting_tab(In(mut ui): In<Ui>, world: &mut World) {
             });
             ui.end_row();
 
-            ui.label(t!("tab.timeline_setting.show_spectrogram"));
-            ui.checkbox(&mut timeline_settings.show_spectrogram, "");
-            ui.end_row();
-
-            ui.label(t!("tab.timeline_setting.spectrogram_opacity"));
-            ui.add(
-                egui::DragValue::new(&mut timeline_settings.spectrogram_opacity)
-                    .range(0.0..=1.0)
-                    .speed(0.01),
-            );
+            ui.label(t!("tab.timeline_setting.show_waveform"));
+            ui.checkbox(&mut timeline_settings.show_waveform, "");
             ui.end_row();
         });
 

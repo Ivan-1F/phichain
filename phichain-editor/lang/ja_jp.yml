@@ -136,8 +136,8 @@ tab:
     zoom: タイムラインのズーム
     density: 拍子線密度
     lane: 垂直ガイドライン
-    show_spectrogram: スペクトログラムを表示
-    spectrogram_opacity: スペクトログラムの不透明度
+    show_waveform: 波形を表示
+    waveform_loading: 波形を読み込み中…
     timelines:
       new_note_timeline: + ノーツタイムライン
       new_event_timeline: + イベントタイムライン
