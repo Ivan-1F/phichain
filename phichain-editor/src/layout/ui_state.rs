@@ -92,7 +92,7 @@ impl egui_dock::TabViewer for TabViewer<'_> {
     }
 
     fn clear_background(&self, tab: &Self::Tab) -> bool {
-        *tab != EditorTab::Game.into_identifier() && *tab != EditorTab::Timeline.into_identifier()
+        *tab != EditorTab::Game.into_identifier()
     }
 
     fn scroll_bars(&self, tab: &Self::Tab) -> [bool; 2] {

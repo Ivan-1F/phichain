@@ -16,6 +16,8 @@ use phichain_chart::note::Note;
 
 pub fn timeline_tab(In(mut ui): In<Ui>, world: &mut World) {
     let clip_rect = ui.clip_rect();
+    ui.painter()
+        .rect_filled(clip_rect, 0.0, egui::Color32::BLACK);
     let mut timeline_viewport = world.resource_mut::<TimelineViewport>();
     timeline_viewport.0 = Rect::from_corners(
         Vec2 {
