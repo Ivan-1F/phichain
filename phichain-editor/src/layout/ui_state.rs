@@ -73,6 +73,7 @@ impl egui_dock::TabViewer for TabViewer<'_> {
     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
         t!(format!("tab.{tab}.title").as_str()).into()
     }
+
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
         self.registry.tab_ui(ui, self.world, tab);
     }
