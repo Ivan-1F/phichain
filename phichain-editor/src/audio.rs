@@ -38,6 +38,14 @@ impl Plugin for AudioPlugin {
                             .and(resource_exists::<AudioDuration>),
                     ),
             )
+            .add_systems(
+                Last,
+                sync_playback_state_system.run_if(
+                    project_loaded()
+                        .and(resource_exists::<InstanceHandle>)
+                        .and(resource_exists::<AudioDuration>),
+                ),
+            )
             .add_observer(pause_observer)
             .add_observer(resume_observer);
     }
@@ -47,37 +55,52 @@ impl Plugin for AudioPlugin {
 fn pause_observer(
     _: On<Pause>,
 
-    handle: Res<InstanceHandle>,
     mut paused: ResMut<Paused>,
     mut game_paused: ResMut<phichain_game::Paused>,
-    mut audio_instances: ResMut<Assets<AudioInstance>>,
-
     mut timing: ResMut<Timing>,
 ) {
-    if let Some(instance) = audio_instances.get_mut(&handle.0) {
-        instance.pause(AudioTween::default());
-        paused.0 = true;
-        game_paused.0 = true;
-
-        timing.pause();
-    }
+    paused.0 = true;
+    game_paused.0 = true;
+    timing.pause();
 }
 
 fn resume_observer(
     _: On<Resume>,
 
-    handle: Res<InstanceHandle>,
     mut paused: ResMut<Paused>,
     mut game_paused: ResMut<phichain_game::Paused>,
-    mut audio_instances: ResMut<Assets<AudioInstance>>,
-
     mut timing: ResMut<Timing>,
 ) {
-    if let Some(instance) = audio_instances.get_mut(&handle.0) {
+    paused.0 = false;
+    game_paused.0 = false;
+    timing.resume();
+}
+
+/// Drive the audio instance's playback state from [`Paused`]
+///
+/// kira keeps only the latest pause and resume command each and always applies pause before resume,
+/// so a pause sent right after a resume can be undone on the audio thread.
+/// Sending a command only when the reported state disagrees ensures the previous one has been applied.
+fn sync_playback_state_system(
+    handle: Res<InstanceHandle>,
+    paused: Res<Paused>,
+    mut audio_instances: ResMut<Assets<AudioInstance>>,
+) {
+    let Some(state) = audio_instances.get(&handle.0).map(|i| i.state()) else {
+        return;
+    };
+    let should_pause = match (paused.0, state) {
+        (true, PlaybackState::Playing { .. } | PlaybackState::Resuming { .. }) => true,
+        (false, PlaybackState::Paused { .. } | PlaybackState::Pausing { .. }) => false,
+        _ => return,
+    };
+    let Some(instance) = audio_instances.get_mut(&handle.0) else {
+        return;
+    };
+    if should_pause {
+        instance.pause(AudioTween::default());
+    } else {
         instance.resume(AudioTween::default());
-        paused.0 = false;
-        game_paused.0 = false;
-        timing.resume();
     }
 }
 

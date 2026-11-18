@@ -14,6 +14,7 @@
 - [Editor] Fixed transition speed events incorrectly showing the unsupported easing selector, easing parameters, and curve editor
 - [Editor] Fixed duplicate borders and mismatched corners where docked panels meet
 - [Editor] Fixed inconsistent timeline backgrounds between docked panels and floating windows; both now use black
+- [Editor] Fixed music continuing to play while the editor is paused when scrolling the timeline right as playback starts with Pause when Scroll enabled
 
 ## [v1.0.0-beta.8] - 2026-11-08
 
