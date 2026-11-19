@@ -1,9 +1,8 @@
-use crate::beat::Beat;
 use serde::{Deserialize, Serialize};
 
 use crate::bpm_list::BpmList;
 use crate::curve_note_track::CurveNoteTrack;
-use crate::event::{LineEvent, LineEventKind, LineEventValue};
+use crate::event::LineEvent;
 use crate::id::{Identified, LineId};
 use crate::line::Line;
 use crate::migration::{migrate, CURRENT_FORMAT};
@@ -166,45 +165,14 @@ impl SerializedLine {
     }
 }
 
-/// A default line with no notes and default events
+/// A new line with empty note and event tracks.
 impl Default for SerializedLine {
     fn default() -> Self {
         Self {
             line: Default::default(),
             id: LineId::new(),
             notes: Default::default(),
-            events: vec![
-                Identified::new(LineEvent {
-                    kind: LineEventKind::X,
-                    value: LineEventValue::constant(0.0),
-                    start_beat: Beat::ZERO,
-                    end_beat: Beat::ONE,
-                }),
-                Identified::new(LineEvent {
-                    kind: LineEventKind::Y,
-                    value: LineEventValue::constant(0.0),
-                    start_beat: Beat::ZERO,
-                    end_beat: Beat::ONE,
-                }),
-                Identified::new(LineEvent {
-                    kind: LineEventKind::Rotation,
-                    value: LineEventValue::constant(0.0),
-                    start_beat: Beat::ZERO,
-                    end_beat: Beat::ONE,
-                }),
-                Identified::new(LineEvent {
-                    kind: LineEventKind::Opacity,
-                    value: LineEventValue::constant(255.0),
-                    start_beat: Beat::ZERO,
-                    end_beat: Beat::ONE,
-                }),
-                Identified::new(LineEvent {
-                    kind: LineEventKind::Speed,
-                    value: LineEventValue::constant(10.0),
-                    start_beat: Beat::ZERO,
-                    end_beat: Beat::ONE,
-                }),
-            ],
+            events: vec![],
             children: vec![],
             curve_note_tracks: vec![],
         }
@@ -214,6 +182,8 @@ impl Default for SerializedLine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::beat::Beat;
+    use crate::event::{LineEventKind, LineEventValue};
 
     #[test]
     fn test_from_json_str_current_format() {
@@ -221,6 +191,7 @@ mod tests {
         let chart = PhichainChart::from_json_str(&json).unwrap();
         assert_eq!(chart.format, CURRENT_FORMAT);
         assert_eq!(chart.lines.len(), 1);
+        assert!(chart.lines[0].events.is_empty());
     }
 
     #[test]
@@ -261,21 +232,20 @@ mod tests {
     #[test]
     fn test_from_json_str_normalizes_events() {
         let mut chart = PhichainChart::default();
-        let later = Identified::new(LineEvent {
+        let earlier = LineEvent {
             kind: LineEventKind::X,
-            value: LineEventValue::constant(1.0),
+            value: LineEventValue::constant(0.0),
             start_beat: Beat::ZERO,
             end_beat: Beat::ONE,
+        };
+        let later = Identified::new(LineEvent {
+            value: LineEventValue::constant(1.0),
+            ..earlier
         });
-        chart.lines[0].events.push(later);
+        chart.lines[0].events = vec![Identified::new(earlier), later];
 
         let json = serde_json::to_string(&chart).unwrap();
         let chart = PhichainChart::from_json_str(&json).unwrap();
-        let x: Vec<_> = chart.lines[0]
-            .events
-            .iter()
-            .filter(|event| event.data.kind == LineEventKind::X)
-            .collect();
-        assert_eq!(x, vec![&later]);
+        assert_eq!(chart.lines[0].events, vec![later]);
     }
 }

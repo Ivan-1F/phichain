@@ -1,3 +1,5 @@
+#[cfg(feature = "bevy")]
+use crate::event::LineEventKind;
 use crate::id::{HasId, LineId};
 #[cfg(feature = "bevy")]
 use bevy::ecs::reflect::ReflectComponent;
@@ -47,10 +49,24 @@ pub struct LinePosition(pub bevy::prelude::Vec2);
 pub struct LineRotation(pub f32);
 
 #[cfg(feature = "bevy")]
-#[derive(bevy::prelude::Component, Debug, Default)]
+#[derive(bevy::prelude::Component, Debug)]
 pub struct LineOpacity(pub f32);
+
+#[cfg(feature = "bevy")]
+impl Default for LineOpacity {
+    fn default() -> Self {
+        Self(LineEventKind::Opacity.default_value() / 255.0)
+    }
+}
 
 /// This will not affect line entity, it is only used to show realtime speed of lines in [phichain::tab::line_list]
 #[cfg(feature = "bevy")]
-#[derive(bevy::prelude::Component, Debug, Default)]
+#[derive(bevy::prelude::Component, Debug)]
 pub struct LineSpeed(pub f32);
+
+#[cfg(feature = "bevy")]
+impl Default for LineSpeed {
+    fn default() -> Self {
+        Self(LineEventKind::Speed.default_value())
+    }
+}

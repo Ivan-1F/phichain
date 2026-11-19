@@ -1,8 +1,6 @@
 use crate::event::EventTrack;
 use phichain_chart::bpm_list::BpmList;
-
-/// The speed of a line before its first speed event
-const DEFAULT_SPEED: f32 = 10.0;
+use phichain_chart::event::LineEventKind;
 
 #[derive(Debug, Clone, Copy)]
 struct SpeedSegment {
@@ -52,9 +50,10 @@ impl SpeedTable {
     fn from_segments(segments: impl IntoIterator<Item = [f32; 4]>) -> Self {
         let mut table: Vec<SpeedSegment> = Vec::new();
         for [start_time, end_time, start_value, end_value] in segments {
-            let distance = table.last().map_or(start_time * DEFAULT_SPEED, |previous| {
-                previous.distance_at(start_time)
-            });
+            let distance = table.last().map_or(
+                start_time * LineEventKind::Speed.default_value(),
+                |previous| previous.distance_at(start_time),
+            );
             table.push(SpeedSegment {
                 start_time,
                 end_time,
@@ -70,7 +69,7 @@ impl SpeedTable {
     pub fn distance_at(&self, time: f32) -> f32 {
         let time = time.max(0.0);
         match self.0.partition_point(|segment| segment.start_time <= time) {
-            0 => time * DEFAULT_SPEED,
+            0 => time * LineEventKind::Speed.default_value(),
             next => self.0[next - 1].distance_at(time),
         }
     }
@@ -85,7 +84,7 @@ mod tests {
     /// Integrate the speed from zero to the time over every piece of constant or linear speed
     fn integrate(segments: &[[f32; 4]], time: f32) -> f32 {
         let mut pieces = vec![];
-        let mut held = (f32::NEG_INFINITY, DEFAULT_SPEED);
+        let mut held = (f32::NEG_INFINITY, LineEventKind::Speed.default_value());
         for &[start, end, start_value, end_value] in segments {
             pieces.push((held.0, start, held.1, held.1));
             pieces.push((start, end, start_value, end_value));

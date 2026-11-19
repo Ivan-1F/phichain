@@ -23,6 +23,16 @@ pub enum LineEventKind {
 }
 
 impl LineEventKind {
+    pub const ALL: [Self; 5] = [Self::X, Self::Y, Self::Rotation, Self::Opacity, Self::Speed];
+
+    /// The track value before its first event, or when it has no events.
+    pub const fn default_value(self) -> f32 {
+        match self {
+            Self::X | Self::Y | Self::Rotation | Self::Opacity => 0.0,
+            Self::Speed => 10.0,
+        }
+    }
+
     pub fn is_x(&self) -> bool {
         matches!(self, LineEventKind::X)
     }

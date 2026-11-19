@@ -112,74 +112,80 @@ fn create_event_system(
         (track, beat)
     };
 
-    // pending events follow the cursor, staying where it last fit
-    let pending_event = pending_event.map(|(pending_event, entity)| {
-        let mut moved = *pending_event;
-        let (track, beat) = calc_event_attrs();
-        moved.end_beat = beat.max(moved.start_beat + ctx.settings.minimum_beat());
-        moved.kind = LineEventKind::try_from(track).expect("Unknown event track");
-        if !index.fits(line_entity, entity, &moved) {
-            return (*pending_event, entity);
+    let placement_value = |event: &LineEvent, excluded: Entity| {
+        let confirmed = |(other, _): &(Entity, &LineEvent)| *other != excluded;
+        let start = index
+            .until(line_entity, event.kind, event.start_beat.value())
+            .find(confirmed)
+            .map_or_else(
+                || event.kind.default_value(),
+                |(_, event)| event.value.end(),
+            );
+        match event.value {
+            LineEventValue::Constant { .. } => LineEventValue::constant(start),
+            LineEventValue::Transition { easing, .. } => {
+                let end = index
+                    .since(line_entity, event.kind, event.end_beat.value())
+                    .find(confirmed)
+                    .map_or(0.0, |(_, event)| event.value.start());
+                LineEventValue::transition(start, end, easing)
+            }
         }
-        // The preview may be despawned by a cascade applied before this command
-        commands.entity(entity).try_insert(moved);
-        (moved, entity)
-    });
+    };
 
-    if let Some(value) = requested_value {
-        if let Some((pending_event, entity)) = pending_event {
-            // inherit event's start & end value from neighbor events
-            let mut new_event = pending_event;
-            new_event.value = value;
-            let confirmed = |(other, _): &(Entity, &LineEvent)| *other != entity;
-            if let Some((_, last_event)) = index
-                .until(line_entity, new_event.kind, new_event.start_beat.value())
-                .find(confirmed)
-            {
-                *new_event.value.start_mut() = last_event.value.end();
-            }
-            if let Some((_, next_event)) = index
-                .since(line_entity, new_event.kind, new_event.end_beat.value())
-                .find(confirmed)
-            {
-                *new_event.value.end_mut() = next_event.value.start();
-            }
+    if let Some((pending_event, entity)) = pending_event {
+        // pending events follow the cursor, staying where they last fit
+        let mut event = *pending_event;
+        let (track, beat) = calc_event_attrs();
+        event.end_beat = beat.max(event.start_beat + ctx.settings.minimum_beat());
+        event.kind = LineEventKind::try_from(track).expect("Unknown event track");
+        if !index.fits(line_entity, entity, &event) {
+            event = *pending_event;
+        }
+        event.value = requested_value.unwrap_or(event.value);
+        event.value = placement_value(&event, entity);
+
+        if requested_value.is_some() {
             commands.entity(entity).despawn();
             edits.once(t!("history.create_events", count = 1), move |commands| {
-                commands.spawn((new_event, EventOf(line_entity)));
+                commands.spawn((event, EventOf(line_entity)));
             });
-        } else {
-            let (track, beat) = calc_event_attrs();
-            let event = LineEvent {
-                kind: LineEventKind::try_from(track).expect("Unknown event track"),
-                value,
-                start_beat: beat,
-                end_beat: beat + ctx.settings.minimum_beat(),
-            };
-            if !index.fits(line_entity, replaced, &event) {
-                toasts.error(t!("history.events_overlap"));
-                return Ok(());
-            }
-            let status = PendingStatus {
-                title: t!("tab.timeline.pending.event").into(),
-                hints: vec![
-                    PendingHint::key(
-                        hotkey.label(CreateEventHotkeys::PlaceConstantEvent),
-                        t!("tab.timeline.pending.constant"),
-                    ),
-                    PendingHint::key(
-                        hotkey.label(CreateEventHotkeys::PlaceTransitionEvent),
-                        t!("tab.timeline.pending.transition"),
-                    ),
-                ],
-            };
-            spawn_pending(
-                &mut commands,
-                item.timeline,
-                status,
-                (event, EventOf(line_entity)),
-            );
+        } else if event != *pending_event {
+            // The preview may be despawned by a cascade applied before this command
+            commands.entity(entity).try_insert(event);
         }
+    } else if let Some(value) = requested_value {
+        let (track, beat) = calc_event_attrs();
+        let mut event = LineEvent {
+            kind: LineEventKind::try_from(track).expect("Unknown event track"),
+            value,
+            start_beat: beat,
+            end_beat: beat + ctx.settings.minimum_beat(),
+        };
+        if !index.fits(line_entity, replaced, &event) {
+            toasts.error(t!("history.events_overlap"));
+            return Ok(());
+        }
+        event.value = placement_value(&event, replaced);
+        let status = PendingStatus {
+            title: t!("tab.timeline.pending.event").into(),
+            hints: vec![
+                PendingHint::key(
+                    hotkey.label(CreateEventHotkeys::PlaceConstantEvent),
+                    t!("tab.timeline.pending.constant"),
+                ),
+                PendingHint::key(
+                    hotkey.label(CreateEventHotkeys::PlaceTransitionEvent),
+                    t!("tab.timeline.pending.transition"),
+                ),
+            ],
+        };
+        spawn_pending(
+            &mut commands,
+            item.timeline,
+            status,
+            (event, EventOf(line_entity)),
+        );
     }
 
     Ok(())

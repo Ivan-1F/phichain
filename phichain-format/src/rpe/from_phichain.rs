@@ -1,3 +1,4 @@
+use crate::compile::events_for_export;
 use crate::compile::steps::evaluate_curve_note_tracks;
 use crate::rpe::schema::{
     RpeBpmPoint, RpeChart, RpeCommonEvent, RpeEventLayer, RpeJudgeLine, RpeMeta, RpeNote,
@@ -79,8 +80,7 @@ fn note(note: &Note) -> RpeNote {
 fn event_layer_from_line(line: &SerializedLine) -> RpeEventLayer {
     let mut event_layer = RpeEventLayer::default();
 
-    for event in &line.events {
-        let event = &event.data;
+    for event in events_for_export(line) {
         match event.kind {
             LineEventKind::Speed => {
                 event_layer.speed_events.push(RpeSpeedEvent {
@@ -91,7 +91,7 @@ fn event_layer_from_line(line: &SerializedLine) -> RpeEventLayer {
                 });
             }
             _ => {
-                let rpe_event = common_event_from_line_event(event);
+                let rpe_event = common_event_from_line_event(&event);
 
                 match event.kind {
                     LineEventKind::X => {
@@ -178,4 +178,36 @@ pub fn phichain_to_rpe(phichain: PhichainChart) -> RpeChart {
     }
 
     rpe
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::rpe::RpeInputOptions;
+    use crate::ChartFormat;
+    use phichain_chart::beat;
+    use phichain_chart::event;
+    use phichain_chart::id::Identified;
+
+    #[test]
+    fn export_preserves_empty_lines_and_defaults_before_late_events() {
+        let mut chart = PhichainChart::default();
+        chart.lines.push(SerializedLine::default());
+        chart.lines[1].events.push(Identified::new(event!(
+            LineEventKind::Opacity, beat!(2) => beat!(3), 255
+        )));
+
+        let exported = phichain_to_rpe(chart);
+        let first = &exported.judge_line_list[0].event_layers[0];
+        assert_eq!(first.speed_events[0].start, 10.0);
+        let alpha = &exported.judge_line_list[1].event_layers[0].alpha_events;
+        assert_eq!(alpha.len(), 2);
+        assert_eq!(alpha[0].start, 0);
+        assert_eq!(alpha[0].start_time, beat!(0).into());
+        assert_eq!(alpha[0].end_time, alpha[1].start_time);
+        assert_eq!(alpha[1].start, 255);
+
+        let imported = exported.to_phichain(&RpeInputOptions::default()).unwrap();
+        assert_eq!(imported.lines.len(), 2);
+    }
 }

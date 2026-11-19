@@ -66,11 +66,11 @@ impl EventIndex {
             .map(|(&(_, entity), event)| (entity, event))
     }
 
-    /// Evaluate a track of a line at the given beat, decided by the event starting last at or before it
-    pub fn evaluate(&self, line: Entity, kind: LineEventKind, beat: f32) -> Option<f32> {
+    /// Evaluate the latest event starting at or before the beat, or use the track's default value.
+    pub fn evaluate(&self, line: Entity, kind: LineEventKind, beat: f32) -> f32 {
         self.until(line, kind, beat)
             .next()
-            .map(|(_, event)| event.value_at(beat))
+            .map_or_else(|| kind.default_value(), |(_, event)| event.value_at(beat))
     }
 
     /// Whether the event of `entity` has length and shares no beat with its neighbors on the track
@@ -262,7 +262,7 @@ mod tests {
                     .values()
                     .rev()
                     .find(|event| event.start_beat.value() <= beat)
-                    .map(|event| event.value_at(beat));
+                    .map_or(0.0, |event| event.value_at(beat));
                 assert_eq!(
                     index.evaluate(line, LineEventKind::X, beat),
                     latest,

@@ -593,7 +593,7 @@ fn undoing_an_inserted_parent_keeps_the_original_line_and_events() {
         .world()
         .get::<phichain_chart::id::LineId>(parent)
         .unwrap();
-    let event_count = app.world().get::<Events>(parent).unwrap().len();
+    assert!(app.world().get::<Events>(parent).is_none());
     undo(&mut app);
     assert!(app.world().get::<Line>(root).is_some());
     assert!(app.world().get::<ChildOf>(root).is_none());
@@ -603,10 +603,7 @@ fn undoing_an_inserted_parent_keeps_the_original_line_and_events() {
     let restored = index.entity(parent_id.uuid()).unwrap();
     assert_eq!(index.entity(root_id.uuid()), Some(root));
     assert_eq!(app.world().get::<ChildOf>(root).unwrap().parent(), restored);
-    assert_eq!(
-        app.world().get::<Events>(restored).unwrap().len(),
-        event_count
-    );
+    assert!(app.world().get::<Events>(restored).is_none());
 }
 
 #[test]

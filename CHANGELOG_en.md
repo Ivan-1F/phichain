@@ -7,6 +7,10 @@
 - [Editor] Redesigned tab styling for docked panels and floating windows
 - [Editor] Replaced the timeline's background spectrogram with a waveform, shown by default and toggleable in Timeline Settings
 - [Editor] Moved timeline creation and removal from Timeline Settings to buttons shown on either side of a timeline's label on hover. New timelines are inserted to its right after choosing a type and whether to follow the selected line or show a fixed line. An empty panel now shows a prompt to create the first timeline
+- [Core] Event tracks now have default values (0 for X, Y, rotation, and opacity; 10 for speed) when empty or before their first event
+  - New lines (including the initial line in new charts) no longer come with pre-populated default events
+  - Exporting to the official or RPE format fills in these initial defaults automatically
+- [Editor] Create Line from Selected Line State now only adds initial events for tracks whose current value differs from the default; placing an event with no preceding event uses the track's default as its start value, and the event timeline playhead now shows default values when empty or before the first event
 
 ### Fixed
 
@@ -15,6 +19,7 @@
 - [Editor] Fixed duplicate borders and mismatched corners where docked panels meet
 - [Editor] Fixed inconsistent timeline backgrounds between docked panels and floating windows; both now use black
 - [Editor] Fixed music continuing to play while the editor is paused when scrolling the timeline right as playback starts with Pause when Scroll enabled
+- [Core] Fixed lines staying stuck in their previous state when moving before a track's first event or deleting all events on a track
 
 ## [v1.0.0-beta.8] - 2026-11-08
 

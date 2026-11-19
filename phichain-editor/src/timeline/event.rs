@@ -475,16 +475,8 @@ pub fn event_timeline_ui(
     }
     // evaluated the same way the line itself is
     let beat: f32 = bpm_list.beat_at(chart_time.0).into();
-    for kind in [
-        LineEventKind::X,
-        LineEventKind::Y,
-        LineEventKind::Rotation,
-        LineEventKind::Opacity,
-        LineEventKind::Speed,
-    ] {
-        let Some(value) = index.evaluate(line_entity, kind, beat) else {
-            continue;
-        };
+    for kind in LineEventKind::ALL {
+        let value = index.evaluate(line_entity, kind, beat);
         let painter = ui.painter().with_clip_rect(track_rect(kind));
         let galley = painter.layout_no_wrap(format_value(value), font.clone(), Color32::WHITE);
         let rect = Align2::CENTER_BOTTOM.anchor_size(

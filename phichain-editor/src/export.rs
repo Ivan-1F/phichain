@@ -241,5 +241,15 @@ mod tests {
         let chart = archive.by_name("chart.json").unwrap();
         let chart: OfficialChart = serde_json::from_reader(chart).unwrap();
         assert_eq!(chart.lines.len(), 1);
+        let line = &chart.lines[0];
+        assert_eq!(line.move_events[0].start_x, 0.5);
+        assert_eq!(line.move_events[0].start_y, 0.5);
+        assert_eq!(line.rotate_events[0].start, 0.0);
+        assert_eq!(line.opacity_events[0].start, 0.0);
+        assert!(line.speed_events[0].value > 0.0);
+        assert_eq!(
+            fs::read_to_string(project.path.chart_path()).unwrap(),
+            V6_CHART
+        );
     }
 }

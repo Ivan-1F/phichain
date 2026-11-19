@@ -209,6 +209,69 @@ fn placed_transition_events_continue_from_and_into_their_neighbors() {
 }
 
 #[test]
+fn constant_speed_placement_uses_the_default_in_preview_and_on_confirmation() {
+    for next_event in [None, Some(20.0)] {
+        let (mut app, line) = editing_test_app();
+        let world = app.world_mut();
+        let window = world.spawn(window_at(Vec2::new(870.0, 300.0))).id();
+        if let Some(value) = next_event {
+            world.spawn((
+                LineEvent {
+                    kind: LineEventKind::Speed,
+                    start_beat: Beat::ONE,
+                    end_beat: Beat::from(2.0),
+                    value: LineEventValue::constant(value),
+                },
+                EventOf(line),
+            ));
+        }
+        open_document(world);
+        world
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::KeyQ);
+        app.update();
+
+        let world = app.world_mut();
+        let (entity, preview) = world
+            .query_filtered::<(Entity, &LineEvent), With<Pending>>()
+            .single(world)
+            .unwrap();
+        let preview = *preview;
+        assert_eq!(preview.kind, LineEventKind::Speed);
+        assert_eq!(preview.value, LineEventValue::constant(10.0));
+        world.resource_mut::<ButtonInput<KeyCode>>().reset_all();
+
+        for (x, kind, value) in [
+            (630.0, LineEventKind::X, 0.0),
+            (870.0, LineEventKind::Speed, 10.0),
+        ] {
+            app.world_mut()
+                .get_mut::<Window>(window)
+                .unwrap()
+                .set_cursor_position(Some(Vec2::new(x, 300.0)));
+            app.update();
+            let moved = app.world().get::<LineEvent>(entity).unwrap();
+            assert_eq!(moved.kind, kind);
+            assert_eq!(moved.value, LineEventValue::constant(value));
+        }
+
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::KeyQ);
+        app.update();
+
+        let world = app.world_mut();
+        assert!(world.get_entity(entity).is_err());
+        let placed = world
+            .query::<&LineEvent>()
+            .iter(world)
+            .find(|event| event.start_beat == preview.start_beat)
+            .unwrap();
+        assert_eq!(*placed, preview);
+    }
+}
+
+#[test]
 fn lines_created_from_the_selected_line_ignore_pending_events() {
     use bevy::ecs::system::RunSystemOnce;
 
@@ -240,10 +303,10 @@ fn lines_created_from_the_selected_line_ignore_pending_events() {
     let created: Vec<_> = world
         .query::<(&LineEvent, &EventOf)>()
         .iter(world)
-        .filter(|(event, event_of)| event_of.0 != line && event.kind == LineEventKind::X)
-        .map(|(event, _)| event.value.start())
+        .filter(|(_, event_of)| event_of.0 != line)
+        .map(|(event, _)| (event.kind, event.value.start()))
         .collect();
-    assert_eq!(created, [10.0]);
+    assert_eq!(created, [(LineEventKind::X, 10.0)]);
 }
 
 #[test]

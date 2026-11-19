@@ -122,23 +122,14 @@ pub fn compute_line_system(
         |(line, mut position, mut rotation, mut opacity, mut speed)| {
             let value = |kind| index.evaluate(line, kind, beat);
 
-            if let Some(x_value) = value(LineEventKind::X) {
-                position.0.x = x_value;
-            }
-            if let Some(y_value) = value(LineEventKind::Y) {
-                position.0.y = y_value;
-            }
-            if let Some(rotation_value) = value(LineEventKind::Rotation) {
-                rotation.0 = rotation_value.to_radians();
-            }
-            if keyboard.pressed(KeyCode::KeyT) {
-                opacity.0 = 1.0;
-            } else if let Some(opacity_value) = value(LineEventKind::Opacity) {
-                opacity.0 = opacity_value / 255.0;
-            }
-            if let Some(speed_value) = value(LineEventKind::Speed) {
-                speed.0 = speed_value;
-            }
+            position.0 = Vec2::new(value(LineEventKind::X), value(LineEventKind::Y));
+            rotation.0 = value(LineEventKind::Rotation).to_radians();
+            opacity.0 = if keyboard.pressed(KeyCode::KeyT) {
+                1.0
+            } else {
+                value(LineEventKind::Opacity) / 255.0
+            };
+            speed.0 = value(LineEventKind::Speed);
         },
     );
 }
@@ -427,5 +418,65 @@ pub fn update_line_texture_system(
 ) {
     for mut sprite in &mut query {
         sprite.image = assets.line.clone();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::event::{EventIndexPlugin, EventOf};
+    use phichain_chart::{beat, event};
+
+    #[test]
+    fn line_state_uses_defaults_before_its_first_events_and_after_removal() {
+        let mut app = App::new();
+        app.add_plugins((TaskPoolPlugin::default(), EventIndexPlugin))
+            .init_resource::<ButtonInput<KeyCode>>()
+            .init_resource::<BpmList>()
+            .insert_resource(ChartTime(0.0))
+            .add_systems(Update, compute_line_system);
+
+        let line = app.world_mut().spawn(Line::default()).id();
+        let events = [
+            (LineEventKind::X, 100.0),
+            (LineEventKind::Y, 50.0),
+            (LineEventKind::Rotation, 90.0),
+            (LineEventKind::Opacity, 255.0),
+            (LineEventKind::Speed, 20.0),
+        ]
+        .map(|(kind, value)| {
+            let event = event!(kind, beat!(2) => beat!(3), value);
+            app.world_mut().spawn((event, EventOf(line))).id()
+        });
+
+        let event_time = app.world().resource::<BpmList>().time_at(beat!(2));
+        let state = |app: &App| {
+            let line = app.world().entity(line);
+            (
+                line.get::<LinePosition>().unwrap().0,
+                line.get::<LineRotation>().unwrap().0,
+                line.get::<LineOpacity>().unwrap().0,
+                line.get::<LineSpeed>().unwrap().0,
+            )
+        };
+        let defaults = (Vec2::ZERO, 0.0, 0.0, 10.0);
+        let event_state = (Vec2::new(100.0, 50.0), 90.0_f32.to_radians(), 1.0, 20.0);
+
+        for (time, expected) in [
+            (0.0, defaults),
+            (event_time, event_state),
+            (0.0, defaults),
+            (event_time, event_state),
+        ] {
+            app.world_mut().resource_mut::<ChartTime>().0 = time;
+            app.update();
+            assert_eq!(state(&app), expected);
+        }
+
+        for entity in events {
+            app.world_mut().despawn(entity);
+        }
+        app.update();
+        assert_eq!(state(&app), defaults);
     }
 }
