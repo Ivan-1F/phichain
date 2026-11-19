@@ -88,15 +88,20 @@ impl Default for AudioSettings {
     }
 }
 
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AspectRatio {
-    #[default]
     Free,
-    Fixed {
-        width: f32,
-        height: f32,
-    },
+    Fixed { width: f32, height: f32 },
+}
+
+impl Default for AspectRatio {
+    fn default() -> Self {
+        Self::Fixed {
+            width: 4.0,
+            height: 3.0,
+        }
+    }
 }
 
 impl fmt::Display for AspectRatio {

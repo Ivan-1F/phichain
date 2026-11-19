@@ -11,6 +11,7 @@
   - New lines (including the initial line in new charts) no longer come with pre-populated default events
   - Exporting to the official or RPE format fills in these initial defaults automatically
 - [Editor] Create Line from Selected Line State now only adds initial events for tracks whose current value differs from the default; placing an event with no preceding event uses the track's default as its start value, and the event timeline playhead now shows default values when empty or before the first event
+- [Editor] Changed the default preview aspect ratio from Free to 4:3
 
 ### Fixed
 
