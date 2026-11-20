@@ -1,6 +1,7 @@
 #[cfg(feature = "bevy")]
 use bevy::ecs::reflect::ReflectComponent;
 use serde::{Deserialize, Serialize};
+use std::ffi::OsStr;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
@@ -59,18 +60,20 @@ impl ProjectPath {
         self.0.join(path)
     }
 
-    fn find_file(&self, name: &str, allowed_extensions: &[impl ToString]) -> Option<PathBuf> {
+    fn find_file(&self, name: &str, allowed_extensions: &[&str]) -> Option<PathBuf> {
         std::fs::read_dir(&self.0)
             .ok()?
             .filter_map(Result::ok)
             .map(|x| x.path())
             .find(|path| {
                 path.is_file()
-                    && path.file_stem() == Some(name.as_ref())
+                    && path
+                        .file_stem()
+                        .is_some_and(|stem| stem.eq_ignore_ascii_case(OsStr::new(name)))
                     && path.extension().is_some_and(|ext| {
                         allowed_extensions
                             .iter()
-                            .any(|allowed| *allowed.to_string() == *ext)
+                            .any(|allowed| ext.eq_ignore_ascii_case(OsStr::new(allowed)))
                     })
             })
     }

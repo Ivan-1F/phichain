@@ -469,6 +469,33 @@ mod tests {
     }
 
     #[test]
+    fn test_open_project_with_mixed_case_media_names() {
+        let tmp = TempDir::new().unwrap();
+        let project_dir = tmp.path();
+        let music_path = project_dir.join("MuSiC.WaV");
+        let illustration_path = project_dir.join("illustration.JPG");
+        create_dummy_wav(&music_path);
+        image::RgbImage::new(8, 8).save(&illustration_path).unwrap();
+        std::fs::write(
+            project_dir.join("chart.json"),
+            serde_json::to_string(&PhichainChart::default()).unwrap(),
+        )
+        .unwrap();
+        std::fs::write(
+            project_dir.join("meta.json"),
+            serde_json::to_string(&sample_meta()).unwrap(),
+        )
+        .unwrap();
+
+        let project = Project::open(project_dir.to_path_buf()).unwrap();
+
+        assert_eq!(project.path.music_path().unwrap(), music_path);
+        let resolved_illustration_path = project.path.illustration_path().unwrap();
+        assert_eq!(resolved_illustration_path, illustration_path);
+        phichain_game::illustration::open_illustration(resolved_illustration_path).unwrap();
+    }
+
+    #[test]
     fn test_open_project_missing_music() {
         let tmp = TempDir::new().unwrap();
         let project_dir = tmp.path().join("incomplete_project");

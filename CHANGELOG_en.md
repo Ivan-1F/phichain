@@ -21,6 +21,7 @@
 - [Editor] Fixed inconsistent timeline backgrounds between docked panels and floating windows; both now use black
 - [Editor] Fixed music continuing to play while the editor is paused when scrolling the timeline right as playback starts with Pause when Scroll enabled
 - [Core] Fixed lines staying stuck in their previous state when moving before a track's first event or deleting all events on a track
+- [Core] Project music and illustration filenames and extensions are now matched case-insensitively, so files such as `music.MP3` and `illustration.JPG` load correctly
 
 ## [v1.0.0-beta.8] - 2026-11-08
 
