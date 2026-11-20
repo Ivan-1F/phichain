@@ -193,9 +193,6 @@ fn main() {
             (apply_args_config_system, apply_editor_settings_system),
         );
 
-    // #[cfg(debug_assertions)]
-    // app.add_plugins(bevy_inspector_egui::quick::WorldInspectorPlugin::new());
-
     app.run();
 }
 

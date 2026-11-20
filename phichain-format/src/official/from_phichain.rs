@@ -293,11 +293,13 @@ mod tests {
 
     #[test]
     fn export_empty_line_with_bpm_slowdown() {
-        let mut chart = PhichainChart::default();
-        chart.bpm_list = BpmList::new(vec![
-            BpmPoint::new(Beat::ZERO, 180.0),
-            BpmPoint::new(beat!(4), 60.0),
-        ]);
+        let chart = PhichainChart {
+            bpm_list: BpmList::new(vec![
+                BpmPoint::new(Beat::ZERO, 180.0),
+                BpmPoint::new(beat!(4), 60.0),
+            ]),
+            ..PhichainChart::default()
+        };
 
         let exported = phichain_to_official(chart, &OfficialOutputOptions::default()).unwrap();
         let middle = &exported.lines[0].move_events;
