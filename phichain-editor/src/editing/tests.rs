@@ -310,6 +310,31 @@ fn lines_created_from_the_selected_line_ignore_pending_events() {
 }
 
 #[test]
+fn created_lines_are_visible() {
+    use bevy::ecs::system::RunSystemOnce;
+    use phichain_game::event::EventIndex;
+
+    let (mut app, initial_line) = editing_test_app();
+    let world = app.world_mut();
+    open_document(world);
+
+    let created: Result = world
+        .run_system_once(super::line::create_line_system)
+        .unwrap();
+    created.unwrap();
+
+    let line = world
+        .query_filtered::<Entity, With<Line>>()
+        .iter(world)
+        .find(|line| *line != initial_line)
+        .expect("a line is created");
+    let opacity = world
+        .resource::<EventIndex>()
+        .evaluate(line, LineEventKind::Opacity, 0.0);
+    assert_eq!(opacity, 255.0);
+}
+
+#[test]
 fn escape_cancels_pending_hold_and_event_on_their_timelines() {
     for x in [300.0, 750.0] {
         assert_escape_cancels(Some(window_at(Vec2::new(x, 300.0))), None, true);

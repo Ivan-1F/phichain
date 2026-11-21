@@ -3,6 +3,7 @@ use bevy::prelude::*;
 
 use crate::action::ActionRegistrationExt;
 use crate::editing::history::EditorHistory;
+use crate::editing::line::new_line;
 use crate::hotkey::modifier::Modifier;
 use crate::hotkey::Hotkey;
 use crate::notification::{ToastsExt, ToastsStorage};
@@ -338,7 +339,11 @@ pub fn create_project(
     let meta_string = serde_json::to_string_pretty(&project_meta)?;
     std::fs::write(project_path.meta_path(), meta_string).context("Failed to write meta")?;
 
-    let chart_string = serde_json::to_string_pretty(&PhichainChart::default())?;
+    let chart = PhichainChart {
+        lines: vec![new_line()],
+        ..PhichainChart::empty()
+    };
+    let chart_string = serde_json::to_string_pretty(&chart)?;
     std::fs::write(project_path.chart_path(), chart_string).context("Failed to write chart")?;
 
     Ok(())

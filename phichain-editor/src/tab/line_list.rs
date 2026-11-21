@@ -1,6 +1,6 @@
 use crate::action::RunAction;
 use crate::editing::history::Edits;
-use crate::editing::line::spawn_line;
+use crate::editing::line::{new_line, spawn_line};
 use crate::selection::SelectedLine;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
@@ -8,7 +8,6 @@ use egui::{Color32, Layout, RichText, Sense, Stroke, StrokeKind, Ui};
 use phichain_chart::constants::{CANVAS_HEIGHT, CANVAS_WIDTH};
 use phichain_chart::line::{Line, LineOpacity, LinePosition, LineRotation, LineSpeed};
 use phichain_chart::note::Note;
-use phichain_chart::serialization::SerializedLine;
 use phichain_game::event::Events;
 use phichain_game::line::LineOrder;
 
@@ -403,18 +402,20 @@ impl<'w, 's> LineList<'w, 's> {
         }
 
         if let Some(current_parent) = add_parent {
+            let line = new_line();
             self.params
                 .edits
                 .once(t!("history.create_line"), move |commands| {
-                    let parent = spawn_line(SerializedLine::default(), commands, current_parent);
+                    let parent = spawn_line(line, commands, current_parent);
                     commands.entity(entity).insert(ChildOf(parent));
                 });
         }
         if add_child {
+            let line = new_line();
             self.params
                 .edits
                 .once(t!("history.create_line"), move |commands| {
-                    spawn_line(SerializedLine::default(), commands, Some(entity));
+                    spawn_line(line, commands, Some(entity));
                 });
         }
     }

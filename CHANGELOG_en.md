@@ -8,7 +8,7 @@
 - [Editor] Replaced the timeline's background spectrogram with a waveform, shown by default and toggleable in Timeline Settings
 - [Editor] Moved timeline creation and removal from Timeline Settings to buttons shown on either side of a timeline's label on hover. New timelines are inserted to its right after choosing a type and whether to follow the selected line or show a fixed line. An empty panel now shows a prompt to create the first timeline
 - [Core] Event tracks now have default values (0 for X, Y, rotation, and opacity; 10 for speed) when empty or before their first event
-  - New lines (including the initial line in new charts) no longer come with pre-populated default events
+  - New lines (including the initial line in new charts) now come with only an opaque opacity event, leaving the other tracks at their defaults
   - Exporting to the official or RPE format fills in these initial defaults automatically
 - [Editor] Create Line from Selected Line State now only adds initial events for tracks whose current value differs from the default; placing an event with no preceding event uses the track's default as its start value, and the event timeline playhead now shows default values when empty or before the first event
 - [Editor] Changed the default preview aspect ratio from Free to 4:3
