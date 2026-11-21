@@ -6063,10 +6063,12 @@ dependencies = [
  "bevy",
  "bevy_egui",
  "bevy_kira_audio",
+ "cosmic-text",
  "image",
  "serde",
  "serde_yaml 0.9.34+deprecated",
  "toml 0.8.9",
+ "unicode-script",
  "zip",
 ]
 

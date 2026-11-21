@@ -93,13 +93,13 @@ use bevy_egui::{
 use bevy_mod_reqwest::ReqwestPlugin;
 use bevy_persistent::Persistent;
 use egui::RichText;
+use phichain_assets::font::{egui_fonts, CjkRegion};
 use phichain_assets::AssetsPlugin;
 use phichain_chart::event::LineEvent;
 use phichain_chart::note::Note;
 use phichain_game::{GamePlugin, GameSet};
 use rust_i18n::set_locale;
 use std::env;
-use std::sync::Arc;
 
 i18n!("lang", fallback = "en_us");
 
@@ -183,10 +183,7 @@ fn main() {
             EguiPrimaryContextPass,
             setup_egui_image_loader_system.run_if(run_once),
         )
-        .add_systems(
-            EguiPrimaryContextPass,
-            setup_egui_font_system.run_if(run_once),
-        )
+        .add_systems(EguiPrimaryContextPass, sync_fonts_system)
         .add_systems(EguiPrimaryContextPass, ui_system.run_if(project_loaded()))
         .add_systems(
             Startup,
@@ -214,34 +211,25 @@ fn setup_egui_image_loader_system(mut contexts: bevy_egui::EguiContexts) -> Resu
     Ok(())
 }
 
-fn setup_egui_font_system(mut contexts: bevy_egui::EguiContexts) -> Result {
+/// Follow the editor language: fonts for the egui ui, and the CJK region for bevy text
+fn sync_fonts_system(
+    mut contexts: bevy_egui::EguiContexts,
+    settings: Res<Persistent<EditorSettings>>,
+    mut region: ResMut<CjkRegion>,
+    mut applied: Local<Option<CjkRegion>>,
+) -> Result {
+    let current = CjkRegion::from_language(&settings.general.language);
+    if *applied == Some(current) {
+        return Ok(());
+    }
+    let mut fonts = egui_fonts::definitions(current);
+    egui_phosphor::add_to_fonts(&mut fonts, egui_phosphor::Variant::Regular);
     let ctx = contexts.ctx_mut()?;
-
-    let font_file = utils::assets::get_base_path()
-        .join("assets/font/MiSans-Regular.ttf")
-        .to_str()
-        .unwrap()
-        .to_string();
-    let font_name = "MiSans-Regular".to_string();
-    let font_file_bytes = std::fs::read(font_file).expect("Failed to open font file");
-
-    let font_data = egui::FontData::from_owned(font_file_bytes);
-    let mut font_def = egui::FontDefinitions::default();
-    font_def
-        .font_data
-        .insert(font_name.to_string(), Arc::new(font_data));
-
-    let font_family: egui::FontFamily = egui::FontFamily::Proportional;
-    font_def
-        .families
-        .get_mut(&font_family)
-        .expect("Failed to setup font")
-        .insert(0, font_name);
-
-    egui_phosphor::add_to_fonts(&mut font_def, egui_phosphor::Variant::Regular);
-
-    ctx.set_fonts(font_def);
-
+    ctx.set_fonts(fonts);
+    // egui centers a row's controls only when none is taller than this
+    ctx.style_mut(|style| style.spacing.interact_size.y = 20.0);
+    region.set_if_neq(current);
+    *applied = Some(current);
     Ok(())
 }
 

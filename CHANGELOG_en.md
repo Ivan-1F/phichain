@@ -12,6 +12,10 @@
   - Exporting to the official or RPE format fills in these initial defaults automatically
 - [Editor] Create Line from Selected Line State now only adds initial events for tracks whose current value differs from the default; placing an event with no preceding event uses the track's default as its start value, and the event timeline playhead now shows default values when empty or before the first event
 - [Editor] Changed the default preview aspect ratio from Free to 4:3
+- [Editor] Changed the interface font from MiSans to Noto Sans CJK
+  - Han characters use the regional glyph forms of the interface language
+  - Changed the control height from 18 to 20
+- [Core] Non-English characters in the song name and level on the game screen now use Noto Sans CJK
 
 ### Fixed
 
@@ -22,6 +26,9 @@
 - [Editor] Fixed music continuing to play while the editor is paused when scrolling the timeline right as playback starts with Pause when Scroll enabled
 - [Core] Fixed lines staying stuck in their previous state when moving before a track's first event or deleting all events on a track
 - [Core] Project music and illustration filenames and extensions are now matched case-insensitively, so files such as `music.MP3` and `illustration.JPG` load correctly
+- [Editor] Fixed Korean and some symbols (such as ł, ≒, and ✗) showing as boxes in the interface
+- [Core] Fixed Korean and some symbols showing as boxes in the song name and level on the game screen
+- [Editor] Fixed text fields, dropdowns, and buttons on the same row being vertically misaligned
 
 ## [v1.0.0-beta.8] - 2026-11-08
 

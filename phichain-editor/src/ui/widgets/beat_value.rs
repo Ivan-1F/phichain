@@ -1,5 +1,5 @@
 use crate::ui::edit::{EditResponse, EditWidget};
-use egui::{Response, Ui, Vec2, Widget};
+use egui::{Response, Ui, Widget};
 use num::{FromPrimitive, Rational32};
 use phichain_chart::beat;
 use phichain_chart::beat::Beat;
@@ -62,7 +62,7 @@ impl BeatValue<'_> {
                         .custom_formatter(move |_, _| format!("{:?}", display_beat))
                         .speed(speed),
                 );
-                ui.spacing_mut().interact_size = Vec2::new(20.0, 18.0);
+                ui.spacing_mut().interact_size.x = 20.0;
                 let response_denom = ui.add(
                     egui::DragValue::new(&mut denom)
                         .range(1..=i32::MAX)
@@ -73,7 +73,7 @@ impl BeatValue<'_> {
                         .range(0..=i32::MAX)
                         .speed(1),
                 );
-                ui.spacing_mut().interact_size = Vec2::new(40.0, 18.0);
+                ui.spacing_mut().interact_size.x = 40.0;
                 let response_whole = ui.add(
                     egui::DragValue::new(&mut whole)
                         .range(0..=i32::MAX)
@@ -92,7 +92,7 @@ impl BeatValue<'_> {
                         .range(0..=i32::MAX)
                         .speed(1),
                 );
-                ui.spacing_mut().interact_size = Vec2::new(20.0, 18.0);
+                ui.spacing_mut().interact_size.x = 20.0;
                 let response_numer = ui.add(
                     egui::DragValue::new(&mut numer)
                         .range(0..=i32::MAX)
@@ -103,7 +103,7 @@ impl BeatValue<'_> {
                         .range(1..=i32::MAX)
                         .speed(1),
                 );
-                ui.spacing_mut().interact_size = Vec2::new(40.0, 18.0);
+                ui.spacing_mut().interact_size.x = 40.0;
 
                 let response_value = ui.add(
                     egui::DragValue::new(&mut value)

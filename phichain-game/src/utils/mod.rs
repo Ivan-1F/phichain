@@ -1,4 +1,3 @@
-pub mod text_utils;
 
 use crate::line::LineOrder;
 use bevy::prelude::{ChildOf, Children, Entity, With, Without, World};

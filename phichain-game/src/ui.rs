@@ -1,15 +1,15 @@
 use super::{GameConfig, GameSet, GameViewport};
 use crate::audio::AudioDuration;
 use crate::score::GameScore;
-use crate::utils::text_utils::{split_by_script, Script};
 use crate::{ChartTime, PauseToggleRequest, SeekRequest};
 use bevy::picking::Pickable;
 use bevy::prelude::*;
 use bevy::ui::RelativeCursorPosition;
 use phichain_chart::offset::Offset;
 
-const CJK_FONT: &str = "font/MiSans-Regular.ttf";
-const ASCII_FONT: &str = "font/phigros.ttf";
+/// Latin text in the Phigros look; other characters fall back to the fonts in `phichain_assets::font`.
+/// It maps the space only at U+00A0, so spaces are replaced before display.
+const LATIN_FONT: &str = "font/phigros.ttf";
 
 pub struct GameUiPlugin;
 
@@ -181,7 +181,7 @@ fn setup_combo_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
                     parent.spawn((
                         Text::new("COMBO"), // this will be replaced every frame at update_combo_system
                         TextFont {
-                            font: asset_server.load("font/phigros.ttf"),
+                            font: asset_server.load(LATIN_FONT),
                             font_size: 20.0,
                             ..default()
                         },
@@ -193,7 +193,7 @@ fn setup_combo_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
                     parent.spawn((
                         Text::new("COMBO"),
                         TextFont {
-                            font: asset_server.load("font/phigros.ttf"),
+                            font: asset_server.load(LATIN_FONT),
                             font_size: 10.0,
                             ..default()
                         },
@@ -225,7 +225,7 @@ fn spawn_score_ui_system(mut commands: Commands, asset_server: Res<AssetServer>)
             parent.spawn((
                 Text::new("0000000"),
                 TextFont {
-                    font: asset_server.load("font/phigros.ttf"),
+                    font: asset_server.load(LATIN_FONT),
                     font_size: 10.0,
                     ..default()
                 },
@@ -329,21 +329,16 @@ fn update_name_system(
 
     commands.entity(container).despawn_related::<Children>();
     commands.entity(container).with_children(|parent| {
-        for (content, script) in split_by_script(&config.name.replace(' ', "\u{00A0}")) {
-            parent.spawn((
-                Text::new(content),
-                TextFont {
-                    font: asset_server.load(match script {
-                        Script::Ascii => ASCII_FONT,
-                        Script::Cjk => CJK_FONT,
-                    }),
-                    font_size: 10.0,
-                    ..default()
-                },
-                TextColor::WHITE,
-                TextScale(0.5),
-            ));
-        }
+        parent.spawn((
+            Text::new(config.name.replace(' ', "\u{00A0}")),
+            TextFont {
+                font: asset_server.load(LATIN_FONT),
+                font_size: 10.0,
+                ..default()
+            },
+            TextColor::WHITE,
+            TextScale(0.5),
+        ));
     });
 
     Ok(())
@@ -566,21 +561,16 @@ fn update_level_system(
 
     commands.entity(container).despawn_related::<Children>();
     commands.entity(container).with_children(|parent| {
-        for (content, script) in split_by_script(&config.level.replace(' ', "\u{00A0}")) {
-            parent.spawn((
-                Text::new(content),
-                TextFont {
-                    font: asset_server.load(match script {
-                        Script::Ascii => ASCII_FONT,
-                        Script::Cjk => CJK_FONT,
-                    }),
-                    font_size: 10.0,
-                    ..default()
-                },
-                TextColor::WHITE,
-                TextScale(0.5),
-            ));
-        }
+        parent.spawn((
+            Text::new(config.level.replace(' ', "\u{00A0}")),
+            TextFont {
+                font: asset_server.load(LATIN_FONT),
+                font_size: 10.0,
+                ..default()
+            },
+            TextColor::WHITE,
+            TextScale(0.5),
+        ));
     });
 
     Ok(())

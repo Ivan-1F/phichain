@@ -1,3 +1,4 @@
+pub mod font;
 pub mod loader;
 pub mod meta;
 
@@ -120,6 +121,7 @@ impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
         load_builtin(app.world_mut())
             .unwrap_or_else(|err| abort_broken_install("built-in resource pack", err));
+        font::plugin(app);
 
         #[cfg(feature = "egui")]
         app.add_systems(bevy_egui::EguiPrimaryContextPass, setup_egui_images_system);

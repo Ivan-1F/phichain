@@ -275,18 +275,17 @@ fn ui_system(world: &mut World) {
                 let response = button_frame(ui, false, |ui, text_color| {
                     ui.set_width(ui.available_width());
                     let muted = text_color.gamma_multiply(0.7);
-                    ui.horizontal(|ui| {
-                        ui.label(RichText::new(&recent_project.name).color(text_color));
-                        ui.add_space(ui.available_width() - 10.0);
-                        // Interactive child; its click is consumed here and won't
-                        // bubble up to trigger the row's open action.
-                        if ui
-                            .add(egui::Label::new("×").sense(Sense::click()))
-                            .clicked()
-                        {
-                            remove.replace(index);
-                        }
-                    });
+                    let (_, remove_clicked) = ui.sides(
+                        |ui| ui.label(RichText::new(&recent_project.name).color(text_color)),
+                        // The click stays here and does not open the project
+                        |ui| {
+                            ui.add(egui::Label::new("×").sense(Sense::click()))
+                                .clicked()
+                        },
+                    );
+                    if remove_clicked {
+                        remove.replace(index);
+                    }
                     ui.label(RichText::new(recent_project.path.to_string_lossy()).color(muted));
                     ui.label(
                         RichText::new(t!(
