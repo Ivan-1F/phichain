@@ -8,12 +8,12 @@ use crate::identifier::{Identifier, IntoIdentifier};
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::schedule::EditorSet;
 use crate::timeline::container::TimelineLayout;
-use crate::timeline::event::EventTimeline;
+use crate::timeline::event::{track_at, EventTimeline};
 use crate::timeline::pending::{spawn_pending, PendingOf};
 use crate::timeline::pending_status::{PendingHint, PendingStatus};
 use crate::timeline::TimelineContext;
 use crate::utils::convert::BevyEguiConvert;
-use phichain_chart::event::{LineEvent, LineEventKind, LineEventValue};
+use phichain_chart::event::{LineEvent, LineEventValue};
 use phichain_game::event::{EventIndex, EventOf};
 
 enum CreateEventHotkeys {
@@ -105,11 +105,7 @@ fn create_event_system(
         let beat = bpm_list.beat_at(time).value();
         let beat = ctx.settings.attach(beat);
 
-        let track =
-            (((cursor_position.x - viewport.min.x) / (viewport.width() / 5.0)).floor() as u8 + 1)
-                .min(5);
-
-        (track, beat)
+        (track_at(viewport, cursor_position.x), beat)
     };
 
     let placement_value = |event: &LineEvent, excluded: Entity| {
@@ -136,9 +132,9 @@ fn create_event_system(
     if let Some((pending_event, entity)) = pending_event {
         // pending events follow the cursor, staying where they last fit
         let mut event = *pending_event;
-        let (track, beat) = calc_event_attrs();
+        let (kind, beat) = calc_event_attrs();
         event.end_beat = beat.max(event.start_beat + ctx.settings.minimum_beat());
-        event.kind = LineEventKind::try_from(track).expect("Unknown event track");
+        event.kind = kind;
         if !index.fits(line_entity, entity, &event) {
             event = *pending_event;
         }
@@ -155,9 +151,9 @@ fn create_event_system(
             commands.entity(entity).try_insert(event);
         }
     } else if let Some(value) = requested_value {
-        let (track, beat) = calc_event_attrs();
+        let (kind, beat) = calc_event_attrs();
         let mut event = LineEvent {
-            kind: LineEventKind::try_from(track).expect("Unknown event track"),
+            kind,
             value,
             start_beat: beat,
             end_beat: beat + ctx.settings.minimum_beat(),

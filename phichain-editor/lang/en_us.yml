@@ -68,6 +68,12 @@ menu_bar:
         save: Save
         cancel: Cancel
 
+quick_action:
+  aspect_ratio: Preview aspect ratio
+  progress: Progress
+  time: Time (seconds)
+  beat: Time (beats)
+
 tab:
   game:
     title: Preview

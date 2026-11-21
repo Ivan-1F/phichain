@@ -21,6 +21,7 @@ use crate::curve_note_track::CurveNoteTrackPlugin;
 use crate::event::EventIndexPlugin;
 use crate::highlight::HighlightPlugin;
 use crate::hit_effect::HitEffectPlugin;
+pub use crate::hit_effect::HitEffectRng;
 use crate::illustration::IllustrationPlugin;
 use crate::line::LinePlugin;
 use crate::loader::nonblocking::NonblockingLoaderPlugin;

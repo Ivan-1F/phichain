@@ -1,4 +1,4 @@
-use crate::misc::WorkingDirectory;
+use crate::misc::MiscPlugin;
 use bevy::prelude::*;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
@@ -14,8 +14,9 @@ impl Plugin for TranslationPlugin {
 #[derive(Resource, Debug, Serialize, Deserialize)]
 pub struct Languages(pub IndexMap<String, String>);
 
-fn load_translation_system(mut commands: Commands, working_directory: Res<WorkingDirectory>) {
-    let meta = working_directory.0.join("lang/meta.json");
+fn load_translation_system(mut commands: Commands) {
+    // bundled with the executable, unlike the user data in the working directory
+    let meta = MiscPlugin::get_base_path().join("lang/meta.json");
     let languages: Languages =
         serde_json::from_reader(std::fs::File::open(meta).expect("Failed to open language meta"))
             .expect("Failed to parse language meta");

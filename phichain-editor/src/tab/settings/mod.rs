@@ -15,6 +15,7 @@ use crate::tab::settings::general::General;
 use crate::tab::settings::graphics::Graphics;
 use crate::tab::settings::hotkey::Hotkey;
 use crate::tab::settings::respack::Respack;
+use crate::ui::accessibility::AccessibleName;
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
 use egui::{Layout, RichText, Ui, WidgetText};
@@ -37,20 +38,23 @@ impl SettingUi for &mut Ui {
         description: Option<impl Into<RichText>>,
         widget: impl FnOnce(&mut Ui) -> bool,
     ) -> bool {
-        let (_, right) = egui::Sides::new().shrink_left().show(
+        let (name, widget) = egui::Sides::new().shrink_left().show(
             self,
             |ui| {
                 ui.vertical(|ui| {
-                    ui.label(name);
+                    let name = ui.label(name);
                     if let Some(description) = description {
                         ui.label(description.into().size(11.0));
                     }
-                });
+                    name
+                })
+                .inner
             },
-            widget,
+            |ui| ui.scope(widget),
         );
+        widget.response.labelled(&name);
 
-        right
+        widget.inner
     }
 }
 

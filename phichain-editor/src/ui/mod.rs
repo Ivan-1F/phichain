@@ -2,6 +2,7 @@ use crate::ui::compat::mute_keyboard_for_bevy_when_egui_wants_system;
 use bevy::prelude::*;
 use bevy_egui::EguiPreUpdateSet;
 
+pub mod accessibility;
 mod compat;
 pub mod edit;
 pub mod latch;

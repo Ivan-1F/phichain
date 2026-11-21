@@ -1,6 +1,7 @@
 use crate::notification::{ToastsExt, ToastsStorage};
 use crate::settings::{AspectRatio, EditorSettings};
 use crate::timing::{SeekTo, Timing};
+use crate::ui::accessibility::AccessibleName;
 use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
 use bevy_persistent::Persistent;
@@ -22,13 +23,14 @@ pub fn quick_action(ui: &mut Ui, world: &mut World) {
         state.get_mut(world);
 
     ui.horizontal(|ui| {
-        ui.label(t!("tab.settings.category.audio.playback_rate.label"));
+        let label = ui.label(t!("tab.settings.category.audio.playback_rate.label"));
         ui.add(
             egui::DragValue::new(&mut editor_settings.audio.playback_rate)
                 .suffix("x")
                 .range(0.01..=1.0)
                 .speed(0.01),
-        );
+        )
+        .labelled(&label);
 
         ui.separator();
 
@@ -97,7 +99,9 @@ pub fn quick_action(ui: &mut Ui, world: &mut World) {
                         }
                     }
                 }
-            });
+            })
+            .response
+            .named(t!("quick_action.aspect_ratio"));
 
         // -------- Progress Control --------
 
@@ -111,14 +115,16 @@ pub fn quick_action(ui: &mut Ui, world: &mut World) {
             ui.add(
                 egui::Slider::new(&mut second_binding, 0.0..=duration.0.as_secs_f32())
                     .show_value(false),
-            );
+            )
+            .named(t!("quick_action.progress"));
             ui.add_sized(
                 vec2(55.0, 18.0),
                 egui::DragValue::new(&mut second_binding)
                     .speed(0.05)
                     .custom_formatter(|x, _| format!("{x:.2}"))
                     .range(0.0..=duration.0.as_secs_f32()),
-            );
+            )
+            .named(t!("quick_action.time"));
             let max_beat = bpm_list.beat_at(duration.0.as_secs_f32());
             ui.add_sized(
                 vec2(55.0, 18.0),
@@ -126,7 +132,8 @@ pub fn quick_action(ui: &mut Ui, world: &mut World) {
                     .speed(0.05)
                     .custom_formatter(|x, _| format!("{x:.2}"))
                     .range(0.0..=max_beat.value()),
-            );
+            )
+            .named(t!("quick_action.beat"));
         });
 
         if second_binding != seconds {

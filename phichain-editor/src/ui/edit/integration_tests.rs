@@ -604,6 +604,7 @@ fn easing_parameter_drag_forms_one_edit_for_steps_and_elastic() {
                     .edit(&mut ui, "parameter", |ui, options| {
                         ui.add(EasingParameter(&mut options.curve))
                     })
+                    .inner
                     .rect,
             );
             state.apply(world);
