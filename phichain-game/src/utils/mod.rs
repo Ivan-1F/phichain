@@ -1,4 +1,3 @@
-
 use crate::line::LineOrder;
 use bevy::prelude::{ChildOf, Children, Entity, With, Without, World};
 use phichain_chart::line::Line;

@@ -129,9 +129,11 @@ impl Fallback for RegionFallback {
 
     fn script_fallback(&self, script: Script, _locale: &str) -> &[&'static str] {
         match script {
-            Script::Han | Script::Hiragana | Script::Katakana | Script::Hangul | Script::Bopomofo => {
-                &self.cjk
-            }
+            Script::Han
+            | Script::Hiragana
+            | Script::Katakana
+            | Script::Hangul
+            | Script::Bopomofo => &self.cjk,
             _ => &[],
         }
     }
