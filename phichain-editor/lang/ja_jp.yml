@@ -191,6 +191,8 @@ tab:
       move_to_root: ルートに移動
       add_parent: 親ラインを作成
       add_child: 子ラインを作成
+  live_record:
+    title: リアルタイム録音
   history:
     title: 履歴
     open_project: プロジェクトを開く

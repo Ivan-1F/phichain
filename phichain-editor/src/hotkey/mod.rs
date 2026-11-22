@@ -63,7 +63,7 @@ impl Display for Hotkey {
     }
 }
 
-fn display_key_code(key: KeyCode) -> String {
+pub fn display_key_code(key: KeyCode) -> String {
     match key {
         // Arrow keys
         KeyCode::ArrowUp => "↑".to_string(),
@@ -238,6 +238,7 @@ pub struct HotkeyContext<'w, 's> {
     pub query: Query<'w, 's, (&'static mut RecordingHotkey, Entity)>,
 
     working_directory: Res<'w, WorkingDirectory>,
+    live_record: Option<Res<'w, crate::tab::live_record::LiveRecordState>>,
 }
 
 impl HotkeyContext<'_, '_> {
@@ -253,7 +254,16 @@ impl HotkeyContext<'_, '_> {
         if self.query.is_empty() {
             self.state
                 .get(hotkey)
-                .map(|x| x.just_pressed(&self.input))
+                .map(|x| {
+                    if self
+                        .live_record
+                        .as_ref()
+                        .is_some_and(|lr| lr.is_key_captured(x.key))
+                    {
+                        return false;
+                    }
+                    x.just_pressed(&self.input)
+                })
                 .unwrap_or(false)
         } else {
             // disable all hotkey while recording hotkey
@@ -264,7 +274,16 @@ impl HotkeyContext<'_, '_> {
         if self.query.is_empty() {
             self.state
                 .get(hotkey)
-                .map(|x| x.pressed(&self.input))
+                .map(|x| {
+                    if self
+                        .live_record
+                        .as_ref()
+                        .is_some_and(|lr| lr.is_key_captured(x.key))
+                    {
+                        return false;
+                    }
+                    x.pressed(&self.input)
+                })
                 .unwrap_or(false)
         } else {
             // disable all hotkey while recording hotkey

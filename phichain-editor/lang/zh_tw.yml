@@ -191,6 +191,8 @@ tab:
       move_to_root: 移動至根部
       add_parent: 新增父線
       add_child: 新增子線
+  live_record:
+    title: 即時錄譜
   history:
     title: 歷史記錄
     open_project: 打開專案

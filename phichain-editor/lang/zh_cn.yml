@@ -191,6 +191,8 @@ tab:
       move_to_root: 移动至根部
       add_parent: 创建父线
       add_child: 创建子线
+  live_record:
+    title: 实时录谱
   history:
     title: 历史记录
     open_project: 打开项目
