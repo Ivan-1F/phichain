@@ -128,7 +128,7 @@ pub fn single_event_inspector(
                 },
             );
             let easing = editor.value().value.easing();
-            if easing.is_steps() || easing.is_elastic() {
+            if easing.is_steps() || easing.is_elastic() || easing.is_reverse_elastic() {
                 editor.field(
                     &mut ui,
                     "easing_parameter",

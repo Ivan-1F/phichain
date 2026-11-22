@@ -272,7 +272,11 @@ impl Widget for EasingValue<'_> {
                         });
                         Grid::new("easing-grid").num_columns(3).show(ui, |ui| {
                             for easing in Easing::iter().filter(|x| {
-                                !x.is_custom() && !x.is_linear() && !x.is_steps() && !x.is_elastic()
+                                !x.is_custom()
+                                    && !x.is_linear()
+                                    && !x.is_steps()
+                                    && !x.is_elastic()
+                                    && !x.is_reverse_elastic()
                             }) {
                                 let selected = self.value == &easing;
 
@@ -318,6 +322,19 @@ impl Widget for EasingValue<'_> {
                                 combobox_changed = true;
                                 *self.value = Easing::Elastic { omega: 20.0 };
                             }
+
+                            if draw_easing_options(
+                                ui,
+                                Easing::ReverseElastic { omega: 20.0 },
+                                self.value.is_reverse_elastic(),
+                                "ReverseElastic",
+                            )
+                            .clicked()
+                                && !self.value.is_reverse_elastic()
+                            {
+                                combobox_changed = true;
+                                *self.value = Easing::ReverseElastic { omega: 20.0 };
+                            }
                         });
                     });
                 })
@@ -346,7 +363,7 @@ impl Widget for EasingParameter<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
         match self.0 {
             Easing::Steps { count } => ui.add(egui::DragValue::new(count).speed(1).range(1..=64)),
-            Easing::Elastic { omega } => {
+            Easing::Elastic { omega } | Easing::ReverseElastic { omega } => {
                 ui.add(egui::DragValue::new(omega).speed(0.1).range(10.0..=128.0))
             }
             _ => ui.allocate_response(Vec2::ZERO, Sense::hover()),

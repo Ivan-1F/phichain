@@ -41,7 +41,10 @@ pub fn curve_note_track_inspector(
             ui.add(EasingValue::new(&mut options.curve));
         },
     );
-    if editor.value().curve.is_steps() || editor.value().curve.is_elastic() {
+    if editor.value().curve.is_steps()
+        || editor.value().curve.is_elastic()
+        || editor.value().curve.is_reverse_elastic()
+    {
         editor.field(
             &mut ui,
             "parameter",

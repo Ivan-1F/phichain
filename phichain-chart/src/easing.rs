@@ -72,6 +72,9 @@ pub enum Easing {
     Elastic {
         omega: f32,
     },
+    ReverseElastic {
+        omega: f32,
+    },
 }
 
 impl Easing {
@@ -142,6 +145,11 @@ impl Easing {
     pub fn is_elastic(self) -> bool {
         matches!(self, Easing::Elastic { .. })
     }
+
+    #[allow(dead_code)]
+    pub fn is_reverse_elastic(self) -> bool {
+        matches!(self, Easing::ReverseElastic { .. })
+    }
 }
 
 impl Easing {
@@ -187,6 +195,10 @@ impl Easing {
             Self::Elastic { omega } => {
                 1.0 - (1.0 - x).squared()
                     * (2.0 * ops::sin(omega * x) / omega + ops::cos(omega * x))
+            }
+            Self::ReverseElastic { omega } => {
+                let u = 1.0 - x;
+                x.squared() * (2.0 * ops::sin(omega * u) / omega + ops::cos(omega * u))
             }
         }
     }
@@ -237,5 +249,17 @@ mod tests {
     fn test_tween() {
         assert_eq!(0.0.ease_to(1.0, 0.5, Easing::Linear), 0.5);
         assert_eq!(1.0.ease_to(2.0, 0.5, Easing::Linear), 1.5);
+    }
+
+    #[test]
+    fn test_reverse_elastic() {
+        let e = Easing::Elastic { omega: 20.0 };
+        let re = Easing::ReverseElastic { omega: 20.0 };
+        assert!((re.ease(0.0) - 0.0).abs() < 1e-6);
+        assert!((re.ease(1.0) - 1.0).abs() < 1e-6);
+        for i in 0..=10 {
+            let x = i as f32 / 10.0;
+            assert!((re.ease(x) - (1.0 - e.ease(1.0 - x))).abs() < 1e-5);
+        }
     }
 }
