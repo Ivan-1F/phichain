@@ -144,7 +144,7 @@ fn main() {
                 })
                 .set(WindowPlugin {
                     primary_window: Some(Window {
-                        title: "Phichain".to_string(),
+                        title: "Phichain (probably fine)".to_string(),
                         ..default()
                     }),
                     ..default()
